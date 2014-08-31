@@ -216,7 +216,7 @@ show verbose descriptions with hyperlinks."
 (require 'expand-region nil t)
 (when (featurep 'expand-region)
   (global-set-key (kbd "C-=") 'er/expand-region)
-  (global-set-key (kbd "C-m") 'er/expand-region))
+  (global-set-key (kbd "C-,") 'er/expand-region))
 
 ;;----------------------------------------------------------------------
 ;; ACE-JUMP-MODE

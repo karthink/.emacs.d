@@ -3,3 +3,9 @@
 
 # Packaging
 .cask
+
+# Personal files
+.mc-lists.el
+auto-save-list
+move-line-region.el
+personal.el

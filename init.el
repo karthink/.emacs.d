@@ -194,7 +194,7 @@ show verbose descriptions with hyperlinks."
 (add-hook 'scheme-mode-hook           #'enable-paredit-mode)
 (eval-after-load "paredit"
   ;; Move the keys for split-sexp and raise-sexp to C-c r/s.
-  (progn (define-key paredit-mode-map (kbd "M-s") nil)
+  '(progn (define-key paredit-mode-map (kbd "M-s") nil)
          (define-key paredit-mode-map (kbd "M-r") nil)
          (define-key paredit-mode-map (kbd "C-c s") 'paredit-splice-sexp)
          (define-key paredit-mode-map (kbd "C-c r") 'paredit-raise-sexp)))
@@ -403,11 +403,11 @@ show verbose descriptions with hyperlinks."
 ;; (require 'yasnippet-bundle)
 (require 'yasnippet) ;; not yasnippet-bundle
 (when (featurep 'yasnippet)
-  (yas/initialize)
-  (yas/load-directory "~/.emacs.d/snippets")
-  (setq yas/prompt-functions '(yas/dropdown-prompt yas/x-prompt))
-  (setq yas/wrap-around-region t)
-  )
+  (setq yas-snippet-dirs "~/.emacs.d/snippets")
+  ;; (yas/load-directory "~/.emacs.d/snippets")
+  (yas-global-mode 1)
+  (setq yas-prompt-functions '(yas/dropdown-prompt yas/x-prompt))
+  (setq yas-wrap-around-region t))
 
 
 ;;----------------------------------------------------------------------
@@ -481,7 +481,7 @@ show verbose descriptions with hyperlinks."
 (setq auto-mode-alist
       (cons '("\\.text" . markdown-mode) auto-mode-alist))
 (eval-after-load "markdown-mode.el"
-  (progn 
+  '(progn 
     (defun markdown-unset-tab ()
       "markdown-mode-hook"
       (define-key markdown-mode-map (kbd "<tab>") nil))
@@ -676,7 +676,7 @@ show verbose descriptions with hyperlinks."
 ;;---------------------------------------------------------------------- 
 ;; Major mode for running Mathematica in Emacs
 ;; (eval-after-load 'math 
-;;  (define-key math-mode-map (kbd "<tab>") 'math-complete-symbol))
+;;  '(define-key math-mode-map (kbd "<tab>") 'math-complete-symbol))
 
 ;;######################################################################
 ;; MISCELLANEOUS PREFERENCES

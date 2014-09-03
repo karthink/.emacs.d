@@ -172,8 +172,8 @@ show verbose descriptions with hyperlinks."
                 (message "Press M-g n/p to visit")
 
               ;;no errors, make the compilation window go away in 0.5 seconds
-              ;; (save-excursion
-              ;;   (run-at-time 0.5 nil 'kill-buffer buf))
+              (save-excursion
+                (run-at-time 1.0 nil 'bury-buffer buf))
               (message "NO COMPILATION ERRORS!"))))
 
 
@@ -192,6 +192,12 @@ show verbose descriptions with hyperlinks."
 (add-hook 'lisp-mode-hook             #'enable-paredit-mode)
 (add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode)
 (add-hook 'scheme-mode-hook           #'enable-paredit-mode)
+(eval-after-load "paredit"
+  ;; Move the keys for split-sexp and raise-sexp to C-c r/s.
+  (progn (define-key paredit-mode-map (kbd "M-s") nil)
+         (define-key paredit-mode-map (kbd "M-r") nil)
+         (define-key paredit-mode-map (kbd "C-c s") 'paredit-splice-sexp)
+         (define-key paredit-mode-map (kbd "C-c r") 'paredit-raise-sexp)))
 
 ;;----------------------------------------------------------------------
 ;; MULTIPLE-CURSORS 
@@ -204,7 +210,7 @@ show verbose descriptions with hyperlinks."
   (global-set-key (kbd "M-@") 'mc/mark-all-words-like-this)
   (global-set-key (kbd "C-@") 'mc/mark-all-like-this)
   (global-set-key (kbd "M-p") 'mc/mark-previous-word-like-this) 
-  (global-set-key  (kbd "<C-return>") 'set-rectangular-region-anchor) 
+  (global-set-key (kbd "<C-return>") 'set-rectangular-region-anchor) 
   (global-set-key (kbd "C-x C-a") 'mc/edit-beginnings-of-lines)     
   (global-set-key (kbd "C-x SPC") 'mc/mark-all-dwim)                
   (global-set-key (kbd "M-N") 'mc/insert-numbers)
@@ -228,7 +234,8 @@ show verbose descriptions with hyperlinks."
 ;;     "Emacs quick move minor mode" t)
 (require 'ace-jump-mode nil t)
 (when (featurep 'ace-jump-mode)
-  (define-key global-map (kbd "M-m") 'ace-jump-mode))
+  (define-key global-map (kbd "M-m") 'ace-jump-mode)
+  (define-key global-map (kbd "C-'") 'ace-jump-mode))
 
 ;; Enable a more powerful jump back function from ace jump mode
 ;;
@@ -363,11 +370,11 @@ show verbose descriptions with hyperlinks."
 ;; C mode preferences
 ;;(setq compilation-window-height 8)
 ;;(c-toggle-hungry-state 1)
-(add-hook 'c-mode-hook
-          (lambda nil
-            (progn
-              (c-toggle-hungry-state 1)
-              (c-subword-mode))))
+;; (add-hook 'c-mode-hook
+;;           (lambda nil
+;;             (progn
+;;               (c-toggle-hungry-state 1)
+;;               (c-subword-mode))))
 
 
 ;;----------------------------------------------------------------------
@@ -384,7 +391,8 @@ show verbose descriptions with hyperlinks."
 (add-hook 'dired-mode-hook
           (function (lambda ()
                       ;; Set dired-x buffer-local variables here.  For example:
-                      (dired-omit-mode 1)
+                      (require 'dired-x)
+                      (setq dired-omit-mode 1)
                       )))
 
 
@@ -472,13 +480,13 @@ show verbose descriptions with hyperlinks."
   "Major mode for editing Markdown files" t)
 (setq auto-mode-alist
       (cons '("\\.text" . markdown-mode) auto-mode-alist))
-(when (featurep 'markdown-mode)
-  ;; Unset the definition of TAB in markdown, so Yasnippet works
-  (defun markdown-unset-tab ()
-    "markdown-mode-hook"
-    (define-key markdown-mode-map (kbd "<tab>") nil))
-  (add-hook 'markdown-mode-hook
-            '(lambda() (markdown-unset-tab) (visual-line-mode))))
+(eval-after-load "markdown-mode.el"
+  (progn 
+    (defun markdown-unset-tab ()
+      "markdown-mode-hook"
+      (define-key markdown-mode-map (kbd "<tab>") nil))
+    (add-hook 'markdown-mode-hook
+              '(lambda() (markdown-unset-tab) (visual-line-mode)))))
 
 
 ;;----------------------------------------------------------------------
@@ -814,7 +822,7 @@ show verbose descriptions with hyperlinks."
 
 ;; Set a Mode Line that tells me which machine, which directory,
 ;; and which line I am on, plus the other customary information.
-(setq default-mode-line-format
+(setq mode-line-format
       (quote
        (#("-" 0 1
           (help-echo

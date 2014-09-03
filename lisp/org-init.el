@@ -87,6 +87,7 @@ this is meant to be called with
            (when remember-frame-p (delete-frame)))))
       ))
 
+(define-key org-mode-map (kbd "C-c r") nil)
 (provide 'org-init)
 
 

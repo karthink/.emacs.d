@@ -3,7 +3,6 @@
                            ; singularity ;
 
 ; Karthik's .emacs file 
-; Karthik Chikmagalur
 ; 02 June 2009 
 
 (setq user-full-name "Karthik C")
@@ -35,12 +34,21 @@
  '(tool-bar-mode nil)
  '(transient-mark-mode nil))
 
-(custom-set-faces
-  ;; custom-set-faces was added by Custom.
-  ;; If you edit it by hand, you could mess it up, so be careful.
-  ;; Your init file should contain only one such instance.
-  ;; If there is more than one, they won't work right.
- '(default ((t (:inherit nil :stipple nil :background "white" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 113 :width normal :foundry "unknown" :family "Droid Sans Mono")))))
+(cond ((equal system-type 'gnu/linux)
+        (custom-set-faces
+         ;; custom-set-faces was added by Custom.
+         ;; If you edit it by hand, you could mess it up, so be careful.
+         ;; Your init file should contain only one such instance.
+         ;; If there is more than one, they won't work right.
+         '(default ((t (:inherit nil :stipple nil :background "white" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 113 :width normal :foundry "unknown" :family "Droid Sans Mono"))))))
+      ((equal system-type 'windows-nt)
+       (custom-set-faces
+        ;; custom-set-faces was added by Custom.
+        ;; If you edit it by hand, you could mess it up, so be careful.
+        ;; Your init file should contain only one such instance.
+        ;; If there is more than one, they won't work right.
+        '(default ((t (:inherit nil :stipple nil :background "white" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 98 :width normal :foundry "outline" :family "Consolas"))))))
+)
 
 ;;##################
 ;; MY CUSTOMIZATIONS
@@ -55,7 +63,7 @@
 ;;######################################################################
 ;; PACKAGE MANAGEMENT
 ;;######################################################################
-(require 'package nil t)
+(if (string< emacs-version "24") (require 'package nil t))
 (when (featurep 'package)
   (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
   (package-initialize))
@@ -83,8 +91,12 @@
 ;; INTERFACING WITH THE OS
 ;;######################################################################
 
+;; Set default shell
+(if (equal system-name 'windows-nt)
+    (setq shell-file-name "C:/apps/cygwin/cygwin.bat"))
+
 ;; Set default www browser
-(if (equal system-type "gnu/linux")
+(if (equal system-type 'gnu/linux)
     (setq 
      browse-url-browser-function 'browse-url-generic
      browse-url-generic-program "xdg-open"))
@@ -181,6 +193,12 @@ show verbose descriptions with hyperlinks."
 ;; PLUGINS AND MODES
 ;;######################################################################
 
+;;----------------------------------------------------------------------
+;; PATRAN/PCL UTILITIES
+;;----------------------------------------------------------------------
+(setq auto-mode-alist (cons '("\\.ses\\'" . text-mode) auto-mode-alist))
+(require 'patran nil t)
+
 ;;---------------------------------------------------------------------
 ;; PAREDIT-MODE
 ;;---------------------------------------------------------------------
@@ -273,11 +291,12 @@ show verbose descriptions with hyperlinks."
 ;;----------------------------------------------------------------------
 ;; SCHEME-MODE
 ;;----------------------------------------------------------------------
-(defun mechanics ()
-  (interactive)
-  (run-scheme 
-    "/usr/local/scmutils/mit-scheme/bin/scheme --library /usr/local/scmutils/mit-scheme/lib"
-  ))
+(require 'setup-scheme nil t)
+;; (defun mechanics ()
+;;   (interactive)
+;;   (run-scheme
+;;     "/usr/local/scmutils/mit-scheme/bin/scheme --library /usr/local/scmutils/mit-scheme/lib"
+;;   ))
 
 ;;----------------------------------------------------------------------
 ;; IDO-MODE.
@@ -401,13 +420,13 @@ show verbose descriptions with hyperlinks."
 ;;----------------------------------------------------------------------
 ;; Yasnippet bundle for Emacs
 ;; (require 'yasnippet-bundle)
-(require 'yasnippet) ;; not yasnippet-bundle
-(when (featurep 'yasnippet)
-  (setq yas-snippet-dirs "~/.emacs.d/snippets")
-  ;; (yas/load-directory "~/.emacs.d/snippets")
-  (yas-global-mode 1)
-  (setq yas-prompt-functions '(yas/dropdown-prompt yas/x-prompt))
-  (setq yas-wrap-around-region t))
+(require 'yasnippet nil t) ;; not yasnippet-bundle
+(eval-after-load "yasnippet"
+  '(progn  (setq yas-snippet-dirs "~/.emacs.d/snippets")
+           ;; (yas/load-directory "~/.emacs.d/snippets")
+           (yas/global-mode 1)
+           (setq yas/prompt-functions '(yas/dropdown-prompt yas/x-prompt))
+           (setq yas/wrap-around-region t)))
 
 
 ;;----------------------------------------------------------------------
@@ -465,11 +484,11 @@ show verbose descriptions with hyperlinks."
 ;;----------------------------------------------------------------------
 ;;;; Org mode
 ;; org-init.el is loaded from the "lisp" directory.
-(require 'org-init nil t)
+(require 'setup-org nil t)
 ;; Keybindings for org-mode and org-remember
-(when (featurep 'org-init)
-  (global-set-key "\C-cr" 'remember)
-  (global-set-key "\C-\M-r" 'org-remember))
+;; (when (featurep 'org-init)
+;;   (global-set-key "\C-cr" 'remember)
+;;   (global-set-key "\C-\M-r" 'org-remember))
 
 
 ;;----------------------------------------------------------------------
@@ -803,7 +822,10 @@ show verbose descriptions with hyperlinks."
 ;;----------------------------------------------------------------------
 ;; SLIME
 ;;----------------------------------------------------------------------
-;;(setq inferior-lisp-program "clisp")
+(cond ((equal system-type 'windows-nt)
+       (setq inferior-lisp-program "gcl"))
+      ((equal system-type 'gnu/linux)
+       (setq inferior-lisp-program "clisp")))
 ;;(require 'slime-autoloads)
 ;;(slime-setup)
           
@@ -812,8 +834,9 @@ show verbose descriptions with hyperlinks."
 ;;######################################################################
 
 ;; Zenburn color theme
-(require 'zenburn)
-(color-theme-zenburn)
+(if (equal system-type 'gnu/linux) 
+    (progn (require 'zenburn)
+            (color-theme-zenburn)))
 
 
 ;;######################################################################

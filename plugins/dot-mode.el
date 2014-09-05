@@ -383,9 +383,9 @@ or even saved for later use with name-last-kbd-macro"
         ;; hangs during execution (on GNU Emacs, anyway).
         (message "Repeated \"%s\"" (dot-mode-buffer-to-string)))
     ;; Put the hooks back
-    (make-local-hook 'pre-command-hook)
-    (make-local-hook 'post-command-hook)
-    (make-local-hook 'after-change-functions)
+    ;; (make-local-hook 'pre-command-hook)
+    ;; (make-local-hook 'post-command-hook)
+    ;; (make-local-hook 'after-change-functions)
     (add-hook 'pre-command-hook 'dot-mode-pre-hook nil t)
     (add-hook 'post-command-hook 'dot-mode-loop nil t)
     (add-hook 'after-change-functions 'dot-mode-after-change nil t)
@@ -522,9 +522,9 @@ than just `.'."
       )
     ;; ELSE
     ;; The hooks are _ALWAYS_ local since dot-mode may not be on in every buffer
-    (make-local-hook 'pre-command-hook)
-    (make-local-hook 'post-command-hook)
-    (make-local-hook 'after-change-functions)
+    ;; (make-local-hook 'pre-command-hook)
+    ;; (make-local-hook 'post-command-hook)
+    ;; (make-local-hook 'after-change-functions)
     (add-hook 'pre-command-hook 'dot-mode-pre-hook nil t)
     (add-hook 'post-command-hook 'dot-mode-loop nil t)
     (add-hook 'after-change-functions 'dot-mode-after-change nil t)

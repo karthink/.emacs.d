@@ -400,19 +400,7 @@ show verbose descriptions with hyperlinks."
 ;; DIRED
 ;;----------------------------------------------------------------------
 ;; Dired preferences
-(add-hook 'dired-load-hook
-          (function (lambda ()
-                      (load "dired-x")
-                      ;; Set dired-x global variables here.  For example:
-                      ;; (setq dired-guess-shell-gnutar "gtar")
-                      ;; (setq dired-x-hands-off-my-keys nil)
-                      )))
-(add-hook 'dired-mode-hook
-          (function (lambda ()
-                      ;; Set dired-x buffer-local variables here.  For example:
-                      (require 'dired-x)
-                      (setq dired-omit-mode 1)
-                      )))
+(require 'setup-dired)
 
 
 ;;----------------------------------------------------------------------

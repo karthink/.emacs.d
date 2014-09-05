@@ -87,7 +87,7 @@
 ;;            (when remember-frame-p (delete-frame)))))
 ;;       ))
 
-(define-key org-mode-map (kbd "C-c r") nil)
+;; (define-key org-mode-map (kbd "C-c r") nil)
 (provide 'setup-org)
 
 

@@ -400,8 +400,7 @@ show verbose descriptions with hyperlinks."
 ;; DIRED
 ;;----------------------------------------------------------------------
 ;; Dired preferences
-(require 'setup-dired)
-
+(require 'setup-dired nil t)
 
 ;;----------------------------------------------------------------------
 ;; YASNIPPET MODE

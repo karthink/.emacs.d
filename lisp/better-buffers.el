@@ -9,8 +9,17 @@
 
 ;; KEYBINDINGS
 
+;;; Use C-` or ` to dismiss *Help* and *info* windows. If there are
+;;; no *Help*/*info* windows open, C-` will cycle between this buffer
+;;; and (other-buffer) and ` will self-insert.
+(global-set-key (kbd "C-`") 'bbuf-dismiss-or-switch)
+
+(global-set-key (kbd "`") (lambda () (interactive)
+                            (bbuf-dismiss-or-insert "`")))
+
 ;; C-x C-b to ibuffer instead of buffer-menu
 (global-set-key (kbd "C-x C-b") 'ibuffer)
+
 ;; Keys to traverse buffers
 (global-set-key (kbd "<C-M-return>") 'ido-display-buffer)
 (global-set-key (kbd "C-<prior>") 'previous-buffer) ; Ctrl+PageDown
@@ -20,6 +29,12 @@
 (global-set-key (kbd "<C-S-iso-lefttab>") 
                 (lambda () (interactive) (other-window -1))) ;Ctrl+Shift+Tab
 
+;;; Cycle buffers forward. (Backward with prefix arg) 
+(global-set-key (kbd "M-`")
+                (lambda (&optional arg)
+                  (interactive "P")
+                  (if arg (previous-buffer) (next-buffer))))
+
 ;;; Set keys to scroll buffer while centering
 ;;; location on screen.
 (global-set-key "\M-]" 'scroll-buffer-down)
@@ -27,16 +42,16 @@
 
 ;; FUNCTIONS
 
-(defun iswitchb-local-keys ()
-  (mapc (lambda (K) 
-          (let* ((key (car K)) (fun (cdr K)))
-            (define-key iswitchb-mode-map (edmacro-parse-keys key) fun)))
-        '(("C-n" . iswitchb-next-match)
-          ("C-p"  . iswitchb-prev-match)
-          ("<up>"    . ignore             )
-          ("<down>"  . ignore             ))))
+;; (defun iswitchb-local-keys ()
+;;   (mapc (lambda (K) 
+;;           (let* ((key (car K)) (fun (cdr K)))
+;;             (define-key iswitchb-mode-map (edmacro-parse-keys key) fun)))
+;;         '(("C-n" . iswitchb-next-match)
+;;           ("C-p"  . iswitchb-prev-match)
+;;           ("<up>"    . ignore             )
+;;           ("<down>"  . ignore             ))))
 
-(add-hook 'iswitchb-define-mode-map-hook 'iswitchb-local-keys)
+;; (add-hook 'iswitchb-define-mode-map-hook 'iswitchb-local-keys)
 
 ;; Swap windows if there are two of them
 (defun swap-windows ()
@@ -86,7 +101,6 @@ User buffers are those not starting with *."
   (backward-paragraph arg)
   (recenter))
 
-;; Never understood why Emacs doesn't have this function.
 (defun rename-file-and-buffer (new-name)
   "Renames both current buffer and file it's visiting to NEW-NAME." 
   (interactive "sNew name: ")
@@ -96,9 +110,11 @@ User buffers are those not starting with *."
         (message "Buffer '%s' is not visiting a file!" name)
       (if (get-buffer new-name)
           (message "A buffer named '%s' already exists!" new-name)
-        (progn (rename-file name new-name 1) (rename-buffer new-name) (set-visited-file-name new-name) (set-buffer-modified-p nil))))))
+        (progn (rename-file name new-name 1)
+               (rename-buffer new-name)
+               (set-visited-file-name new-name)
+               (set-buffer-modified-p nil))))))
 
-;; Never understood why Emacs doesn't have this function, either.
 (defun move-buffer-file (dir)
   "Moves both current buffer and file it's visiting to DIR."
   (interactive "DNew directory: ")
@@ -110,8 +126,67 @@ User buffers are those not starting with *."
          (newname (concat dir "/" name)))
     (if (not filename)
         (message "Buffer '%s' is not visiting a file!" name)
-      (progn (copy-file filename newname 1) (delete-file filename) (set-visited-file-name newname) (set-buffer-modified-p nil) t))))
+      (progn (copy-file filename newname 1)
+             (delete-file filename)
+             (set-visited-file-name newname)
+             (set-buffer-modified-p nil) t))))
 
+;;----------------------------------------------------------------------
+;; BETTER-BUFFERS DISMISS WINDOW 
+;;----------------------------------------------------------------------
+;; Code to dismiss *Help* windows and other popups by saving and
+;; restoring window configurations.
+
+(defvar bbuf-window-configuration nil
+  "Variable to store a window configuration to restore later.
+  Will be updated when a *Help* window springs up.")
+
+(defvar bbuf-bury-buffer-list '("*help*" "*info*")
+  "List of buffer names that will be buried (with respective
+  windows closed) by bbuf-dismiss-windows")
+
+;;; Save window-configuration to bbuf-window-configuration
+;;; when a *Help* window pops up. 
+;;; (But only when there are no pre-existing *Help* buffers)
+(add-hook 'help-mode-hook
+          (lambda () 
+            (interactive) 
+            (if (not (member "*Help*"
+                             (mapcar (lambda (w) (buffer-name 
+                                                  (window-buffer w))) 
+                                     (window-list))))
+                (setq bbuf-window-configuration 
+                      (current-window-configuration)))))
+
+(defun bbuf-dismiss-windows (no-dismiss-window-function)
+  "Restore the window configuration to the one just before
+certain windows/buffers are created. The windows/buffers to
+dismiss are given by buffer names in
+bbuf-bury-buffer-list. If there are no windows to
+dismiss, run no-dismiss-window-function instead.
+
+Typically, running this function will bury any open *Help* buffer
+and dismiss its window."
+  (let ((buf (window-buffer (next-window))))
+    (if (member (downcase (buffer-name buf))
+                bbuf-bury-buffer-list)
+        (progn (bury-buffer buf)
+               (set-window-configuration
+                bbuf-window-configuration))
+      (funcall no-dismiss-window-function))))
+
+(defun bbuf-dismiss-or-switch (arg)
+  "Restore window configuration or cycle (current buffer)"
+  (interactive "P")
+  (bbuf-dismiss-windows 
+   (lambda () (switch-to-buffer 
+               (other-buffer (current-buffer) (if arg nil t))))))
+
+(defun bbuf-dismiss-or-insert (char)
+  "Restore window configuration or insert a character"
+  (bbuf-dismiss-windows
+   (lambda () (insert char))))
 ;;----------------------------------------------------------------------
 
 (provide 'better-buffers)
+

@@ -8,10 +8,14 @@
 ;; Collection of bindings and functions to make editing less painful on Emacs
 
 ;; /Enable/DISABLE cua-selection mode, for awesome rectangle selects
-;; (Set cua-selection-mode for rectangle awesomeness)
+;; (Set cua-selection-mode for rectangle editing)
 ;; (cua-selection-mode 1)
 (transient-mark-mode t)
 (delete-selection-mode 0)
+
+;; Change case with impunity 
+(put 'downcase-region 'disabled nil)
+(put 'upcase-region 'disabled nil)
 
 (defvar newline-and-indent t
   "Modify the behavior of the open-*-line functions to cause them to autoindent.")
@@ -31,7 +35,7 @@
 ;;; Prevent Extraneous Tabs
 (setq-default indent-tabs-mode nil)
 
-;; Turn off transient-mark-mode
+;; Turn on transient-mark-mode
 (transient-mark-mode 1)
 
 ;;; Text mode and Auto Fill mode
@@ -44,7 +48,17 @@
 (add-hook 'text-mode-hook 'toggle-word-wrap)
 
 ;; Modify the way hippie-expand behaves, expand as little as possible
-(setq hippie-expand-try-functions-list '(try-complete-file-name-partially try-complete-file-name try-expand-all-abbrevs  try-expand-dabbrev try-expand-dabbrev-all-buffers try-expand-list try-expand-line try-expand-dabbrev-from-kill try-complete-lisp-symbol-partially try-complete-lisp-symbol))
+(setq hippie-expand-try-functions-list 
+      '(try-complete-file-name-partially
+        try-complete-file-name
+        try-expand-all-abbrevs
+        try-expand-dabbrev
+        try-expand-dabbrev-all-buffers
+        try-expand-list
+        try-expand-line
+        try-expand-dabbrev-from-kill
+        try-complete-lisp-symbol-partially
+        try-complete-lisp-symbol))
 
 ;;----------------------------------------------------------------------
 ;; KEYBINDINGS
@@ -61,7 +75,7 @@
 
 ;;; Alternative to M-x
 (global-set-key "\C-x\C-m" 'execute-extended-command)
-(global-set-key "\C-c\C-m" 'execute-extended-command)
+;;(global-set-key "\C-c\C-m" 'execute-extended-command)
 
 ;;; Unbind `C-x f'
 (global-unset-key "\C-xf")
@@ -71,9 +85,6 @@
 (global-set-key (kbd "C-x t") 'beginning-of-buffer)
 (global-set-key (kbd "C-x .") 'end-of-buffer)
 (global-set-key (kbd "C-x l") 'end-of-buffer)
-
-;;; Rebind `C-x C-b' for `buffer-menu'
-(global-set-key "\C-x\C-b" 'buffer-menu)
 
 ;;; keybindings for Vi like o and O
 ;; autoindent open-*-lines
@@ -108,10 +119,12 @@
 (global-set-key (kbd "M-[") 'backward-paragraph)
 
 ;; Re-search forward
-(global-set-key (kbd "M-s") 'isearch-forward-regexp)
+;;; Superceded by iy-go-to-char
+;; (global-set-key (kbd "M-s") 'isearch-forward-regexp)
 
 ;; Re-search backward
-(global-set-key (kbd "M-r") 'isearch-backward-regexp)
+;;; Superceded by iy-go-to-char
+;; (global-set-key (kbd "M-r") 'isearch-backward-regexp)
 
 ;; Easy regex replace
 (defalias 'rr 'replace-regexp)
@@ -239,10 +252,12 @@
   (if (char-table-p translation-table-for-input)
       (setq char (or (aref translation-table-for-input char) char)))
   (save-excursion (message (char-to-string char))
-                  (copy-region-as-kill (point) (progn
-                                                 (search-forward (char-to-string char) 
-                                                                 nil nil arg)
-                                                 (point)))))
+                  (copy-region-as-kill (point) 
+                                       (progn
+                                         (search-forward 
+                                          (char-to-string char) 
+                                          nil nil arg)
+                                         (point)))))
 
 ;;; goto matching parenthesis, Vi style. The last statement is a bit conked; also look at the keybinding for this function above.
 (defun goto-match-paren (arg)

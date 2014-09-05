@@ -8,11 +8,6 @@
 (setq user-full-name "Karthik C")
 ; (setq user-mail-address "karthik[AT]gmail.com")
 
-; Each section in this file is introduced by a
-; line beginning with four semicolons; and each
-; entry is introduced by a line beginning with
-; three semicolons.
-
 (custom-set-variables
   ;; custom-set-variables was added by Custom.
   ;; If you edit it by hand, you could mess it up, so be careful.
@@ -21,18 +16,13 @@
  '(blink-cursor-mode nil)
  '(display-time-mode t)
  '(fringe-mode (quote (nil . 0)) nil (fringe))
- '(inferior-lisp-program "clisp")
- '(jabber-default-status "Available
-")
- '(markdown-command "markdown_py -x footnotes /dev/stdin")
- '(markdown-enable-math nil)
  '(menu-bar-mode nil)
- '(safe-local-variable-values (quote ((simplenote-key . "agtzaW1wbGUtbm90ZXINCxIETm90ZRjBxo4GDA") (simplenote-key . "agtzaW1wbGUtbm90ZXINCxIETm90ZRjw_qcFDA") (major-mode . makefile-mode) (folded-file . t))))
+ '(tooltip-mode nil)
  '(scroll-bar-mode nil)
  '(show-paren-mode t)
  '(tex-dvi-view-command (quote (cond ((eq window-system (quote x)) "evince") ((eq window-system (quote w32)) "yap") (t "dvi2tty * | cat -s"))))
  '(tool-bar-mode nil)
- '(transient-mark-mode nil))
+ '(transient-mark-mode t))
 
 (cond ((equal system-type 'gnu/linux)
         (custom-set-faces
@@ -50,9 +40,9 @@
         '(default ((t (:inherit nil :stipple nil :background "white" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 98 :width normal :foundry "outline" :family "Consolas"))))))
 )
 
-;;##################
-;; MY CUSTOMIZATIONS
-;;##################
+;;######################################################################
+;; PATHS
+;;######################################################################
 
 ;; Set directory
 (setq default-directory "~/")
@@ -67,6 +57,12 @@
 (when (featurep 'package)
   (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
   (package-initialize))
+
+;;######################################################################
+;; PERSONAL
+;;######################################################################
+;;; My account data for Weblogger, Jabber & other services
+(require 'personal nil t)
 
 ;;######################################################################
 ;; EDITING
@@ -101,11 +97,10 @@
      browse-url-browser-function 'browse-url-generic
      browse-url-generic-program "xdg-open"))
 
-(if (or (equal system-name "ansatz") (equal system-name "langevin-235w"))
+(if (equal system-name "ansatz")
     (setq 
      browse-url-browser-function 'browse-url-generic
      browse-url-generic-program "google-chrome"))
-
 
 ;; Extends path to include my ~/bin directory
 ;; Not required if starting Emacs from shell.
@@ -117,7 +112,8 @@
 ;;                "bin"))
 
 ;; Consult clipboard before primary selection
-;; http://www.gnu.org/software/emacs/manual/html_node/emacs/Clipboard.html
+;; http://www.gnu.org/software/emacs/manual/
+;; html_node/emacs/Clipboard.html
 (setq x-select-enable-clipboard t)
 
 ;; Arrange for Emacs to notice password prompts and turn off echoing for them, as follows:
@@ -166,7 +162,6 @@ show verbose descriptions with hyperlinks."
   (shell-command (concat "dict " word (cond ((null prefix) nil)
                                                 (t " -v")))))
 
-
 ;;######################################################################
 ;; COMPILATION
 ;;######################################################################
@@ -190,14 +185,165 @@ show verbose descriptions with hyperlinks."
 
 
 ;;######################################################################
-;; PLUGINS AND MODES
+;; LANGUAGE MODES
 ;;######################################################################
+
+;;----------------------------------------------------------------------
+;; LUA-MODE
+;;----------------------------------------------------------------------
+(setq auto-mode-alist (cons '("\\.lua$" . lua-mode) auto-mode-alist))
+(autoload 'lua-mode "lua-mode" "Lua editing mode." t)
+
+;;----------------------------------------------------------------------
+;; PYTHON-MODE
+;;----------------------------------------------------------------------
+;;; Ipython mode
+;;   (setq ipython-command "/usr/bin/ipython")
+;;   (require 'ipython)
+
+;;----------------------------------------------------------------------
+;; C-MODE
+;;----------------------------------------------------------------------
+;; C mode preferences
+;;(setq compilation-window-height 8)
+;;(c-toggle-hungry-state 1)
+;; (add-hook 'c-mode-hook
+;;           (lambda nil
+;;             (progn
+;;               (c-toggle-hungry-state 1)
+;;               (c-subword-mode))))
+
+;;----------------------------------------------------------------------
+;; SLIME
+;;----------------------------------------------------------------------
+(cond ((equal system-type 'windows-nt)
+       (setq inferior-lisp-program "gcl"))
+      ((equal system-type 'gnu/linux)
+       (setq inferior-lisp-program "clisp")))
+;;(require 'slime-autoloads)
+;;(slime-setup)
+
+;;----------------------------------------------------------------------
+;; SCHEME MODE
+;;----------------------------------------------------------------------
+(require 'setup-scheme nil t)
+;; (defun mechanics ()
+;;   (interactive)
+;;   (run-scheme
+;;     "/usr/local/scmutils/mit-scheme/bin/scheme --library /usr/local/scmutils/mit-scheme/lib"
+;;   ))
+
+;;---------------------------------------------------------------------- 
+;; MATH-MODE
+;;---------------------------------------------------------------------- 
+;; Major mode for running Mathematica in Emacs
+;; (eval-after-load 'math 
+;;  '(define-key math-mode-map (kbd "<tab>") 'math-complete-symbol))
+
+;;----------------------------------------------------------------------
+;; RUBY MODE
+;;----------------------------------------------------------------------
+;; (add-to-list 'load-path "~/.emacs.d/plugins/ruby/")
+;; (require 'ruby-electric)
+;; (add-hook 'ruby-mode-hook (lambda () (ruby-electric-mode t)))
+;; Ri in emacs
+;; (autoload 'ruby-mode "ruby-mode" "Major mode for editing Ruby code" t)
+;; (add-to-list 'auto-mode-alist '("\\.rb\\'" . ruby-mode))
+;; (require 'inf-ruby nil t)
+;; (when (featurep 'inf-ruby) 
+;;   (setq ri-ruby-script (expand-file-name "~/.emacs.d/plugins/ri-emacs.rb"))
+;;   (autoload 'ri (expand-file-name "~/.emacs.d/plugins/ri-ruby.el") nil t)
+;;   (add-hook 'ruby-mode-hook (lambda ()                                          
+;;                               (local-set-key (kbd "<f1>") 'ri)                           
+;;                               (local-set-key "\M-\C-i" 'ri-ruby-complete-symbol)
+;;                               (local-set-key (kbd "<f5>") 'ri-ruby-show-args)            
+;;                               )))
+
+;;----------------------------------------------------------------------
+;; OCTAVE-MODE
+;;----------------------------------------------------------------------
+;; Load .m files as octave mode
+(setq auto-mode-alist (cons '("\\.m" . octave-mode) auto-mode-alist))
 
 ;;----------------------------------------------------------------------
 ;; PATRAN/PCL UTILITIES
 ;;----------------------------------------------------------------------
 (setq auto-mode-alist (cons '("\\.ses\\'" . text-mode) auto-mode-alist))
 (require 'patran nil t)
+
+;;######################################################################
+;; MARKUP MODES
+;;######################################################################
+
+;;----------------------------------------------------------------------
+;; MARKDOWN-MODE
+;;----------------------------------------------------------------------
+;; Load from the "lisp" directory, also associate .text with markdown
+(autoload 'markdown-mode "markdown-mode.el"
+  "Major mode for editing Markdown files" t)
+(setq auto-mode-alist
+      (cons '("\\.text" . markdown-mode) auto-mode-alist))
+(eval-after-load "markdown-mode.el"
+  '(progn 
+     ;; (setq markdown-command "markdown"
+     ;;       markdown-enable-math nil)
+     (defun markdown-unset-tab ()
+       "markdown-mode-hook"
+       (define-key markdown-mode-map (kbd "<tab>") nil))
+     (add-hook 'markdown-mode-hook
+               '(lambda() (markdown-unset-tab) (visual-line-mode)))))
+
+;;----------------------------------------------------------------------
+;; AUCTEX-MODE & ADDITIONS
+;;---------------------------------------------------------------------- 
+;; (setq 
+;;  TeX-auto-save t
+;;  TeX-parse-self t
+;;  TeX-electric-escape nil)
+;; (setq-default TeX-master nil)
+
+;; (autoload 'cdlatex-mode "cdlatex" "CDLaTeX Mode" t)
+;; (autoload 'turn-on-cdlatex "cdlatex" "CDLaTeX Mode" nil)
+;; (add-hook 'LaTeX-mode-hook 
+;;           (lambda nil
+;;             (progn 
+;;               (turn-on-auto-fill)
+;;               (setq TeX-newline-function 'reindent-then-newline-and-indent)
+;; 	      (define-key TeX-mode-map (kbd "C-;") 'TeX-complete-symbol)
+;;               (TeX-fold-mode 1)
+;;               (setq cdlatex-command-alist
+;;                     '(("vc" "Insert \\vect{}" "\\vect{?}" cdlatex-position-cursor nil nil t)))
+;;               (turn-on-cdlatex)
+;;               (setq cdlatex-paired-parens "$[{("))))
+
+;;----------------------------------------------------------------------
+;; MUSE-MODE
+;;----------------------------------------------------------------------
+                                        ; Set up muse mode for easy publishing.
+                                        ;(require 'muse-mode)
+;; (require 'muse-html)     ; load publishing styles I use
+;; (require 'muse-latex)
+;; (require 'muse-texinfo)
+;; (require 'muse-docbook)
+;; (require 'muse-xml)
+
+;; ; Muse styles
+;; (muse-derive-style "w3-xhtml" "xhtml"
+;; :style-sheet "<link rel=\"stylesheet\" type=\"text/css\" media=\"all\" href=\"http://www.w3.org/StyleSheets/Core/Steely\" />") 
+
+;(defvar muse-styles-w3 '("Oldstyle" 
+;                           "Modernist" 
+;                           "Midnight" 
+;                           "Ultramarine" 
+;                           "Swiss"
+;                           "Chocolate"
+;                           "Traditional"
+;                           "Steely")
+;                       "CSS styles for muse style w3-xhtml" )
+
+;;######################################################################
+;; PLUGINS
+;;######################################################################
 
 ;;---------------------------------------------------------------------
 ;; PAREDIT-MODE
@@ -216,7 +362,6 @@ show verbose descriptions with hyperlinks."
          (define-key paredit-mode-map (kbd "M-r") nil)
          (define-key paredit-mode-map (kbd "C-c s") 'paredit-splice-sexp)
          (define-key paredit-mode-map (kbd "C-c r") 'paredit-raise-sexp)))
-
 ;;----------------------------------------------------------------------
 ;; MULTIPLE-CURSORS 
 ;;----------------------------------------------------------------------
@@ -275,30 +420,6 @@ show verbose descriptions with hyperlinks."
   (define-key global-map (kbd "M-r") 'iy-go-to-char-backward))
 
 ;;----------------------------------------------------------------------
-;; SIMPLENOTE-SETUP
-;;----------------------------------------------------------------------
-;; (require 'simplenote)
-;; (setq simplenote-email "simplenoteemail@provider.com")
-;; (setq simplenote-password "simplenotepassword")
-;; (simplenote-setup)
-
-;;----------------------------------------------------------------------
-;; LUA-MODE
-;;----------------------------------------------------------------------
-(setq auto-mode-alist (cons '("\\.lua$" . lua-mode) auto-mode-alist))
-(autoload 'lua-mode "lua-mode" "Lua editing mode." t)
-
-;;----------------------------------------------------------------------
-;; SCHEME-MODE
-;;----------------------------------------------------------------------
-(require 'setup-scheme nil t)
-;; (defun mechanics ()
-;;   (interactive)
-;;   (run-scheme
-;;     "/usr/local/scmutils/mit-scheme/bin/scheme --library /usr/local/scmutils/mit-scheme/lib"
-;;   ))
-
-;;----------------------------------------------------------------------
 ;; IDO-MODE.
 ;;----------------------------------------------------------------------
 (require 'ido nil t)
@@ -345,7 +466,6 @@ show verbose descriptions with hyperlinks."
 ;;          "M-x "
 ;;          (all-completions "" obarray 'commandp))))))
 
-
 ;;----------------------------------------------------------------------
 ;; AUTOPAIR and WRAP-REGION
 ;;----------------------------------------------------------------------
@@ -357,44 +477,10 @@ show verbose descriptions with hyperlinks."
 ;; (wrap-region-global-mode t)
 
 ;;----------------------------------------------------------------------
-;; RUBY-MODE
-;;----------------------------------------------------------------------
-;; (add-to-list 'load-path "~/.emacs.d/plugins/ruby/")
-;; (require 'ruby-electric)
-;; (add-hook 'ruby-mode-hook (lambda () (ruby-electric-mode t)))
-;; Ri in emacs
-;; (autoload 'ruby-mode "ruby-mode" "Major mode for editing Ruby code" t)
-;; (add-to-list 'auto-mode-alist '("\\.rb\\'" . ruby-mode))
-;; (require 'inf-ruby nil t)
-;; (when (featurep 'inf-ruby) 
-;;   (setq ri-ruby-script (expand-file-name "~/.emacs.d/plugins/ri-emacs.rb"))
-;;   (autoload 'ri (expand-file-name "~/.emacs.d/plugins/ri-ruby.el") nil t)
-;;   (add-hook 'ruby-mode-hook (lambda ()                                          
-;;                               (local-set-key (kbd "<f1>") 'ri)                           
-;;                               (local-set-key "\M-\C-i" 'ri-ruby-complete-symbol)
-;;                               (local-set-key (kbd "<f5>") 'ri-ruby-show-args)            
-;;                               )))
-
-
-;;----------------------------------------------------------------------
 ;; TRAMP
 ;;----------------------------------------------------------------------
 ;; Tramp ssh'es into root@host to edit files. The emacs sudo, kindof.
 (autoload 'tramp "tramp")
-
-
-;;----------------------------------------------------------------------
-;; C-MODE
-;;----------------------------------------------------------------------
-;; C mode preferences
-;;(setq compilation-window-height 8)
-;;(c-toggle-hungry-state 1)
-;; (add-hook 'c-mode-hook
-;;           (lambda nil
-;;             (progn
-;;               (c-toggle-hungry-state 1)
-;;               (c-subword-mode))))
-
 
 ;;----------------------------------------------------------------------
 ;; DIRED
@@ -414,7 +500,6 @@ show verbose descriptions with hyperlinks."
            (yas/global-mode 1)
            (setq yas/prompt-functions '(yas/dropdown-prompt yas/x-prompt))
            (setq yas/wrap-around-region t)))
-
 
 ;;----------------------------------------------------------------------
 ;; BOOKMARKS
@@ -439,7 +524,6 @@ show verbose descriptions with hyperlinks."
 
 ;; (bookmark-to-abbrevs)
 
-
 ;;----------------------------------------------------------------------
 ;; W3M
 ;;----------------------------------------------------------------------
@@ -447,24 +531,21 @@ show verbose descriptions with hyperlinks."
 ;; (autoload 'w3m-el "w3m-el" "w3m in Emacs" t)
 ;; (setq w3m-use-cookies t)
 
-
 ;;----------------------------------------------------------------------
 ;; ARTIST-MODE
 ;;----------------------------------------------------------------------
 ;; Artist mode for drawing ASCII art!
 ;; (autoload 'artist-mode "artist" "Enter artist-mode" t)
 
-
 ;;----------------------------------------------------------------------
 ;; FOOTNOTE-MODE
 ;;----------------------------------------------------------------------
 ;;; Footnote mode
-                                        ; Adds a function to read in existing footnotes upon starting a new
-                                        ; session. 'tis a bit flaky.
+; Adds a function to read in existing footnotes upon starting a new
+; session. 'tis a bit flaky.
 ;; (require 'footnote-init nil t)
 ;; (when (featurep 'footnote-init) (add-hook
 ;;                                  'footnote-mode-hook 'footnote-init))
-
 
 ;;----------------------------------------------------------------------
 ;; ORG-MODE
@@ -476,64 +557,6 @@ show verbose descriptions with hyperlinks."
 ;; (when (featurep 'org-init)
 ;;   (global-set-key "\C-cr" 'remember)
 ;;   (global-set-key "\C-\M-r" 'org-remember))
-
-
-;;----------------------------------------------------------------------
-;; MARKDOWN-MODE
-;;----------------------------------------------------------------------
-;; Load from the "lisp" directory, also associate .text with markdown
-(autoload 'markdown-mode "markdown-mode.el"
-  "Major mode for editing Markdown files" t)
-(setq auto-mode-alist
-      (cons '("\\.text" . markdown-mode) auto-mode-alist))
-(eval-after-load "markdown-mode.el"
-  '(progn 
-    (defun markdown-unset-tab ()
-      "markdown-mode-hook"
-      (define-key markdown-mode-map (kbd "<tab>") nil))
-    (add-hook 'markdown-mode-hook
-              '(lambda() (markdown-unset-tab) (visual-line-mode)))))
-
-
-;;----------------------------------------------------------------------
-;; OCTAVE-MODE
-;;----------------------------------------------------------------------
-;; Load .m files as octave mode
-(setq auto-mode-alist (cons '("\\.m" . octave-mode) auto-mode-alist))
-
-
-;;----------------------------------------------------------------------
-;; WEBLOGGER-MODE
-;;----------------------------------------------------------------------
-;; Publish to Wordpress from Emacs
-;; (autoload 'weblogger "weblogger.el" "Publish to Wordpress from Emacs" t)
-
-
-;;----------------------------------------------------------------------
-;; MUSE-MODE
-;;----------------------------------------------------------------------
-                                        ; Set up muse mode for easy publishing.
-                                        ;(require 'muse-mode)
-;; (require 'muse-html)     ; load publishing styles I use
-;; (require 'muse-latex)
-;; (require 'muse-texinfo)
-;; (require 'muse-docbook)
-;; (require 'muse-xml)
-
-;; ; Muse styles
-;; (muse-derive-style "w3-xhtml" "xhtml"
-;; :style-sheet "<link rel=\"stylesheet\" type=\"text/css\" media=\"all\" href=\"http://www.w3.org/StyleSheets/Core/Steely\" />") 
-
-                                        ;(defvar muse-styles-w3 '("Oldstyle" 
-                                        ;                           "Modernist" 
-                                        ;                           "Midnight" 
-                                        ;                           "Ultramarine" 
-                                        ;                           "Swiss"
-                                        ;                           "Chocolate"
-                                        ;                           "Traditional"
-                                        ;                           "Steely")
-                                        ;                       "CSS styles for muse style w3-xhtml" )
-
 
 ;;----------------------------------------------------------------------
 ;; BABEL
@@ -548,15 +571,6 @@ show verbose descriptions with hyperlinks."
 (autoload 'babel-buffer "babel"
   "Use a web translation service to translate the current buffer." t)
 
-
-;;----------------------------------------------------------------------
-;; PYTHON-MODE
-;;----------------------------------------------------------------------
-;;; Ipython mode
-;;   (setq ipython-command "/usr/bin/ipython")
-;;   (require 'ipython)
-
-
 ;;----------------------------------------------------------------------
 ;; DOT-MODE
 ;;----------------------------------------------------------------------
@@ -567,7 +581,6 @@ show verbose descriptions with hyperlinks."
   (global-set-key [(control ?.)] (lambda () (interactive) (dot-mode 1)
                                    (message "Dot mode activated."))))
 
-
 ;;----------------------------------------------------------------------
 ;; ERC
 ;;----------------------------------------------------------------------
@@ -577,11 +590,26 @@ show verbose descriptions with hyperlinks."
 (setq erc-track-exclude-types '("JOIN" "NICK" "PART" "QUIT" "MODE"
                                 "324" "329" "332" "333" "353" "477"))
 
+;;----------------------------------------------------------------------
+;; SIMPLENOTE
+;;----------------------------------------------------------------------
+;; Simplenote details in "personal.el"
+;; (require 'simplenote)
+;; (setq simplenote-email "simplenoteemail@provider.com")
+;; (setq simplenote-password "simplenotepassword")
+;; (simplenote-setup)
 
+;;----------------------------------------------------------------------
+;; WEBLOGGER
+;;----------------------------------------------------------------------
+;; Weblogger details in "personal.el"
+;; Publish to Wordpress from Emacs
+;; (autoload 'weblogger "weblogger.el" "Publish to Wordpress from Emacs" t)
 
 ;;----------------------------------------------------------------------
 ;; JABBER
 ;;----------------------------------------------------------------------
+;; Jabber details in "personal.el"
 ;; ;; Emacs Jabber, set up for Google Talk.
 ;; (setq jabber-account-list '(
 ;;                             ("myaddr@gmail.com"
@@ -598,14 +626,13 @@ show verbose descriptions with hyperlinks."
 ;; (setq jabber-show-offline-contacts nil)
 ;; (setq jabber-roster-show-bindings nil)
 ;; (setq jabber-vcard-avatars-retrieve nil)
-;;                                         ;(setq jabber-default-status (shell-command-to-string "fortune cookie linuxcookie -n short"))
+;; (setq jabber-default-status (shell-command-to-string "fortune cookie linuxcookie -n short"))
 
 ;;----------------------------------------------------------------------
 ;; HTMLIZE
 ;;----------------------------------------------------------------------
 ;; Htmlize Emacs buffers
 ;;(autoload 'htmlize "htmlize" "HTML-ize Emacs regions/buffers" nil t)
-
 
 ;;----------------------------------------------------------------------
 ;; SWEET-KILL
@@ -633,13 +660,11 @@ show verbose descriptions with hyperlinks."
 ;;(require 'sweet-kill)
 ;; Haiku upon Emacs invocation! (Depends on sweet-kill)
 
-
 ;;----------------------------------------------------------------------
 ;; LONGLINES-MODE
 ;;----------------------------------------------------------------------
 ;; Set keyboard shortcut for turning on longlines-mode in text-mode.
 (define-key text-mode-map "\C-cL" 'longlines-mode)
-
 
 ;;----------------------------------------------------------------------
 ;; FLYSPELL-PROG-MODE
@@ -653,37 +678,6 @@ show verbose descriptions with hyperlinks."
 ;;   (add-hook hook (lambda ()
 ;;                    (flyspell-prog-mode))))
 
-;;----------------------------------------------------------------------
-;; AUCTEX-MODE & ADDITIONS
-;;---------------------------------------------------------------------- 
-;; (setq 
-;;  TeX-auto-save t
-;;  TeX-parse-self t
-;;  TeX-electric-escape nil)
-;; (setq-default TeX-master nil)
-
-;; (autoload 'cdlatex-mode "cdlatex" "CDLaTeX Mode" t)
-;; (autoload 'turn-on-cdlatex "cdlatex" "CDLaTeX Mode" nil)
-;; (add-hook 'LaTeX-mode-hook 
-;;           (lambda nil
-;;             (progn 
-;;               (turn-on-auto-fill)
-;;               (setq TeX-newline-function 'reindent-then-newline-and-indent)
-;; 	      (define-key TeX-mode-map (kbd "C-;") 'TeX-complete-symbol)
-;;               (TeX-fold-mode 1)
-;;               (setq cdlatex-command-alist
-;;                     '(("vc" "Insert \\vect{}" "\\vect{?}" cdlatex-position-cursor nil nil t)))
-;;               (turn-on-cdlatex)
-;;               (setq cdlatex-paired-parens "$[{("))))
-
-
-;;---------------------------------------------------------------------- 
-;; MATH-MODE
-;;---------------------------------------------------------------------- 
-;; Major mode for running Mathematica in Emacs
-;; (eval-after-load 'math 
-;;  '(define-key math-mode-map (kbd "<tab>") 'math-complete-symbol))
-
 ;;######################################################################
 ;; MISCELLANEOUS PREFERENCES
 ;;######################################################################
@@ -694,16 +688,10 @@ show verbose descriptions with hyperlinks."
 ;; Stop cursor from blinking
 (blink-cursor-mode 0)
 
-;; Turn on menu bar (this bar has text)
-;; (Use numeric argument to turn on)
-(menu-bar-mode 0)
-;; Turn off tool bar (this bar has icons)
-;; (Use numeric argument to turn on)
-(tool-bar-mode 0)
-;; Turn off tooltip mode for tool bar
-;; (This mode causes icon explanations to pop up)
-;; (Use numeric argument to turn on)
-(tooltip-mode 0)
+;; Turn off the menu and tool bars and the tooltip mode
+;; (menu-bar-mode 0)
+;; (tool-bar-mode 0)
+;; (tooltip-mode 0)
 
 ;; Turn on image viewing
 (auto-image-file-mode t)
@@ -720,7 +708,8 @@ show verbose descriptions with hyperlinks."
       kept-old-versions 5 ; Old versions to keep
 ) 
 
-;;; Prevent Emacs from bugging me about C-x n n not being user-friendly.
+;; Prevent Emacs from bugging me about C-x n n not being
+;; user-friendly.
 (put 'narrow-to-region 'disabled nil)
 
 ;; For lazy typists
@@ -729,10 +718,11 @@ show verbose descriptions with hyperlinks."
 (mouse-avoidance-mode 'animate)
 
 ;; highlight the current line, as in Matlab
-;;(global-hl-line-mode)
+;; (global-hl-line-mode)
 
-; when you mark a region, you can delete it or replace it as in other Windows programs:
-;; simply hit delete or type whatever you want or yank
+;; when you mark a region, you can delete it or replace it as in other
+;; Windows programs. simply hit delete or type whatever you want or
+;; yank
 ;;(delete-selection-mode)
 
 ; let there be a marker on every empty line on the left fringe
@@ -745,9 +735,9 @@ show verbose descriptions with hyperlinks."
 (defun fullscreen ()
   (interactive)
   (set-frame-parameter nil 'fullscreen
-                       (if (frame-parameter nil 'fullscreen) nil 'fullboth)))
+                       (if (frame-parameter nil 'fullscreen) 
+                           nil 'fullboth)))
 (global-set-key [f11] 'fullscreen)
-
 
 ;; WINDOW SPLITTING
 ;; Set horizontal splits as the default
@@ -776,28 +766,27 @@ show verbose descriptions with hyperlinks."
                          (when (featurep 'simplenote) 
                            (simplenote-push-buffer))))))
 
-;; Sync with Simplenote immediately after opening certain files
-(add-hook 'find-file-hook '(lambda nil 
-                             (if (and (featurep 'simplenote) 
-                                      (or (string=
-                                           (buffer-file-name)
-                                           (expand-file-name 
-                                            (concat default-directory
-                                                    "journal.org")))
-                                          (string=
-                                           (buffer-file-name)
-                                           (expand-file-name 
-                                            (concat default-directory
-                                                    "tasks.org")))
-                                          (string=
-                                           (buffer-file-name)
-                                           (expand-file-name 
-                                            (concat default-directory
-                                                    "projects.org")))))
-                                 (simplenote-pull-buffer))))
+;; ;; Sync with Simplenote immediately after opening certain files
+;; (add-hook 'find-file-hook 
+;;           '(lambda nil 
+;;              (if (and (featurep 'simplenote) 
+;;                       (or (string=
+;;                            (buffer-file-name)
+;;                            (expand-file-name 
+;;                             (concat default-directory
+;;                                     "journal.org")))
+;;                           (string=
+;;                            (buffer-file-name)
+;;                            (expand-file-name 
+;;                             (concat default-directory
+;;                                     "tasks.org")))
+;;                           (string=
+;;                            (buffer-file-name)
+;;                            (expand-file-name 
+;;                             (concat default-directory
+;;                                     "projects.org")))))
+;;                  (simplenote-pull-buffer))))
 
-                           
-                                  
 ;;----------------------------------------------------------------------
 ;; MACROS
 ;;----------------------------------------------------------------------
@@ -805,16 +794,6 @@ show verbose descriptions with hyperlinks."
 ;; Bind call last macro to F4
 (global-set-key (kbd "<f3>") 'kmacro-start-macro)
 (global-set-key (kbd "<f4>") 'kmacro-end-or-call-macro)
-
-;;----------------------------------------------------------------------
-;; SLIME
-;;----------------------------------------------------------------------
-(cond ((equal system-type 'windows-nt)
-       (setq inferior-lisp-program "gcl"))
-      ((equal system-type 'gnu/linux)
-       (setq inferior-lisp-program "clisp")))
-;;(require 'slime-autoloads)
-;;(slime-setup)
           
 ;;######################################################################
 ;; COLORS & COLOR THEMES
@@ -824,7 +803,6 @@ show verbose descriptions with hyperlinks."
 (if (equal system-type 'gnu/linux) 
     (progn (require 'zenburn)
             (color-theme-zenburn)))
-
 
 ;;######################################################################
 ;; MODELINE:
@@ -870,7 +848,9 @@ show verbose descriptions with hyperlinks."
 
 ;; Enable recursive minibuffer edits
 (setq enable-recursive-minibuffers 1)
-
-(put 'downcase-region 'disabled nil)
-
-(put 'upcase-region 'disabled nil)
+(custom-set-faces
+  ;; custom-set-faces was added by Custom.
+  ;; If you edit it by hand, you could mess it up, so be careful.
+  ;; Your init file should contain only one such instance.
+  ;; If there is more than one, they won't work right.
+ '(default ((t (:inherit nil :stipple nil :background "white" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 113 :width normal :foundry "unknown" :family "Droid Sans Mono")))))

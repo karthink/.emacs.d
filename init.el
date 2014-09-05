@@ -69,19 +69,16 @@
 ;;######################################################################
 (require 'better-editing nil t)
 
-
 ;;######################################################################
 ;; BUFFER MANAGEMENT
 ;;######################################################################
 (require 'better-buffers nil t)
-
 
 ;;######################################################################
 ;; UTILITY FUNCTIONS
 ;;######################################################################
 ;; Count words, print ASCII table, etc
 (require 'utilities nil t)
-
 
 ;;######################################################################
 ;; INTERFACING WITH THE OS
@@ -360,8 +357,16 @@ show verbose descriptions with hyperlinks."
   ;; Move the keys for split-sexp and raise-sexp to C-c r/s.
   '(progn (define-key paredit-mode-map (kbd "M-s") nil)
          (define-key paredit-mode-map (kbd "M-r") nil)
-         (define-key paredit-mode-map (kbd "C-c s") 'paredit-splice-sexp)
-         (define-key paredit-mode-map (kbd "C-c r") 'paredit-raise-sexp)))
+         (define-key paredit-mode-map (kbd "<M-up>") nil)
+         (define-key paredit-mode-map (kbd "<M-down>") nil)
+         (define-key paredit-mode-map (kbd "C-c <up>") 
+           'paredit-splice-sexp-killing-backward)
+         (define-key paredit-mode-map (kbd "C-c <down>") 
+           'paredit-splice-sexp-killing-forward)
+         (define-key paredit-mode-map (kbd "C-c s") 
+           'paredit-splice-sexp)
+         (define-key paredit-mode-map (kbd "C-c r") 
+           'paredit-raise-sexp)))
 ;;----------------------------------------------------------------------
 ;; MULTIPLE-CURSORS 
 ;;----------------------------------------------------------------------
@@ -741,8 +746,8 @@ show verbose descriptions with hyperlinks."
 
 ;; WINDOW SPLITTING
 ;; Set horizontal splits as the default
-;; (setq split-height-threshold nil)
-;; (setq split-width-threshold 80)
+(setq split-height-threshold nil)
+(setq split-width-threshold 80)
 
 ;; Byte-compile init.el immediately after saving it:
 (add-hook 'after-save-hook
@@ -848,9 +853,3 @@ show verbose descriptions with hyperlinks."
 
 ;; Enable recursive minibuffer edits
 (setq enable-recursive-minibuffers 1)
-(custom-set-faces
-  ;; custom-set-faces was added by Custom.
-  ;; If you edit it by hand, you could mess it up, so be careful.
-  ;; Your init file should contain only one such instance.
-  ;; If there is more than one, they won't work right.
- '(default ((t (:inherit nil :stipple nil :background "white" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 113 :width normal :foundry "unknown" :family "Droid Sans Mono")))))

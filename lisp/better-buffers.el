@@ -1,17 +1,19 @@
-;;----------------------------------------------------------------------
+;;######################################################################
 ;; BETTER BUFFERS
-;;----------------------------------------------------------------------
+;;######################################################################
 
 ;; Collection of commands to make handling buffers less painful
 
 ;; Iswitchb Mode; Superceded by ido-mode
 ;; (iswitchb-mode 1)
 
+;;----------------------------------------------------------------------
 ;; KEYBINDINGS
+;;----------------------------------------------------------------------
 
 ;;; Use C-` or ` to dismiss *Help* and *info* windows. If there are
 ;;; no *Help*/*info* windows open, C-` will cycle between this buffer
-;;; and (other-buffer) and ` will self-insert.
+;;; and (other-buffer) instead, and ` will self-insert.
 (global-set-key (kbd "C-`") 'bbuf-dismiss-or-switch)
 
 (global-set-key (kbd "`") (lambda () (interactive)
@@ -40,7 +42,13 @@
 (global-set-key "\M-]" 'scroll-buffer-down)
 (global-set-key "\M-[" 'scroll-buffer-up)
 
+;;; Toggle window split between horizontal and vertical
+(define-key ctl-x-4-map "t" 'toggle-window-split)
+(define-key ctl-x-4-map "|" 'toggle-window-split)
+
+;;----------------------------------------------------------------------
 ;; FUNCTIONS
+;;----------------------------------------------------------------------
 
 ;; (defun iswitchb-local-keys ()
 ;;   (mapc (lambda (K) 
@@ -52,6 +60,33 @@
 ;;           ("<down>"  . ignore             ))))
 
 ;; (add-hook 'iswitchb-define-mode-map-hook 'iswitchb-local-keys)
+
+(defun toggle-window-split ()
+  (interactive)
+  "Toggles the window split between horizontal and vertical when
+the fram has exactly two windows."
+  (if (= (count-windows) 2)
+      (let* ((this-win-buffer (window-buffer))
+	     (next-win-buffer (window-buffer (next-window)))
+	     (this-win-edges (window-edges (selected-window)))
+	     (next-win-edges (window-edges (next-window)))
+	     (this-win-2nd (not (and (<= (car this-win-edges)
+					 (car next-win-edges))
+				     (<= (cadr this-win-edges)
+					 (cadr next-win-edges)))))
+	     (splitter
+	      (if (= (car this-win-edges)
+		     (car (window-edges (next-window))))
+		  'split-window-horizontally
+		'split-window-vertically)))
+	(delete-other-windows)
+	(let ((first-win (selected-window)))
+	  (funcall splitter)
+	  (if this-win-2nd (other-window 1))
+	  (set-window-buffer (selected-window) this-win-buffer)
+	  (set-window-buffer (next-window) next-win-buffer)
+	  (select-window first-win)
+	  (if this-win-2nd (other-window 1))))))
 
 ;; Swap windows if there are two of them
 (defun swap-windows ()
@@ -132,7 +167,7 @@ User buffers are those not starting with *."
              (set-buffer-modified-p nil) t))))
 
 ;;----------------------------------------------------------------------
-;; BETTER-BUFFERS DISMISS WINDOW 
+;; DISMISS-WINDOW 
 ;;----------------------------------------------------------------------
 ;; Code to dismiss *Help* windows and other popups by saving and
 ;; restoring window configurations.
@@ -143,7 +178,7 @@ User buffers are those not starting with *."
 
 (defvar bbuf-bury-buffer-list '("*help*" "*info*")
   "List of buffer names that will be buried (with respective
-  windows closed) by bbuf-dismiss-windows")
+  windows deleted) by bbuf-dismiss-windows")
 
 ;;; Save window-configuration to bbuf-window-configuration
 ;;; when a *Help* window pops up. 
@@ -180,7 +215,7 @@ and dismiss its window."
   (interactive "P")
   (bbuf-dismiss-windows 
    (lambda () (switch-to-buffer 
-               (other-buffer (current-buffer) (if arg nil t))))))
+               (other-buffer (current-buffer) (not arg))))))
 
 (defun bbuf-dismiss-or-insert (char)
   "Restore window configuration or insert a character"

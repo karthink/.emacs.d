@@ -3,5 +3,7 @@
 # key: ;-
 # binding: direct-keybinding
 # --
-;;----------------$1----------------
+;;${1:$(make-string (string-width yas-text) ?\-)}
+;;${1:$$(upcase yas-text)}
+;;${1:$(make-string (string-width yas-text) ?\-)}
 $0

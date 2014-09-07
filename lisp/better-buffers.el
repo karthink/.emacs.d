@@ -19,6 +19,13 @@
 (global-set-key (kbd "`") (lambda () (interactive)
                             (bbuf-dismiss-or-insert "`")))
 
+
+(global-set-key (kbd "<C-delete>")
+                (lambda () (interactive)
+                  (save-buffer)
+                  (kill-buffer (current-buffer))))
+
+
 ;; C-x C-b to ibuffer instead of buffer-menu
 (global-set-key (kbd "C-x C-b") 'ibuffer)
 
@@ -176,7 +183,10 @@ User buffers are those not starting with *."
   "Variable to store a window configuration to restore later.
   Will be updated when a *Help* window springs up.")
 
-(defvar bbuf-bury-buffer-list '("*help*" "*info*")
+(defvar bbuf-bury-buffer-list '("*help*"
+                                "*info*"
+                                "*compile-log*"
+                                "*apropos*")
   "List of buffer names that will be buried (with respective
   windows deleted) by bbuf-dismiss-windows")
 
@@ -185,13 +195,26 @@ User buffers are those not starting with *."
 ;;; (But only when there are no pre-existing *Help* buffers)
 (add-hook 'help-mode-hook
           (lambda () 
-            (interactive) 
-            (if (not (member "*Help*"
-                             (mapcar (lambda (w) (buffer-name 
-                                                  (window-buffer w))) 
-                                     (window-list))))
-                (setq bbuf-window-configuration 
-                      (current-window-configuration)))))
+            (bbuf-save-window-configuration "*Help*")))
+
+(add-hook 'compilation-finish-functions
+          (lambda ()
+            (bbuf-save-window-configuration "*Compile-Log*")))
+
+(add-hook 'apropos-mode-hook
+          (lambda ()
+            (bbuf-save-window-configuration "*Apropos*")))
+
+
+(defun bbuf-save-window-configuration (buffer-name)
+  "if buffer-name is not one of the currently displayed buffers,
+save the current window configuration"
+  (if (not (member buffer-name
+                   (mapcar (lambda (w) (buffer-name 
+                                        (window-buffer w))) 
+                           (window-list))))
+      (setq bbuf-window-configuration 
+            (current-window-configuration))))
 
 (defun bbuf-dismiss-windows (no-dismiss-window-function)
   "Restore the window configuration to the one just before

@@ -13,32 +13,29 @@
   ;; If you edit it by hand, you could mess it up, so be careful.
   ;; Your init file should contain only one such instance.
   ;; If there is more than one, they won't work right.
- '(blink-cursor-mode nil)
  '(display-time-mode t)
  '(fringe-mode (quote (nil . 0)) nil (fringe))
  '(menu-bar-mode nil)
- '(tooltip-mode nil)
  '(scroll-bar-mode nil)
  '(show-paren-mode t)
  '(tex-dvi-view-command (quote (cond ((eq window-system (quote x)) "evince") ((eq window-system (quote w32)) "yap") (t "dvi2tty * | cat -s"))))
  '(tool-bar-mode nil)
- '(transient-mark-mode t))
+ '(tooltip-mode nil))
 
 (cond ((equal system-type 'gnu/linux)
-        (custom-set-faces
-         ;; custom-set-faces was added by Custom.
-         ;; If you edit it by hand, you could mess it up, so be careful.
-         ;; Your init file should contain only one such instance.
-         ;; If there is more than one, they won't work right.
-         '(default ((t (:inherit nil :stipple nil :background "white" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 113 :width normal :foundry "unknown" :family "Droid Sans Mono"))))))
+       (custom-set-faces
+        ;; custom-set-faces was added by Custom.
+        ;; If you edit it by hand, you could mess it up, so be careful.
+        ;; Your init file should contain only one such instance.
+        ;; If there is more than one, they won't work right.
+        '(default ((t (:inherit nil :stipple nil :background "white" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 120 :width normal :foundry "unknown" :family "Ubuntu Mono"))))))
       ((equal system-type 'windows-nt)
        (custom-set-faces
         ;; custom-set-faces was added by Custom.
         ;; If you edit it by hand, you could mess it up, so be careful.
         ;; Your init file should contain only one such instance.
         ;; If there is more than one, they won't work right.
-        '(default ((t (:inherit nil :stipple nil :background "white" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 98 :width normal :foundry "outline" :family "Consolas"))))))
-)
+        '(default ((t (:inherit nil :stipple nil :background "white" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 98 :width normal :foundry "outline" :family "Consolas")))))))
 
 ;;######################################################################
 ;; PATHS
@@ -180,6 +177,13 @@ show verbose descriptions with hyperlinks."
                 (run-at-time 1.0 nil 'bury-buffer buf))
               (message "NO COMPILATION ERRORS!"))))
 
+;; (add-hook 'emacs-lisp-mode-hook 
+;;           (lambda ()
+;;             (unless (or (file-exists-p "makefile")
+;;                         (file-exists-p "Makefile"))
+;;               (set (make-local-variable 'compile-command)
+;;                    (concat "make -k "
+;;                            (file-name-sans-extension buffer-file-name))))))
 
 ;;######################################################################
 ;; LANGUAGE MODES
@@ -224,6 +228,13 @@ show verbose descriptions with hyperlinks."
 ;; SCHEME MODE
 ;;----------------------------------------------------------------------
 (require 'setup-scheme nil t)
+(add-hook 'scheme-mode-hook 
+          (lambda () 
+            (define-key scheme-mode-map (kbd "C-c C-c") 
+              'scheme-send-definition-and-go)
+            (define-key scheme-mode-map (kbd "C-c M-e") 
+              'scheme-compile-definition-and-go)))
+
 ;; (defun mechanics ()
 ;;   (interactive)
 ;;   (run-scheme
@@ -342,6 +353,12 @@ show verbose descriptions with hyperlinks."
 ;; PLUGINS
 ;;######################################################################
 
+;;----------------------------------------------------------------------
+;; AUTO-COMPLETE MODE
+;;----------------------------------------------------------------------
+(require 'auto-complete-config nil t)
+(ac-config-default)
+
 ;;---------------------------------------------------------------------
 ;; PAREDIT-MODE
 ;;---------------------------------------------------------------------
@@ -423,6 +440,12 @@ show verbose descriptions with hyperlinks."
 (when (featurep 'iy-go-to-char)
   (define-key global-map (kbd "M-s") 'iy-go-to-char)
   (define-key global-map (kbd "M-r") 'iy-go-to-char-backward))
+
+;;----------------------------------------------------------------------
+;; WRAP-REGION MODE
+;;----------------------------------------------------------------------
+(require 'wrap-region nil t)
+(add-hook 'text-mode-hook 'wrap-region-mode)
 
 ;;----------------------------------------------------------------------
 ;; IDO-MODE.
@@ -746,8 +769,8 @@ show verbose descriptions with hyperlinks."
 
 ;; WINDOW SPLITTING
 ;; Set horizontal splits as the default
-(setq split-height-threshold nil)
 (setq split-width-threshold 80)
+(setq split-height-threshold 60)
 
 ;; Byte-compile init.el immediately after saving it:
 (add-hook 'after-save-hook
@@ -805,9 +828,9 @@ show verbose descriptions with hyperlinks."
 ;;######################################################################
 
 ;; Zenburn color theme
-(if (equal system-type 'gnu/linux) 
-    (progn (require 'zenburn)
-            (color-theme-zenburn)))
+;; (if (equal system-type 'gnu/linux) 
+;;     (progn (require 'zenburn)
+;;             (color-theme-zenburn)))
 
 ;;######################################################################
 ;; MODELINE:
@@ -853,3 +876,4 @@ show verbose descriptions with hyperlinks."
 
 ;; Enable recursive minibuffer edits
 (setq enable-recursive-minibuffers 1)
+

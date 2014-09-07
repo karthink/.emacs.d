@@ -412,7 +412,7 @@
  (web-server .
 	     [(0 1 1)
 	      ((emacs
-		(24 4)))
+		(24 3)))
 	      "Emacs Web Server" tar
 	      ((:keywords "http" "server" "network")
 	       (:url . "https://github.com/eschulte/emacs-web-server"))])

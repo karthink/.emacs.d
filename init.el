@@ -55,7 +55,7 @@
   (setq package-enable-at-startup nil))
 
 ;;; Set load paths for ELPA packages
-(require 'cl)
+(require 'cl-lib)
 (package-initialize)
 
 (when (featurep 'package)

@@ -50,10 +50,16 @@
 ;;######################################################################
 ;; PACKAGE MANAGEMENT
 ;;######################################################################
-(if (string< emacs-version "24") (require 'package nil t))
+(if (string< emacs-version "24")
+    (require 'package nil t)
+  (setq package-enable-at-startup nil))
+
+;;; Set load paths for ELPA packages
+(require 'cl)
+(package-initialize)
+
 (when (featurep 'package)
-  (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
-  (package-initialize))
+  (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t))
 
 ;;######################################################################
 ;; PERSONAL
@@ -339,15 +345,15 @@ show verbose descriptions with hyperlinks."
 ;; (muse-derive-style "w3-xhtml" "xhtml"
 ;; :style-sheet "<link rel=\"stylesheet\" type=\"text/css\" media=\"all\" href=\"http://www.w3.org/StyleSheets/Core/Steely\" />") 
 
-;(defvar muse-styles-w3 '("Oldstyle" 
-;                           "Modernist" 
-;                           "Midnight" 
-;                           "Ultramarine" 
-;                           "Swiss"
-;                           "Chocolate"
-;                           "Traditional"
-;                           "Steely")
-;                       "CSS styles for muse style w3-xhtml" )
+                                        ;(defvar muse-styles-w3 '("Oldstyle" 
+                                        ;                           "Modernist" 
+                                        ;                           "Midnight" 
+                                        ;                           "Ultramarine" 
+                                        ;                           "Swiss"
+                                        ;                           "Chocolate"
+                                        ;                           "Traditional"
+                                        ;                           "Steely")
+                                        ;                       "CSS styles for muse style w3-xhtml" )
 
 ;;######################################################################
 ;; PLUGINS
@@ -356,8 +362,9 @@ show verbose descriptions with hyperlinks."
 ;;----------------------------------------------------------------------
 ;; AUTO-COMPLETE MODE
 ;;----------------------------------------------------------------------
+;;; ELPA package, run (package-initialize) first
 (require 'auto-complete-config nil t)
-(ac-config-default)
+(eval-after-load "auto-complete" (quote (ac-config-default)))
 ;; (setq ac-auto-show-menu t
 ;;       ac-auto-start t
 ;;       ac-show-menu-immediately-on-auto-complete t) 
@@ -376,20 +383,21 @@ show verbose descriptions with hyperlinks."
 (eval-after-load "paredit"
   ;; Move the keys for split-sexp and raise-sexp to C-c r/s.
   '(progn (define-key paredit-mode-map (kbd "M-s") nil)
-         (define-key paredit-mode-map (kbd "M-r") nil)
-         (define-key paredit-mode-map (kbd "<M-up>") nil)
-         (define-key paredit-mode-map (kbd "<M-down>") nil)
-         (define-key paredit-mode-map (kbd "C-c <up>") 
-           'paredit-splice-sexp-killing-backward)
-         (define-key paredit-mode-map (kbd "C-c <down>") 
-           'paredit-splice-sexp-killing-forward)
-         (define-key paredit-mode-map (kbd "C-c s") 
-           'paredit-splice-sexp)
-         (define-key paredit-mode-map (kbd "C-c r") 
-           'paredit-raise-sexp)))
+          (define-key paredit-mode-map (kbd "M-r") nil)
+          (define-key paredit-mode-map (kbd "<M-up>") nil)
+          (define-key paredit-mode-map (kbd "<M-down>") nil)
+          (define-key paredit-mode-map (kbd "C-c <up>") 
+            'paredit-splice-sexp-killing-backward)
+          (define-key paredit-mode-map (kbd "C-c <down>") 
+            'paredit-splice-sexp-killing-forward)
+          (define-key paredit-mode-map (kbd "C-c s") 
+            'paredit-splice-sexp)
+          (define-key paredit-mode-map (kbd "C-c r") 
+            'paredit-raise-sexp)))
 ;;----------------------------------------------------------------------
 ;; MULTIPLE-CURSORS 
 ;;----------------------------------------------------------------------
+;;; ELPA package, run (package-initialize) first
 (require 'multiple-cursors nil t)
 (when (featurep 'multiple-cursors)
   (add-to-list 'mc/cursor-specific-vars 'iy-go-to-char-start-pos)  
@@ -407,6 +415,7 @@ show verbose descriptions with hyperlinks."
 ;;----------------------------------------------------------------------
 ;; EXPAND-REGION
 ;;----------------------------------------------------------------------
+;;; ELPA package, run (package-initialize) first
 (require 'expand-region nil t)
 (when (featurep 'expand-region)
   (global-set-key (kbd "C-=") 'er/expand-region)

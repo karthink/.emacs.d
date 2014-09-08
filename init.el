@@ -358,6 +358,9 @@ show verbose descriptions with hyperlinks."
 ;;----------------------------------------------------------------------
 (require 'auto-complete-config nil t)
 (ac-config-default)
+;; (setq ac-auto-show-menu t
+;;       ac-auto-start t
+;;       ac-show-menu-immediately-on-auto-complete t) 
 
 ;;---------------------------------------------------------------------
 ;; PAREDIT-MODE
@@ -769,7 +772,7 @@ show verbose descriptions with hyperlinks."
 
 ;; WINDOW SPLITTING
 ;; Set horizontal splits as the default
-(setq split-width-threshold 80)
+(setq split-width-threshold 140)
 (setq split-height-threshold 60)
 
 ;; Byte-compile init.el immediately after saving it:

@@ -186,7 +186,8 @@ User buffers are those not starting with *."
 (defvar bbuf-bury-buffer-list '("*help*"
                                 "*info*"
                                 "*compile-log*"
-                                "*apropos*")
+                                "*apropos*"
+                                "*backtrace*")
   "List of buffer names that will be buried (with respective
   windows deleted) by bbuf-dismiss-windows")
 

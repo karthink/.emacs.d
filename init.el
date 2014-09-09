@@ -50,6 +50,9 @@
 ;;######################################################################
 ;; PACKAGE MANAGEMENT
 ;;######################################################################
+;;; Some package somewhere is making trouble with make-local-hook. :(
+(defalias 'make-local-hook 'ignore)
+
 (if (string< emacs-version "24")
     (require 'package nil t)
   (setq package-enable-at-startup nil))
@@ -496,6 +499,12 @@ show verbose descriptions with hyperlinks."
   (require 'ido-other-window nil t))
 
 ;; Supercharge M-x. Use with care!
+;;; Smex
+(require 'smex nil t)
+(smex-initialize)
+(global-set-key (kbd "M-x") 'smex)
+(global-set-key (kbd "M-S-x") 'smex-major-mode-commands)
+
 ;; (global-set-key
 ;;     "\M-x"
 ;;     (lambda ()

@@ -1,6 +1,5 @@
-
-(autoload 'idomenu "idomenu" nil t)
-(require 'idomenu)
+;; (autoload 'idomenu "idomenu" nil t)
+;; (require 'idomenu)
 
   ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PACKAGE: helm              ;;
@@ -16,16 +15,16 @@
 
 (require 'helm-config)
 ;;(require 'helm-eshell)
-(require 'helm-files)
+;;(require 'helm-files)
 ;;(require 'helm-grep)
 
 ; (define-key helm-map (kbd "<tab>") 'helm-execute-persistent-action) ; rebihnd tab to do persistent action
 ; (define-key helm-map (kbd "C-i") 'helm-execute-persistent-action) ; make TAB works in terminal
 ; (define-key helm-map (kbd "C-z")  'helm-select-action) ; list actions using C-z
 
-(define-key helm-grep-mode-map (kbd "<return>")  'helm-grep-mode-jump-other-window)
-(define-key helm-grep-mode-map (kbd "n")  'helm-grep-mode-jump-other-window-forward)
-(define-key helm-grep-mode-map (kbd "p")  'helm-grep-mode-jump-other-window-backward)
+; (define-key helm-grep-mode-map (kbd "<return>")  'helm-grep-mode-jump-other-window)
+; (define-key helm-grep-mode-map (kbd "n")  'helm-grep-mode-jump-other-window-forward)
+; (define-key helm-grep-mode-map (kbd "p")  'helm-grep-mode-jump-other-window-backward)
 
 (setq
  helm-google-suggest-use-curl-p t
@@ -37,8 +36,8 @@
 
  helm-split-window-default-side 'other ;; open helm buffer in another window
  helm-split-window-in-side-p t ;; open helm buffer inside current window, not occupy whole other window
- helm-buffers-favorite-modes (append helm-buffers-favorite-modes
-                                     '(picture-mode artist-mode))
+ ;; helm-buffers-favorite-modes (append helm-buffers-favorite-modes
+ ;;                                     '(picture-mode artist-mode))
  helm-candidate-number-limit 30 ; limit the number of displayed canidates
  helm-M-x-requires-pattern 1     ; show all candidates when set to 0
  helm-ff-file-name-history-use-recentf t
@@ -55,3 +54,6 @@
 (helm-mode 1)
 (helm-match-plugin-mode)
 (global-set-key (kbd "M-.") 'helm-semantic-or-imenu)
+(global-set-key (kbd "M-x") 'helm-M-x)
+(global-set-key (kbd "C-x C-f") 'helm-find-files)
+

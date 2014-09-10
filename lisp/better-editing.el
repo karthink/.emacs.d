@@ -184,8 +184,11 @@
   (interactive "p")
   (next-line 
    (save-excursion 
-     (let ((beg (line-beginning-position))
-           (end (line-end-position)))
+     (let* ((bounds (if (region-active-p)
+                        (cons (region-beginning) (region-end))
+                      (cons (line-beginning-position) (line-end-position))))
+            (beg (car bounds))
+            (end (cdr bounds)))
        (copy-region-as-kill beg end)
        (dotimes (num arg arg)
          (end-of-line) (newline)

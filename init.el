@@ -479,11 +479,17 @@ show verbose descriptions with hyperlinks."
 ;; IDO-MODE.
 ;;----------------------------------------------------------------------
 (require 'ido nil t)
+
 (when (featurep 'ido) 
   (ido-mode t)
   (setq ido-enable-flex-matching t) ;; enable fuzzy matching
   (ido-everywhere 1)
-
+  (if (require 'ido-ubiquitous nil t)
+      (ido-ubiquitous-mode))
+  (autoload 'idomenu "idomenu" nil t)
+  (eval-after-load "idomenu"
+    (global-set-key (kbd "M-.") 'imenu))
+  
   ;; Custom keybindings
   (defun ido-my-keys ()
     (mapc (lambda (K) 

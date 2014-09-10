@@ -363,6 +363,19 @@ show verbose descriptions with hyperlinks."
 ;;######################################################################
 
 ;;----------------------------------------------------------------------
+;; CALC
+;;----------------------------------------------------------------------
+(defun calc-on-line () (interactive)
+  (cond ((region-active-p)
+         (let ((beg (region-beginning))
+               (end (region-end)))
+           (insert (calc-eval (buffer-substring-no-properties beg end)))
+           (kill-region beg end)))
+        (t (insert " = " (calc-eval (thing-at-point 'line))))))
+(global-set-key (kbd "C-S-e") 'calc-on-line)
+
+
+;;----------------------------------------------------------------------
 ;; AUTO-COMPLETE MODE
 ;;----------------------------------------------------------------------
 ;;; ELPA package, run (package-initialize) first

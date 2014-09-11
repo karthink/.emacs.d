@@ -182,29 +182,33 @@
 (defun duplicate-line (&optional arg)
   "Duplicate it. With prefix ARG, duplicate ARG lines following the current one."
   (interactive "p")
-  (next-line 
-   (save-excursion 
-     (let* ((bounds (if (region-active-p)
-                        (cons (region-beginning) (region-end))
-                      (cons (line-beginning-position) (line-end-position))))
-            (beg (car bounds))
-            (end (cdr bounds)))
-       (copy-region-as-kill beg end)
-       (dotimes (num arg arg)
-         (end-of-line) (newline)
-         (yank))))))
+  (destructuring-bind (beg . end) (if (region-active-p)
+                                      (cons (region-beginning)
+                                            (region-end))
+                                    (cons (line-beginning-position)
+                                          (line-end-position)))
+    (copy-region-as-kill beg end)
+    (if (region-active-p)
+        (progn (dotimes (n arg arg)
+                 (goto-char (region-end))
+                 (yank))
+               (exchange-point-and-mark)) 
+      (save-excursion
+        (dotimes (n arg arg)
+          (open-previous-line 1)
+          (yank))))))
 
-(defun duplicate-line-many-once (&optional arg)
-  "Duplicate it. With prefix ARG, duplicate ARG lines following the current one."
-  (interactive "p")
-  (save-excursion 
-    (let ((beg (line-beginning-position))
-          (end 
-           (progn (forward-line (1- arg)) (line-end-position))))
-      (copy-region-as-kill beg end)
-      (end-of-line) (newline)
-      (yank)))
-  (next-line arg))
+;; (defun duplicate-line-many-once (&optional arg)
+;;   "Duplicate it. With prefix ARG, duplicate ARG lines following the current one. This function is deprecated. Use duplicate-line with a selected region instead"
+;;   (interactive "p")
+;;   (save-excursion 
+;;     (let ((beg (line-beginning-position))
+;;           (end 
+;;            (progn (forward-line (1- arg)) (line-end-position))))
+;;       (copy-region-as-kill beg end)
+;;       (end-of-line) (newline)
+;;       (yank)))
+;;   (next-line arg))
 
 ;;; behave like vi's o command
 (defun open-next-line (arg)

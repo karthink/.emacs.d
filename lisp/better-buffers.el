@@ -22,8 +22,11 @@
 
 (global-set-key (kbd "<C-delete>")
                 (lambda () (interactive)
-                  (save-buffer)
-                  (kill-buffer (current-buffer))))
+                  (funcall (if (string= (buffer-name) "*scratch*")
+                               'bury-buffer
+                             (lambda ()
+                               (and (buffer-file-name) (save-buffer))
+                               (kill-buffer))))))
 
 
 ;; C-x C-b to ibuffer instead of buffer-menu

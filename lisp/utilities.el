@@ -52,6 +52,21 @@
                       (setq i (- i 96)))))
   (toggle-read-only 1))
 
+;;----------------------------------------------------------------------
+;; INSERT FUNCTION DEFINITION AT POINT
+;;----------------------------------------------------------------------
+(defun insert-definition-at-point ()
+  "Function to find the definition of the defun at point and insert it there."
+  (interactive)
+  (save-excursion
+    (imenu (thing-at-point 'symbol))
+    (mark-defun)
+    (kill-ring-save (region-beginning) (region-end)))
+  (yank)
+  (exchange-point-and-mark)
+  (backward-kill-sexp))
+
+(global-set-key (kbd "C-x C-M-y") 'insert-definition-at-point)
 
 ;;----------------------------------------------------------------------
 

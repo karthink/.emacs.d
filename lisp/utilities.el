@@ -61,10 +61,20 @@
   (save-excursion
     (imenu (thing-at-point 'symbol))
     (mark-defun)
-    (kill-ring-save (region-beginning) (region-end)))
+    (kill-ring-save (region-beginning)
+                    (region-end)))
+  (with-temp-buffer
+    (yank)
+    (beginning-of-buffer)
+    (delete-blank-lines) 
+    (kill-new (buffer-substring-no-properties
+               (point-min)
+               (point-max))
+              t))
+  (beginning-of-line)
   (yank)
-  (exchange-point-and-mark)
-  (backward-kill-sexp))
+  (kill-whole-line)
+  (beginning-of-defun))
 
 (global-set-key (kbd "C-x C-M-y") 'insert-definition-at-point)
 

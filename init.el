@@ -374,6 +374,18 @@ show verbose descriptions with hyperlinks."
         (t (end-of-line) (insert " = " (calc-eval (thing-at-point 'line))))))
 (global-set-key (kbd "C-S-e") 'calc-on-line)
 
+;;----------------------------------------------------------------------
+;; ABBREV MODE
+;;----------------------------------------------------------------------
+(setq save-abbrevs t)
+(if (file-exists-p abbrev-file-name)
+    (quietly-read-abbrev-file))
+;;(setq-default abbrev-mode t)
+;;(dolist (hook '(erc-mode-hook
+;;                    emacs-lisp-mode-hook
+;;                    text-mode-hook))
+;;      (add-hook hook (lambda () (abbrev-mode 1))))
+
 
 ;;----------------------------------------------------------------------
 ;; AUTO-COMPLETE MODE
@@ -820,19 +832,21 @@ show verbose descriptions with hyperlinks."
                           (expand-file-name 
                            (concat default-directory
                                    "init.el")))
-                         (byte-compile-file (buffer-file-name)))
-                        ((or (string=
-                          (buffer-file-name)
-                          (expand-file-name 
-                           (concat default-directory
-                                   "journal.org")))
-                         (string=
-                          (buffer-file-name)
-                          (expand-file-name 
-                           (concat default-directory
-                                   "projects.org"))))
-                         (when (featurep 'simplenote) 
-                           (simplenote-push-buffer))))))
+                         (byte-compile-file (buffer-file-name))))))
+
+
+;; ((or (string=
+;;                           (buffer-file-name)
+;;                           (expand-file-name 
+;;                            (concat default-directory
+;;                                    "journal.org")))
+;;                          (string=
+;;                           (buffer-file-name)
+;;                           (expand-file-name 
+;;                            (concat default-directory
+;;                                    "projects.org"))))
+;;                          (when (featurep 'simplenote) 
+;;                            (simplenote-push-buffer)))
 
 ;; ;; Sync with Simplenote immediately after opening certain files
 ;; (add-hook 'find-file-hook 

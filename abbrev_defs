@@ -53,7 +53,10 @@
 
 (define-abbrev-table 'prog-mode-abbrev-table '())
 
-(define-abbrev-table 'scheme-mode-abbrev-table '())
+(define-abbrev-table 'scheme-mode-abbrev-table
+  '(
+    ("l" "lambda" nil 0)
+   ))
 
 (define-abbrev-table 'snippet-mode-abbrev-table '())
 

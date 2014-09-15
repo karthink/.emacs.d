@@ -363,6 +363,17 @@ show verbose descriptions with hyperlinks."
 ;;######################################################################
 
 ;;----------------------------------------------------------------------
+;; PRETTY LAMBDA MODE
+;;----------------------------------------------------------------------
+(require 'pretty-lambdada)
+(add-hook 'emacs-lisp-mode-hook 'pretty-lambda)
+(add-hook 'scheme-mode-hook 'pretty-lambda)
+(add-hook 'lisp-mode-hook 'pretty-lambda)
+(add-hook 'lisp-interaction-mode-hook 'pretty-lambda)
+(add-hook 'inferior-scheme-mode-hook 'pretty-lambda)
+;;(pretty-lambda-for-modes)
+
+;;----------------------------------------------------------------------
 ;; CALC
 ;;----------------------------------------------------------------------
 (defun calc-on-line () (interactive)

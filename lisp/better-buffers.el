@@ -243,7 +243,7 @@ and dismiss its window."
   (interactive "P")
   (bbuf-dismiss-windows 
    (lambda () (switch-to-buffer 
-               (other-buffer (current-buffer) (not arg))))))
+          (other-buffer (current-buffer) arg)))))
 
 (defun bbuf-dismiss-or-insert (char)
   "Restore window configuration or insert a character"

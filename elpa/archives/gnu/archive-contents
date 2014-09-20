@@ -65,7 +65,7 @@
 	       ((:url . "http://github.com/defunkt/coffee-mode")
 		(:keywords "coffeescript" "major" "mode"))])
  (company .
-	  [(0 8 3)
+	  [(0 8 5)
 	   ((emacs
 	     (24 1))
 	    (cl-lib
@@ -180,7 +180,7 @@
 	   ((:url . "http://elpa.gnu.org/packages/flylisp.html")
 	    (:keywords))])
  (ggtags .
-	 [(0 8 5)
+	 [(0 8 6)
 	  ((emacs
 	    (24))
 	   (cl-lib
@@ -302,7 +302,7 @@
 	    ((:url . "http://elpa.gnu.org/packages/omn-mode.html")
 	     (:keywords))])
  (org .
-      [(20140908)
+      [(20140915)
        nil "Outline-based notes management and organizer" tar nil])
  (osc .
       [(0 1)

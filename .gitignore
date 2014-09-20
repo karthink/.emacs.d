@@ -5,6 +5,7 @@
 .cask
 
 # Personal files
+ido.last
 .mc-lists.el
 auto-save-list
 move-line-region.el
@@ -13,3 +14,6 @@ elpa/yasnippet-20140821.38/snippets
 ac-comphist.dat
 tramp
 eshell
+elpa/jabber-20140829.240/
+elpa/*.txt
+elpa/archives/*

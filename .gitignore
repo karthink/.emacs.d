@@ -12,3 +12,4 @@ personal.el
 elpa/yasnippet-20140821.38/snippets
 ac-comphist.dat
 tramp
+eshell

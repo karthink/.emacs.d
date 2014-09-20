@@ -12,3 +12,6 @@ personal.el
 elpa/yasnippet-20140821.38/snippets
 ac-comphist.dat
 tramp
+elpa/jabber-20140829.240/
+elpa/*.txt
+elpa/archives/*

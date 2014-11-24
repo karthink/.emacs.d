@@ -191,7 +191,8 @@ User buffers are those not starting with *."
                                 "*compile-log*"
                                 "*apropos*"
                                 "*backtrace*"
-                                "*warning*")
+                                "*warning*"
+                                "*Warning*")
   "List of buffer names that will be buried (with respective
   windows deleted) by bbuf-dismiss-windows")
 

@@ -394,10 +394,11 @@ show verbose descriptions with hyperlinks."
 ;;----------------------------------------------------------------------
 (defun calc-on-line () (interactive)
   (cond ((region-active-p)
-         (let ((beg (region-beginning))
-               (end (region-end)))
-           (insert (calc-eval (buffer-substring-no-properties beg end)))
-           (kill-region beg end)))
+         (let* ((beg (region-beginning))
+                (end (region-end))
+                (string (buffer-substring-no-properties beg end)))
+           (kill-region beg end)
+           (insert (calc-eval string))))
         (t (end-of-line) (insert " = " (calc-eval (thing-at-point 'line))))))
 (global-set-key (kbd "C-S-e") 'calc-on-line)
 

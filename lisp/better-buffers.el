@@ -45,7 +45,7 @@
 (global-set-key (kbd "M-`")
                 (lambda (&optional arg)
                   (interactive "P")
-                  (if arg (previous-buffer) (next-buffer))))
+                  (if arg (next-buffer) (previous-buffer))))
 
 ;;; Set keys to scroll buffer while centering
 ;;; location on screen.

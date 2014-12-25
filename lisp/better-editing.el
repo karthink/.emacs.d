@@ -2,7 +2,7 @@
 ;;;; BETTER EDITING
 ;;----------------------------------------------------------------------
 
-(flyspell-mode)
+;; (flyspell-mode)
 
 ;; Collection of bindings and functions to make editing less painful on Emacs
 
@@ -46,7 +46,8 @@
 ;;(add-hook 'text-mode-hook 'longlines-mode)
 (add-hook 'text-mode-hook 'toggle-word-wrap)
 
-;; Modify the way hippie-expand behaves, expand as little as possible
+;; Supercharge the way hippie-expand behaves, expand as little as
+;; possible
 (setq hippie-expand-try-functions-list 
       '(try-complete-file-name-partially
         try-complete-file-name

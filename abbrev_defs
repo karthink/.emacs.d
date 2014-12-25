@@ -21,7 +21,10 @@
 
 (define-abbrev-table 'emacs-lisp-byte-code-mode-abbrev-table '())
 
-(define-abbrev-table 'emacs-lisp-mode-abbrev-table '())
+(define-abbrev-table 'emacs-lisp-mode-abbrev-table
+  '(
+    ("l" "lambda" nil 1)
+   ))
 
 (define-abbrev-table 'erc-mode-abbrev-table '())
 

@@ -181,6 +181,11 @@ show verbose descriptions with hyperlinks."
   (shell-command (concat "dict " word (cond ((null prefix) nil)
                                                 (t " -v")))))
 
+;;----------------------------------------------------------------------
+;; ESHELL PREFERENCES
+;;----------------------------------------------------------------------
+(setq eshell-buffer-shorthand t)
+
 ;;######################################################################
 ;; COMPILATION
 ;;######################################################################
@@ -974,7 +979,8 @@ want to use in the modeline *in lieu of* the original.")
 ;; and which line I am on, plus the other customary information.
 (setq mode-line-format
       (quote
-       (#("-" 0 1
+       (        
+        #("-" 0 1
           (help-echo
            "mouse-1: select window, mouse-2: delete others ..."))
         mode-line-mule-info
@@ -1001,7 +1007,8 @@ want to use in the modeline *in lieu of* the original.")
         #("%n" 0 2 (help-echo "mouse-2: widen" local-map (keymap ...)))
         ")%] "
         (-3 . "%P")
-        ;;   "-%-"
+        " WC: "
+        ;; (:eval (count-words-buffer-modeline))
         )))
 
 (display-time-mode 0)

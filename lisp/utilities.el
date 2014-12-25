@@ -31,7 +31,28 @@
 ;; count words in region
 ;; (global-set-key (kbd "C-=") 'count-words-region)
 
+(defun count-words-buffer ()
+  "Print number of words in the region."
+;;; 1. Set up appropriate conditions.
+  (save-excursion
+    (let ((count 0)
+          (beginning (point-min))
+          (end (point-max)))
+      (goto-char beginning)
+;;; 2. Run the while loop.
+      (while (and (< (point) end)
+		  (re-search-forward "\\w+\\W*" end t))
+	(setq count (1+ count)))
+;;; 3. Send a message to the user.
+      (cond ((zerop count) (message "No words"))
+            ((= 1 count) (message "1 word"))
+            (t  (message  (format "%d words" count)))))))
 
+(add-hook 'after-save-hook
+          (lambda () (if  (member major-mode '(text-mode
+                                          latex-mode
+                                          auctex-mode))
+                    (count-words-buffer))))
 ;;----------------------------------------------------------------------
 ;; PRINT ASCII TABLE
 ;;----------------------------------------------------------------------

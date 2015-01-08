@@ -120,7 +120,9 @@ User buffers are those not starting with *."
   (interactive)
   (next-buffer)
   (let ((i 0))
-    (while (and (string-match "^*" (buffer-name)) (< i 50))
+    (while (and (not (string-match "^*scratch*" (buffer-name)))
+                (string-match "^*" (buffer-name))
+                (< i 50))
       (setq i (1+ i)) (next-buffer) )))
 
 (defun previous-user-buffer ()
@@ -129,7 +131,9 @@ User buffers are those not starting with *."
   (interactive)
   (previous-buffer)
   (let ((i 0))
-    (while (and (string-match "^*" (buffer-name)) (< i 50))
+    (while (and (not (string-match "^*scratch*" (buffer-name)))
+                (string-match "^*" (buffer-name))
+                (< i 50))
       (setq i (1+ i)) (previous-buffer) )))
 
 ;;; scroll-buffer: Functions to do exactly that.

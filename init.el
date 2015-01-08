@@ -463,6 +463,7 @@ show verbose descriptions with hyperlinks."
 (when (featurep 'multiple-cursors)
   (add-to-list 'mc/cursor-specific-vars 'iy-go-to-char-start-pos)  
   (global-set-key (kbd "C->") 'mc/mark-next-like-this)
+  (global-set-key (kbd "C-<") 'mc/mark-previous-like-this)
   (global-set-key (kbd "M-n") 'mc/mark-next-word-like-this) 
   (global-set-key (kbd "M-@") 'mc/mark-all-words-like-this)
   (global-set-key (kbd "C-@") 'mc/mark-all-like-this)

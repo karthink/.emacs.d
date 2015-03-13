@@ -14,20 +14,13 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(blink-cursor-mode nil)
+ '(custom-enabled-themes (quote (sanityinc-solarized-light)))
+ '(custom-safe-themes (quote ("4cf3221feff536e2b3385209e9b9dc4c2e0818a69a1cdb4b522756bcdf4e00a4" default)))
  '(fringe-mode (quote (nil . 0)) nil (fringe))
  '(menu-bar-mode nil)
  '(scroll-bar-mode nil)
  '(show-paren-mode t)
- '(tex-dvi-view-command
-   (quote
-    (cond
-     ((eq window-system
-          (quote x))
-      "evince")
-     ((eq window-system
-          (quote w32))
-      "yap")
-     (t "dvi2tty * | cat -s"))))
+ '(tex-dvi-view-command (quote (cond ((eq window-system (quote x)) "evince") ((eq window-system (quote w32)) "yap") (t "dvi2tty * | cat -s"))))
  '(tool-bar-mode nil)
  '(tooltip-mode nil))
 
@@ -62,6 +55,15 @@
 ;; Adds ~/.emacs.d to the load-path
 (add-to-list 'load-path "~/.emacs.d/plugins/")
 (add-to-list 'load-path "~/.emacs.d/lisp/")
+
+;;######################################################################
+;; HTTP PROXY
+;;######################################################################
+(if (equal system-name "BNG1307010024A")
+    (setq url-proxy-services
+          '(("no_proxy" . "^\\(localhost\\|10.*\\)")
+            ("http" . "proxy.jfwtc.ge.com:8080")
+            ("https" . "proxy.jfwtc.ge.com:8080"))))
 
 ;;######################################################################
 ;; PACKAGE MANAGEMENT

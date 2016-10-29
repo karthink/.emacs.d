@@ -15,12 +15,26 @@
  ;; If there is more than one, they won't work right.
  '(blink-cursor-mode nil)
  '(custom-enabled-themes (quote (sanityinc-solarized-light)))
- '(custom-safe-themes (quote ("4cf3221feff536e2b3385209e9b9dc4c2e0818a69a1cdb4b522756bcdf4e00a4" default)))
+ '(custom-safe-themes
+   (quote
+    ("4cf3221feff536e2b3385209e9b9dc4c2e0818a69a1cdb4b522756bcdf4e00a4" default)))
  '(fringe-mode (quote (nil . 0)) nil (fringe))
  '(menu-bar-mode nil)
+ '(package-selected-packages
+   (quote
+    (color-theme color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet auctex expand-region multiple-cursors)))
  '(scroll-bar-mode nil)
  '(show-paren-mode t)
- '(tex-dvi-view-command (quote (cond ((eq window-system (quote x)) "evince") ((eq window-system (quote w32)) "yap") (t "dvi2tty * | cat -s"))))
+ '(tex-dvi-view-command
+   (quote
+    (cond
+     ((eq window-system
+          (quote x))
+      "evince")
+     ((eq window-system
+          (quote w32))
+      "yap")
+     (t "dvi2tty * | cat -s"))))
  '(tool-bar-mode nil)
  '(tooltip-mode nil))
 
@@ -59,11 +73,11 @@
 ;;######################################################################
 ;; HTTP PROXY
 ;;######################################################################
-(if (equal system-name "BNG1307010024A")
-    (setq url-proxy-services
-          '(("no_proxy" . "^\\(localhost\\|10.*\\)")
-            ("http" . "proxy.jfwtc.ge.com:8080")
-            ("https" . "proxy.jfwtc.ge.com:8080"))))
+;; (if (equal (system-name) "BNG1307010024A")
+;;     (setq url-proxy-services
+;;           '(("no_proxy" . "^\\(localhost\\|10.*\\)")
+;;             ("http" . "proxy.jfwtc.ge.com:8080")
+;;             ("https" . "proxy.jfwtc.ge.com:8080"))))
 
 ;;######################################################################
 ;; PACKAGE MANAGEMENT
@@ -109,19 +123,24 @@
 ;;######################################################################
 
 ;; Set default shell
-(if (equal system-name 'windows-nt)
-    (setq shell-file-name "C:/apps/cygwin/cygwin.bat"))
+;; (if (equal (system-name) "BLUECHIP")
+;;     (setq shell-file-name "C:/cygwin/cygwin.bat"))
+
+(if (equal (system-name) 'windows-nt)
+    (setq shell-file-name "C:/cygwin/cygwin.bat"))
 
 ;; Set default www browser
 (if (equal system-type 'gnu/linux)
     (setq 
      browse-url-browser-function 'browse-url-generic
-     browse-url-generic-program "xdg-open"))
+     ;browse-url-generic-program "xdg-open"
+     ))
 
-(if (equal system-name "ansatz")
+(if (equal (system-name) "ansatz")
     (setq 
      browse-url-browser-function 'browse-url-generic
-     browse-url-generic-program "google-chrome"))
+     ;browse-url-generic-program "google-chrome"
+     ))
 
 ;; Extends path to include my ~/bin directory
 ;; Not required if starting Emacs from shell.
@@ -135,7 +154,7 @@
 ;; Consult clipboard before primary selection
 ;; http://www.gnu.org/software/emacs/manual/
 ;; html_node/emacs/Clipboard.html
-(setq x-select-enable-clipboard t)
+(setq select-enable-clipboard t)
 
 ;; Arrange for Emacs to notice password prompts and turn off echoing for them, as follows:
 (add-hook 'comint-output-filter-functions
@@ -260,12 +279,12 @@ show verbose descriptions with hyperlinks."
 ;; SCHEME MODE
 ;;----------------------------------------------------------------------
 (require 'setup-scheme nil t)
-(add-hook 'scheme-mode-hook 
-          (lambda () 
-            (define-key scheme-mode-map (kbd "C-c C-c") 
-              'scheme-send-definition-and-go)
-            (define-key scheme-mode-map (kbd "C-c M-e") 
-              'scheme-compile-definition-and-go)))
+;; (add-hook 'scheme-mode-hook 
+;;           (lambda () 
+;;             (define-key scheme-mode-map (kbd "C-c C-c") 
+;;               'scheme-send-definition-and-go)
+;;             (define-key scheme-mode-map (kbd "C-c M-e") 
+;;               'scheme-compile-definition-and-go)))
 
 ;; (defun mechanics ()
 ;;   (interactive)
@@ -342,19 +361,26 @@ show verbose descriptions with hyperlinks."
 ;;  TeX-electric-escape nil)
 ;; (setq-default TeX-master nil)
 
-;; (autoload 'cdlatex-mode "cdlatex" "CDLaTeX Mode" t)
-;; (autoload 'turn-on-cdlatex "cdlatex" "CDLaTeX Mode" nil)
-;; (add-hook 'LaTeX-mode-hook 
-;;           (lambda nil
-;;             (progn 
-;;               (turn-on-auto-fill)
-;;               (setq TeX-newline-function 'reindent-then-newline-and-indent)
-;; 	      (define-key TeX-mode-map (kbd "C-;") 'TeX-complete-symbol)
-;;               (TeX-fold-mode 1)
-;;               (setq cdlatex-command-alist
-;;                     '(("vc" "Insert \\vect{}" "\\vect{?}" cdlatex-position-cursor nil nil t)))
-;;               (turn-on-cdlatex)
-;;               (setq cdlatex-paired-parens "$[{("))))
+(autoload 'cdlatex-mode "cdlatex" "CDLaTeX Mode" t)
+(autoload 'turn-on-cdlatex "cdlatex" "CDLaTeX Mode" nil)
+(add-hook 'LaTeX-mode-hook 
+          (lambda nil
+            (progn 
+              (turn-on-auto-fill)
+              (setq TeX-newline-function 'reindent-then-newline-and-indent)
+	      (define-key TeX-mode-map (kbd "C-;") 'TeX-complete-symbol)
+              (TeX-fold-mode 1)
+              (setq cdlatex-command-alist
+                    '(("vc" "Insert \\vect{}" "\\vect{?}" cdlatex-position-cursor nil nil t)))
+              (turn-on-cdlatex)
+              (setq cdlatex-paired-parens "$[{(")
+              ;; Useful for writing matrices easily
+              (define-key TeX-mode-map (kbd "M-SPC")
+                (lambda () (interactive) (insert " & ")))
+              (define-key TeX-mode-map (kbd "C-M-9")
+                (lambda () (interactive)
+                  (insert "[\\begin{smallmatrix}  \\end{smallmatrix}]")
+                  (backward-char 19))))))
 
 ;;----------------------------------------------------------------------
 ;; MUSE-MODE
@@ -1022,3 +1048,9 @@ want to use in the modeline *in lieu of* the original.")
 
 ;; Enable recursive minibuffer edits
 (setq enable-recursive-minibuffers 1)
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )

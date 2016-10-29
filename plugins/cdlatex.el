@@ -1,25 +1,24 @@
-;; cdlatex.el -- Fast input methods for LaTeX environments and math
-;; Copyright (c) 1995, 1996, 1997, 2003 Carsten Dominik
+;;; cdlatex.el --- Fast input methods for LaTeX environments and math
+;; Copyright (c) 2010, 2011, 2012, 2014 Free Software Foundation, Inc.
 ;;
-;; Author: Carsten Dominik <dominik@science.uva.nl>
+;; Author: Carsten Dominik <carsten.dominik@gmail.com>
 ;; Keywords: tex
-;; Version: 4.0
+;; Version: 4.7
 ;;
-;; This file is not part of GNU Emacs
+;; This file is not part of GNU Emacs.
 ;;
-;; This program is free software you can redistribute it and/or modify it
-;; under the terms of the GNU General Public License as published by the Free
-;; Software Foundation; either version 2 of the License, or (at your option)
-;; any later version.
-;;
-;; This program is distributed in the hope that it will be useful, but
-;; WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-;; or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-;; for more details.
-;;
-;; You should have received a copy of the GNU General Public License along
-;; with GNU Emacs.  If you did not, write to the Free Software Foundation,
-;; Inc., 675 Mass Ave., Cambridge, MA 02139, USA.
+;; GNUTHis file is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; cdlatex.el  is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with cdlatex.el. If not, see <http://www.gnu.org/licenses/>.
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -27,15 +26,6 @@
 ;;
 ;; CDLaTeX is a minor mode supporting fast insertion of environment
 ;; templates and math stuff in LaTeX.
-;;
-;; INSTALLATION
-;;
-;; In order to make the command `cdlatex-mode' work, you need to put the
-;; file cdlatex.el on your load path (you should compile it) and put
-;; this in you .emacs file:
-;;
-;; (autoload 'cdlatex-mode "cdlatex" "CDLaTeX Mode" t)
-;; (autoload 'turn-on-cdlatex "cdlatex" "CDLaTeX Mode" nil)
 ;;
 ;; To turn CDLaTeX Minor Mode on and off in a particular buffer, use
 ;; `M-x cdlatex-mode'.
@@ -156,13 +146,14 @@
 ;;    or LaTeX macro *before* point.  For example
 ;; 
 ;;      Keys                            Result
-;;      -------------------------------------------------------------
-;;      a'~                             ERROR          % in text mode
-;;      $a'~                            \tilde{a}      % in math mode
+;;      --------------------------------------------------------------------
+;;      a'~                             ERROR                 % in text mode
+;;      $a'~                            \tilde{a}             % in math mode
 ;;      a':                             \ddot{a}
-;;      ab'b                            a\textbf{b}    % in text mode
-;;      $ab'b                           a\mathbf{b}    % in math mode
+;;      ab'b                            \textbf{ab}           % in text mode
+;;      $ab'b                           a\mathbf{b}           % in math mode
 ;;      \alpha'.                        \dot{\alpha}
+;;      r_{dust}'r                      r_\mathrm{dust}       % in math mode
 ;;      <SPC> 'e                        \emph{}
 ;;      this is important   M-2 'b      this \textbf{is important}
 ;; 
@@ -170,7 +161,9 @@
 ;;    - using math accents like ~ outside math mode will throw an error.
 ;;    - the font change used automatically adapts to math mode.
 ;;    - if the item before point is a LaTeX macro, the change applies to
-;;      the whole macro. 
+;;      the whole macro.
+;;    - in text mode, the change applies to the entire word before point,
+;;      while in math mode only the last character is modified.
 ;;    - if the character before point is white space, a dollar or an
 ;;      opening parenthesis, this command just opens an empty template
 ;;      and positions the cursor inside.
@@ -235,8 +228,10 @@
 ;; ======================
 ;; 
 ;; Check out the documentation of the variables in the configuration
-;; section.  The variables must be set before loading CDLaTeX in order to
-;; be effective.
+;; section.  The variables must be set before cdlatex-mode is turned on,
+;; or, at the latext, in `cdlatex-mode-hook', in order to be effective.
+;; When changing the variables, toggle the mode off and on to make sure
+;; that everything is up to date.
 ;;
 ;; Here is how you might configure CDLaTeX to provide environment templates
 ;; (including automatic labels) for two theorem-like environments.
@@ -304,6 +299,7 @@
 ;;   configure the variable `cdlatex-math-modify-prefix'.
 ;;
 ;; - To insert a backquote into the buffer, use C-q `
+;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;;;;;;
@@ -331,8 +327,6 @@
     (customize-browse 'cdlatex))
    ((fboundp 'customize-group)
     (customize-group 'cdlatex))
-   ((fboundp 'customize)
-    (customize 'cdlatex))
    (t (error "No customization available"))))
 
 (defun cdlatex-create-customize-menu ()
@@ -381,6 +375,16 @@ Each element of this list is again a list with the following items:
 		(sexp     :tag "Arguments  ")
 		(boolean  :tag "Available in Text mode")
 		(boolean  :tag "Available in Math mode"))))
+
+(defcustom cdlatex-tab-hook nil
+  "List of functions called by TAB before the default command is executed.
+These functions are called each time TAB is pressed.  They may parse the
+environment and take an action.  The function should return t when it
+successful executed an action and other TAB actions should *not* be tried.
+When a return value is nil, other hook functions are tried, followed by the
+default action of TAB (see documentation of the command `cdlatex-tab'."
+  :group 'cdlatex-keyword-commands
+  :type '(repeat (function :tag "Function" :value nil)))
 
 ;; Configuration of environment templates -------------------------------
 
@@ -567,7 +571,7 @@ automatic help when idle for more than this amount of time."
   (require 'finder)
   (finder-commentary "cdlatex.el"))
 
-(defconst cdlatex-version "1.12"
+(defconst cdlatex-version "4.6"
   "Version string for CDLaTeX.")
 
 (defvar cdlatex-mode nil
@@ -635,7 +639,8 @@ Entering cdlatex-mode calls the hook cdlatex-mode-hook.
   (if cdlatex-mode
       (progn
 	(easy-menu-add cdlatex-mode-menu)
-	(run-hooks 'cdlatex-mode-hook))
+	(run-hooks 'cdlatex-mode-hook)
+	(cdlatex-compute-tables))
     (easy-menu-remove cdlatex-mode-menu)))
     
 (or (assoc 'cdlatex-mode minor-mode-alist)
@@ -717,7 +722,7 @@ Entering cdlatex-mode calls the hook cdlatex-mode-hook.
 (defun cdlatex-pbb ()
   "Insert a pair of parens, brackets or braces."
   (interactive)
-  (let ((paren (char-to-string last-command-char)))
+  (let ((paren (char-to-string (event-basic-type last-command-event))))
     (if (and (stringp cdlatex-paired-parens)
              (string-match (regexp-quote paren) cdlatex-paired-parens)
              (not (cdlatex-number-of-backslashes-is-odd)))
@@ -766,21 +771,22 @@ When not in LaTeX math environment, _{} and ^{} will have dollars."
   (interactive)
   (if (cdlatex-number-of-backslashes-is-odd)
       ;; Quoted
-      (insert last-command-char)
+      (insert (event-basic-type last-command-event))
     ;; Check if we need to switch to math mode
     (if (not (texmathp)) (cdlatex-dollar))
     (if (string= (buffer-substring (max (point-min) (- (point) 2)) (point))
-                 (concat (char-to-string last-command-char) "{"))
+                 (concat (char-to-string (event-basic-type last-command-event))
+			 "{"))
         ;; We are at the start of a sub/suberscript.  Allow a__{b} and a^^{b}
         ;; This is an undocumented feature, please keep it in.  It supports
         ;; a special notation which can be used for upright sub- and 
         ;; superscripts. 
         (progn
           (backward-char 1)
-          (insert last-command-char)
+          (insert (event-basic-type last-command-event))
           (forward-char 1))
       ;; Insert the normal template.
-      (insert last-command-char)
+      (insert (event-basic-type last-command-event))
       (insert "{}")
       (forward-char -1))))
 
@@ -811,7 +817,10 @@ When not in LaTeX math environment, _{} and ^{} will have dollars."
   "This function is intended to do many cursor movements.
 It is bound to the tab key since tab does nothing useful in a TeX file.
 
-The function first tries to expand any command keyword before point.
+This function first calls all functions in `cdlatex-tab-hook', which see.
+
+If none of those functions returns t, the command  first tries to expand
+any command keyword before point.
 
 If there is none, it cleans up short subscripts and superscripts at point.
 I.e. it changes a^{2} into a^2, since this is more readable.  This feature
@@ -830,10 +839,13 @@ The cursor stops...
 - before a SPACE at beginning of line
 - after first of several SPACE
 
-Sounds strange? Try it out.
-"
+Sounds strange?  Try it out!"
   (interactive)
   (catch 'stop
+
+    ;; try hook stuff
+    (let ((funcs cdlatex-tab-hook))
+      (while funcs (if (funcall (pop funcs)) (throw 'stop t))))
 
     ;; try command expansion
     (let ((pos (point)) exp math-mode)
@@ -859,7 +871,7 @@ Sounds strange? Try it out.
     (cond
      ((looking-at "}\\|\\]\\|)")
       (forward-char -3)
-      (if (and (looking-at "[_^]{[0-9a-zA-Z]}")
+      (if (and (looking-at "[_^]{[-+0-9a-zA-Z]}")
                cdlatex-simplify-sub-super-scripts)
           ;; simplify sub/super script
           (progn (forward-char 1)
@@ -1058,6 +1070,14 @@ With optional prefix ABSOLUTE, insert the absolute path."
 (defvar cdlatex-math-symbol-alist-comb nil)
 (defvar cdlatex-math-modify-alist-comb nil)
 
+(defvar zmacs-regions)
+(defun cdlatex-region-active-p ()
+  "Is `transient-mark-mode' on and the region active?
+Works on both Emacs and XEmacs."
+  (if (featurep 'xmeacs)
+      (and zmacs-regions (region-active-p))
+    (and transient-mark-mode mark-active)))
+
 (defun cdlatex-math-symbol ()
   "Read a char from keyboard and insert corresponding math char.
 The combinations are defined in `cdlatex-math-symbol-alist'.  If not in a LaTeX
@@ -1148,6 +1168,7 @@ constant `cdlatex-math-modify-alist'."
   (catch 'exit
 
     (let ((inside-math (texmathp))
+	  (win (selected-window))
 	  char (help-is-on nil) ass acc rmdot it cmd extrabrac)
       (catch 'exit1
         (save-window-excursion
@@ -1177,6 +1198,7 @@ constant `cdlatex-math-modify-alist'."
                         (setq help-is-on 1)))
                 (setq help-is-on 1)))
              ((equal char cdlatex-math-modify-prefix)
+	      (select-window win)
               (insert cdlatex-math-modify-prefix)
               (message "")
               (throw 'exit t))
@@ -1194,17 +1216,40 @@ constant `cdlatex-math-modify-alist'."
       (setq it     (nth 4 ass))
       (if (not cmd) (error "No such modifier `%c' %s math mode." char
 			   (if inside-math "inside" "outside")))
-      (if (or (bolp)
-	      (not cdlatex-modify-backwards)
-	      (memq (preceding-char) '(?\  ?$ ?- ?{ ?\( )))
-          ;; Just insert empty form and position cursor
-          (progn (if acc
-                     (insert cmd "{?")
-                   (insert "{" cmd " ?"))
-                 (if it (insert "\\/"))
-                 (insert "}")
-                 (search-backward "?")
-                 (delete-char 1))
+      (cond
+       ((cdlatex-region-active-p)
+	(let ((beg (min (region-beginning) (region-end)))
+	      (end (max (region-beginning) (region-end))))
+	  (goto-char end)
+	  (point-to-register ?x)
+	  (goto-char beg)
+	  (insert "{")
+	  (if acc (forward-char -1))
+	  (insert cmd)
+	  (if (not acc) (insert " "))
+	  (register-to-point ?x)
+	  (insert "}")))
+       (arg
+	(point-to-register ?x)
+	(backward-word arg)
+	(insert "{")
+	(if acc (forward-char -1))
+	(insert cmd)
+	(if (not acc) (insert " "))
+	(register-to-point ?x)
+	(insert "}"))	
+       ((or (bolp)
+	    (not cdlatex-modify-backwards)
+	    (memq (preceding-char) '(?\  ?$ ?- ?{ ?\( )))
+	;; Just insert empty form and position cursor
+	(if acc
+	    (insert cmd "{?")
+	  (insert "{" cmd " ?"))
+	(if it (insert "\\/"))
+	(insert "}")
+	(search-backward "?")
+	(delete-char 1))
+       (t
         ;; Modify preceding character or word
         (point-to-register ?x)
         (if (= (preceding-char) ?\})
@@ -1236,7 +1281,7 @@ constant `cdlatex-math-modify-alist'."
         (insert cmd)
         (if (not acc) (insert " "))
         (register-to-point ?x)
-        (if extrabrac (insert "}"))))))
+        (if extrabrac (insert "}")))))))
 
 ;;; And here is the help function for the symbol insertions stuff
 
@@ -1246,7 +1291,18 @@ constant `cdlatex-math-modify-alist'."
         (flock (cdlatex-use-fonts)) this-char value)
     (if sparse
         (setq all-chars (concat (mapcar 'car alist)))
-      (setq all-chars "aA0 bB1!cC2@dD3#eE4$fF5%gG6^hH7&iI8jJ9?kK+~lL-_mM*|nN/\\oO=\"pP()qQ[]rR{}sS<>tT`'uU.:vVwWxXyYzZ"))
+      (setq all-chars "aA0 bB1!cC2@dD3#eE4$fF5%gG6^hH7&iI8
+jJ9?kK+~lL-_mM*|nN/\\oO=\"pP()qQ[]rR{}sS<>tT`'uU.:vV
+
+wW
+
+xX
+
+yY
+
+zZ
+
+"))
     (if (get-buffer-window " *CDLaTeX Help*")
         (select-window (get-buffer-window " *CDLaTeX Help*"))
       (switch-to-buffer-other-window " *CDLaTeX Help*"))
@@ -1280,7 +1336,7 @@ constant `cdlatex-math-modify-alist'."
       (if (= (* 4 (/ cnt 4)) cnt) (insert "\n")))
     (unless (one-window-p t)
       (enlarge-window (1+(- (count-lines 1 (point)) (window-height)))))
-    (goto-line offset)
+    (goto-char (point-min)) (forward-line (1- offset))
     (beginning-of-line 1)
     (recenter 0)))
 
@@ -2025,15 +2081,15 @@ these variables via `cdlatex-add-to-label-alist'."
 	    (push (cons level (substitute-command-keys 
 			       "\\<dummy-map>\\[cdlatex-nop]"))
 		  bindings)
-	    (mapcar (lambda (entry)
-		      (setq symbol (nth level entry))
-		      (when (and symbol (stringp symbol)
-				 (not (equal "" symbol)))
-			(define-key 
-			  map (vector (append modifiers (list (car entry))))
-			  (list 'lambda '() '(interactive)
-				(list 'cdlatex-insert-math symbol)))))
-		    cdlatex-math-symbol-alist-comb)))
+	    (mapc (lambda (entry)
+		    (setq symbol (nth level entry))
+		    (when (and symbol (stringp symbol)
+			       (not (equal "" symbol)))
+		      (define-key 
+			map (vector (append modifiers (list (car entry))))
+			(list 'lambda '() '(interactive)
+			      (list 'cdlatex-insert-math symbol)))))
+		  cdlatex-math-symbol-alist-comb)))
     (put 'cdlatex-math-symbol-alist-comb 'cdlatex-bindings bindings)))
 
 (defun cdlatex-insert-math (string)
@@ -2108,4 +2164,3 @@ these variables via `cdlatex-add-to-label-alist'."
 ;;;============================================================================
 
 ;;; cdlatex.el ends here
-

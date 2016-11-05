@@ -366,7 +366,7 @@ show verbose descriptions with hyperlinks."
 (add-hook 'LaTeX-mode-hook 
           (lambda nil
             (progn 
-              (turn-on-auto-fill)
+              ;(turn-on-auto-fill)
               (setq TeX-newline-function 'reindent-then-newline-and-indent)
 	      (define-key TeX-mode-map (kbd "C-;") 'TeX-complete-symbol)
               (TeX-fold-mode 1)
@@ -380,7 +380,11 @@ show verbose descriptions with hyperlinks."
               (define-key TeX-mode-map (kbd "C-M-9")
                 (lambda () (interactive)
                   (insert "[\\begin{smallmatrix}  \\end{smallmatrix}]")
-                  (backward-char 19))))))
+                  (backward-char 19)))
+              (define-key TeX-mode-map (kbd "C-M-0")
+                (lambda () (interactive)
+                  (insert "\\begin{bmatrix}  \\end{bmatrix}")
+                  (backward-char 14))))))
 
 ;;----------------------------------------------------------------------
 ;; MUSE-MODE

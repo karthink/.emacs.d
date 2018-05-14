@@ -17,12 +17,12 @@
  '(custom-enabled-themes (quote (sanityinc-solarized-light)))
  '(custom-safe-themes
    (quote
-    ("4cf3221feff536e2b3385209e9b9dc4c2e0818a69a1cdb4b522756bcdf4e00a4" default)))
+    ("e11569fd7e31321a33358ee4b232c2d3cf05caccd90f896e1df6cab228191109" "4cf3221feff536e2b3385209e9b9dc4c2e0818a69a1cdb4b522756bcdf4e00a4" default)))
  '(fringe-mode (quote (nil . 0)) nil (fringe))
  '(menu-bar-mode nil)
  '(package-selected-packages
    (quote
-    (color-theme color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet auctex expand-region multiple-cursors)))
+    (auctex dash deferred request-deferred s dash-functional ein ein-mumamo color-theme color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet expand-region multiple-cursors)))
  '(scroll-bar-mode nil)
  '(show-paren-mode t)
  '(tex-dvi-view-command
@@ -355,10 +355,11 @@ show verbose descriptions with hyperlinks."
 ;;----------------------------------------------------------------------
 ;; AUCTEX-MODE & ADDITIONS
 ;;---------------------------------------------------------------------- 
-;; (setq 
-;;  TeX-auto-save t
-;;  TeX-parse-self t
-;;  TeX-electric-escape nil)
+(setq 
+ TeX-auto-save t
+ TeX-parse-self t
+ TeX-electric-escape nil
+ TeX-PDF-mode t)
 ;; (setq-default TeX-master nil)
 
 (autoload 'cdlatex-mode "cdlatex" "CDLaTeX Mode" t)
@@ -384,7 +385,22 @@ show verbose descriptions with hyperlinks."
               (define-key TeX-mode-map (kbd "C-M-0")
                 (lambda () (interactive)
                   (insert "\\begin{bmatrix}  \\end{bmatrix}")
-                  (backward-char 14))))))
+                  (backward-char 14)))
+              (setq cdlatex-math-symbol-alist '(
+                                                (?F ("\\Phi"))
+                                                (?o ("\\omega" "\\mho" "\\mathcal{O}"))
+                                                ))
+              (setq cdlatex-command-alist
+                    '(("smat" "Insert smallmatrix env"
+                       "\\left( \\begin{smallmatrix} ? \\end{smallmatrix} \\right)"
+                       cdlatex-position-cursor nil nil t)
+                      ("bmat" "Insert bmatrix env"
+                       "\\begin{bmatrix}\n?\n\\end{bmatrix}"
+                       cdlatex-position-cursor nil nil t)
+                      ("pmat" "Insert pmatrix env"
+                       "\\begin{pmatrix}\n?\n\\end{pmatrix}"
+                       cdlatex-position-cursor nil nil t)))
+              )))
 
 ;;----------------------------------------------------------------------
 ;; MUSE-MODE
@@ -1057,4 +1073,4 @@ want to use in the modeline *in lieu of* the original.")
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- )
+ '(default ((t (:inherit nil :stipple nil :background "white" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 120 :width normal :foundry "unknown" :family "Ubuntu Mono")))))

@@ -22,7 +22,7 @@
  '(menu-bar-mode nil)
  '(package-selected-packages
    (quote
-    (color-theme color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet auctex expand-region multiple-cursors)))
+    (julia-repl julia-shell julia-mode matlab-mode color-theme color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet auctex expand-region multiple-cursors)))
  '(scroll-bar-mode nil)
  '(show-paren-mode t)
  '(tex-dvi-view-command
@@ -65,7 +65,10 @@
 ;;######################################################################
 
 ;; Set directory
-(setq default-directory "~/")
+(setq default-directory 
+      (cond ((equal system-name "surface")
+             "/cygdrive/c/Users/karthik/OneDrive/Documents/")
+            (t "~/")))
 ;; Adds ~/.emacs.d to the load-path
 (add-to-list 'load-path "~/.emacs.d/plugins/")
 (add-to-list 'load-path "~/.emacs.d/lisp/")
@@ -135,6 +138,11 @@
      browse-url-browser-function 'browse-url-generic
      ;browse-url-generic-program "xdg-open"
      ))
+
+(if (equal system-type 'cygwin)
+    (progn   (require 'windows-path)
+             (windows-path-activate)
+             ))
 
 (if (equal (system-name) "ansatz")
     (setq 
@@ -239,6 +247,15 @@ show verbose descriptions with hyperlinks."
 ;;######################################################################
 ;; LANGUAGE MODES
 ;;######################################################################
+
+;;----------------------------------------------------------------------
+;; JULIA-MODE
+;;----------------------------------------------------------------------
+(defun my-julia-mode-hooks ()
+  (require 'julia-shell-mode))
+(add-hook 'julia-mode-hook 'my-julia-mode-hooks)
+;; (define-key julia-mode-map (kbd "C-c C-c") 'julia-shell-run-region-or-line)
+;; (define-key julia-mode-map (kbd "C-c C-s") 'julia-shell-save-and-go)
 
 ;;----------------------------------------------------------------------
 ;; LUA-MODE
@@ -1057,4 +1074,4 @@ want to use in the modeline *in lieu of* the original.")
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- )
+ '(default ((t (:family "Consolas" :foundry "outline" :slant normal :weight normal :height 120 :width normal)))))

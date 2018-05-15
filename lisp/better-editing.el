@@ -111,6 +111,12 @@
 ;; Key to kill-whole-line
 (global-set-key (kbd "C-S-k") 'kill-whole-line)
 
+;; Key to kill-whole-sentence
+(global-set-key (kbd "M-K") (lambda ()
+                              (interactive)
+                              (backward-sentence)
+                              (kill-sentence)))
+
 ;; Key to kill word backwards OR kill region 
 (global-set-key (kbd "C-w") 'backward-kill-word-or-region)
 
@@ -135,6 +141,10 @@
 (global-set-key (kbd "C-x / d") 'delete-matching-lines)
 (global-set-key (kbd "C-x / o") 'occur)
 (global-set-key (kbd "C-x / /") 'isearch-forward-regexp)
+;; Multiple search and replace
+(global-set-key (kbd "C-x / Q") 'batch-replace-strings)
+;; Replace in whole buffer
+(global-set-key (kbd "C-x / W") 'replace-in-buffer)
 
 ;; Adding text to and from elsewhere
 (global-unset-key (kbd "C-x i"))
@@ -163,6 +173,7 @@
 
 (global-set-key [M-up] 'move-text-up)    
 (global-set-key [M-down] 'move-text-down)
+
 
 ;;----------------------------------------------------------------------
 ;; FUNCTIONS
@@ -412,6 +423,46 @@
   (interactive "*p")
   (move-text-internal (- arg)))
 
+
+;;----------------------------------------------------------------------
+;; Multiple search and replace
+;;----------------------------------------------------------------------
+
+(defun batch-replace-strings (replacement-alist)
+  "Prompt user for pairs of strings to search/replace, then do so in the current buffer"
+  (interactive (list (batch-replace-strings-prompt)))
+  (dolist (pair replacement-alist)
+    (save-excursion
+      (replace-string (car pair) (cdr pair)))))
+
+(defun batch-replace-strings-prompt ()
+  "prompt for string pairs and return as an association list"
+  (let (from-string
+        ret-alist)
+    (while (not (string-equal "" (setq from-string (read-string "String to search (RET to stop): "))))
+      (setq ret-alist
+            (cons (cons from-string (read-string (format "Replace %s with: " from-string)))
+                  ret-alist)))
+    ret-alist))
+
+;;----------------------------------------------------------------------
+;; Replace text in whole buffer 
+;;----------------------------------------------------------------------
+
+;; The suggested OLD text is either the current region, or the next
+;;  word (as mark-word would select it). The suggested text for the
+;;  replacement is the same as the OLD text.
+
+(defun replace-in-buffer ()
+  (interactive)
+  (save-excursion
+    (if (equal mark-active nil) (mark-word))
+    (setq curr-word (buffer-substring-no-properties (mark) (point)))
+    (setq old-string (read-string "OLD string:\n" curr-word))
+    (setq new-string (read-string "NEW string:\n" old-string))
+    (query-replace old-string new-string nil (point-min) (point-max))
+    )
+  )
 ;;----------------------------------------------------------------------
 
 (provide 'better-editing)

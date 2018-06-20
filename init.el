@@ -13,6 +13,15 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(TeX-view-program-selection
+   (quote
+    (((output-dvi has-no-display-manager)
+      "dvi2tty")
+     ((output-dvi style-pstricks)
+      "dvips and gv")
+     (output-dvi "xdvi")
+     (output-pdf "Sumatra PDF")
+     (output-html "xdg-open"))))
  '(auto-save-interval 2400)
  '(auto-save-timeout 300)
  '(blink-cursor-mode nil)
@@ -24,7 +33,7 @@
  '(menu-bar-mode nil)
  '(package-selected-packages
    (quote
-    (auto-complete julia-repl julia-shell julia-mode matlab-mode auctex dash deferred request-deferred s dash-functional ein ein-mumamo color-theme color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet expand-region multiple-cursors)))
+    (ace-jump-mode wolfram-mode auto-complete julia-repl julia-shell julia-mode matlab-mode auctex dash deferred request-deferred s dash-functional ein ein-mumamo color-theme color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet expand-region multiple-cursors)))
  '(scroll-bar-mode nil)
  '(show-paren-mode t)
  '(tex-dvi-view-command
@@ -70,6 +79,8 @@
 (setq default-directory 
       (cond ((equal system-name "surface")
              "/cygdrive/c/Users/karthik/OneDrive/Documents/")
+            ((equal system-name "cube")
+             "/cygdrive/c/Users/karth/OneDrive/Documents/")
             (t "~/")))
 ;; Adds ~/.emacs.d to the load-path
 (add-to-list 'load-path "~/.emacs.d/plugins/")
@@ -141,10 +152,10 @@
      ;browse-url-generic-program "xdg-open"
      ))
 
-(if (equal system-type 'cygwin)
-    (progn   (require 'windows-path)
-             (windows-path-activate)
-             ))
+;; (if (equal system-type 'cygwin)
+;;     (progn   (require 'windows-path)
+;;              (windows-path-activate)
+;;              ))
 
 (if (equal (system-name) "ansatz")
     (setq 
@@ -379,6 +390,15 @@ show verbose descriptions with hyperlinks."
  TeX-parse-self t
  TeX-electric-escape nil
  TeX-PDF-mode t)
+(setq-default TeX-source-correlate-mode t)
+(setq TeX-source-correlate-method 'synctex)
+(setq-default TeX-source-correlate-start-server t)
+
+(if (equal system-type 'cygwin)
+    (setq TeX-view-program-list
+          '(("Sumatra PDF" ("\"/cygdrive/c/Program Files/SumatraPDF/SumatraPDF.exe\" -reuse-instance"
+                            (mode-io-correlate " -forward-search %b %n ") " %o")))))
+
 ;; (setq-default TeX-master nil)
 
 (autoload 'cdlatex-mode "cdlatex" "CDLaTeX Mode" t)

@@ -438,7 +438,11 @@ show verbose descriptions with hyperlinks."
                        cdlatex-position-cursor nil nil t)
                       ("pmat" "Insert pmatrix env"
                        "\\begin{pmatrix}\n?\n\\end{pmatrix}"
-                       cdlatex-position-cursor nil nil t)))
+                       cdlatex-position-cursor nil nil t)
+                      ("equ*" "Insert equation* env"
+                       "\\begin{equation*}\n?\n\\end{equation*}"
+                       cdlatex-position-cursor nil t nil))
+                    )
               )))
 
 ;;----------------------------------------------------------------------
@@ -694,13 +698,13 @@ show verbose descriptions with hyperlinks."
 ;;----------------------------------------------------------------------
 ;; Yasnippet bundle for Emacs
 ;; (require 'yasnippet-bundle)
-(require 'yasnippet nil t) ;; not yasnippet-bundle
-(eval-after-load "yasnippet"
-  '(progn  (setq yas-snippet-dirs "~/.emacs.d/snippets")
-           ;; (yas/load-directory "~/.emacs.d/snippets")
-           (yas/global-mode 1)
-           (setq yas/prompt-functions '(yas/dropdown-prompt yas/x-prompt))
-           (setq yas/wrap-around-region t)))
+;; (require 'yasnippet nil t) ;; not yasnippet-bundle
+;; (eval-after-load "yasnippet"
+;;   '(progn  (setq yas-snippet-dirs "~/.emacs.d/snippets")
+;;            ;; (yas/load-directory "~/.emacs.d/snippets")
+;;            (yas/global-mode 1)
+;;            (setq yas/prompt-functions '(yas/dropdown-prompt yas/x-prompt))
+;;            (setq yas/wrap-around-region t)))
 
 ;;----------------------------------------------------------------------
 ;; BOOKMARKS

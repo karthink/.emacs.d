@@ -441,7 +441,14 @@ show verbose descriptions with hyperlinks."
                        cdlatex-position-cursor nil nil t)
                       ("equ*" "Insert equation* env"
                        "\\begin{equation*}\n?\n\\end{equation*}"
-                       cdlatex-position-cursor nil t nil))
+                       cdlatex-position-cursor nil t nil)
+                      ("ssn" "Insert subsection env"
+                       "\\subsection{?}"
+                       cdlatex-position-cursor nil t nil)
+                      ("ssn*" "Insert subsection* env"
+                       "\\subsection*{?}"
+                       cdlatex-position-cursor nil t nil)
+                      )
                     )
               )))
 

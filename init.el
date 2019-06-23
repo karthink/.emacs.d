@@ -33,7 +33,7 @@
  '(menu-bar-mode nil)
  '(package-selected-packages
    (quote
-    (ace-jump-mode wolfram-mode auto-complete julia-repl julia-shell julia-mode matlab-mode auctex dash deferred request-deferred s dash-functional ein ein-mumamo color-theme color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet expand-region multiple-cursors)))
+    (evil ace-jump-mode wolfram-mode auto-complete julia-repl julia-shell julia-mode matlab-mode auctex dash deferred request-deferred s dash-functional ein ein-mumamo color-theme color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet expand-region multiple-cursors)))
  '(scroll-bar-mode nil)
  '(show-paren-mode t)
  '(tex-dvi-view-command
@@ -352,7 +352,7 @@ show verbose descriptions with hyperlinks."
 ;; OCTAVE-MODE
 ;;----------------------------------------------------------------------
 ;; Load .m files as octave mode
-(setq auto-mode-alist (cons '("\\.m" . octave-mode) auto-mode-alist))
+;;(setq auto-mode-alist (cons '("\\.m" . octave-mode) auto-mode-alist))
 
 ;;----------------------------------------------------------------------
 ;; PATRAN/PCL UTILITIES
@@ -372,6 +372,8 @@ show verbose descriptions with hyperlinks."
   "Major mode for editing Markdown files" t)
 (setq auto-mode-alist
       (cons '("\\.text" . markdown-mode) auto-mode-alist))
+(setq auto-mode-alist
+      (cons '("\\.md" . markdown-mode) auto-mode-alist))
 (eval-after-load "markdown-mode.el"
   '(progn 
      ;; (setq markdown-command "markdown"

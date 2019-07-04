@@ -3,7 +3,7 @@
                            ; singularity ;
 
 ; Karthik's .emacs file 
-; 02 June 2009 
+; 02 June 2019 
 
 (setq user-full-name "Karthik C")
 ; (setq user-mail-address "karthik[AT]gmail.com")
@@ -25,15 +25,19 @@
  '(auto-save-interval 2400)
  '(auto-save-timeout 300)
  '(blink-cursor-mode nil)
- '(custom-enabled-themes (quote (sanityinc-solarized-light)))
  '(custom-safe-themes
    (quote
-    ("e11569fd7e31321a33358ee4b232c2d3cf05caccd90f896e1df6cab228191109" "4cf3221feff536e2b3385209e9b9dc4c2e0818a69a1cdb4b522756bcdf4e00a4" default)))
+    ("8e797edd9fa9afec181efbfeeebf96aeafbd11b69c4c85fa229bb5b9f7f7e66c" "2b9dc43b786e36f68a9fd4b36dd050509a0e32fe3b0a803310661edb7402b8b6" "b583823b9ee1573074e7cbfd63623fe844030d911e9279a7c8a5d16de7df0ed0" "585942bb24cab2d4b2f74977ac3ba6ddbd888e3776b9d2f993c5704aa8bb4739" "a22f40b63f9bc0a69ebc8ba4fbc6b452a4e3f84b80590ba0a92b4ff599e53ad0" "80ae3a89f1eca6fb94a525004f66b544e347c6f756aaafb728c7cdaef85ea1f5" "54f2d1fcc9bcadedd50398697618f7c34aceb9966a6cbaa99829eb64c0c1f3ca" "8f97d5ec8a774485296e366fdde6ff5589cf9e319a584b845b6f7fa788c9fa9a" default)))
  '(fringe-mode (quote (nil . 0)) nil (fringe))
  '(menu-bar-mode nil)
  '(package-selected-packages
    (quote
-    (evil ace-jump-mode wolfram-mode auto-complete julia-repl julia-shell julia-mode matlab-mode auctex dash deferred request-deferred s dash-functional ein ein-mumamo color-theme color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet expand-region multiple-cursors)))
+    (use-package fzf evil-surround gruvbox-theme ido-completing-read+ cdlatex evil-commentary evil-goggles evil-paredit evil-replace-with-register iy-go-to-char smex ido-grid-mode composable evil ace-jump-mode wolfram-mode auto-complete julia-repl julia-shell julia-mode matlab-mode auctex dash deferred request-deferred s dash-functional ein ein-mumamo color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet expand-region multiple-cursors)))
+ '(pdf-view-midnight-colors (quote ("#DCDCCC" . "#383838")))
+ '(rainbow-identifiers-choose-face-function (quote rainbow-identifiers-cie-l*a*b*-choose-face))
+ '(rainbow-identifiers-cie-l*a*b*-color-count 1024)
+ '(rainbow-identifiers-cie-l*a*b*-lightness 80)
+ '(rainbow-identifiers-cie-l*a*b*-saturation 25)
  '(scroll-bar-mode nil)
  '(show-paren-mode t)
  '(tex-dvi-view-command
@@ -50,26 +54,21 @@
  '(tooltip-mode nil))
 
 (cond ((equal system-type 'gnu/linux)
-       (custom-set-faces
-        ;; custom-set-faces was added by Custom.
-        ;; If you edit it by hand, you could mess it up, so be careful.
-        ;; Your init file should contain only one such instance.
-        ;; If there is more than one, they won't work right.
-        '(default ((t (:inherit nil :stipple nil :background "white" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 120 :width normal :foundry "unknown" :family "Ubuntu Mono"))))))
+       ;; (custom-set-faces
+       ;;  '(default ((t (:inherit nil :stipple nil :background "white" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 120 :width normal :foundry "CYRE" :family "Inconsolata")))))
+       )
       ((equal system-type 'windows-nt)
        (custom-set-faces
-        ;; custom-set-faces was added by Custom.
-        ;; If you edit it by hand, you could mess it up, so be careful.
-        ;; Your init file should contain only one such instance.
-        ;; If there is more than one, they won't work right.
         '(default ((t (:inherit nil :stipple nil :background "white" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 98 :width normal :foundry "outline" :family "Consolas"))))))
       ((equal system-type 'cygwin)
        (custom-set-faces
-        ;; custom-set-faces was added by Custom.
-        ;; If you edit it by hand, you could mess it up, so be careful.
-        ;; Your init file should contain only one such instance.
-        ;; If there is more than one, they won't work right.
         '(default ((t (:family "Consolas" :foundry "outline" :slant normal :weight normal :height 120 :width normal)))))))
+
+;;######################################################################
+;; LINE NUMBERS
+;;######################################################################
+(line-number-mode 1)
+(setq display-line-numbers 'relative)
 
 ;;######################################################################
 ;; PATHS
@@ -77,9 +76,9 @@
 
 ;; Set directory
 (setq default-directory 
-      (cond ((equal system-name "surface")
+      (cond ((equal (system-name) "surface")
              "/cygdrive/c/Users/karthik/OneDrive/Documents/")
-            ((equal system-name "cube")
+            ((equal (system-name) "cube")
              "/cygdrive/c/Users/karth/OneDrive/Documents/")
             (t "~/")))
 ;; Adds ~/.emacs.d to the load-path
@@ -87,30 +86,30 @@
 (add-to-list 'load-path "~/.emacs.d/lisp/")
 
 ;;######################################################################
-;; HTTP PROXY
-;;######################################################################
-;; (if (equal (system-name) "BNG1307010024A")
-;;     (setq url-proxy-services
-;;           '(("no_proxy" . "^\\(localhost\\|10.*\\)")
-;;             ("http" . "proxy.jfwtc.ge.com:8080")
-;;             ("https" . "proxy.jfwtc.ge.com:8080"))))
-
-;;######################################################################
 ;; PACKAGE MANAGEMENT
 ;;######################################################################
-;;; Some package somewhere is making trouble with make-local-hook. :(
-(defalias 'make-local-hook 'ignore)
-
-(if (string< emacs-version "24")
-    (require 'package nil t)
-  (setq package-enable-at-startup nil))
-
 ;;; Set load paths for ELPA packages
-(require 'cl-lib)
+;; (require 'cl-lib)
+;; (require 'package)
+;;(setq package-enable-at-startup nil)
 (package-initialize)
+(add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
+(add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/"))
+(add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
 
-(when (featurep 'package)
-  (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t))
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package))
+
+(eval-when-compile
+  (require 'use-package))
+ 
+;; (require 'diminish)
+;; (require 'bind-key)
+;; (package-initialize)
+
+;; (when (featurep 'package)
+;;   (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t))
 
 ;;######################################################################
 ;; PERSONAL
@@ -138,39 +137,15 @@
 ;; INTERFACING WITH THE OS
 ;;######################################################################
 
-;; Set default shell
-;; (if (equal (system-name) "BLUECHIP")
-;;     (setq shell-file-name "C:/cygwin/cygwin.bat"))
-
 (if (equal (system-name) 'windows-nt)
     (setq shell-file-name "C:/cygwin/cygwin.bat"))
 
 ;; Set default www browser
 (if (equal system-type 'gnu/linux)
     (setq 
-     browse-url-browser-function 'browse-url-generic
-     ;browse-url-generic-program "xdg-open"
+     ;browse-url-browser-function 'browse-url-generic
+     browse-url-generic-program "/usr/bin/palemoon"
      ))
-
-;; (if (equal system-type 'cygwin)
-;;     (progn   (require 'windows-path)
-;;              (windows-path-activate)
-;;              ))
-
-(if (equal (system-name) "ansatz")
-    (setq 
-     browse-url-browser-function 'browse-url-generic
-     ;browse-url-generic-program "google-chrome"
-     ))
-
-;; Extends path to include my ~/bin directory
-;; Not required if starting Emacs from shell.
-;;(setenv "PATH" (concat
-;;                (getenv "PATH")
-;;                path-separator
-;;                (getenv "HOME")
-;;                "/"
-;;                "bin"))
 
 ;; Consult clipboard before primary selection
 ;; http://www.gnu.org/software/emacs/manual/
@@ -186,13 +161,6 @@
 (setq ring-bell-function (lambda ()
                            (call-process-shell-command 
                             "xset led 3; xset -led 3" nil 0 nil)))
-
-;; For Emacs 23 only. use the system's trash can when deleting files and foldrs
-;; (setq delete-by-moving-to-trash t)
-
-;; Keys to use my describe.rb ruby script to query google
-(global-set-key (kbd "C-?") 'describe-word-at-point)
-(global-set-key (kbd "C-x ?") 'describe-word)
 
 ;; Key to run current line as bash command
 (global-set-key (kbd "C-!") 'shell-command-at-line)
@@ -249,13 +217,23 @@ show verbose descriptions with hyperlinks."
                 (run-at-time 1.0 nil 'bury-buffer buf))
               (message "NO COMPILATION ERRORS!"))))
 
-;; (add-hook 'emacs-lisp-mode-hook 
-;;           (lambda ()
-;;             (unless (or (file-exists-p "makefile")
-;;                         (file-exists-p "Makefile"))
-;;               (set (make-local-variable 'compile-command)
-;;                    (concat "make -k "
-;;                            (file-name-sans-extension buffer-file-name))))))
+;; (defun bury-compile-buffer-if-successful (buffer string)
+;;  "Bury a compilation buffer if succeeded without warnings "
+;;  (when (and
+;;          (buffer-live-p buffer)
+;;          (string-match "*Compile-Log*" (buffer-name buffer))
+;;          (string-match "finished" string)
+;;          ;; (not
+;;          ;;  (with-current-buffer buffer
+;;          ;;    (goto-char (point-min))
+;;          ;;    (search-forward "warning" nil t)))
+;;          )
+;;     (run-with-timer 1 nil
+;;                     (lambda (buf)
+;;                       (bury-buffer buf)
+;;                       (switch-to-prev-buffer (get-buffer-window buf) 'kill))
+;;                     buffer)))
+;; (add-hook 'compilation-finish-functions 'bury-compile-buffer-if-successful)
 
 ;;######################################################################
 ;; LANGUAGE MODES
@@ -277,50 +255,9 @@ show verbose descriptions with hyperlinks."
 (autoload 'lua-mode "lua-mode" "Lua editing mode." t)
 
 ;;----------------------------------------------------------------------
-;; PYTHON-MODE
-;;----------------------------------------------------------------------
-;;; Ipython mode
-;;   (setq ipython-command "/usr/bin/ipython")
-;;   (require 'ipython)
-
-;;----------------------------------------------------------------------
-;; C-MODE
-;;----------------------------------------------------------------------
-;; C mode preferences
-;;(setq compilation-window-height 8)
-;;(c-toggle-hungry-state 1)
-;; (add-hook 'c-mode-hook
-;;           (lambda nil
-;;             (progn
-;;               (c-toggle-hungry-state 1)
-;;               (c-subword-mode))))
-
-;;----------------------------------------------------------------------
-;; SLIME
-;;----------------------------------------------------------------------
-(cond ((equal system-type 'windows-nt)
-       (setq inferior-lisp-program "gcl"))
-      ((equal system-type 'gnu/linux)
-       (setq inferior-lisp-program "clisp")))
-;;(require 'slime-autoloads)
-;;(slime-setup)
-
-;;----------------------------------------------------------------------
 ;; SCHEME MODE
 ;;----------------------------------------------------------------------
 (require 'setup-scheme nil t)
-;; (add-hook 'scheme-mode-hook 
-;;           (lambda () 
-;;             (define-key scheme-mode-map (kbd "C-c C-c") 
-;;               'scheme-send-definition-and-go)
-;;             (define-key scheme-mode-map (kbd "C-c M-e") 
-;;               'scheme-compile-definition-and-go)))
-
-;; (defun mechanics ()
-;;   (interactive)
-;;   (run-scheme
-;;     "/usr/local/scmutils/mit-scheme/bin/scheme --library /usr/local/scmutils/mit-scheme/lib"
-;;   ))
 
 ;;---------------------------------------------------------------------- 
 ;; MATH-MODE
@@ -330,154 +267,74 @@ show verbose descriptions with hyperlinks."
 ;;  '(define-key math-mode-map (kbd "<tab>") 'math-complete-symbol))
 
 ;;----------------------------------------------------------------------
-;; RUBY MODE
-;;----------------------------------------------------------------------
-;; (add-to-list 'load-path "~/.emacs.d/plugins/ruby/")
-;; (require 'ruby-electric)
-;; (add-hook 'ruby-mode-hook (lambda () (ruby-electric-mode t)))
-;; Ri in emacs
-;; (autoload 'ruby-mode "ruby-mode" "Major mode for editing Ruby code" t)
-;; (add-to-list 'auto-mode-alist '("\\.rb\\'" . ruby-mode))
-;; (require 'inf-ruby nil t)
-;; (when (featurep 'inf-ruby) 
-;;   (setq ri-ruby-script (expand-file-name "~/.emacs.d/plugins/ri-emacs.rb"))
-;;   (autoload 'ri (expand-file-name "~/.emacs.d/plugins/ri-ruby.el") nil t)
-;;   (add-hook 'ruby-mode-hook (lambda ()                                          
-;;                               (local-set-key (kbd "<f1>") 'ri)                           
-;;                               (local-set-key "\M-\C-i" 'ri-ruby-complete-symbol)
-;;                               (local-set-key (kbd "<f5>") 'ri-ruby-show-args)            
-;;                               )))
-
-;;----------------------------------------------------------------------
-;; OCTAVE-MODE
-;;----------------------------------------------------------------------
-;; Load .m files as octave mode
-;;(setq auto-mode-alist (cons '("\\.m" . octave-mode) auto-mode-alist))
-
-;;----------------------------------------------------------------------
-;; PATRAN/PCL UTILITIES
-;;----------------------------------------------------------------------
-(setq auto-mode-alist (cons '("\\.ses\\'" . text-mode) auto-mode-alist))
-(require 'patran nil t)
-
-;;######################################################################
-;; MARKUP MODES
-;;######################################################################
-
-;;----------------------------------------------------------------------
-;; MARKDOWN-MODE
-;;----------------------------------------------------------------------
-;; Load from the "lisp" directory, also associate .text with markdown
-(autoload 'markdown-mode "markdown-mode.el"
-  "Major mode for editing Markdown files" t)
-(setq auto-mode-alist
-      (cons '("\\.text" . markdown-mode) auto-mode-alist))
-(setq auto-mode-alist
-      (cons '("\\.md" . markdown-mode) auto-mode-alist))
-(eval-after-load "markdown-mode.el"
-  '(progn 
-     ;; (setq markdown-command "markdown"
-     ;;       markdown-enable-math nil)
-     (defun markdown-unset-tab ()
-       "markdown-mode-hook"
-       (define-key markdown-mode-map (kbd "<tab>") nil))
-     (add-hook 'markdown-mode-hook
-               '(lambda() (markdown-unset-tab) (visual-line-mode)))))
-
-;;----------------------------------------------------------------------
 ;; AUCTEX-MODE & ADDITIONS
 ;;---------------------------------------------------------------------- 
-(setq 
- TeX-auto-save t
- TeX-parse-self t
- TeX-electric-escape nil
- TeX-PDF-mode t)
-(setq-default TeX-source-correlate-mode t)
-(setq TeX-source-correlate-method 'synctex)
-(setq-default TeX-source-correlate-start-server t)
-
-(if (equal system-type 'cygwin)
-    (setq TeX-view-program-list
-          '(("Sumatra PDF" ("\"/cygdrive/c/Program Files/SumatraPDF/SumatraPDF.exe\" -reuse-instance"
-                            (mode-io-correlate " -forward-search %b %n ") " %o")))))
+(use-package auctex
+  :ensure t
+  :bind (:map TeX-mode-map
+              ("M-SPC" . TeX-matrix-spacer)
+              ("C-M-9" . TeX-insert-smallmatrix)
+              ("C-M-]" . TeX-insert-bmatrix)
+              ("C-;" . TeX-complete-symbol))
+  :config
+  (progn  (defun TeX-matrix-spacer () (interactive) (insert " & ")) 
+          (defun TeX-insert-smallmatrix () (interactive)
+            (insert "[\\begin{smallmatrix}  \\end{smallmatrix}]")
+            (backward-char 19))
+          (defun TeX-insert-bmatrix () (interactive)
+            (insert "\\begin{bmatrix}  \\end{bmatrix}")
+            (backward-char 14))
+          (setq 
+           TeX-auto-save t
+           TeX-parse-self t
+           TeX-electric-escape nil
+           TeX-PDF-mode t)
+         (setq-default TeX-source-correlate-mode t)
+         (setq TeX-source-correlate-method 'synctex)
+         (setq-default TeX-source-correlate-start-server t)
+         (setq TeX-newline-function 'reindent-then-newline-and-indent)
+         (cond ((equal system-type 'cygwin)
+                (setq TeX-view-program-list
+                      '(("Sumatra PDF" ("\"/cygdrive/c/Program Files/SumatraPDF/SumatraPDF.exe\" -reuse-instance"
+                                        (mode-io-correlate " -forward-search %b %n ") " %o"))))))
+         (TeX-fold-mode 1))
+  )
 
 ;; (setq-default TeX-master nil)
+(use-package cdlatex
+  :ensure t
+  :defer t
+  :commands turn-on-cdlatex
+  :config
+  (progn
+    (setq cdlatex-command-alist
+          '(("vc" "Insert \\vect{}" "\\vect{?}"
+             cdlatex-position-cursor nil nil t)
+            ("smat" "Insert smallmatrix env"
+             "\\left( \\begin{smallmatrix} ? \\end{smallmatrix} \\right)"
+             cdlatex-position-cursor nil nil t)
+            ("bmat" "Insert bmatrix env"
+             "\\begin{bmatrix}\n?\n\\end{bmatrix}"
+             cdlatex-position-cursor nil nil t)
+            ("pmat" "Insert pmatrix env"
+             "\\begin{pmatrix}\n?\n\\end{pmatrix}"
+             cdlatex-position-cursor nil nil t)
+            ("equ*" "Insert equation* env"
+             "\\begin{equation*}\n?\n\\end{equation*}"
+             cdlatex-position-cursor nil t nil)
+            ("ssn" "Insert subsection env"
+             "\\subsection{?}"
+             cdlatex-position-cursor nil t nil)
+            ("ssn*" "Insert subsection* env"
+             "\\subsection*{?}"
+             cdlatex-position-cursor nil t nil)))
+    (setq cdlatex-math-symbol-alist '((?F ("\\Phi"))
+                                      (?o ("\\omega" "\\mho" "\\mathcal{O}"))))
+    (setq cdlatex-paired-parens "$[{("))
+  :hook (LaTeX-mode . turn-on-cdlatex))
 
-(autoload 'cdlatex-mode "cdlatex" "CDLaTeX Mode" t)
-(autoload 'turn-on-cdlatex "cdlatex" "CDLaTeX Mode" nil)
-(add-hook 'LaTeX-mode-hook 
-          (lambda nil
-            (progn 
-              ;(turn-on-auto-fill)
-              (setq TeX-newline-function 'reindent-then-newline-and-indent)
-	      (define-key TeX-mode-map (kbd "C-;") 'TeX-complete-symbol)
-              (TeX-fold-mode 1)
-              (setq cdlatex-command-alist
-                    '(("vc" "Insert \\vect{}" "\\vect{?}" cdlatex-position-cursor nil nil t)))
-              (turn-on-cdlatex)
-              (setq cdlatex-paired-parens "$[{(")
-              ;; Useful for writing matrices easily
-              (define-key TeX-mode-map (kbd "M-SPC")
-                (lambda () (interactive) (insert " & ")))
-              (define-key TeX-mode-map (kbd "C-M-9")
-                (lambda () (interactive)
-                  (insert "[\\begin{smallmatrix}  \\end{smallmatrix}]")
-                  (backward-char 19)))
-              (define-key TeX-mode-map (kbd "C-M-0")
-                (lambda () (interactive)
-                  (insert "\\begin{bmatrix}  \\end{bmatrix}")
-                  (backward-char 14)))
-              (setq cdlatex-math-symbol-alist '(
-                                                (?F ("\\Phi"))
-                                                (?o ("\\omega" "\\mho" "\\mathcal{O}"))
-                                                ))
-              (setq cdlatex-command-alist
-                    '(("smat" "Insert smallmatrix env"
-                       "\\left( \\begin{smallmatrix} ? \\end{smallmatrix} \\right)"
-                       cdlatex-position-cursor nil nil t)
-                      ("bmat" "Insert bmatrix env"
-                       "\\begin{bmatrix}\n?\n\\end{bmatrix}"
-                       cdlatex-position-cursor nil nil t)
-                      ("pmat" "Insert pmatrix env"
-                       "\\begin{pmatrix}\n?\n\\end{pmatrix}"
-                       cdlatex-position-cursor nil nil t)
-                      ("equ*" "Insert equation* env"
-                       "\\begin{equation*}\n?\n\\end{equation*}"
-                       cdlatex-position-cursor nil t nil)
-                      ("ssn" "Insert subsection env"
-                       "\\subsection{?}"
-                       cdlatex-position-cursor nil t nil)
-                      ("ssn*" "Insert subsection* env"
-                       "\\subsection*{?}"
-                       cdlatex-position-cursor nil t nil)
-                      )
-                    )
-              )))
-
-;;----------------------------------------------------------------------
-;; MUSE-MODE
-;;----------------------------------------------------------------------
-                                        ; Set up muse mode for easy publishing.
-                                        ;(require 'muse-mode)
-;; (require 'muse-html)     ; load publishing styles I use
-;; (require 'muse-latex)
-;; (require 'muse-texinfo)
-;; (require 'muse-docbook)
-;; (require 'muse-xml)
-
-;; ; Muse styles
-;; (muse-derive-style "w3-xhtml" "xhtml"
-;; :style-sheet "<link rel=\"stylesheet\" type=\"text/css\" media=\"all\" href=\"http://www.w3.org/StyleSheets/Core/Steely\" />") 
-
-                                        ;(defvar muse-styles-w3 '("Oldstyle" 
-                                        ;                           "Modernist" 
-                                        ;                           "Midnight" 
-                                        ;                           "Ultramarine" 
-                                        ;                           "Swiss"
-                                        ;                           "Chocolate"
-                                        ;                           "Traditional"
-                                        ;                           "Steely")
-                                        ;                       "CSS styles for muse style w3-xhtml" )
+;; (autoload 'cdlatex-mode "cdlatex" "CDLaTeX Mode" t)
+;; (autoload 'turn-on-cdlatex "cdlatex" "CDLaTeX Mode" nil)
 
 ;;######################################################################
 ;; PLUGINS
@@ -513,19 +370,21 @@ show verbose descriptions with hyperlinks."
 (setq save-abbrevs t)
 (if (file-exists-p abbrev-file-name)
     (quietly-read-abbrev-file))
-;;(setq-default abbrev-mode t)
-;;(dolist (hook '(erc-mode-hook
-;;                    emacs-lisp-mode-hook
-;;                    text-mode-hook))
-;;      (add-hook hook (lambda () (abbrev-mode 1))))
-
 
 ;;----------------------------------------------------------------------
 ;; AUTO-COMPLETE MODE
 ;;----------------------------------------------------------------------
 ;;; ELPA package, run (package-initialize) first
-(require 'auto-complete-config nil t)
-(eval-after-load "auto-complete" (quote (ac-config-default)))
+
+(use-package auto-complete
+  :ensure t
+  :commands global-auto-complete-mode
+  :init
+  (progn
+    (ac-config-default)
+    (global-auto-complete-mode 1)))
+
+;; (require 'auto-complete-config nil t)
 ;; (setq ac-auto-show-menu t
 ;;       ac-auto-start t
 ;;       ac-show-menu-immediately-on-auto-complete t) 
@@ -533,28 +392,27 @@ show verbose descriptions with hyperlinks."
 ;;---------------------------------------------------------------------
 ;; PAREDIT-MODE
 ;;---------------------------------------------------------------------
-(autoload 'enable-paredit-mode "paredit"
-  "Turn on pseudo-structural editing of Lisp code." t)
-(add-hook 'emacs-lisp-mode-hook       #'enable-paredit-mode)
-(add-hook 'eval-expression-minibuffer-setup-hook #'enable-paredit-mode)
-(add-hook 'ielm-mode-hook             #'enable-paredit-mode)
-(add-hook 'lisp-mode-hook             #'enable-paredit-mode)
-(add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode)
-(add-hook 'scheme-mode-hook           #'enable-paredit-mode)
-(eval-after-load "paredit"
-  ;; Move the keys for split-sexp and raise-sexp to C-c r/s.
-  '(progn (define-key paredit-mode-map (kbd "M-s") nil)
-          (define-key paredit-mode-map (kbd "M-r") nil)
-          (define-key paredit-mode-map (kbd "<M-up>") nil)
-          (define-key paredit-mode-map (kbd "<M-down>") nil)
-          (define-key paredit-mode-map (kbd "C-c <up>") 
-            'paredit-splice-sexp-killing-backward)
-          (define-key paredit-mode-map (kbd "C-c <down>") 
-            'paredit-splice-sexp-killing-forward)
-          (define-key paredit-mode-map (kbd "C-c s") 
-            'paredit-splice-sexp)
-          (define-key paredit-mode-map (kbd "C-c r") 
-            'paredit-raise-sexp)))
+(use-package paredit
+  :commands enable-paredit-mode
+  :hook ((emacs-lisp-mode 
+          eval-expression-minibuffer-setup
+          ielm-mode
+          lisp-mode
+          lisp-interaction-mode
+          scheme-mode) . enable-paredit-mode)
+  ;; (autoload 'enable-paredit-mode "paredit"
+  ;; "Turn on pseudo-structural editing of Lisp code." t)
+  ;; :bind (:map paredit-mode-map
+  ;;             ;; ("M-s" . nil)
+  ;;             ;; ("M-r" . nil)
+  ;;             ;; ("<M-up>" . nil)
+  ;;             ;; ("<M-down>" . nil)
+  ;;             ("C-c <up>" . 'paredit-splice-sexp-killing-backward)
+  ;;             ("C-c <down>" . 'paredit-splice-sexp-killing-forward)
+  ;;             ("C-c s" . 'paredit-splice-sexp)
+  ;;             ("C-c r" . 'paredit-raise-sexp))
+  )
+
 ;;----------------------------------------------------------------------
 ;; MULTIPLE-CURSORS 
 ;;----------------------------------------------------------------------
@@ -569,8 +427,8 @@ show verbose descriptions with hyperlinks."
   (global-set-key (kbd "C-@") 'mc/mark-all-like-this)
   (global-set-key (kbd "M-p") 'mc/mark-previous-word-like-this) 
   (global-set-key (kbd "<C-return>") 'set-rectangular-region-anchor) 
-  (global-set-key (kbd "C-x C-a") 'mc/edit-beginnings-of-lines)     
-  (global-set-key (kbd "C-x SPC") 'mc/mark-all-dwim)                
+  ;; (global-set-key (kbd "C-x C-a") 'mc/edit-beginnings-of-lines)     
+  ;; (global-set-key (kbd "C-x SPC") 'mc/mark-all-dwim)                
   (global-set-key (kbd "M-N") 'mc/insert-numbers)
   (global-set-key (kbd "M-S") 'mc/sort-regions))
 
@@ -578,10 +436,16 @@ show verbose descriptions with hyperlinks."
 ;; EXPAND-REGION
 ;;----------------------------------------------------------------------
 ;;; ELPA package, run (package-initialize) first
-(require 'expand-region nil t)
-(when (featurep 'expand-region)
-  (global-set-key (kbd "C-=") 'er/expand-region)
-  (global-set-key (kbd "C-,") 'er/expand-region))
+(use-package expand-region
+  :commands expand-region
+  :init
+  (progn (bind-key "C-=" 'er/expand-region)
+         (bind-key "C-," 'er/expand-region)))
+
+;; (require 'expand-region nil t)
+;; (when (featurep 'expand-region)
+;;   (global-set-key (kbd "C-=") 'er/expand-region)
+;;   (global-set-key (kbd "C-,") 'er/expand-region))
 
 ;;----------------------------------------------------------------------
 ;; ACE-JUMP-MODE
@@ -591,10 +455,14 @@ show verbose descriptions with hyperlinks."
 ;;     'ace-jump-mode
 ;;     "ace-jump-mode"
 ;;     "Emacs quick move minor mode" t)
-(require 'ace-jump-mode nil t)
-(when (featurep 'ace-jump-mode)
-  (define-key global-map (kbd "M-m") 'ace-jump-mode)
-  (define-key global-map (kbd "C-'") 'ace-jump-mode))
+(use-package ace-jump-mode
+  :commands ace-jump-mode
+  :init
+  (bind-key "M-j" 'ace-jump-mode))
+;; (require 'ace-jump-mode nil t)
+;; (when (featurep 'ace-jump-mode)
+;;   (define-key global-map (kbd "M-m") 'ace-jump-mode)
+;;   (define-key global-map (kbd "C-'") 'ace-jump-mode))
 
 ;; Enable a more powerful jump back function from ace jump mode
 ;;
@@ -627,11 +495,15 @@ show verbose descriptions with hyperlinks."
 (require 'ido nil t)
 
 (when (featurep 'ido) 
+  
   (ido-mode t)
   (setq ido-enable-flex-matching t) ;; enable fuzzy matching
   (ido-everywhere 1)
-  (if (require 'ido-ubiquitous nil t)
-      (ido-ubiquitous-mode))
+  (if (require 'ido-completing-read+)
+      (ido-ubiquitous-mode 1))
+  (require 'icomplete)
+  (icomplete-mode 1)
+  
   (autoload 'idomenu "idomenu" nil t)
   (eval-after-load "idomenu"
     (global-set-key (kbd "M-.") 'imenu))
@@ -663,9 +535,12 @@ show verbose descriptions with hyperlinks."
 
   (require 'ido-other-window nil t))
 
-;; Supercharge M-x. Use with care!
+(when (commandp 'ido-grid-mode)
+  (ido-grid-mode 1))
+
+;;  -x. Use with care!
 ;;; Smex
-(require 'smex nil t)
+;;(require 'smex nil t)
 (smex-initialize)
 (global-set-key (kbd "M-x") 'smex)
 (global-set-key (kbd "M-S-x") 'smex-major-mode-commands)
@@ -703,19 +578,6 @@ show verbose descriptions with hyperlinks."
 (require 'setup-dired nil t)
 
 ;;----------------------------------------------------------------------
-;; YASNIPPET MODE
-;;----------------------------------------------------------------------
-;; Yasnippet bundle for Emacs
-;; (require 'yasnippet-bundle)
-;; (require 'yasnippet nil t) ;; not yasnippet-bundle
-;; (eval-after-load "yasnippet"
-;;   '(progn  (setq yas-snippet-dirs "~/.emacs.d/snippets")
-;;            ;; (yas/load-directory "~/.emacs.d/snippets")
-;;            (yas/global-mode 1)
-;;            (setq yas/prompt-functions '(yas/dropdown-prompt yas/x-prompt))
-;;            (setq yas/wrap-around-region t)))
-
-;;----------------------------------------------------------------------
 ;; BOOKMARKS
 ;;----------------------------------------------------------------------
 ;; Bookmark+ mode
@@ -739,27 +601,10 @@ show verbose descriptions with hyperlinks."
 ;; (bookmark-to-abbrevs)
 
 ;;----------------------------------------------------------------------
-;; W3M
-;;----------------------------------------------------------------------
-;; w3m-el browser
-;; (autoload 'w3m-el "w3m-el" "w3m in Emacs" t)
-;; (setq w3m-use-cookies t)
-
-;;----------------------------------------------------------------------
 ;; ARTIST-MODE
 ;;----------------------------------------------------------------------
 ;; Artist mode for drawing ASCII art!
 ;; (autoload 'artist-mode "artist" "Enter artist-mode" t)
-
-;;----------------------------------------------------------------------
-;; FOOTNOTE-MODE
-;;----------------------------------------------------------------------
-;;; Footnote mode
-; Adds a function to read in existing footnotes upon starting a new
-; session. 'tis a bit flaky.
-;; (require 'footnote-init nil t)
-;; (when (featurep 'footnote-init) (add-hook
-;;                                  'footnote-mode-hook 'footnote-init))
 
 ;;----------------------------------------------------------------------
 ;; ORG-MODE
@@ -773,19 +618,6 @@ show verbose descriptions with hyperlinks."
 ;;   (global-set-key "\C-\M-r" 'org-remember))
 
 ;;----------------------------------------------------------------------
-;; BABEL
-;;----------------------------------------------------------------------
-;;; Babel: Translate text between languages
-(autoload 'babel "babel"
-  "Use a web translation service to translate the message MSG." t)
-(autoload 'babel-region "babel"
-  "Use a web translation service to translate the current region." t)
-(autoload 'babel-as-string "babel"
-  "Use a web translation service to translate MSG, returning a string." t)
-(autoload 'babel-buffer "babel"
-  "Use a web translation service to translate the current buffer." t)
-
-;;----------------------------------------------------------------------
 ;; DOT-MODE
 ;;----------------------------------------------------------------------
 ;; (Vi like redo edits with C-.)
@@ -794,85 +626,6 @@ show verbose descriptions with hyperlinks."
   (add-hook 'find-file-hooks 'dot-mode-on)
   (global-set-key [(control ?.)] (lambda () (interactive) (dot-mode 1)
                                    (message "Dot mode activated."))))
-
-;;----------------------------------------------------------------------
-;; ERC
-;;----------------------------------------------------------------------
-;; ERC preferences
-(erc-track-mode t)
-(setq erc-hide-list '("JOIN" "PART" "QUIT" "NICK"))
-(setq erc-track-exclude-types '("JOIN" "NICK" "PART" "QUIT" "MODE"
-                                "324" "329" "332" "333" "353" "477"))
-
-;;----------------------------------------------------------------------
-;; SIMPLENOTE
-;;----------------------------------------------------------------------
-;; Simplenote details in "personal.el"
-;; (require 'simplenote)
-;; (setq simplenote-email "simplenoteemail@provider.com")
-;; (setq simplenote-password "simplenotepassword")
-;; (simplenote-setup)
-
-;;----------------------------------------------------------------------
-;; WEBLOGGER
-;;----------------------------------------------------------------------
-;; Weblogger details in "personal.el"
-;; Publish to Wordpress from Emacs
-;; (autoload 'weblogger "weblogger.el" "Publish to Wordpress from Emacs" t)
-
-;;----------------------------------------------------------------------
-;; JABBER
-;;----------------------------------------------------------------------
-;; Jabber details in "personal.el"
-;; ;; Emacs Jabber, set up for Google Talk.
-;; (setq jabber-account-list '(
-;;                             ("myaddr@gmail.com"
-;;                              ;; (:password . nil) or (:password . "your-pass")
-;;                              (:network-server . "talk.google.com")
-;;                              ;; (:port . 5223)
-;;                              (:connection-type . ssl))
-;;                             ))
-
-;; ;; Misc jabber settings:
-;; ;; Auto-highlight links in jabber buffers
-;; (add-hook 'jabber-chat-mode-hook 'goto-address)
-;; (add-hook 'jabber-chat-mode-hook 'flyspell-mode)
-;; (setq jabber-show-offline-contacts nil)
-;; (setq jabber-roster-show-bindings nil)
-;; (setq jabber-vcard-avatars-retrieve nil)
-;; (setq jabber-default-status (shell-command-to-string "fortune cookie linuxcookie -n short"))
-
-;;----------------------------------------------------------------------
-;; HTMLIZE
-;;----------------------------------------------------------------------
-;; Htmlize Emacs buffers
-;;(autoload 'htmlize "htmlize" "HTML-ize Emacs regions/buffers" nil t)
-
-;;----------------------------------------------------------------------
-;; SWEET-KILL
-;;----------------------------------------------------------------------
-;; Make *scratch* buffer suitable for writing
-(setq initial-scratch-message nil)
-;; (progn 
-;;   (set-buffer "*scratch*")
-;;   (erase-buffer))
-;;   (save-excursion
-;;   (let ((h (- (/ (window-height) 2) 1)) (l (length haiku-emacs)))
-;;     (beginning-of-buffer)
-;;     (open-line h)
-;;     (goto-line h)
-;;     (mapc (lambda (x)
-;;             (insert x)
-;;             (center-line)
-;;             (newline))
-;;           (nth (random l) haiku-emacs))))
-;;   (message "C-x k"))
-
-;;    (sleep-for 2)
-;;    (kill-buffer)))
-;; Sweet kill Emacs (Prints a haiku at exit)
-;;(require 'sweet-kill)
-;; Haiku upon Emacs invocation! (Depends on sweet-kill)
 
 ;;----------------------------------------------------------------------
 ;; LONGLINES-MODE
@@ -898,6 +651,8 @@ show verbose descriptions with hyperlinks."
 
 ;; Get rid of that AWFUL splash screen
 (setq inhibit-splash-screen t)
+;; Make *scratch* buffer suitable for writing
+(setq initial-scratch-message nil)
 
 ;; Stop cursor from blinking
 (blink-cursor-mode 0)
@@ -937,7 +692,7 @@ show verbose descriptions with hyperlinks."
 ;; when you mark a region, you can delete it or replace it as in other
 ;; Windows programs. simply hit delete or type whatever you want or
 ;; yank
-;;(delete-selection-mode)
+(delete-selection-mode)
 
 ; let there be a marker on every empty line on the left fringe
 ;;(setq default-indicate-empty-lines nil)
@@ -946,62 +701,27 @@ show verbose descriptions with hyperlinks."
 (setq show-paren-delay 0)
 
 ;; FULLSCREEN
-(defun fullscreen ()
-  (interactive)
-  (set-frame-parameter nil 'fullscreen
-                       (if (frame-parameter nil 'fullscreen) 
-                           nil 'fullboth)))
-(global-set-key [f11] 'fullscreen)
+;; (defun fullscreen ()
+;;   (interactive)
+;;   (set-frame-parameter nil 'fullscreen
+;;                        (if (frame-parameter nil 'fullscreen) 
+;;                            nil 'fullboth)))
+(global-set-key [f11] 'toggle-frame-fullscreen)
 
 ;; WINDOW SPLITTING
 ;; Set horizontal splits as the default
-(setq split-width-threshold 140)
+(setq split-width-threshold 120)
 (setq split-height-threshold 60)
 
-;; Byte-compile init.el immediately after saving it:
-(add-hook 'after-save-hook
-          '(lambda nil (cond 
-                        ((string= 
-                          (buffer-file-name)
-                          (expand-file-name 
-                           (concat default-directory
-                                   "init.el")))
-                         (byte-compile-file (buffer-file-name))))))
-
-
-;; ((or (string=
-;;                           (buffer-file-name)
-;;                           (expand-file-name 
-;;                            (concat default-directory
-;;                                    "journal.org")))
-;;                          (string=
-;;                           (buffer-file-name)
-;;                           (expand-file-name 
-;;                            (concat default-directory
-;;                                    "projects.org"))))
-;;                          (when (featurep 'simplenote) 
-;;                            (simplenote-push-buffer)))
-
-;; ;; Sync with Simplenote immediately after opening certain files
-;; (add-hook 'find-file-hook 
-;;           '(lambda nil 
-;;              (if (and (featurep 'simplenote) 
-;;                       (or (string=
-;;                            (buffer-file-name)
-;;                            (expand-file-name 
-;;                             (concat default-directory
-;;                                     "journal.org")))
-;;                           (string=
-;;                            (buffer-file-name)
-;;                            (expand-file-name 
-;;                             (concat default-directory
-;;                                     "tasks.org")))
-;;                           (string=
-;;                            (buffer-file-name)
-;;                            (expand-file-name 
-;;                             (concat default-directory
-;;                                     "projects.org")))))
-;;                  (simplenote-pull-buffer))))
+;; Byte-compile elisp files immediately after saving them if .elc exists:
+(defun auto-byte-recompile ()
+"If the current buffer is in emacs-lisp-mode and there already exists an `.elc'
+file corresponding to the current buffer file, then recompile the file."
+  (interactive)
+  (when (and (eq major-mode 'emacs-lisp-mode)
+             (file-exists-p (byte-compile-dest-file buffer-file-name)))
+    (byte-compile-file buffer-file-name)))
+(add-hook 'after-save-hook 'auto-byte-recompile)
 
 ;;----------------------------------------------------------------------
 ;; MACROS
@@ -1015,6 +735,9 @@ show verbose descriptions with hyperlinks."
 ;; COLORS & COLOR THEMES
 ;;######################################################################
 
+;;; Load theme after the frame is created.
+(add-hook 'after-make-frame-functions
+          (lambda (frame) (load-theme 'gruvbox-dark-soft t)))
 ;; Zenburn color theme
 ;; (if (equal system-type 'gnu/linux) 
 ;;     (progn (require 'zenburn)
@@ -1060,58 +783,6 @@ want to use in the modeline *in lieu of* the original.")
 
 (add-hook 'after-change-major-mode-hook 'clean-mode-line)
 
-;;; alias the new `flymake-report-status-slim' to
-;;; `flymake-report-status'
-(defalias 'flymake-report-status 'flymake-report-status-slim)
-(defun flymake-report-status-slim (e-w &optional status)
-  "Show \"slim\" flymake status in mode line."
-  (when e-w
-    (setq flymake-mode-line-e-w e-w))
-  (when status
-    (setq flymake-mode-line-status status))
-  (let* ((mode-line " Φ"))
-    (when (> (length flymake-mode-line-e-w) 0)
-      (setq mode-line (concat mode-line ":" flymake-mode-line-e-w)))
-    (setq mode-line (concat mode-line flymake-mode-line-status))
-    (setq flymake-mode-line mode-line)
-    (force-mode-line-update)))
-
-;; Set a Mode Line that tells me which machine, which directory,
-;; and which line I am on, plus the other customary information.
-(setq mode-line-format
-      (quote
-       (        
-        #("-" 0 1
-          (help-echo
-           "mouse-1: select window, mouse-2: delete others ..."))
-        mode-line-mule-info
-        mode-line-modified
-        mode-line-frame-identification
-        "  "
-        mode-line-buffer-identification
-        "  "
-        ;;(:eval (substring
-        ;;        (system-name) 0 (string-match "\\..+" (system-name))))
-        ;;":"
-        default-directory
-        #(" " 0 1
-          (help-echo
-           "mouse-1: select window, mouse-2: delete others ..."))
-        (line-number-mode " Line %l ")
-        global-mode-string
-        #("   %[(" 0 6
-          (help-echo
-           "mouse-1: select window, mouse-2: delete others ..."))
-        ;;(:eval (mode-line-mode-name))
-        mode-line-process
-        minor-mode-alist
-        #("%n" 0 2 (help-echo "mouse-2: widen" local-map (keymap ...)))
-        ")%] "
-        (-3 . "%P")
-        " WC: "
-        ;; (:eval (count-words-buffer-modeline))
-        )))
-
 (display-time-mode 0)
 
 ;;######################################################################
@@ -1121,18 +792,25 @@ want to use in the modeline *in lieu of* the original.")
 ;; Enable recursive minibuffer edits
 (setq enable-recursive-minibuffers 1)
 
-(if (equal system-type 'cygwin)
-    (custom-set-faces
-     ;; custom-set-faces was added by Custom.
-     ;; If you edit it by hand, you could mess it up, so be careful.
-     ;; Your init file should contain only one such instance.
-     ;; If there is more than one, they won't work right.
-     '(default ((t (:family "Consolas" :foundry "outline" :slant normal :weight normal :height 120 :width normal)))))
-  (custom-set-faces
-   '(default ((t (:inherit nil :stipple nil :background "white" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 120 :width normal :foundry "unknown" :family "Ubuntu Mono"))))))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(default ((t (:family "Consolas" :foundry "outline" :slant normal :weight normal :height 120 :width normal)))))
+
+;;######################################################################
+;; EVIL-MODE
+;;######################################################################
+(use-package evil
+  :init
+  (evil-mode))
+(use-package evil-surround
+  :commands turn-on-evil-surround-mode
+  :init
+  (turn-on-evil-surround-mode))
+(use-package evil-commentary
+  :commands evil-commentary-mode
+  :init
+  (evil-commentary-mode 1))
+
+;; (require 'evil)
+;; (evil-mode 1)
+;; (turn-on-evil-surround-mode)
+;; (evil-commentary-mode 1)
+
+

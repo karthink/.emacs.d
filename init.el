@@ -13,15 +13,6 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(TeX-view-program-selection
-   (quote
-    (((output-dvi has-no-display-manager)
-      "dvi2tty")
-     ((output-dvi style-pstricks)
-      "dvips and gv")
-     (output-dvi "xdvi")
-     (output-pdf "Sumatra PDF")
-     (output-html "xdg-open"))))
  '(auto-save-interval 2400)
  '(auto-save-timeout 300)
  '(blink-cursor-mode nil)
@@ -32,7 +23,7 @@
  '(menu-bar-mode nil)
  '(package-selected-packages
    (quote
-    (use-package fzf evil-surround gruvbox-theme ido-completing-read+ cdlatex evil-commentary evil-goggles evil-paredit evil-replace-with-register iy-go-to-char smex ido-grid-mode composable evil ace-jump-mode wolfram-mode auto-complete julia-repl julia-shell julia-mode matlab-mode auctex dash deferred request-deferred s dash-functional ein ein-mumamo color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet expand-region multiple-cursors)))
+    (god-mode use-package fzf evil-surround gruvbox-theme ido-completing-read+ cdlatex evil-commentary evil-goggles evil-paredit evil-replace-with-register iy-go-to-char smex ido-grid-mode composable evil ace-jump-mode wolfram-mode auto-complete julia-repl julia-shell julia-mode matlab-mode auctex dash deferred request-deferred s dash-functional ein ein-mumamo color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet expand-region multiple-cursors)))
  '(pdf-view-midnight-colors (quote ("#DCDCCC" . "#383838")))
  '(rainbow-identifiers-choose-face-function (quote rainbow-identifiers-cie-l*a*b*-choose-face))
  '(rainbow-identifiers-cie-l*a*b*-color-count 1024)
@@ -94,7 +85,7 @@
 ;;(setq package-enable-at-startup nil)
 (package-initialize)
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
-(add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/"))
+;(add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/"))
 (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
 
 (unless (package-installed-p 'use-package)
@@ -269,7 +260,7 @@ show verbose descriptions with hyperlinks."
 ;;----------------------------------------------------------------------
 ;; AUCTEX-MODE & ADDITIONS
 ;;---------------------------------------------------------------------- 
-(use-package auctex
+(use-package latex 
   :ensure t
   :bind (:map TeX-mode-map
               ("M-SPC" . TeX-matrix-spacer)
@@ -297,7 +288,13 @@ show verbose descriptions with hyperlinks."
                 (setq TeX-view-program-list
                       '(("Sumatra PDF" ("\"/cygdrive/c/Program Files/SumatraPDF/SumatraPDF.exe\" -reuse-instance"
                                         (mode-io-correlate " -forward-search %b %n ") " %o"))))))
-         (TeX-fold-mode 1))
+	 (setq TeX-view-program-selection
+          '(((output-dvi has-no-display-manager) "dvi2tty")
+           ((output-dvi style-pstricks) "dvips and gv")
+           (output-dvi "xdvi")
+           (output-pdf "Sumatra PDF")
+           (output-html "xdg-open")))
+	 (TeX-fold-mode 1))
   )
 
 ;; (setq-default TeX-master nil)
@@ -499,8 +496,8 @@ show verbose descriptions with hyperlinks."
   (ido-mode t)
   (setq ido-enable-flex-matching t) ;; enable fuzzy matching
   (ido-everywhere 1)
-  (if (require 'ido-completing-read+)
-      (ido-ubiquitous-mode 1))
+  ;; (if (require 'ido-completing-read+))
+  (ido-ubiquitous-mode 1)
   (require 'icomplete)
   (icomplete-mode 1)
   
@@ -792,25 +789,28 @@ want to use in the modeline *in lieu of* the original.")
 ;; Enable recursive minibuffer edits
 (setq enable-recursive-minibuffers 1)
 
-
 ;;######################################################################
 ;; EVIL-MODE
 ;;######################################################################
 (use-package evil
   :init
-  (evil-mode))
+  (evil-mode)
+  )
 (use-package evil-surround
   :commands turn-on-evil-surround-mode
   :init
-  (turn-on-evil-surround-mode))
+  (turn-on-evil-surround-mode)
+  )
 (use-package evil-commentary
   :commands evil-commentary-mode
   :init
-  (evil-commentary-mode 1))
+  (evil-commentary-mode 1)
+  )
 
 ;; (require 'evil)
 ;; (evil-mode 1)
 ;; (turn-on-evil-surround-mode)
 ;; (evil-commentary-mode 1)
+
 
 

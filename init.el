@@ -2,8 +2,8 @@
                      ; one day i look inside it ;
                            ; singularity ;
 
-; Karthik's .emacs file 
-; 02 June 2019 
+; Karthik's .emacs file
+; 02 June 2019
 
 (setq user-full-name "Karthik C")
 ; (setq user-mail-address "karthik[AT]gmail.com")
@@ -23,7 +23,7 @@
  '(menu-bar-mode nil)
  '(package-selected-packages
    (quote
-    (god-mode use-package fzf evil-surround gruvbox-theme ido-completing-read+ cdlatex evil-commentary evil-goggles evil-paredit evil-replace-with-register iy-go-to-char smex ido-grid-mode composable evil ace-jump-mode wolfram-mode auto-complete julia-repl julia-shell julia-mode matlab-mode auctex dash deferred request-deferred s dash-functional ein ein-mumamo color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet expand-region multiple-cursors)))
+    (evil-tabs evil-leader org-evil god-mode use-package fzf evil-surround gruvbox-theme ido-completing-read+ cdlatex evil-commentary evil-goggles evil-paredit evil-replace-with-register iy-go-to-char smex ido-grid-mode composable evil ace-jump-mode wolfram-mode auto-complete julia-repl julia-shell julia-mode matlab-mode auctex dash deferred request-deferred s dash-functional ein ein-mumamo color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet expand-region multiple-cursors)))
  '(pdf-view-midnight-colors (quote ("#DCDCCC" . "#383838")))
  '(rainbow-identifiers-choose-face-function (quote rainbow-identifiers-cie-l*a*b*-choose-face))
  '(rainbow-identifiers-cie-l*a*b*-color-count 1024)
@@ -45,9 +45,8 @@
  '(tooltip-mode nil))
 
 (cond ((equal system-type 'gnu/linux)
-       ;; (custom-set-faces
-       ;;  '(default ((t (:inherit nil :stipple nil :background "white" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 120 :width normal :foundry "CYRE" :family "Inconsolata")))))
-       )
+       (custom-set-faces
+          '(default ((t (:family "FantasqueSansMono Nerd Font" :foundry "PfEd" :slant normal :weight normal :height 128 :width normal))))))
       ((equal system-type 'windows-nt)
        (custom-set-faces
         '(default ((t (:inherit nil :stipple nil :background "white" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 98 :width normal :foundry "outline" :family "Consolas"))))))
@@ -59,16 +58,17 @@
 ;; LINE NUMBERS
 ;;######################################################################
 (line-number-mode 1)
-(setq display-line-numbers 'relative)
+(global-display-line-numbers-mode)
+(setq display-line-numbers-type 'relative)
 
 ;;######################################################################
 ;; PATHS
 ;;######################################################################
 
 ;; Set directory
-(setq default-directory 
+(setq default-directory
       (cond ((equal (system-name) "surface")
-             "/cygdrive/c/Users/karthik/OneDrive/Documents/")
+             "/cygdrive/c/Users/karth/OneDrive/Documents/")
             ((equal (system-name) "cube")
              "/cygdrive/c/Users/karth/OneDrive/Documents/")
             (t "~/")))
@@ -86,7 +86,7 @@
 (package-initialize)
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
 ;(add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/"))
-(add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
+;; (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
 
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
@@ -94,7 +94,7 @@
 
 (eval-when-compile
   (require 'use-package))
- 
+
 ;; (require 'diminish)
 ;; (require 'bind-key)
 ;; (package-initialize)
@@ -133,7 +133,7 @@
 
 ;; Set default www browser
 (if (equal system-type 'gnu/linux)
-    (setq 
+    (setq
      ;browse-url-browser-function 'browse-url-generic
      browse-url-generic-program "/usr/bin/palemoon"
      ))
@@ -150,7 +150,7 @@
 ;; Get rid of the annoying system beep
 ;; (setq visible-bell t)
 (setq ring-bell-function (lambda ()
-                           (call-process-shell-command 
+                           (call-process-shell-command
                             "xset led 3; xset -led 3" nil 0 nil)))
 
 ;; Key to run current line as bash command
@@ -194,10 +194,10 @@ show verbose descriptions with hyperlinks."
 ;; compile!
 (global-set-key [(f9)] 'compile)
 (global-set-key [(f10)] 'recompile)
-(add-hook 'compilation-finish-functions       
+(add-hook 'compilation-finish-functions
           (lambda (buf str)
 
-            (if (or 
+            (if (or
                  (string-match "exited abnormally" str)
                  (string-match "matches found" str))
                 ;;there were errors
@@ -250,32 +250,32 @@ show verbose descriptions with hyperlinks."
 ;;----------------------------------------------------------------------
 (require 'setup-scheme nil t)
 
-;;---------------------------------------------------------------------- 
+;;----------------------------------------------------------------------
 ;; MATH-MODE
-;;---------------------------------------------------------------------- 
+;;----------------------------------------------------------------------
 ;; Major mode for running Mathematica in Emacs
-;; (eval-after-load 'math 
+;; (eval-after-load 'math
 ;;  '(define-key math-mode-map (kbd "<tab>") 'math-complete-symbol))
 
 ;;----------------------------------------------------------------------
 ;; AUCTEX-MODE & ADDITIONS
-;;---------------------------------------------------------------------- 
-(use-package latex 
+;;----------------------------------------------------------------------
+(use-package auctex
   :ensure t
   :bind (:map TeX-mode-map
               ("M-SPC" . TeX-matrix-spacer)
               ("C-M-9" . TeX-insert-smallmatrix)
               ("C-M-]" . TeX-insert-bmatrix)
               ("C-;" . TeX-complete-symbol))
-  :config
-  (progn  (defun TeX-matrix-spacer () (interactive) (insert " & ")) 
+  :init
+  (progn  (defun TeX-matrix-spacer () (interactive) (insert " & "))
           (defun TeX-insert-smallmatrix () (interactive)
             (insert "[\\begin{smallmatrix}  \\end{smallmatrix}]")
             (backward-char 19))
           (defun TeX-insert-bmatrix () (interactive)
             (insert "\\begin{bmatrix}  \\end{bmatrix}")
             (backward-char 14))
-          (setq 
+          (setq
            TeX-auto-save t
            TeX-parse-self t
            TeX-electric-escape nil
@@ -287,15 +287,23 @@ show verbose descriptions with hyperlinks."
          (cond ((equal system-type 'cygwin)
                 (setq TeX-view-program-list
                       '(("Sumatra PDF" ("\"/cygdrive/c/Program Files/SumatraPDF/SumatraPDF.exe\" -reuse-instance"
-                                        (mode-io-correlate " -forward-search %b %n ") " %o"))))))
-	 (setq TeX-view-program-selection
-          '(((output-dvi has-no-display-manager) "dvi2tty")
-           ((output-dvi style-pstricks) "dvips and gv")
-           (output-dvi "xdvi")
-           (output-pdf "Sumatra PDF")
-           (output-html "xdg-open")))
-	 (TeX-fold-mode 1))
-  )
+                                        (mode-io-correlate " -forward-search %b %n ") " %o"))))
+                
+                (setq TeX-view-program-selection
+                      '(((output-dvi has-no-display-manager) "dvi2tty")
+                        ((output-dvi style-pstricks) "dvips and gv")
+                        (output-dvi "xdvi")
+                        (output-pdf "Sumatra PDF")
+                        (output-html "xdg-open"))))
+               ((equal system-type 'gnu/linux)
+                (setq TeX-view-program-selection
+                      '(((output-dvi has-no-display-manager) "dvi2tty")
+                        ((output-dvi style-pstricks) "dvips and gv")
+                        (output-dvi "xdvi")
+                        (output-pdf "Zathura")
+                        (output-html "xdg-open"))))
+               )
+         (TeX-fold-mode 1)))
 
 ;; (setq-default TeX-master nil)
 (use-package cdlatex
@@ -384,14 +392,14 @@ show verbose descriptions with hyperlinks."
 ;; (require 'auto-complete-config nil t)
 ;; (setq ac-auto-show-menu t
 ;;       ac-auto-start t
-;;       ac-show-menu-immediately-on-auto-complete t) 
+;;       ac-show-menu-immediately-on-auto-complete t)
 
 ;;---------------------------------------------------------------------
 ;; PAREDIT-MODE
 ;;---------------------------------------------------------------------
 (use-package paredit
   :commands enable-paredit-mode
-  :hook ((emacs-lisp-mode 
+  :hook ((emacs-lisp-mode
           eval-expression-minibuffer-setup
           ielm-mode
           lisp-mode
@@ -411,21 +419,21 @@ show verbose descriptions with hyperlinks."
   )
 
 ;;----------------------------------------------------------------------
-;; MULTIPLE-CURSORS 
+;; MULTIPLE-CURSORS
 ;;----------------------------------------------------------------------
 ;;; ELPA package, run (package-initialize) first
 (require 'multiple-cursors nil t)
 (when (featurep 'multiple-cursors)
-  (add-to-list 'mc/cursor-specific-vars 'iy-go-to-char-start-pos)  
+  (add-to-list 'mc/cursor-specific-vars 'iy-go-to-char-start-pos)
   (global-set-key (kbd "C->") 'mc/mark-next-like-this)
   (global-set-key (kbd "C-<") 'mc/mark-previous-like-this)
-  (global-set-key (kbd "M-n") 'mc/mark-next-word-like-this) 
+  (global-set-key (kbd "M-n") 'mc/mark-next-word-like-this)
   (global-set-key (kbd "M-@") 'mc/mark-all-words-like-this)
   (global-set-key (kbd "C-@") 'mc/mark-all-like-this)
-  (global-set-key (kbd "M-p") 'mc/mark-previous-word-like-this) 
-  (global-set-key (kbd "<C-return>") 'set-rectangular-region-anchor) 
-  ;; (global-set-key (kbd "C-x C-a") 'mc/edit-beginnings-of-lines)     
-  ;; (global-set-key (kbd "C-x SPC") 'mc/mark-all-dwim)                
+  (global-set-key (kbd "M-p") 'mc/mark-previous-word-like-this)
+  (global-set-key (kbd "<C-return>") 'set-rectangular-region-anchor)
+  ;; (global-set-key (kbd "C-x C-a") 'mc/edit-beginnings-of-lines)
+  ;; (global-set-key (kbd "C-x SPC") 'mc/mark-all-dwim)
   (global-set-key (kbd "M-N") 'mc/insert-numbers)
   (global-set-key (kbd "M-S") 'mc/sort-regions))
 
@@ -473,7 +481,7 @@ show verbose descriptions with hyperlinks."
 ;; (define-key global-map (kbd "C-x SPC") 'ace-jump-mode-pop-mark)
 
 ;;----------------------------------------------------------------------
-;; IY-GO-TO-CHAR 
+;; IY-GO-TO-CHAR
 ;;----------------------------------------------------------------------
 (require 'iy-go-to-char nil t)
 (when (featurep 'iy-go-to-char)
@@ -491,8 +499,8 @@ show verbose descriptions with hyperlinks."
 ;;----------------------------------------------------------------------
 (require 'ido nil t)
 
-(when (featurep 'ido) 
-  
+(when (featurep 'ido)
+
   (ido-mode t)
   (setq ido-enable-flex-matching t) ;; enable fuzzy matching
   (ido-everywhere 1)
@@ -500,19 +508,19 @@ show verbose descriptions with hyperlinks."
   (ido-ubiquitous-mode 1)
   (require 'icomplete)
   (icomplete-mode 1)
-  
+
   (autoload 'idomenu "idomenu" nil t)
   (eval-after-load "idomenu"
     (global-set-key (kbd "M-.") 'imenu))
-  
+
   ;; Custom keybindings
   (defun ido-my-keys ()
-    (mapc (lambda (K) 
+    (mapc (lambda (K)
             (let* ((key (car K)) (fun (cdr K)))
               (define-key ido-completion-map (edmacro-parse-keys key) fun)))
           '(("C-n" . ido-next-match)
             ("C-p"  . ido-prev-match))))
-  
+
 
   ;; Enable ido-completion over TAGS
   (defun ido-find-file-in-tag-files ()
@@ -672,7 +680,7 @@ show verbose descriptions with hyperlinks."
       delete-old-versions t ; Automatically delete excess backups
       kept-new-versions 10 ; Newest versions to keep
       kept-old-versions 5 ; Old versions to keep
-) 
+)
 
 ;; Prevent Emacs from bugging me about C-x n n not being
 ;; user-friendly.
@@ -701,7 +709,7 @@ show verbose descriptions with hyperlinks."
 ;; (defun fullscreen ()
 ;;   (interactive)
 ;;   (set-frame-parameter nil 'fullscreen
-;;                        (if (frame-parameter nil 'fullscreen) 
+;;                        (if (frame-parameter nil 'fullscreen)
 ;;                            nil 'fullboth)))
 (global-set-key [f11] 'toggle-frame-fullscreen)
 
@@ -727,16 +735,16 @@ file corresponding to the current buffer file, then recompile the file."
 ;; Bind call last macro to F4
 (global-set-key (kbd "<f3>") 'kmacro-start-macro)
 (global-set-key (kbd "<f4>") 'kmacro-end-or-call-macro)
-          
+
 ;;######################################################################
 ;; COLORS & COLOR THEMES
 ;;######################################################################
 
 ;;; Load theme after the frame is created.
 (add-hook 'after-make-frame-functions
-          (lambda (frame) (load-theme 'gruvbox-dark-soft t)))
+          (lambda (frame) (load-theme 'gruvbox-light-hard t)))
 ;; Zenburn color theme
-;; (if (equal system-type 'gnu/linux) 
+;; (if (equal system-type 'gnu/linux)
 ;;     (progn (require 'zenburn)
 ;;             (color-theme-zenburn)))
 
@@ -765,20 +773,20 @@ must pass the correct minor/major mode symbol and a string you
 want to use in the modeline *in lieu of* the original.")
 
 
-(defun clean-mode-line ()
-  (interactive)
-  (loop for cleaner in mode-line-cleaner-alist
-        do (let* ((mode (car cleaner))
-                 (mode-str (cdr cleaner))
-                 (old-mode-str (cdr (assq mode minor-mode-alist))))
-             (when old-mode-str
-                 (setcar old-mode-str mode-str))
-               ;; major mode
-             (when (eq mode major-mode)
-               (setq mode-name mode-str)))))
+; (defun clean-mode-line ()
+;   (interactive)
+;   (loop for cleaner in mode-line-cleaner-alist
+;         do (let* ((mode (car cleaner))
+;                  (mode-str (cdr cleaner))
+;                  (old-mode-str (cdr (assq mode minor-mode-alist))))
+;              (when old-mode-str
+;                  (setcar old-mode-str mode-str))
+;                ;; major mode
+;              (when (eq mode major-mode)
+;                (setq mode-name mode-str)))))
 
 
-(add-hook 'after-change-major-mode-hook 'clean-mode-line)
+; (add-hook 'after-change-major-mode-hook 'clean-mode-line)
 
 (display-time-mode 0)
 
@@ -794,23 +802,57 @@ want to use in the modeline *in lieu of* the original.")
 ;;######################################################################
 (use-package evil
   :init
-  (evil-mode)
+  (setq evil-want-C-u-scroll t)
+  (evil-mode 1)
+  :bind (:map evil-motion-state-map
+              ("C-w C-h" . evil-window-left)
+              ("C-w C-l" . evil-window-right)
+              ("C-w C-k" . evil-window-up)
+              ("C-w C-j" . evil-window-down)))
+
+(use-package evil-leader
+  :commands global-evil-leader-mode
+  :init
+  (global-evil-leader-mode)
+  (evil-leader/set-leader "<SPC>")
+  (evil-leader/set-key-for-mode 'emacs-lisp-mode "B" 'byte-compile-file)
+  (evil-leader/set-key-for-mode 'latex-mode "c" 'TeX-command-master)
+  (evil-leader/set-key
+    "e" 'find-file
+    "f" 'fzf
+    "bd" (lambda () (interactive) (kill-buffer (current-buffer)))
+    "bn" (lambda (&optional arg)
+                  (interactive "P")
+                  (if arg (next-user-buffer) (previous-user-buffer)))
+    "bp" (lambda (&optional arg)
+                  (interactive "P")
+                  (if arg (previous-user-buffer) (next-user-buffer)))
+    "bb" 'ido-switch-buffer
+    "ww" 'save-buffer
+    "wq" (lambda () (interactive)
+           (save-buffer (current-buffer))
+           (kill-buffer (current-buffer)))
+
+    "j" 'ace-jump-mode
+    )
   )
+
 (use-package evil-surround
   :commands turn-on-evil-surround-mode
   :init
-  (turn-on-evil-surround-mode)
-  )
+  (turn-on-evil-surround-mode))
+
 (use-package evil-commentary
   :commands evil-commentary-mode
   :init
-  (evil-commentary-mode 1)
-  )
+  (evil-commentary-mode 1))
+
+;; (use-package evil-tabs
+;;   :commands global-evil-tabs-mode
+;;   :init
+;;   (global-evil-tabs-mode t))
 
 ;; (require 'evil)
 ;; (evil-mode 1)
 ;; (turn-on-evil-surround-mode)
 ;; (evil-commentary-mode 1)
-
-
-

@@ -23,7 +23,7 @@
  '(menu-bar-mode nil)
  '(package-selected-packages
    (quote
-    (evil-tabs evil-leader org-evil god-mode use-package fzf evil-surround gruvbox-theme ido-completing-read+ cdlatex evil-commentary evil-goggles evil-paredit evil-replace-with-register iy-go-to-char smex ido-grid-mode composable evil ace-jump-mode wolfram-mode auto-complete julia-repl julia-shell julia-mode matlab-mode auctex dash deferred request-deferred s dash-functional ein ein-mumamo color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet expand-region multiple-cursors)))
+    (evil-magit undo-tree evil-tabs evil-leader org-evil god-mode use-package fzf evil-surround gruvbox-theme ido-completing-read+ cdlatex evil-commentary evil-goggles evil-paredit evil-replace-with-register iy-go-to-char smex ido-grid-mode composable evil ace-jump-mode wolfram-mode auto-complete julia-repl julia-shell julia-mode matlab-mode auctex dash deferred request-deferred s dash-functional ein ein-mumamo color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet expand-region multiple-cursors)))
  '(pdf-view-midnight-colors (quote ("#DCDCCC" . "#383838")))
  '(rainbow-identifiers-choose-face-function (quote rainbow-identifiers-cie-l*a*b*-choose-face))
  '(rainbow-identifiers-cie-l*a*b*-color-count 1024)
@@ -87,6 +87,7 @@
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
 ;(add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/"))
 ;; (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
+(setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
 
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
@@ -495,6 +496,12 @@ show verbose descriptions with hyperlinks."
 (add-hook 'text-mode-hook 'wrap-region-mode)
 
 ;;----------------------------------------------------------------------
+;; FZF - Fast fuzzy find
+;;----------------------------------------------------------------------
+(use-package fzf
+  :ensure)
+
+;;----------------------------------------------------------------------
 ;; IDO-MODE.
 ;;----------------------------------------------------------------------
 (require 'ido nil t)
@@ -540,8 +547,12 @@ show verbose descriptions with hyperlinks."
 
   (require 'ido-other-window nil t))
 
-(when (commandp 'ido-grid-mode)
+(use-package ido-grid-mode
+  :ensure
+  :init
   (ido-grid-mode 1))
+;; (when (commandp 'ido-grid-mode)
+  ;; (ido-grid-mode 1))
 
 ;;  -x. Use with care!
 ;;; Smex
@@ -801,6 +812,7 @@ want to use in the modeline *in lieu of* the original.")
 ;; EVIL-MODE
 ;;######################################################################
 (use-package evil
+  :ensure
   :init
   (setq evil-want-C-u-scroll t)
   (evil-mode 1)
@@ -811,6 +823,7 @@ want to use in the modeline *in lieu of* the original.")
               ("C-w C-j" . evil-window-down)))
 
 (use-package evil-leader
+  :ensure
   :commands global-evil-leader-mode
   :init
   (global-evil-leader-mode)
@@ -838,11 +851,13 @@ want to use in the modeline *in lieu of* the original.")
   )
 
 (use-package evil-surround
+  :ensure
   :commands turn-on-evil-surround-mode
   :init
   (turn-on-evil-surround-mode))
 
 (use-package evil-commentary
+  :ensure
   :commands evil-commentary-mode
   :init
   (evil-commentary-mode 1))
@@ -856,3 +871,9 @@ want to use in the modeline *in lieu of* the original.")
 ;; (evil-mode 1)
 ;; (turn-on-evil-surround-mode)
 ;; (evil-commentary-mode 1)
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(default ((t (:family "FantasqueSansMono Nerd Font" :foundry "PfEd" :slant normal :weight normal :height 128 :width normal)))))

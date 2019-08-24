@@ -4,9 +4,6 @@
 
 ;; Collection of commands to make handling buffers less painful
 
-;; Iswitchb Mode; Superceded by ido-mode
-;; (iswitchb-mode 1)
-
 ;;----------------------------------------------------------------------
 ;; KEYBINDINGS
 ;;----------------------------------------------------------------------

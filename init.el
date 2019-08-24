@@ -3,7 +3,6 @@
                            ; singularity ;
 
 ; Karthik's .emacs file
-; 02 June 2019
 
 (setq user-full-name "Karthik C")
 ; (setq user-mail-address "karthik[AT]gmail.com")
@@ -13,24 +12,14 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(auto-save-interval 2400)
- '(auto-save-timeout 300)
- '(blink-cursor-mode nil)
  '(custom-safe-themes
    (quote
-    ("8e797edd9fa9afec181efbfeeebf96aeafbd11b69c4c85fa229bb5b9f7f7e66c" "2b9dc43b786e36f68a9fd4b36dd050509a0e32fe3b0a803310661edb7402b8b6" "b583823b9ee1573074e7cbfd63623fe844030d911e9279a7c8a5d16de7df0ed0" "585942bb24cab2d4b2f74977ac3ba6ddbd888e3776b9d2f993c5704aa8bb4739" "a22f40b63f9bc0a69ebc8ba4fbc6b452a4e3f84b80590ba0a92b4ff599e53ad0" "80ae3a89f1eca6fb94a525004f66b544e347c6f756aaafb728c7cdaef85ea1f5" "54f2d1fcc9bcadedd50398697618f7c34aceb9966a6cbaa99829eb64c0c1f3ca" "8f97d5ec8a774485296e366fdde6ff5589cf9e319a584b845b6f7fa788c9fa9a" default)))
+    ("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" "274fa62b00d732d093fc3f120aca1b31a6bb484492f31081c1814a858e25c72e" "8e797edd9fa9afec181efbfeeebf96aeafbd11b69c4c85fa229bb5b9f7f7e66c" "2b9dc43b786e36f68a9fd4b36dd050509a0e32fe3b0a803310661edb7402b8b6" "b583823b9ee1573074e7cbfd63623fe844030d911e9279a7c8a5d16de7df0ed0" "585942bb24cab2d4b2f74977ac3ba6ddbd888e3776b9d2f993c5704aa8bb4739" "a22f40b63f9bc0a69ebc8ba4fbc6b452a4e3f84b80590ba0a92b4ff599e53ad0" "80ae3a89f1eca6fb94a525004f66b544e347c6f756aaafb728c7cdaef85ea1f5" "54f2d1fcc9bcadedd50398697618f7c34aceb9966a6cbaa99829eb64c0c1f3ca" "8f97d5ec8a774485296e366fdde6ff5589cf9e319a584b845b6f7fa788c9fa9a" default)))
  '(fringe-mode (quote (nil . 0)) nil (fringe))
- '(menu-bar-mode nil)
  '(package-selected-packages
    (quote
-    (evil-magit undo-tree evil-tabs evil-leader org-evil god-mode use-package fzf evil-surround gruvbox-theme ido-completing-read+ cdlatex evil-commentary evil-goggles evil-paredit evil-replace-with-register iy-go-to-char smex ido-grid-mode composable evil ace-jump-mode wolfram-mode auto-complete julia-repl julia-shell julia-mode matlab-mode auctex dash deferred request-deferred s dash-functional ein ein-mumamo color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet expand-region multiple-cursors)))
+    (smart-mode-line rainbow-mode dracula-theme evil-magit undo-tree evil-tabs evil-leader org-evil god-mode use-package fzf evil-surround gruvbox-theme ido-completing-read+ cdlatex evil-commentary evil-goggles evil-paredit evil-replace-with-register iy-go-to-char smex ido-grid-mode composable evil ace-jump-mode wolfram-mode auto-complete julia-repl julia-shell julia-mode matlab-mode auctex dash deferred request-deferred s dash-functional ein ein-mumamo color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet expand-region multiple-cursors)))
  '(pdf-view-midnight-colors (quote ("#DCDCCC" . "#383838")))
- '(rainbow-identifiers-choose-face-function (quote rainbow-identifiers-cie-l*a*b*-choose-face))
- '(rainbow-identifiers-cie-l*a*b*-color-count 1024)
- '(rainbow-identifiers-cie-l*a*b*-lightness 80)
- '(rainbow-identifiers-cie-l*a*b*-saturation 25)
- '(scroll-bar-mode nil)
- '(show-paren-mode t)
  '(tex-dvi-view-command
    (quote
     (cond
@@ -40,13 +29,11 @@
      ((eq window-system
           (quote w32))
       "yap")
-     (t "dvi2tty * | cat -s"))))
- '(tool-bar-mode nil)
- '(tooltip-mode nil))
+     (t "dvi2tty * | cat -s")))))
 
 (cond ((equal system-type 'gnu/linux)
        (custom-set-faces
-          '(default ((t (:family "FantasqueSansMono Nerd Font" :foundry "PfEd" :slant normal :weight normal :height 128 :width normal))))))
+         '(default ((t (:family "Fantasque Sans Mono" :foundry "PfEd" :slant normal :weight normal :height 125 :width normal))))))
       ((equal system-type 'windows-nt)
        (custom-set-faces
         '(default ((t (:inherit nil :stipple nil :background "white" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 98 :width normal :foundry "outline" :family "Consolas"))))))
@@ -71,7 +58,10 @@
              "/cygdrive/c/Users/karth/OneDrive/Documents/")
             ((equal (system-name) "cube")
              "/cygdrive/c/Users/karth/OneDrive/Documents/")
+            ((equal (system-name) "thinkpad")
+             "~/Documents/")
             (t "~/")))
+
 ;; Adds ~/.emacs.d to the load-path
 (add-to-list 'load-path "~/.emacs.d/plugins/")
 (add-to-list 'load-path "~/.emacs.d/lisp/")
@@ -95,6 +85,7 @@
 
 (eval-when-compile
   (require 'use-package))
+(require 'bind-key)
 
 ;; (require 'diminish)
 ;; (require 'bind-key)
@@ -118,12 +109,17 @@
 ;; BUFFER MANAGEMENT
 ;;######################################################################
 (require 'better-buffers nil t)
+(winner-mode)
 
 ;;######################################################################
-;; UTILITY FUNCTIONS
+;; UTILITY
 ;;######################################################################
 ;; Count words, print ASCII table, etc
 (require 'utilities nil t)
+
+;; Colorize color names in buffers
+(use-package rainbow-mode
+  :config (rainbow-mode))
 
 ;;######################################################################
 ;; INTERFACING WITH THE OS
@@ -234,22 +230,22 @@ show verbose descriptions with hyperlinks."
 ;;----------------------------------------------------------------------
 ;; JULIA-MODE
 ;;----------------------------------------------------------------------
-(defun my-julia-mode-hooks ()
-  (require 'julia-shell-mode))
-(add-hook 'julia-mode-hook 'my-julia-mode-hooks)
+;; (defun my-julia-mode-hooks ()
+;;   (require 'julia-shell-mode))
+;; (add-hook 'julia-mode-hook 'my-julia-mode-hooks)
 ;; (define-key julia-mode-map (kbd "C-c C-c") 'julia-shell-run-region-or-line)
 ;; (define-key julia-mode-map (kbd "C-c C-s") 'julia-shell-save-and-go)
 
 ;;----------------------------------------------------------------------
 ;; LUA-MODE
 ;;----------------------------------------------------------------------
-(setq auto-mode-alist (cons '("\\.lua$" . lua-mode) auto-mode-alist))
-(autoload 'lua-mode "lua-mode" "Lua editing mode." t)
+;; (setq auto-mode-alist (cons '("\\.lua$" . lua-mode) auto-mode-alist))
+;; (autoload 'lua-mode "lua-mode" "Lua editing mode." t)
 
 ;;----------------------------------------------------------------------
 ;; SCHEME MODE
 ;;----------------------------------------------------------------------
-(require 'setup-scheme nil t)
+;; (require 'setup-scheme nil t)
 
 ;;----------------------------------------------------------------------
 ;; MATH-MODE
@@ -294,7 +290,7 @@ show verbose descriptions with hyperlinks."
                       '(((output-dvi has-no-display-manager) "dvi2tty")
                         ((output-dvi style-pstricks) "dvips and gv")
                         (output-dvi "xdvi")
-                        (output-pdf "Sumatra PDF")
+                        (output-pdf "pdf-tools")
                         (output-html "xdg-open"))))
                ((equal system-type 'gnu/linux)
                 (setq TeX-view-program-selection
@@ -406,6 +402,7 @@ show verbose descriptions with hyperlinks."
           lisp-mode
           lisp-interaction-mode
           scheme-mode) . enable-paredit-mode)
+
   ;; (autoload 'enable-paredit-mode "paredit"
   ;; "Turn on pseudo-structural editing of Lisp code." t)
   ;; :bind (:map paredit-mode-map
@@ -419,34 +416,35 @@ show verbose descriptions with hyperlinks."
   ;;             ("C-c r" . 'paredit-raise-sexp))
   )
 
+  (use-package evil-paredit
+    :init (add-hook 'emacs-lisp-mode-hook 'evil-paredit-mode))
 ;;----------------------------------------------------------------------
 ;; MULTIPLE-CURSORS
 ;;----------------------------------------------------------------------
 ;;; ELPA package, run (package-initialize) first
-(require 'multiple-cursors nil t)
-(when (featurep 'multiple-cursors)
-  (add-to-list 'mc/cursor-specific-vars 'iy-go-to-char-start-pos)
-  (global-set-key (kbd "C->") 'mc/mark-next-like-this)
-  (global-set-key (kbd "C-<") 'mc/mark-previous-like-this)
-  (global-set-key (kbd "M-n") 'mc/mark-next-word-like-this)
-  (global-set-key (kbd "M-@") 'mc/mark-all-words-like-this)
-  (global-set-key (kbd "C-@") 'mc/mark-all-like-this)
-  (global-set-key (kbd "M-p") 'mc/mark-previous-word-like-this)
-  (global-set-key (kbd "<C-return>") 'set-rectangular-region-anchor)
-  ;; (global-set-key (kbd "C-x C-a") 'mc/edit-beginnings-of-lines)
-  ;; (global-set-key (kbd "C-x SPC") 'mc/mark-all-dwim)
-  (global-set-key (kbd "M-N") 'mc/insert-numbers)
-  (global-set-key (kbd "M-S") 'mc/sort-regions))
+;; (require 'multiple-cursors nil t)
+;; (when (featurep 'multiple-cursors)
+;;   (add-to-list 'mc/cursor-specific-vars 'iy-go-to-char-start-pos)
+;;   (global-set-key (kbd "C->") 'mc/mark-next-like-this)
+;;   (global-set-key (kbd "C-<") 'mc/mark-previous-like-this)
+;;   (global-set-key (kbd "M-n") 'mc/mark-next-word-like-this)
+;;   (global-set-key (kbd "M-@") 'mc/mark-all-words-like-this)
+;;   (global-set-key (kbd "C-@") 'mc/mark-all-like-this)
+;;   (global-set-key (kbd "M-p") 'mc/mark-previous-word-like-this)
+;;   (global-set-key (kbd "<C-return>") 'set-rectangular-region-anchor)
+;;   ;; (global-set-key (kbd "C-x C-a") 'mc/edit-beginnings-of-lines)
+;;   ;; (global-set-key (kbd "C-x SPC") 'mc/mark-all-dwim)
+;;   (global-set-key (kbd "M-N") 'mc/insert-numbers)
+;;   (global-set-key (kbd "M-S") 'mc/sort-regions))
 
 ;;----------------------------------------------------------------------
 ;; EXPAND-REGION
 ;;----------------------------------------------------------------------
 ;;; ELPA package, run (package-initialize) first
 (use-package expand-region
+  :ensure
   :commands expand-region
-  :init
-  (progn (bind-key "C-=" 'er/expand-region)
-         (bind-key "C-," 'er/expand-region)))
+  :bind ("C-," . 'er/expand-region))
 
 ;; (require 'expand-region nil t)
 ;; (when (featurep 'expand-region)
@@ -462,9 +460,9 @@ show verbose descriptions with hyperlinks."
 ;;     "ace-jump-mode"
 ;;     "Emacs quick move minor mode" t)
 (use-package ace-jump-mode
+  :ensure t
   :commands ace-jump-mode
-  :init
-  (bind-key "M-j" 'ace-jump-mode))
+  :bind ("M-j" . 'ace-jump-mode))
 ;; (require 'ace-jump-mode nil t)
 ;; (when (featurep 'ace-jump-mode)
 ;;   (define-key global-map (kbd "M-m") 'ace-jump-mode)
@@ -647,7 +645,7 @@ show verbose descriptions with hyperlinks."
 ;; LONGLINES-MODE
 ;;----------------------------------------------------------------------
 ;; Set keyboard shortcut for turning on longlines-mode in text-mode.
-(define-key text-mode-map "\C-cL" 'longlines-mode)
+;; (define-key text-mode-map "\C-cL" 'longlines-mode)
 
 ;;----------------------------------------------------------------------
 ;; FLYSPELL-PROG-MODE
@@ -669,15 +667,18 @@ show verbose descriptions with hyperlinks."
 (setq inhibit-splash-screen t)
 ;; Make *scratch* buffer suitable for writing
 (setq initial-scratch-message nil)
+(setq auto-save-interval 2400)
+(setq auto-save-timeout 300)
 
 ;; Stop cursor from blinking
 (blink-cursor-mode 0)
 
-;; Turn off the menu and tool bars and the tooltip mode
-;; (menu-bar-mode 0)
-;; (tool-bar-mode 0)
-;; (tooltip-mode 0)
-
+;; Turn off the menu, tool bars, tooltips and the scroll bar
+(menu-bar-mode 0)
+(tool-bar-mode 0)
+(tooltip-mode 0)
+(scroll-bar-mode 0)
+(show-paren-mode 1)
 ;; Turn on image viewing
 (auto-image-file-mode t)
 
@@ -753,7 +754,9 @@ file corresponding to the current buffer file, then recompile the file."
 
 ;;; Load theme after the frame is created.
 (add-hook 'after-make-frame-functions
-          (lambda (frame) (load-theme 'gruvbox-light-hard t)))
+          (lambda (frame)
+            (load-theme 'gruvbox-dark-medium t)
+            (load-theme 'smart-mode-line-dark t)))
 ;; Zenburn color theme
 ;; (if (equal system-type 'gnu/linux)
 ;;     (progn (require 'zenburn)
@@ -762,6 +765,10 @@ file corresponding to the current buffer file, then recompile the file."
 ;;######################################################################
 ;; MODELINE:
 ;;######################################################################
+
+(use-package smart-mode-line
+  :ensure t
+  :init (sml/setup))
 
 (defvar mode-line-cleaner-alist
   `((auto-complete-mode . " α")
@@ -779,25 +786,25 @@ file corresponding to the current buffer file, then recompile the file."
     (scheme-mode . " SCM"))
   "Alist for `clean-mode-line'.
 
-When you add a new element to the alist, keep in mind that you
-must pass the correct minor/major mode symbol and a string you
-want to use in the modeline *in lieu of* the original.")
+;; When you add a new element to the alist, keep in mind that you
+;; must pass the correct minor/major mode symbol and a string you
+;; want to use in the modeline *in lieu of* the original.")
 
 
-; (defun clean-mode-line ()
-;   (interactive)
-;   (loop for cleaner in mode-line-cleaner-alist
-;         do (let* ((mode (car cleaner))
-;                  (mode-str (cdr cleaner))
-;                  (old-mode-str (cdr (assq mode minor-mode-alist))))
-;              (when old-mode-str
-;                  (setcar old-mode-str mode-str))
-;                ;; major mode
-;              (when (eq mode major-mode)
-;                (setq mode-name mode-str)))))
+(defun clean-mode-line ()
+  (interactive)
+  (loop for cleaner in mode-line-cleaner-alist
+        do (let* ((mode (car cleaner))
+                 (mode-str (cdr cleaner))
+                 (old-mode-str (cdr (assq mode minor-mode-alist))))
+             (when old-mode-str
+                 (setcar old-mode-str mode-str))
+               ;; major mode
+             (when (eq mode major-mode)
+               (setq mode-name mode-str)))))
 
 
-; (add-hook 'after-change-major-mode-hook 'clean-mode-line)
+(add-hook 'after-change-major-mode-hook 'clean-mode-line)
 
 (display-time-mode 0)
 
@@ -811,50 +818,75 @@ want to use in the modeline *in lieu of* the original.")
 ;;######################################################################
 ;; EVIL-MODE
 ;;######################################################################
-(use-package evil
+(use-package evil-leader
   :ensure
+  :commands global-evil-leader-mode
+  :init
+  (global-evil-leader-mode 1)
+  (evil-leader/set-leader "<SPC>")
+  (evil-leader/set-key-for-mode 'emacs-lisp-mode "B" 'byte-compile-file)
+  (evil-leader/set-key-for-mode 'latex-mode "cc" 'TeX-command-master)
+  (evil-leader/set-key
+    "e" 'find-file
+    "f" 'fzf
+    "F" 'fzf-directory
+    "b" 'ido-switch-buffer
+    "w" 'save-buffer
+    "q" 'evil-quit
+    "j" 'ace-jump-mode
+
+    "k" (lambda () (interactive) (kill-buffer (current-buffer)))
+    "n" (lambda (&optional arg)
+                  (interactive "P")
+                  (if arg (next-user-buffer) (previous-user-buffer)))
+    "p" (lambda (&optional arg)
+                  (interactive "P")
+                  (if arg (previous-user-buffer) (next-user-buffer)))
+    "B" (lambda ()
+          (interactive)
+          (find-file-other-window (getenv "BIB")))
+    "," 'er/expand-region
+    "cn" 'next-error
+    "cp" 'previous-error
+    "vf" 'ido-find-file-other-window
+    "vb" 'ido-switch-buffer-other-window))
+
+(use-package evil
+  :ensure t
   :init
   (setq evil-want-C-u-scroll t)
+  (setq evil-emacs-state-cursor '(hbar . 4))
+  (setq evil-vsplit-window-right t)
+  (add-hook 'evil-jumps-post-jump-hook #'recenter)
   (evil-mode 1)
   :bind (:map evil-motion-state-map
               ("C-w C-h" . evil-window-left)
               ("C-w C-l" . evil-window-right)
               ("C-w C-k" . evil-window-up)
-              ("C-w C-j" . evil-window-down)))
-
-(use-package evil-leader
-  :ensure
-  :commands global-evil-leader-mode
-  :init
-  (global-evil-leader-mode)
-  (evil-leader/set-leader "<SPC>")
-  (evil-leader/set-key-for-mode 'emacs-lisp-mode "B" 'byte-compile-file)
-  (evil-leader/set-key-for-mode 'latex-mode "c" 'TeX-command-master)
-  (evil-leader/set-key
-    "e" 'find-file
-    "f" 'fzf
-    "bd" (lambda () (interactive) (kill-buffer (current-buffer)))
-    "bn" (lambda (&optional arg)
-                  (interactive "P")
-                  (if arg (next-user-buffer) (previous-user-buffer)))
-    "bp" (lambda (&optional arg)
-                  (interactive "P")
-                  (if arg (previous-user-buffer) (next-user-buffer)))
-    "bb" 'ido-switch-buffer
-    "ww" 'save-buffer
-    "wq" (lambda () (interactive)
-           (save-buffer (current-buffer))
-           (kill-buffer (current-buffer)))
-
-    "j" 'ace-jump-mode
-    )
-  )
+              ("C-w C-j" . evil-window-down)
+              ("C-w C-f" . winner-redo)
+              ("C-w C-b" . winner-undo)
+              ("C-w C-w" . winner-undo)
+         :map evil-normal-state-map
+              ("[o" . open-previous-line)
+              ("]o" . open-next-line))
+  :config
+  (defvar dotemacs--original-mode-line-bg (face-background 'mode-line))
+  (defadvice evil-set-cursor-color (after dotemacs activate)
+    (cond ((evil-emacs-state-p)
+           (set-face-background 'mode-line "#440000"))
+          ;; ((evil-insert-state-p)
+          ;;  (set-face-background 'mode-line "#002244"))
+          ;; ((evil-visual-state-p)
+          ;;  (set-face-background 'mode-line "#440044"))
+          (t
+           (set-face-background 'mode-line dotemacs--original-mode-line-bg)))))
 
 (use-package evil-surround
   :ensure
   :commands turn-on-evil-surround-mode
   :init
-  (turn-on-evil-surround-mode))
+  (global-evil-surround-mode 1))
 
 (use-package evil-commentary
   :ensure
@@ -871,9 +903,6 @@ want to use in the modeline *in lieu of* the original.")
 ;; (evil-mode 1)
 ;; (turn-on-evil-surround-mode)
 ;; (evil-commentary-mode 1)
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(default ((t (:family "FantasqueSansMono Nerd Font" :foundry "PfEd" :slant normal :weight normal :height 128 :width normal)))))
+
+
+

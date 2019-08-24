@@ -26,6 +26,7 @@
           (goto-char beg)
           (insert begin-char)
           (goto-char end)
+          (forward-char 1)
           (insert end-char))
         (message (format "%s %s" beg end)))
     (insert begin-char)))

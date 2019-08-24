@@ -14,7 +14,17 @@
  ;; If there is more than one, they won't work right.
  '(custom-safe-themes
    (quote
-    ("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" "274fa62b00d732d093fc3f120aca1b31a6bb484492f31081c1814a858e25c72e" "8e797edd9fa9afec181efbfeeebf96aeafbd11b69c4c85fa229bb5b9f7f7e66c" "2b9dc43b786e36f68a9fd4b36dd050509a0e32fe3b0a803310661edb7402b8b6" "b583823b9ee1573074e7cbfd63623fe844030d911e9279a7c8a5d16de7df0ed0" "585942bb24cab2d4b2f74977ac3ba6ddbd888e3776b9d2f993c5704aa8bb4739" "a22f40b63f9bc0a69ebc8ba4fbc6b452a4e3f84b80590ba0a92b4ff599e53ad0" "80ae3a89f1eca6fb94a525004f66b544e347c6f756aaafb728c7cdaef85ea1f5" "54f2d1fcc9bcadedd50398697618f7c34aceb9966a6cbaa99829eb64c0c1f3ca" "8f97d5ec8a774485296e366fdde6ff5589cf9e319a584b845b6f7fa788c9fa9a" default)))
+    ("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa"
+     "274fa62b00d732d093fc3f120aca1b31a6bb484492f31081c1814a858e25c72e"
+     "8e797edd9fa9afec181efbfeeebf96aeafbd11b69c4c85fa229bb5b9f7f7e66c"
+     "2b9dc43b786e36f68a9fd4b36dd050509a0e32fe3b0a803310661edb7402b8b6"
+     "b583823b9ee1573074e7cbfd63623fe844030d911e9279a7c8a5d16de7df0ed0"
+     "585942bb24cab2d4b2f74977ac3ba6ddbd888e3776b9d2f993c5704aa8bb4739"
+     "a22f40b63f9bc0a69ebc8ba4fbc6b452a4e3f84b80590ba0a92b4ff599e53ad0"
+     "80ae3a89f1eca6fb94a525004f66b544e347c6f756aaafb728c7cdaef85ea1f5"
+     "54f2d1fcc9bcadedd50398697618f7c34aceb9966a6cbaa99829eb64c0c1f3ca"
+     "8f97d5ec8a774485296e366fdde6ff5589cf9e319a584b845b6f7fa788c9fa9a"
+     default)))
  '(fringe-mode (quote (nil . 0)) nil (fringe))
  '(package-selected-packages
    (quote
@@ -70,9 +80,6 @@
 ;; PACKAGE MANAGEMENT
 ;;######################################################################
 ;;; Set load paths for ELPA packages
-;; (require 'cl-lib)
-;; (require 'package)
-;;(setq package-enable-at-startup nil)
 (package-initialize)
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
 ;(add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/"))
@@ -86,19 +93,6 @@
 (eval-when-compile
   (require 'use-package))
 (require 'bind-key)
-
-;; (require 'diminish)
-;; (require 'bind-key)
-;; (package-initialize)
-
-;; (when (featurep 'package)
-;;   (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t))
-
-;;######################################################################
-;; PERSONAL
-;;######################################################################
-;;; My account data for Weblogger, Jabber & other services
-(require 'personal nil t)
 
 ;;######################################################################
 ;; EDITING
@@ -116,7 +110,6 @@
 ;;######################################################################
 ;; Count words, print ASCII table, etc
 (require 'utilities nil t)
-
 ;; Colorize color names in buffers
 (use-package rainbow-mode
   :config (rainbow-mode))
@@ -205,54 +198,9 @@ show verbose descriptions with hyperlinks."
                 (run-at-time 1.0 nil 'bury-buffer buf))
               (message "NO COMPILATION ERRORS!"))))
 
-;; (defun bury-compile-buffer-if-successful (buffer string)
-;;  "Bury a compilation buffer if succeeded without warnings "
-;;  (when (and
-;;          (buffer-live-p buffer)
-;;          (string-match "*Compile-Log*" (buffer-name buffer))
-;;          (string-match "finished" string)
-;;          ;; (not
-;;          ;;  (with-current-buffer buffer
-;;          ;;    (goto-char (point-min))
-;;          ;;    (search-forward "warning" nil t)))
-;;          )
-;;     (run-with-timer 1 nil
-;;                     (lambda (buf)
-;;                       (bury-buffer buf)
-;;                       (switch-to-prev-buffer (get-buffer-window buf) 'kill))
-;;                     buffer)))
-;; (add-hook 'compilation-finish-functions 'bury-compile-buffer-if-successful)
-
 ;;######################################################################
 ;; LANGUAGE MODES
 ;;######################################################################
-
-;;----------------------------------------------------------------------
-;; JULIA-MODE
-;;----------------------------------------------------------------------
-;; (defun my-julia-mode-hooks ()
-;;   (require 'julia-shell-mode))
-;; (add-hook 'julia-mode-hook 'my-julia-mode-hooks)
-;; (define-key julia-mode-map (kbd "C-c C-c") 'julia-shell-run-region-or-line)
-;; (define-key julia-mode-map (kbd "C-c C-s") 'julia-shell-save-and-go)
-
-;;----------------------------------------------------------------------
-;; LUA-MODE
-;;----------------------------------------------------------------------
-;; (setq auto-mode-alist (cons '("\\.lua$" . lua-mode) auto-mode-alist))
-;; (autoload 'lua-mode "lua-mode" "Lua editing mode." t)
-
-;;----------------------------------------------------------------------
-;; SCHEME MODE
-;;----------------------------------------------------------------------
-;; (require 'setup-scheme nil t)
-
-;;----------------------------------------------------------------------
-;; MATH-MODE
-;;----------------------------------------------------------------------
-;; Major mode for running Mathematica in Emacs
-;; (eval-after-load 'math
-;;  '(define-key math-mode-map (kbd "<tab>") 'math-complete-symbol))
 
 ;;----------------------------------------------------------------------
 ;; AUCTEX-MODE & ADDITIONS
@@ -335,9 +283,6 @@ show verbose descriptions with hyperlinks."
     (setq cdlatex-paired-parens "$[{("))
   :hook (LaTeX-mode . turn-on-cdlatex))
 
-;; (autoload 'cdlatex-mode "cdlatex" "CDLaTeX Mode" t)
-;; (autoload 'turn-on-cdlatex "cdlatex" "CDLaTeX Mode" nil)
-
 ;;######################################################################
 ;; PLUGINS
 ;;######################################################################
@@ -386,11 +331,6 @@ show verbose descriptions with hyperlinks."
     (ac-config-default)
     (global-auto-complete-mode 1)))
 
-;; (require 'auto-complete-config nil t)
-;; (setq ac-auto-show-menu t
-;;       ac-auto-start t
-;;       ac-show-menu-immediately-on-auto-complete t)
-
 ;;---------------------------------------------------------------------
 ;; PAREDIT-MODE
 ;;---------------------------------------------------------------------
@@ -418,24 +358,6 @@ show verbose descriptions with hyperlinks."
 
   (use-package evil-paredit
     :init (add-hook 'emacs-lisp-mode-hook 'evil-paredit-mode))
-;;----------------------------------------------------------------------
-;; MULTIPLE-CURSORS
-;;----------------------------------------------------------------------
-;;; ELPA package, run (package-initialize) first
-;; (require 'multiple-cursors nil t)
-;; (when (featurep 'multiple-cursors)
-;;   (add-to-list 'mc/cursor-specific-vars 'iy-go-to-char-start-pos)
-;;   (global-set-key (kbd "C->") 'mc/mark-next-like-this)
-;;   (global-set-key (kbd "C-<") 'mc/mark-previous-like-this)
-;;   (global-set-key (kbd "M-n") 'mc/mark-next-word-like-this)
-;;   (global-set-key (kbd "M-@") 'mc/mark-all-words-like-this)
-;;   (global-set-key (kbd "C-@") 'mc/mark-all-like-this)
-;;   (global-set-key (kbd "M-p") 'mc/mark-previous-word-like-this)
-;;   (global-set-key (kbd "<C-return>") 'set-rectangular-region-anchor)
-;;   ;; (global-set-key (kbd "C-x C-a") 'mc/edit-beginnings-of-lines)
-;;   ;; (global-set-key (kbd "C-x SPC") 'mc/mark-all-dwim)
-;;   (global-set-key (kbd "M-N") 'mc/insert-numbers)
-;;   (global-set-key (kbd "M-S") 'mc/sort-regions))
 
 ;;----------------------------------------------------------------------
 ;; EXPAND-REGION
@@ -446,38 +368,14 @@ show verbose descriptions with hyperlinks."
   :commands expand-region
   :bind ("C-," . 'er/expand-region))
 
-;; (require 'expand-region nil t)
-;; (when (featurep 'expand-region)
-;;   (global-set-key (kbd "C-=") 'er/expand-region)
-;;   (global-set-key (kbd "C-,") 'er/expand-region))
-
 ;;----------------------------------------------------------------------
 ;; ACE-JUMP-MODE
 ;;----------------------------------------------------------------------
-;; Ace jump mode major function
-;; (autoload
-;;     'ace-jump-mode
-;;     "ace-jump-mode"
-;;     "Emacs quick move minor mode" t)
+
 (use-package ace-jump-mode
   :ensure t
   :commands ace-jump-mode
   :bind ("M-j" . 'ace-jump-mode))
-;; (require 'ace-jump-mode nil t)
-;; (when (featurep 'ace-jump-mode)
-;;   (define-key global-map (kbd "M-m") 'ace-jump-mode)
-;;   (define-key global-map (kbd "C-'") 'ace-jump-mode))
-
-;; Enable a more powerful jump back function from ace jump mode
-;;
-;; (autoload
-;;   'ace-jump-mode-pop-mark
-;;   "ace-jump-mode"
-;;   "Ace jump back:-)"
-;;   t)
-;; (eval-after-load "ace-jump-mode"
-;;   '(ace-jump-mode-enable-mark-sync))
-;; (define-key global-map (kbd "C-x SPC") 'ace-jump-mode-pop-mark)
 
 ;;----------------------------------------------------------------------
 ;; IY-GO-TO-CHAR
@@ -549,35 +447,10 @@ show verbose descriptions with hyperlinks."
   :ensure
   :init
   (ido-grid-mode 1))
-;; (when (commandp 'ido-grid-mode)
-  ;; (ido-grid-mode 1))
 
-;;  -x. Use with care!
-;;; Smex
-;;(require 'smex nil t)
 (smex-initialize)
 (global-set-key (kbd "M-x") 'smex)
 (global-set-key (kbd "M-S-x") 'smex-major-mode-commands)
-
-;; (global-set-key
-;;     "\M-x"
-;;     (lambda ()
-;;       (interactive)
-;;       (call-interactively
-;;        (intern
-;;         (ido-completing-read
-;;          "M-x "
-;;          (all-completions "" obarray 'commandp))))))
-
-;;----------------------------------------------------------------------
-;; AUTOPAIR and WRAP-REGION
-;;----------------------------------------------------------------------
-;; Better paren handling:
-;; (require 'autopair)
-;; (autopair-global-mode)
-
-;; (require 'wrap-region)
-;; (wrap-region-global-mode t)
 
 ;;----------------------------------------------------------------------
 ;; TRAMP
@@ -592,44 +465,11 @@ show verbose descriptions with hyperlinks."
 (require 'setup-dired nil t)
 
 ;;----------------------------------------------------------------------
-;; BOOKMARKS
-;;----------------------------------------------------------------------
-;; Bookmark+ mode
-;;(require 'bookmark+)
-(defalias 'bs 'bookmark-set)
-(defalias 'bl 'bookmark-bmenu-list)
-;; Enable bookmarks in file completion
-;; (defun bookmark-to-abbrevs ()
-;;   "Create abbrevs based on `bookmark-alist'."
-;;   (dolist (bookmark bookmark-alist)
-;;     (let* ((name (car bookmark))
-;;            (file (bookmark-get-filename name)))
-;;       (define-abbrev global-abbrev-table name file))))
-
-;; ;; Jump recently selected bookmarks to the top
-;; (defadvice bookmark-jump (after bookmark-jump activate)
-;;   (let ((latest (bookmark-get-bookmark bookmark)))
-;;     (setq bookmark-alist (delq latest bookmark-alist))
-;;     (add-to-list 'bookmark-alist latest)))
-
-;; (bookmark-to-abbrevs)
-
-;;----------------------------------------------------------------------
-;; ARTIST-MODE
-;;----------------------------------------------------------------------
-;; Artist mode for drawing ASCII art!
-;; (autoload 'artist-mode "artist" "Enter artist-mode" t)
-
-;;----------------------------------------------------------------------
 ;; ORG-MODE
 ;;----------------------------------------------------------------------
 ;;;; Org mode
 ;; org-init.el is loaded from the "lisp" directory.
 (require 'setup-org nil t)
-;; Keybindings for org-mode and org-remember
-;; (when (featurep 'org-init)
-;;   (global-set-key "\C-cr" 'remember)
-;;   (global-set-key "\C-\M-r" 'org-remember))
 
 ;;----------------------------------------------------------------------
 ;; DOT-MODE
@@ -640,24 +480,6 @@ show verbose descriptions with hyperlinks."
   (add-hook 'find-file-hooks 'dot-mode-on)
   (global-set-key [(control ?.)] (lambda () (interactive) (dot-mode 1)
                                    (message "Dot mode activated."))))
-
-;;----------------------------------------------------------------------
-;; LONGLINES-MODE
-;;----------------------------------------------------------------------
-;; Set keyboard shortcut for turning on longlines-mode in text-mode.
-;; (define-key text-mode-map "\C-cL" 'longlines-mode)
-
-;;----------------------------------------------------------------------
-;; FLYSPELL-PROG-MODE
-;;----------------------------------------------------------------------
-;; enable flyspell-prog-mode for all cc-modes, cperl and python mode
-;; (dolist (hook '(c-mode-common-hook
-;;                 cperl-mode-hook
-;;                 html-mode-hook
-;;                 css-mode-hook
-;;                 lisp-mode-hook))
-;;   (add-hook hook (lambda ()
-;;                    (flyspell-prog-mode))))
 
 ;;######################################################################
 ;; MISCELLANEOUS PREFERENCES
@@ -711,18 +533,10 @@ show verbose descriptions with hyperlinks."
 ;; yank
 (delete-selection-mode)
 
-; let there be a marker on every empty line on the left fringe
-;;(setq default-indicate-empty-lines nil)
-
 ; show the matching parentheses immediately
 (setq show-paren-delay 0)
 
 ;; FULLSCREEN
-;; (defun fullscreen ()
-;;   (interactive)
-;;   (set-frame-parameter nil 'fullscreen
-;;                        (if (frame-parameter nil 'fullscreen)
-;;                            nil 'fullboth)))
 (global-set-key [f11] 'toggle-frame-fullscreen)
 
 ;; WINDOW SPLITTING
@@ -757,10 +571,6 @@ file corresponding to the current buffer file, then recompile the file."
           (lambda (frame)
             (load-theme 'gruvbox-dark-medium t)
             (load-theme 'smart-mode-line-dark t)))
-;; Zenburn color theme
-;; (if (equal system-type 'gnu/linux)
-;;     (progn (require 'zenburn)
-;;             (color-theme-zenburn)))
 
 ;;######################################################################
 ;; MODELINE:
@@ -893,16 +703,3 @@ file corresponding to the current buffer file, then recompile the file."
   :commands evil-commentary-mode
   :init
   (evil-commentary-mode 1))
-
-;; (use-package evil-tabs
-;;   :commands global-evil-tabs-mode
-;;   :init
-;;   (global-evil-tabs-mode t))
-
-;; (require 'evil)
-;; (evil-mode 1)
-;; (turn-on-evil-surround-mode)
-;; (evil-commentary-mode 1)
-
-
-

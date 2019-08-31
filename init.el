@@ -29,18 +29,11 @@
  '(package-selected-packages
    (quote
     (smart-mode-line rainbow-mode dracula-theme evil-magit undo-tree evil-tabs evil-leader org-evil god-mode use-package fzf evil-surround gruvbox-theme ido-completing-read+ cdlatex evil-commentary evil-goggles evil-paredit evil-replace-with-register iy-go-to-char smex ido-grid-mode composable evil ace-jump-mode wolfram-mode auto-complete julia-repl julia-shell julia-mode matlab-mode auctex dash deferred request-deferred s dash-functional ein ein-mumamo color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet expand-region multiple-cursors)))
- '(pdf-view-midnight-colors (quote ("#DCDCCC" . "#383838")))
- '(tex-dvi-view-command
-   (quote
-    (cond
-     ((eq window-system
-          (quote x))
-      "evince")
-     ((eq window-system
-          (quote w32))
-      "yap")
-     (t "dvi2tty * | cat -s")))))
+ '(pdf-view-midnight-colors (quote ("#DCDCCC" . "#383838"))))
 
+;;######################################################################
+;; FONTS
+;;######################################################################
 (cond ((equal system-type 'gnu/linux)
        (custom-set-faces
          '(default ((t (:family "Fantasque Sans Mono" :foundry "PfEd" :slant normal :weight normal :height 125 :width normal))))))
@@ -61,7 +54,6 @@
 ;;######################################################################
 ;; PATHS
 ;;######################################################################
-
 ;; Set directory
 (setq default-directory
       (cond ((equal (system-name) "surface")
@@ -69,7 +61,7 @@
             ((equal (system-name) "cube")
              "/cygdrive/c/Users/karth/OneDrive/Documents/")
             ((equal (system-name) "thinkpad")
-             "~/Documents/")
+             "~/Documents/research/")
             (t "~/")))
 
 ;; Adds ~/.emacs.d to the load-path
@@ -362,7 +354,6 @@ show verbose descriptions with hyperlinks."
 ;;----------------------------------------------------------------------
 ;; EXPAND-REGION
 ;;----------------------------------------------------------------------
-;;; ELPA package, run (package-initialize) first
 (use-package expand-region
   :ensure
   :commands expand-region
@@ -371,7 +362,6 @@ show verbose descriptions with hyperlinks."
 ;;----------------------------------------------------------------------
 ;; ACE-JUMP-MODE
 ;;----------------------------------------------------------------------
-
 (use-package ace-jump-mode
   :ensure t
   :commands ace-jump-mode

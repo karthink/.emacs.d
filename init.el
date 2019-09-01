@@ -14,21 +14,11 @@
  ;; If there is more than one, they won't work right.
  '(custom-safe-themes
    (quote
-    ("3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa"
-     "274fa62b00d732d093fc3f120aca1b31a6bb484492f31081c1814a858e25c72e"
-     "8e797edd9fa9afec181efbfeeebf96aeafbd11b69c4c85fa229bb5b9f7f7e66c"
-     "2b9dc43b786e36f68a9fd4b36dd050509a0e32fe3b0a803310661edb7402b8b6"
-     "b583823b9ee1573074e7cbfd63623fe844030d911e9279a7c8a5d16de7df0ed0"
-     "585942bb24cab2d4b2f74977ac3ba6ddbd888e3776b9d2f993c5704aa8bb4739"
-     "a22f40b63f9bc0a69ebc8ba4fbc6b452a4e3f84b80590ba0a92b4ff599e53ad0"
-     "80ae3a89f1eca6fb94a525004f66b544e347c6f756aaafb728c7cdaef85ea1f5"
-     "54f2d1fcc9bcadedd50398697618f7c34aceb9966a6cbaa99829eb64c0c1f3ca"
-     "8f97d5ec8a774485296e366fdde6ff5589cf9e319a584b845b6f7fa788c9fa9a"
-     default)))
+    ("c74e83f8aa4c78a121b52146eadb792c9facc5b1f02c917e3dbb454fca931223" "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" "274fa62b00d732d093fc3f120aca1b31a6bb484492f31081c1814a858e25c72e" "8e797edd9fa9afec181efbfeeebf96aeafbd11b69c4c85fa229bb5b9f7f7e66c" "2b9dc43b786e36f68a9fd4b36dd050509a0e32fe3b0a803310661edb7402b8b6" "b583823b9ee1573074e7cbfd63623fe844030d911e9279a7c8a5d16de7df0ed0" "585942bb24cab2d4b2f74977ac3ba6ddbd888e3776b9d2f993c5704aa8bb4739" "a22f40b63f9bc0a69ebc8ba4fbc6b452a4e3f84b80590ba0a92b4ff599e53ad0" "80ae3a89f1eca6fb94a525004f66b544e347c6f756aaafb728c7cdaef85ea1f5" "54f2d1fcc9bcadedd50398697618f7c34aceb9966a6cbaa99829eb64c0c1f3ca" "8f97d5ec8a774485296e366fdde6ff5589cf9e319a584b845b6f7fa788c9fa9a" default)))
  '(fringe-mode (quote (nil . 0)) nil (fringe))
  '(package-selected-packages
    (quote
-    (smart-mode-line rainbow-mode dracula-theme evil-magit undo-tree evil-tabs evil-leader org-evil god-mode use-package fzf evil-surround gruvbox-theme ido-completing-read+ cdlatex evil-commentary evil-goggles evil-paredit evil-replace-with-register iy-go-to-char smex ido-grid-mode composable evil ace-jump-mode wolfram-mode auto-complete julia-repl julia-shell julia-mode matlab-mode auctex dash deferred request-deferred s dash-functional ein ein-mumamo color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet expand-region multiple-cursors)))
+    (org-bullets smart-mode-line rainbow-mode dracula-theme evil-magit undo-tree evil-tabs evil-leader org-evil god-mode use-package fzf evil-surround gruvbox-theme ido-completing-read+ cdlatex evil-commentary evil-goggles evil-paredit evil-replace-with-register iy-go-to-char smex ido-grid-mode composable evil ace-jump-mode wolfram-mode auto-complete julia-repl julia-shell julia-mode matlab-mode auctex dash deferred request-deferred s dash-functional ein ein-mumamo color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet expand-region multiple-cursors)))
  '(pdf-view-midnight-colors (quote ("#DCDCCC" . "#383838"))))
 
 ;;######################################################################
@@ -225,7 +215,7 @@ show verbose descriptions with hyperlinks."
                 (setq TeX-view-program-list
                       '(("Sumatra PDF" ("\"/cygdrive/c/Program Files/SumatraPDF/SumatraPDF.exe\" -reuse-instance"
                                         (mode-io-correlate " -forward-search %b %n ") " %o"))))
-                
+
                 (setq TeX-view-program-selection
                       '(((output-dvi has-no-display-manager) "dvi2tty")
                         ((output-dvi style-pstricks) "dvips and gv")
@@ -460,6 +450,9 @@ show verbose descriptions with hyperlinks."
 ;;;; Org mode
 ;; org-init.el is loaded from the "lisp" directory.
 (require 'setup-org nil t)
+(use-package org-bullets
+  :ensure t
+  :hook (org-mode . org-bullets-mode))
 
 ;;----------------------------------------------------------------------
 ;; DOT-MODE

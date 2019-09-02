@@ -14,11 +14,22 @@
  ;; If there is more than one, they won't work right.
  '(custom-safe-themes
    (quote
-    ("c74e83f8aa4c78a121b52146eadb792c9facc5b1f02c917e3dbb454fca931223" "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" "274fa62b00d732d093fc3f120aca1b31a6bb484492f31081c1814a858e25c72e" "8e797edd9fa9afec181efbfeeebf96aeafbd11b69c4c85fa229bb5b9f7f7e66c" "2b9dc43b786e36f68a9fd4b36dd050509a0e32fe3b0a803310661edb7402b8b6" "b583823b9ee1573074e7cbfd63623fe844030d911e9279a7c8a5d16de7df0ed0" "585942bb24cab2d4b2f74977ac3ba6ddbd888e3776b9d2f993c5704aa8bb4739" "a22f40b63f9bc0a69ebc8ba4fbc6b452a4e3f84b80590ba0a92b4ff599e53ad0" "80ae3a89f1eca6fb94a525004f66b544e347c6f756aaafb728c7cdaef85ea1f5" "54f2d1fcc9bcadedd50398697618f7c34aceb9966a6cbaa99829eb64c0c1f3ca" "8f97d5ec8a774485296e366fdde6ff5589cf9e319a584b845b6f7fa788c9fa9a" default)))
+    ("c74e83f8aa4c78a121b52146eadb792c9facc5b1f02c917e3dbb454fca931223"
+     "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa"
+     "274fa62b00d732d093fc3f120aca1b31a6bb484492f31081c1814a858e25c72e"
+     "8e797edd9fa9afec181efbfeeebf96aeafbd11b69c4c85fa229bb5b9f7f7e66c"
+     "2b9dc43b786e36f68a9fd4b36dd050509a0e32fe3b0a803310661edb7402b8b6"
+     "b583823b9ee1573074e7cbfd63623fe844030d911e9279a7c8a5d16de7df0ed0"
+     "585942bb24cab2d4b2f74977ac3ba6ddbd888e3776b9d2f993c5704aa8bb4739"
+     "a22f40b63f9bc0a69ebc8ba4fbc6b452a4e3f84b80590ba0a92b4ff599e53ad0"
+     "80ae3a89f1eca6fb94a525004f66b544e347c6f756aaafb728c7cdaef85ea1f5"
+     "54f2d1fcc9bcadedd50398697618f7c34aceb9966a6cbaa99829eb64c0c1f3ca"
+     "8f97d5ec8a774485296e366fdde6ff5589cf9e319a584b845b6f7fa788c9fa9a"
+     default)))
  '(fringe-mode (quote (nil . 0)) nil (fringe))
  '(package-selected-packages
    (quote
-    (org-bullets smart-mode-line rainbow-mode dracula-theme evil-magit undo-tree evil-tabs evil-leader org-evil god-mode use-package fzf evil-surround gruvbox-theme ido-completing-read+ cdlatex evil-commentary evil-goggles evil-paredit evil-replace-with-register iy-go-to-char smex ido-grid-mode composable evil ace-jump-mode wolfram-mode auto-complete julia-repl julia-shell julia-mode matlab-mode auctex dash deferred request-deferred s dash-functional ein ein-mumamo color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet expand-region multiple-cursors)))
+    (evil-exchange evil-lion evil-matchit evil-numbers evil-rsi evil-snipe evil-space evil-visualstar org-bullets smart-mode-line rainbow-mode dracula-theme evil-magit undo-tree evil-tabs evil-leader org-evil god-mode use-package fzf evil-surround gruvbox-theme ido-completing-read+ cdlatex evil-commentary evil-goggles evil-paredit evil-replace-with-register iy-go-to-char smex ido-grid-mode composable evil ace-jump-mode wolfram-mode auto-complete julia-repl julia-shell julia-mode matlab-mode auctex dash deferred request-deferred s dash-functional ein ein-mumamo color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet expand-region multiple-cursors)))
  '(pdf-view-midnight-colors (quote ("#DCDCCC" . "#383838"))))
 
 ;;######################################################################
@@ -453,6 +464,8 @@ show verbose descriptions with hyperlinks."
 (use-package org-bullets
   :ensure t
   :hook (org-mode . org-bullets-mode))
+(use-package org-evil
+  :ensure t)
 
 ;;----------------------------------------------------------------------
 ;; DOT-MODE
@@ -664,6 +677,8 @@ file corresponding to the current buffer file, then recompile the file."
               ("[o" . open-previous-line)
               ("]o" . open-next-line))
   :config
+  ;; (define-key evil-motion-state-map ";" 'evil-repeat-find-char)
+  ;; (define-key evil-motion-state-map "," 'evil-repeat-find-char-reverse)
   (defvar dotemacs--original-mode-line-bg (face-background 'mode-line))
   (defadvice evil-set-cursor-color (after dotemacs activate)
     (cond ((evil-emacs-state-p)
@@ -673,16 +688,79 @@ file corresponding to the current buffer file, then recompile the file."
           ;; ((evil-visual-state-p)
           ;;  (set-face-background 'mode-line "#440044"))
           (t
-           (set-face-background 'mode-line dotemacs--original-mode-line-bg)))))
+           (set-face-background 'mode-line dotemacs--original-mode-line-bg))))
+  ;; Setup text-objects for use in LaTeX. Putting this here because it doesn't make sense to put this in the AucTeX section without enabling evil-mode first.
+  (require 'evil-latex-textobjects nil t)
+  (add-hook 'LaTeX-mode-hook 'turn-on-evil-latex-textobjects-mode))
 
+;; c/d/y s {motion}{delimiter} to change/delete/add delimiter around motion.
 (use-package evil-surround
   :ensure
   :commands turn-on-evil-surround-mode
-  :init
+  :config
   (global-evil-surround-mode 1))
 
+;; gc{motion} to comment/uncomment
 (use-package evil-commentary
   :ensure
   :commands evil-commentary-mode
-  :init
+  :config
   (evil-commentary-mode 1))
+
+;; gx{motion} to select, gx{motion} on second object to exchange
+(use-package evil-exchange
+  :ensure t
+  :config
+  (evil-exchange-install))
+
+;; gl{motion}{char} to align on char
+(use-package evil-lion
+  :ensure t
+  :config
+  (evil-lion-mode))
+
+;; % to match delimiters, % as text-object to manipulate
+(use-package evil-matchit
+  :ensure t
+  :init (global-evil-matchit-mode 1))
+
+;; + and - to increment/decrement number at point
+(use-package evil-numbers
+  :ensure t
+  :bind (:map evil-normal-state-map
+              ("+" . evil-numbers/inc-at-pt)
+              ("-" . evil-numbers/dec-at-pt)))
+
+;; C-a, C-e, C-f, C-b, C-d and C-k have same definitions as in emacs mode.
+;; C-n and C-p work like in emacs if auto-complete is loaded.
+(use-package evil-rsi
+  :ensure t
+  :config
+  (evil-rsi-mode))
+
+;; s to snipe for next occurrence of chars
+;; in operator mode, z or x to operate including/excluding next ocurrence of chars
+(use-package evil-snipe
+  :ensure t
+  :config
+  ;; (evil-snipe-override-mode nil)
+  (evil-snipe-mode 1)
+  (setq evil-snipe-spillover-scope 'whole-visible)
+  (evil-define-key 'visual evil-snipe-local-mode-map "z" 'evil-snipe-s)
+  (evil-define-key 'visual evil-snipe-local-mode-map "Z" 'evil-snipe-S)
+  (add-hook 'magit-mode-hook 'turn-off-evil-snipe-override-mode))
+
+;; Hit ; or , (originally <SPC>) to repeat last movement.
+;; (use-package evil-space
+;;   :ensure t
+;;   :init
+;;   (evil-space-mode)
+;;   (setq evil-space-next-key ";")
+;;   (setq evil-space-prev-key ","))
+
+;; Select with visual-mode and hit * or # to find next occurrence
+(use-package evil-visualstar
+  :ensure t
+  :config
+  (global-evil-visualstar-mode)
+  (setq evil-visualstar/persistent t))

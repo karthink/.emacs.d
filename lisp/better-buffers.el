@@ -23,7 +23,8 @@
                                'bury-buffer
                              (lambda ()
                                (and (buffer-file-name) (save-buffer))
-                               (kill-buffer))))))
+                               (kill-buffer)
+                               (delete-window))))))
 
 
 ;; C-x C-b to ibuffer instead of buffer-menu

@@ -14,18 +14,7 @@
  ;; If there is more than one, they won't work right.
  '(custom-safe-themes
    (quote
-    ("c74e83f8aa4c78a121b52146eadb792c9facc5b1f02c917e3dbb454fca931223"
-     "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa"
-     "274fa62b00d732d093fc3f120aca1b31a6bb484492f31081c1814a858e25c72e"
-     "8e797edd9fa9afec181efbfeeebf96aeafbd11b69c4c85fa229bb5b9f7f7e66c"
-     "2b9dc43b786e36f68a9fd4b36dd050509a0e32fe3b0a803310661edb7402b8b6"
-     "b583823b9ee1573074e7cbfd63623fe844030d911e9279a7c8a5d16de7df0ed0"
-     "585942bb24cab2d4b2f74977ac3ba6ddbd888e3776b9d2f993c5704aa8bb4739"
-     "a22f40b63f9bc0a69ebc8ba4fbc6b452a4e3f84b80590ba0a92b4ff599e53ad0"
-     "80ae3a89f1eca6fb94a525004f66b544e347c6f756aaafb728c7cdaef85ea1f5"
-     "54f2d1fcc9bcadedd50398697618f7c34aceb9966a6cbaa99829eb64c0c1f3ca"
-     "8f97d5ec8a774485296e366fdde6ff5589cf9e319a584b845b6f7fa788c9fa9a"
-     default)))
+    ("a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" "c74e83f8aa4c78a121b52146eadb792c9facc5b1f02c917e3dbb454fca931223" "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" "274fa62b00d732d093fc3f120aca1b31a6bb484492f31081c1814a858e25c72e" "8e797edd9fa9afec181efbfeeebf96aeafbd11b69c4c85fa229bb5b9f7f7e66c" "2b9dc43b786e36f68a9fd4b36dd050509a0e32fe3b0a803310661edb7402b8b6" "b583823b9ee1573074e7cbfd63623fe844030d911e9279a7c8a5d16de7df0ed0" "585942bb24cab2d4b2f74977ac3ba6ddbd888e3776b9d2f993c5704aa8bb4739" "a22f40b63f9bc0a69ebc8ba4fbc6b452a4e3f84b80590ba0a92b4ff599e53ad0" "80ae3a89f1eca6fb94a525004f66b544e347c6f756aaafb728c7cdaef85ea1f5" "54f2d1fcc9bcadedd50398697618f7c34aceb9966a6cbaa99829eb64c0c1f3ca" "8f97d5ec8a774485296e366fdde6ff5589cf9e319a584b845b6f7fa788c9fa9a" default)))
  '(fringe-mode (quote (nil . 0)) nil (fringe))
  '(package-selected-packages
    (quote
@@ -673,6 +662,7 @@ file corresponding to the current buffer file, then recompile the file."
               ("C-w C-f" . winner-redo)
               ("C-w C-b" . winner-undo)
               ("C-w C-w" . winner-undo)
+              ("C-w |" . toggle-window-split)
          :map evil-normal-state-map
               ("[o" . open-previous-line)
               ("]o" . open-next-line))
@@ -697,14 +687,14 @@ file corresponding to the current buffer file, then recompile the file."
 (use-package evil-surround
   :ensure
   :commands turn-on-evil-surround-mode
-  :config
+  :init
   (global-evil-surround-mode 1))
 
 ;; gc{motion} to comment/uncomment
 (use-package evil-commentary
   :ensure
   :commands evil-commentary-mode
-  :config
+  :init
   (evil-commentary-mode 1))
 
 ;; gx{motion} to select, gx{motion} on second object to exchange
@@ -764,3 +754,4 @@ file corresponding to the current buffer file, then recompile the file."
   :config
   (global-evil-visualstar-mode)
   (setq evil-visualstar/persistent t))
+

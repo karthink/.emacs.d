@@ -18,7 +18,7 @@
  '(fringe-mode (quote (nil . 0)) nil (fringe))
  '(package-selected-packages
    (quote
-    (evil-exchange evil-lion evil-matchit evil-numbers evil-rsi evil-snipe evil-space evil-visualstar org-bullets smart-mode-line rainbow-mode dracula-theme evil-magit undo-tree evil-tabs evil-leader org-evil god-mode use-package fzf evil-surround gruvbox-theme ido-completing-read+ cdlatex evil-commentary evil-goggles evil-paredit evil-replace-with-register iy-go-to-char smex ido-grid-mode composable evil ace-jump-mode wolfram-mode auto-complete julia-repl julia-shell julia-mode matlab-mode auctex dash deferred request-deferred s dash-functional ein ein-mumamo color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet expand-region multiple-cursors)))
+    (ivy-bibtex ivy-hydra ivy-rich which-key counsel swiper ivy evil-exchange evil-lion evil-matchit evil-numbers evil-rsi evil-snipe evil-space evil-visualstar org-bullets smart-mode-line rainbow-mode dracula-theme evil-magit undo-tree evil-tabs evil-leader org-evil god-mode use-package fzf evil-surround gruvbox-theme ido-completing-read+ cdlatex evil-commentary evil-goggles evil-paredit evil-replace-with-register iy-go-to-char smex ido-grid-mode composable evil ace-jump-mode wolfram-mode auto-complete julia-repl julia-shell julia-mode matlab-mode auctex dash deferred request-deferred s dash-functional ein ein-mumamo color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet expand-region multiple-cursors)))
  '(pdf-view-midnight-colors (quote ("#DCDCCC" . "#383838"))))
 
 ;;######################################################################
@@ -75,6 +75,8 @@
 (eval-when-compile
   (require 'use-package))
 (require 'bind-key)
+
+(add-hook 'package-menu-mode-hook 'hl-line-mode)
 
 ;;######################################################################
 ;; EDITING
@@ -270,6 +272,14 @@ show verbose descriptions with hyperlinks."
 ;;######################################################################
 
 ;;----------------------------------------------------------------------
+;; WHICH-KEY
+;;----------------------------------------------------------------------
+(use-package which-key
+  :ensure t
+  :init (which-key-mode)
+  :diminish which-key-mode)
+
+;;----------------------------------------------------------------------
 ;; PRETTY LAMBDA MODE
 ;;----------------------------------------------------------------------
 (require 'pretty-lambdada)
@@ -375,62 +385,130 @@ show verbose descriptions with hyperlinks."
 ;; FZF - Fast fuzzy find
 ;;----------------------------------------------------------------------
 (use-package fzf
-  :ensure)
+  :ensure t)
 
 ;;----------------------------------------------------------------------
 ;; IDO-MODE.
 ;;----------------------------------------------------------------------
-(require 'ido nil t)
+;; (require 'ido nil t)
 
-(when (featurep 'ido)
+;; (when (featurep 'ido)
 
-  (ido-mode t)
-  (setq ido-enable-flex-matching t) ;; enable fuzzy matching
-  (ido-everywhere 1)
-  ;; (if (require 'ido-completing-read+))
-  (ido-ubiquitous-mode 1)
-  (require 'icomplete)
-  (icomplete-mode 1)
+;;   (ido-mode t)
+;;   (setq ido-enable-flex-matching t) ;; enable fuzzy matching
+;;   (ido-everywhere 1)
+;;   ;; (if (require 'ido-completing-read+))
+;;   (ido-ubiquitous-mode 1)
+;;   (require 'icomplete)
+;;   (icomplete-mode 1)
 
-  (autoload 'idomenu "idomenu" nil t)
-  (eval-after-load "idomenu"
-    (global-set-key (kbd "M-.") 'imenu))
+;;   (autoload 'idomenu "idomenu" nil t)
+;;   (eval-after-load "idomenu"
+;;     (global-set-key (kbd "M-.") 'imenu))
 
-  ;; Custom keybindings
-  (defun ido-my-keys ()
-    (mapc (lambda (K)
-            (let* ((key (car K)) (fun (cdr K)))
-              (define-key ido-completion-map (edmacro-parse-keys key) fun)))
-          '(("C-n" . ido-next-match)
-            ("C-p"  . ido-prev-match))))
+;;   ;; Custom keybindings
+;;   (defun ido-my-keys ()
+;;     (mapc (lambda (K)
+;;             (let* ((key (car K)) (fun (cdr K)))
+;;               (define-key ido-completion-map (edmacro-parse-keys key) fun)))
+;;           '(("C-n" . ido-next-match)
+;;             ("C-p"  . ido-prev-match))))
 
 
-  ;; Enable ido-completion over TAGS
-  (defun ido-find-file-in-tag-files ()
-    (interactive)
-    (save-excursion
-      (let ((enable-recursive-minibuffers t))
-        (visit-tags-table-buffer))
-      (find-file
-       (expand-file-name
-        (ido-completing-read
-         "Project file: " (tags-table-files) nil t)))))
+;;   ;; Enable ido-completion over TAGS
+;;   (defun ido-find-file-in-tag-files ()
+;;     (interactive)
+;;     (save-excursion
+;;       (let ((enable-recursive-minibuffers t))
+;;         (visit-tags-table-buffer))
+;;       (find-file
+;;        (expand-file-name
+;;         (ido-completing-read
+;;          "Project file: " (tags-table-files) nil t)))))
 
-  ;; (define-key ido-mode-map (kbd "C-x t") 'ido-find-file-in-tag-files)
+;;   ;; (define-key ido-mode-map (kbd "C-x t") 'ido-find-file-in-tag-files)
 
-  (add-hook 'ido-setup-hook (lambda nil
-                              (ido-my-keys)))
+;;   (add-hook 'ido-setup-hook (lambda nil
+;;                               (ido-my-keys)))
 
-  (require 'ido-other-window nil t))
+;;   (require 'ido-other-window nil t))
 
-(use-package ido-grid-mode
-  :ensure
+;; (use-package ido-grid-mode
+;;   :ensure
+;;   :init
+;;   (ido-grid-mode 1))
+
+;; (smex-initialize)
+;; (global-set-key (kbd "M-x") 'smex)
+;; (global-set-key (kbd "M-S-x") 'smex-major-mode-commands)
+
+;;----------------------------------------------------------------------
+;; IVY/COUNSEL/SWIPER
+;;----------------------------------------------------------------------
+(use-package ivy
   :init
-  (ido-grid-mode 1))
+  (ivy-mode 1)
+  
+  :config
+  (setq ivy-use-virtual-buffers t)
+  (setq enable-recursive-minibuffers t)
+  ;; enable this if you want `swiper' to use it
+  ;; (setq search-default-mode #'char-fold-to-regexp)
+  (global-set-key "\C-s" 'swiper)
+  (global-set-key (kbd "C-c C-r") 'ivy-resume)
+  (global-set-key (kbd "<f6>") 'ivy-resume)
+  (global-set-key (kbd "M-x") 'counsel-M-x)
+  (global-set-key (kbd "C-x C-f") 'counsel-find-file)
+  (global-set-key (kbd "<f1> f") 'counsel-describe-function)
+  (global-set-key (kbd "<f1> v") 'counsel-describe-variable)
+  (global-set-key (kbd "<f1> l") 'counsel-find-library)
+  ;; (global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
+  (global-set-key (kbd "<f2> u") 'counsel-unicode-char)
+  ;; (global-set-key (kbd "C-c g") 'counsel-git)
+  ;; (global-set-key (kbd "C-c j") 'counsel-git-grep)
+  ;; (global-set-key (kbd "C-c k") 'counsel-ag)
+  (global-set-key (kbd "C-x l") 'counsel-locate)
+  ;; (global-set-key (kbd "C-S-o") 'counsel-rhythmbox)
+  (define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
+  
+  :diminish ivy-mode
+  )
 
-(smex-initialize)
-(global-set-key (kbd "M-x") 'smex)
-(global-set-key (kbd "M-S-x") 'smex-major-mode-commands)
+;;; ivy-rich shows descriptions along with selection candidates in ivy
+(use-package ivy-rich
+  :init (ivy-rich-mode 1)
+  :config
+  (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line))
+
+;;; ivy-hydra allows additional actions and vim-like navigation on ivy candidates.
+;;; Initialize in ivy with C-o
+;; (use-package ivy-hydra)
+
+;;; Bibtex management from ivy. Call ivy-bibtex.
+(use-package ivy-bibtex
+  :commands ivy-bibtex
+  :config
+  (setq ivy-re-builders-alist '((ivy-bibtex . ivy--regex-ignore-order)
+                                (t . ivy--regex-plus))
+        bibtex-completion-bibliography (getenv "BIB")
+        bibtex-completion-library-path '("~/Documents/research/lit")
+        bibtex-completion-pdf-field "File"
+        bibtex-completion-additional-search-fields '(keywords)
+        bibtex-completion-pdf-symbol "⌘"
+        bibtex-completion-notes-symbol "✎")
+
+  (defun bibtex-completion-open-pdf-external (keys &optional fallback-action)
+    (let* ((pdf-reader (getenv "READER"))
+           (bibtex-completion-pdf-open-function
+               (lambda (fpath) (start-process pdf-reader "*ivy-bibtex-evince*" pdf-reader fpath))))
+      (bibtex-completion-open-pdf keys fallback-action)))
+  
+  (ivy-bibtex-ivify-action bibtex-completion-open-pdf-external ivy-bibtex-open-pdf-external)
+
+  (ivy-add-actions
+   'ivy-bibtex
+   '(("P" ivy-bibtex-open-pdf-external "Open PDF file in external viewer (if present)")))
+  )
 
 ;;----------------------------------------------------------------------
 ;; TRAMP
@@ -551,11 +629,11 @@ file corresponding to the current buffer file, then recompile the file."
 ;; COLORS & COLOR THEMES
 ;;######################################################################
 
-;;; Load theme after the frame is created.
-(add-hook 'after-make-frame-functions
-          (lambda (frame)
-            (load-theme 'gruvbox-dark-medium t)
-            (load-theme 'smart-mode-line-dark t)))
+;; ;;; Load theme after the frame is created.
+;; (add-hook 'after-make-frame-functions
+;;           (lambda (frame)
+;;             (load-theme 'gruvbox-dark-medium t)
+;;             (load-theme 'smart-mode-line-dark t)))
 
 ;;######################################################################
 ;; MODELINE:
@@ -625,7 +703,7 @@ file corresponding to the current buffer file, then recompile the file."
     "e" 'find-file
     "f" 'fzf
     "F" 'fzf-directory
-    "b" 'ido-switch-buffer
+    "b" 'switch-to-buffer
     "w" 'save-buffer
     "q" 'evil-quit
     "j" 'ace-jump-mode
@@ -695,7 +773,8 @@ file corresponding to the current buffer file, then recompile the file."
   :ensure
   :commands evil-commentary-mode
   :init
-  (evil-commentary-mode 1))
+  (evil-commentary-mode 1)
+  :diminish)
 
 ;; gx{motion} to select, gx{motion} on second object to exchange
 (use-package evil-exchange
@@ -726,7 +805,8 @@ file corresponding to the current buffer file, then recompile the file."
 (use-package evil-rsi
   :ensure t
   :config
-  (evil-rsi-mode))
+  (evil-rsi-mode)
+  :diminish evil-rsi-mode)
 
 ;; s to snipe for next occurrence of chars
 ;; in operator mode, z or x to operate including/excluding next ocurrence of chars
@@ -738,7 +818,8 @@ file corresponding to the current buffer file, then recompile the file."
   (setq evil-snipe-spillover-scope 'whole-visible)
   (evil-define-key 'visual evil-snipe-local-mode-map "z" 'evil-snipe-s)
   (evil-define-key 'visual evil-snipe-local-mode-map "Z" 'evil-snipe-S)
-  (add-hook 'magit-mode-hook 'turn-off-evil-snipe-override-mode))
+  (add-hook 'magit-mode-hook 'turn-off-evil-snipe-override-mode)
+  :diminish evil-snipe-mode)
 
 ;; Hit ; or , (originally <SPC>) to repeat last movement.
 ;; (use-package evil-space
@@ -755,3 +836,9 @@ file corresponding to the current buffer file, then recompile the file."
   (global-evil-visualstar-mode)
   (setq evil-visualstar/persistent t))
 
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(default ((t (:family "Fantasque Sans Mono" :foundry "PfEd" :slant normal :weight normal :height 125 :width normal)))))

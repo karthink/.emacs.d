@@ -3,47 +3,104 @@
                            ; singularity ;
 
 ; Karthik's .emacs file
+(eval-when-compile (require 'cl))
+(lexical-let ((emacs-start-time (current-time)))
+  (add-hook 'emacs-startup-hook
+            (lambda ()
+              (let ((elapsed (float-time (time-subtract (current-time) emacs-start-time))))
+                (message "[Emacs initialized in %.3fs]" elapsed)))))
 
 (setq user-full-name "Karthik C")
 ; (setq user-mail-address "karthik[AT]gmail.com")
 
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(custom-safe-themes
-   (quote
-    ("a27c00821ccfd5a78b01e4f35dc056706dd9ede09a8b90c6955ae6a390eb1c1e" "c74e83f8aa4c78a121b52146eadb792c9facc5b1f02c917e3dbb454fca931223" "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" "274fa62b00d732d093fc3f120aca1b31a6bb484492f31081c1814a858e25c72e" "8e797edd9fa9afec181efbfeeebf96aeafbd11b69c4c85fa229bb5b9f7f7e66c" "2b9dc43b786e36f68a9fd4b36dd050509a0e32fe3b0a803310661edb7402b8b6" "b583823b9ee1573074e7cbfd63623fe844030d911e9279a7c8a5d16de7df0ed0" "585942bb24cab2d4b2f74977ac3ba6ddbd888e3776b9d2f993c5704aa8bb4739" "a22f40b63f9bc0a69ebc8ba4fbc6b452a4e3f84b80590ba0a92b4ff599e53ad0" "80ae3a89f1eca6fb94a525004f66b544e347c6f756aaafb728c7cdaef85ea1f5" "54f2d1fcc9bcadedd50398697618f7c34aceb9966a6cbaa99829eb64c0c1f3ca" "8f97d5ec8a774485296e366fdde6ff5589cf9e319a584b845b6f7fa788c9fa9a" default)))
- '(fringe-mode (quote (nil . 0)) nil (fringe))
- '(package-selected-packages
-   (quote
-    (ivy-bibtex ivy-hydra ivy-rich which-key counsel swiper ivy evil-exchange evil-lion evil-matchit evil-numbers evil-rsi evil-snipe evil-space evil-visualstar org-bullets smart-mode-line rainbow-mode dracula-theme evil-magit undo-tree evil-tabs evil-leader org-evil god-mode use-package fzf evil-surround gruvbox-theme ido-completing-read+ cdlatex evil-commentary evil-goggles evil-paredit evil-replace-with-register iy-go-to-char smex ido-grid-mode composable evil ace-jump-mode wolfram-mode auto-complete julia-repl julia-shell julia-mode matlab-mode auctex dash deferred request-deferred s dash-functional ein ein-mumamo color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet expand-region multiple-cursors)))
- '(pdf-view-midnight-colors (quote ("#DCDCCC" . "#383838"))))
+;;########################################################################
+;; UI FIXES
+;;########################################################################
+
+;; Get rid of the splash screen
+(setq inhibit-splash-screen t)
+;; Make *scratch* buffer suitable for writing
+(setq initial-scratch-message nil)
+
+;; Stop cursor from blinking
+(blink-cursor-mode 0)
+
+;; Turn off the menu, tool bars, tooltips and the scroll bar
+(menu-bar-mode 0)
+(tool-bar-mode 0)
+(tooltip-mode 0)
+(scroll-bar-mode 0)
+(show-paren-mode 1)
+;; Turn on image viewing
+(auto-image-file-mode t)
+
+;; Show me what I type, immediately
+(setq echo-keystrokes 0.01)
+
+;;########################################################################
+;; SAVE AND BACKUP
+;;########################################################################
+;; Put backups elsewhere:
+(setq auto-save-interval 2400)
+(setq auto-save-timeout 300)
+(setq backup-directory-alist '(("." . "~/.emacs-backup"))
+      backup-by-copying t ; Use copies
+      version-control t ; Use version numbers on backups
+      delete-old-versions t ; Automatically delete excess backups
+      kept-new-versions 10 ; Newest versions to keep
+      kept-old-versions 5 ; Old versions to keep
+      )
 
 ;;######################################################################
-;; FONTS
+;; MISCELLANEOUS PREFERENCES
 ;;######################################################################
-(cond ((equal system-type 'gnu/linux)
-       (custom-set-faces
-         '(default ((t (:family "Fantasque Sans Mono" :foundry "PfEd" :slant normal :weight normal :height 125 :width normal))))))
-      ((equal system-type 'windows-nt)
-       (custom-set-faces
-        '(default ((t (:inherit nil :stipple nil :background "white" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 98 :width normal :foundry "outline" :family "Consolas"))))))
-      ((equal system-type 'cygwin)
-       (custom-set-faces
-        '(default ((t (:family "Consolas" :foundry "outline" :slant normal :weight normal :height 120 :width normal)))))))
 
-;;######################################################################
-;; LINE NUMBERS
-;;######################################################################
-(line-number-mode 1)
-(global-display-line-numbers-mode)
-(setq display-line-numbers-type 'relative)
+;; Prevent Emacs from bugging me about C-x n n not being
+;; user-friendly.
+(put 'narrow-to-region 'disabled nil)
+
+;; For lazy typists
+(fset 'yes-or-no-p 'y-or-n-p)
+;; Move the mouse away if the cursor gets close
+(mouse-avoidance-mode 'animate)
+
+;; highlight the current line, as in Matlab
+;; (global-hl-line-mode)
+
+;; when you mark a region, you can delete it or replace it as in other
+;; Windows programs. simply hit delete or type whatever you want or
+;; yank
+(delete-selection-mode)
+
+; show the matching parentheses immediately
+(setq show-paren-delay 0)
+
+;; FULLSCREEN
+(global-set-key [f11] 'toggle-frame-fullscreen)
+
+;; WINDOW SPLITTING
+;; Set horizontal splits as the default
+(setq split-width-threshold 120)
+(setq split-height-threshold 80)
+
+;; Byte-compile elisp files immediately after saving them if .elc exists:
+(defun auto-byte-recompile ()
+"If the current buffer is in emacs-lisp-mode and there already exists an `.elc'
+file corresponding to the current buffer file, then recompile the file."
+  (interactive)
+  (when (and (eq major-mode 'emacs-lisp-mode)
+             (file-exists-p (byte-compile-dest-file buffer-file-name)))
+    (byte-compile-file buffer-file-name)))
+(add-hook 'after-save-hook 'auto-byte-recompile)
 
 ;;######################################################################
 ;; PATHS
 ;;######################################################################
+
+;; Get custom-set-variables out of init.el
+(setq custom-file "~/.emacs.d/custom.el")
+(load custom-file)
+
 ;; Set directory
 (setq default-directory
       (cond ((equal (system-name) "surface")
@@ -51,7 +108,7 @@
             ((equal (system-name) "cube")
              "/cygdrive/c/Users/karth/OneDrive/Documents/")
             ((equal (system-name) "thinkpad")
-             "~/Documents/research/")
+             "~/")
             (t "~/")))
 
 ;; Adds ~/.emacs.d to the load-path
@@ -79,38 +136,18 @@
 (add-hook 'package-menu-mode-hook 'hl-line-mode)
 
 ;;######################################################################
-;; EDITING
-;;######################################################################
-(require 'better-editing nil t)
-
-;;######################################################################
-;; BUFFER MANAGEMENT
-;;######################################################################
-(require 'better-buffers nil t)
-(winner-mode)
-
-;;######################################################################
-;; UTILITY
-;;######################################################################
-;; Count words, print ASCII table, etc
-(require 'utilities nil t)
-;; Colorize color names in buffers
-(use-package rainbow-mode
-  :config (rainbow-mode))
-
-;;######################################################################
 ;; INTERFACING WITH THE OS
 ;;######################################################################
 
 (if (equal (system-name) 'windows-nt)
     (setq shell-file-name "C:/cygwin/cygwin.bat"))
 
-;; Set default www browser
-(if (equal system-type 'gnu/linux)
-    (setq
-     ;browse-url-browser-function 'browse-url-generic
-     browse-url-generic-program "/usr/bin/palemoon"
-     ))
+;; ;; Set default www browser
+;; (if (equal system-type 'gnu/linux)
+;;     (setq
+;;      ;browse-url-browser-function 'browse-url-generic
+;;      ;browse-url-generic-program "/usr/bin/palemoon"
+;;      ))
 
 ;; Consult clipboard before primary selection
 ;; http://www.gnu.org/software/emacs/manual/
@@ -160,6 +197,47 @@ show verbose descriptions with hyperlinks."
 ;; ESHELL PREFERENCES
 ;;----------------------------------------------------------------------
 (setq eshell-buffer-shorthand t)
+
+;;######################################################################
+;; FONTS
+;;######################################################################
+(cond ((equal system-type 'gnu/linux)
+       (custom-set-faces
+         '(default ((t (:family "Fantasque Sans Mono" :foundry "PfEd" :slant normal :weight normal :height 125 :width normal))))))
+      ((equal system-type 'windows-nt)
+       (custom-set-faces
+        '(default ((t (:inherit nil :stipple nil :background "white" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 98 :width normal :foundry "outline" :family "Consolas"))))))
+      ((equal system-type 'cygwin)
+       (custom-set-faces
+        '(default ((t (:family "Consolas" :foundry "outline" :slant normal :weight normal :height 120 :width normal)))))))
+
+;;######################################################################
+;; LINE NUMBERS
+;;######################################################################
+(line-number-mode 1)
+(global-display-line-numbers-mode)
+(setq display-line-numbers-type 'relative)
+
+;;######################################################################
+;; EDITING
+;;######################################################################
+(require 'better-editing nil t)
+
+;;######################################################################
+;; BUFFER MANAGEMENT
+;;######################################################################
+(require 'better-buffers nil t)
+(winner-mode)
+
+;;######################################################################
+;; UTILITY
+;;######################################################################
+;; Count words, print ASCII table, etc
+(require 'utilities nil t)
+;; Colorize color names in buffers
+(use-package rainbow-mode
+  :ensure t
+  :config (rainbow-mode))
 
 ;;######################################################################
 ;; COMPILATION
@@ -270,6 +348,11 @@ show verbose descriptions with hyperlinks."
 ;;######################################################################
 ;; PLUGINS
 ;;######################################################################
+;;----------------------------------------------------------------------
+;; VERSION CONTROL
+;;----------------------------------------------------------------------
+(use-package magit
+  :ensure t)
 
 ;;----------------------------------------------------------------------
 ;; WHICH-KEY
@@ -310,23 +393,53 @@ show verbose descriptions with hyperlinks."
 (if (file-exists-p abbrev-file-name)
     (quietly-read-abbrev-file))
 
+
+;;----------------------------------------------------------------------
+; COMPANY-MODE
+;;----------------------------------------------------------------------
+(use-package company
+  :ensure t
+  :diminish ""
+  :config
+  (global-company-mode)
+  ;; (setq company-tooltip-limit 10)
+  (setq company-dabbrev-downcase 0)
+  ;; (setq company-idle-delay 0)
+  ;; (setq company-echo-delay 0)
+  (setq company-minimum-prefix-length 2)
+  ;; (setq company-require-match nil)
+  (setq company-selection-wrap-around t)
+  (setq company-tooltip-align-annotations t)
+  ;; (setq company-tooltip-flip-when-above t)
+  (setq company-transformers '(company-sort-by-occurrence)) ; weight by frequency
+  (define-key company-active-map (kbd "M-n") nil)
+  (define-key company-active-map (kbd "M-p") nil)
+  (define-key company-active-map (kbd "C-n") 'company-select-next)
+  (define-key company-active-map (kbd "C-p") 'company-select-previous)
+  (define-key company-active-map (kbd "TAB") 'company-complete-common-or-cycle)
+  (define-key company-active-map (kbd "<tab>") 'company-complete-common-or-cycle)
+  (define-key company-active-map (kbd "S-TAB") 'company-select-previous)
+  (define-key company-active-map (kbd "<backtab>") 'company-select-previous)
+  )
+
 ;;----------------------------------------------------------------------
 ;; AUTO-COMPLETE MODE
 ;;----------------------------------------------------------------------
 ;;; ELPA package, run (package-initialize) first
 
-(use-package auto-complete
-  :ensure t
-  :commands global-auto-complete-mode
-  :init
-  (progn
-    (ac-config-default)
-    (global-auto-complete-mode 1)))
+;; (use-package auto-complete
+;;   :ensure t
+;;   :commands global-auto-complete-mode
+;;   :init
+;;   (progn
+;;     (ac-config-default)
+;;     (global-auto-complete-mode 1)))
 
 ;;---------------------------------------------------------------------
 ;; PAREDIT-MODE
 ;;---------------------------------------------------------------------
 (use-package paredit
+  :ensure t
   :commands enable-paredit-mode
   :hook ((emacs-lisp-mode
           eval-expression-minibuffer-setup
@@ -349,6 +462,7 @@ show verbose descriptions with hyperlinks."
   )
 
   (use-package evil-paredit
+    :ensure t
     :init (add-hook 'emacs-lisp-mode-hook 'evil-paredit-mode))
 
 ;;----------------------------------------------------------------------
@@ -378,14 +492,11 @@ show verbose descriptions with hyperlinks."
 ;;----------------------------------------------------------------------
 ;; WRAP-REGION MODE
 ;;----------------------------------------------------------------------
-(require 'wrap-region nil t)
-(add-hook 'text-mode-hook 'wrap-region-mode)
-
-;;----------------------------------------------------------------------
-;; FZF - Fast fuzzy find
-;;----------------------------------------------------------------------
-(use-package fzf
-  :ensure t)
+(use-package wrap-region
+  :ensure t
+  :init (wrap-region-mode 1))
+;; (require 'wrap-region nil t)
+;; (add-hook 'text-mode-hook 'wrap-region-mode)
 
 ;;----------------------------------------------------------------------
 ;; IDO-MODE.
@@ -446,19 +557,20 @@ show verbose descriptions with hyperlinks."
 ;; IVY/COUNSEL/SWIPER
 ;;----------------------------------------------------------------------
 (use-package ivy
+  :ensure t
   :init
   (ivy-mode 1)
-  
+
   :config
   (setq ivy-use-virtual-buffers t)
   (setq enable-recursive-minibuffers t)
   ;; enable this if you want `swiper' to use it
   ;; (setq search-default-mode #'char-fold-to-regexp)
   (global-set-key "\C-s" 'swiper)
-  (global-set-key (kbd "C-c C-r") 'ivy-resume)
-  (global-set-key (kbd "<f6>") 'ivy-resume)
-  (global-set-key (kbd "M-x") 'counsel-M-x)
-  (global-set-key (kbd "C-x C-f") 'counsel-find-file)
+  ;; (global-set-key (kbd "C-c C-r") 'ivy-resume)
+  ;; (global-set-key (kbd "<f6>") 'ivy-resume)
+  ;; (global-set-key (kbd "M-x") 'counsel-M-x)
+  ;; (global-set-key (kbd "C-x C-f") 'counsel-find-file)
   (global-set-key (kbd "<f1> f") 'counsel-describe-function)
   (global-set-key (kbd "<f1> v") 'counsel-describe-variable)
   (global-set-key (kbd "<f1> l") 'counsel-find-library)
@@ -470,12 +582,20 @@ show verbose descriptions with hyperlinks."
   (global-set-key (kbd "C-x l") 'counsel-locate)
   ;; (global-set-key (kbd "C-S-o") 'counsel-rhythmbox)
   (define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
-  
-  :diminish ivy-mode
-  )
 
-;;; ivy-rich shows descriptions along with selection candidates in ivy
+  ;; (defun my-ivy-switch-file-search ()
+  ;;   "Switch to counsel-file-jump, preserving current input."
+  ;;   (interactive)
+  ;;   (let ((input (ivy--input)))
+  ;;     (ivy-quit-and-run (counsel-file-jump))))
+
+  ;; (define-key counsel-find-file-map (kbd "C-s") 'my-ivy-switch-file-search)
+  :diminish ivy-mode
+)
+
+;; ivy-rich shows descriptions along with selection candidates in ivy
 (use-package ivy-rich
+  :ensure t
   :init (ivy-rich-mode 1)
   :config
   (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line))
@@ -486,6 +606,7 @@ show verbose descriptions with hyperlinks."
 
 ;;; Bibtex management from ivy. Call ivy-bibtex.
 (use-package ivy-bibtex
+  :ensure t
   :commands ivy-bibtex
   :config
   (setq ivy-re-builders-alist '((ivy-bibtex . ivy--regex-ignore-order)
@@ -502,13 +623,12 @@ show verbose descriptions with hyperlinks."
            (bibtex-completion-pdf-open-function
                (lambda (fpath) (start-process pdf-reader "*ivy-bibtex-evince*" pdf-reader fpath))))
       (bibtex-completion-open-pdf keys fallback-action)))
-  
+
   (ivy-bibtex-ivify-action bibtex-completion-open-pdf-external ivy-bibtex-open-pdf-external)
 
   (ivy-add-actions
    'ivy-bibtex
-   '(("P" ivy-bibtex-open-pdf-external "Open PDF file in external viewer (if present)")))
-  )
+   '(("P" ivy-bibtex-open-pdf-external "Open PDF file in external viewer (if present)"))))
 
 ;;----------------------------------------------------------------------
 ;; TRAMP
@@ -538,84 +658,11 @@ show verbose descriptions with hyperlinks."
 ;; DOT-MODE
 ;;----------------------------------------------------------------------
 ;; (Vi like redo edits with C-.)
-(require 'dot-mode nil t)
-(when (featurep 'dot-mode)
-  (add-hook 'find-file-hooks 'dot-mode-on)
-  (global-set-key [(control ?.)] (lambda () (interactive) (dot-mode 1)
-                                   (message "Dot mode activated."))))
-
-;;######################################################################
-;; MISCELLANEOUS PREFERENCES
-;;######################################################################
-
-;; Get rid of that AWFUL splash screen
-(setq inhibit-splash-screen t)
-;; Make *scratch* buffer suitable for writing
-(setq initial-scratch-message nil)
-(setq auto-save-interval 2400)
-(setq auto-save-timeout 300)
-
-;; Stop cursor from blinking
-(blink-cursor-mode 0)
-
-;; Turn off the menu, tool bars, tooltips and the scroll bar
-(menu-bar-mode 0)
-(tool-bar-mode 0)
-(tooltip-mode 0)
-(scroll-bar-mode 0)
-(show-paren-mode 1)
-;; Turn on image viewing
-(auto-image-file-mode t)
-
-;; Show me what I type, immediately
-(setq echo-keystrokes 0.01)
-
-;; Put backups elsewhere:
-(setq backup-directory-alist '(("." . "~/.emacs-backup"))
-      backup-by-copying t ; Use copies
-      version-control t ; Use version numbers on backups
-      delete-old-versions t ; Automatically delete excess backups
-      kept-new-versions 10 ; Newest versions to keep
-      kept-old-versions 5 ; Old versions to keep
-)
-
-;; Prevent Emacs from bugging me about C-x n n not being
-;; user-friendly.
-(put 'narrow-to-region 'disabled nil)
-
-;; For lazy typists
-(fset 'yes-or-no-p 'y-or-n-p)
-;; Move the mouse away if the cursor gets close
-(mouse-avoidance-mode 'animate)
-
-;; highlight the current line, as in Matlab
-;; (global-hl-line-mode)
-
-;; when you mark a region, you can delete it or replace it as in other
-;; Windows programs. simply hit delete or type whatever you want or
-;; yank
-(delete-selection-mode)
-
-; show the matching parentheses immediately
-(setq show-paren-delay 0)
-
-;; FULLSCREEN
-(global-set-key [f11] 'toggle-frame-fullscreen)
-
-;; WINDOW SPLITTING
-;; Set horizontal splits as the default
-(setq split-width-threshold 120)
-(setq split-height-threshold 60)
-
-;; Byte-compile elisp files immediately after saving them if .elc exists:
-(defun auto-byte-recompile ()
-"If the current buffer is in emacs-lisp-mode and there already exists an `.elc'
-file corresponding to the current buffer file, then recompile the file."
-  (interactive)
-  (when (and (eq major-mode 'emacs-lisp-mode)
-             (file-exists-p (byte-compile-dest-file buffer-file-name)))
-    (byte-compile-file buffer-file-name)))
-(add-hook 'after-save-hook 'auto-byte-recompile)
+;; (require 'dot-mode nil t)
+;; (when (featurep 'dot-mode)
+;;   (add-hook 'find-file-hooks 'dot-mode-on)
+;;   (global-set-key [(control ?.)] (lambda () (interactive) (dot-mode 1)
+;;                                    (message "Dot mode activated."))))
 
 ;;----------------------------------------------------------------------
 ;; MACROS
@@ -643,43 +690,43 @@ file corresponding to the current buffer file, then recompile the file."
   :ensure t
   :init (sml/setup))
 
-(defvar mode-line-cleaner-alist
-  `((auto-complete-mode . " α")
-    (yas-minor-mode . " Υ")
-    (paredit-mode . " π")
-    (eldoc-mode . "")
-    (abbrev-mode . "")
-    ;; Major modes
-    (lisp-interaction-mode . "λ")
-    (hi-lock-mode . "")
-    (python-mode . "Py")
-    (emacs-lisp-mode . "Eλ")
-    (nxhtml-mode . "nx")
-    (dot-mode . " .")
-    (scheme-mode . " SCM"))
-  "Alist for `clean-mode-line'.
+; (defvar mode-line-cleaner-alist
+;   `((auto-complete-mode . " α")
+;     (yas-minor-mode . " Υ")
+;     (paredit-mode . " π")
+;     (eldoc-mode . "")
+;     (abbrev-mode . "")
+;     ;; Major modes
+;     (lisp-interaction-mode . "λ")
+;     (hi-lock-mode . "")
+;     (python-mode . "Py")
+;     (emacs-lisp-mode . "Eλ")
+;     (nxhtml-mode . "nx")
+;     (dot-mode . " .")
+;     (scheme-mode . " SCM"))
+;   "Alist for `clean-mode-line'.
 
-;; When you add a new element to the alist, keep in mind that you
-;; must pass the correct minor/major mode symbol and a string you
-;; want to use in the modeline *in lieu of* the original.")
-
-
-(defun clean-mode-line ()
-  (interactive)
-  (loop for cleaner in mode-line-cleaner-alist
-        do (let* ((mode (car cleaner))
-                 (mode-str (cdr cleaner))
-                 (old-mode-str (cdr (assq mode minor-mode-alist))))
-             (when old-mode-str
-                 (setcar old-mode-str mode-str))
-               ;; major mode
-             (when (eq mode major-mode)
-               (setq mode-name mode-str)))))
+; ;; When you add a new element to the alist, keep in mind that you
+; ;; must pass the correct minor/major mode symbol and a string you
+; ;; want to use in the modeline *in lieu of* the original.")
 
 
-(add-hook 'after-change-major-mode-hook 'clean-mode-line)
+; (defun clean-mode-line ()
+;   (interactive)
+;   (loop for cleaner in mode-line-cleaner-alist
+;         do (let* ((mode (car cleaner))
+;                  (mode-str (cdr cleaner))
+;                  (old-mode-str (cdr (assq mode minor-mode-alist))))
+;              (when old-mode-str
+;                  (setcar old-mode-str mode-str))
+;                ;; major mode
+;              (when (eq mode major-mode)
+;                (setq mode-name mode-str)))))
 
-(display-time-mode 0)
+
+; (add-hook 'after-change-major-mode-hook 'clean-mode-line)
+
+; (display-time-mode 0)
 
 ;;######################################################################
 ;; MINIBUFFER
@@ -700,22 +747,31 @@ file corresponding to the current buffer file, then recompile the file."
   (evil-leader/set-key-for-mode 'emacs-lisp-mode "B" 'byte-compile-file)
   (evil-leader/set-key-for-mode 'latex-mode "cc" 'TeX-command-master)
   (evil-leader/set-key
-    "e" 'find-file
-    "f" 'fzf
-    "F" 'fzf-directory
+    ;; "e" 'find-file
+    "fF" 'counsel-fzf
+    "ff" 'find-file
+    "f." 'find-file
+    "fr" 'counsel-recentf
+    "fj" 'counsel-file-jump
+    "fg" 'counsel-git
+    "fa" 'counsel-ag
+    ;; "F" 'counsel-fzf-dir-function
     "b" 'switch-to-buffer
     "w" 'save-buffer
     "q" 'evil-quit
     "j" 'ace-jump-mode
 
-    "k" (lambda () (interactive) (kill-buffer (current-buffer)))
+    "k" (lambda () "Kill buffer" (interactive) (kill-buffer (current-buffer)))
     "n" (lambda (&optional arg)
+          "Next Buffer"
                   (interactive "P")
                   (if arg (next-user-buffer) (previous-user-buffer)))
     "p" (lambda (&optional arg)
+          "Previous Buffer"
                   (interactive "P")
                   (if arg (previous-user-buffer) (next-user-buffer)))
     "B" (lambda ()
+          "Open Bibtex file"
           (interactive)
           (find-file-other-window (getenv "BIB")))
     "," 'er/expand-region
@@ -741,7 +797,7 @@ file corresponding to the current buffer file, then recompile the file."
               ("C-w C-b" . winner-undo)
               ("C-w C-w" . winner-undo)
               ("C-w |" . toggle-window-split)
-         :map evil-normal-state-map
+              :map evil-normal-state-map
               ("[o" . open-previous-line)
               ("]o" . open-next-line))
   :config
@@ -759,86 +815,81 @@ file corresponding to the current buffer file, then recompile the file."
            (set-face-background 'mode-line dotemacs--original-mode-line-bg))))
   ;; Setup text-objects for use in LaTeX. Putting this here because it doesn't make sense to put this in the AucTeX section without enabling evil-mode first.
   (require 'evil-latex-textobjects nil t)
-  (add-hook 'LaTeX-mode-hook 'turn-on-evil-latex-textobjects-mode))
+  (add-hook 'LaTeX-mode-hook 'turn-on-evil-latex-textobjects-mode)
 
-;; c/d/y s {motion}{delimiter} to change/delete/add delimiter around motion.
-(use-package evil-surround
-  :ensure
-  :commands turn-on-evil-surround-mode
-  :init
-  (global-evil-surround-mode 1))
+  ;; c/d/y s {motion}{delimiter} to change/delete/add delimiter around motion.
+  (use-package evil-surround
+    :ensure
+    :commands turn-on-evil-surround-mode
+    :init
+    (global-evil-surround-mode 1))
 
-;; gc{motion} to comment/uncomment
-(use-package evil-commentary
-  :ensure
-  :commands evil-commentary-mode
-  :init
-  (evil-commentary-mode 1)
-  :diminish)
+  ;; gc{motion} to comment/uncomment
+  (use-package evil-commentary
+    :ensure
+    :commands evil-commentary-mode
+    :init
+    (evil-commentary-mode 1)
+    :diminish)
 
-;; gx{motion} to select, gx{motion} on second object to exchange
-(use-package evil-exchange
-  :ensure t
-  :config
-  (evil-exchange-install))
+  ;; gx{motion} to select, gx{motion} on second object to exchange
+  (use-package evil-exchange
+    :ensure t
+    :config
+    (evil-exchange-install))
 
-;; gl{motion}{char} to align on char
-(use-package evil-lion
-  :ensure t
-  :config
-  (evil-lion-mode))
+  ;; gl{motion}{char} to align on char
+  (use-package evil-lion
+    :ensure t
+    :config
+    (evil-lion-mode))
 
-;; % to match delimiters, % as text-object to manipulate
-(use-package evil-matchit
-  :ensure t
-  :init (global-evil-matchit-mode 1))
+  ;; % to match delimiters, % as text-object to manipulate
+  (use-package evil-matchit
+    :ensure t
+    :init (global-evil-matchit-mode 1))
 
-;; + and - to increment/decrement number at point
-(use-package evil-numbers
-  :ensure t
-  :bind (:map evil-normal-state-map
-              ("+" . evil-numbers/inc-at-pt)
-              ("-" . evil-numbers/dec-at-pt)))
+  ;; + and - to increment/decrement number at point
+  (use-package evil-numbers
+    :ensure t
+    :bind (:map evil-normal-state-map
+                ("+" . evil-numbers/inc-at-pt)
+                ("-" . evil-numbers/dec-at-pt)))
 
-;; C-a, C-e, C-f, C-b, C-d and C-k have same definitions as in emacs mode.
-;; C-n and C-p work like in emacs if auto-complete is loaded.
-(use-package evil-rsi
-  :ensure t
-  :config
-  (evil-rsi-mode)
-  :diminish evil-rsi-mode)
+  ;; C-a, C-e, C-f, C-b, C-d and C-k have same definitions as in emacs mode.
+  ;; C-n and C-p work like in emacs if auto-complete is loaded.
+  (use-package evil-rsi
+    :ensure t
+    :config
+    (evil-rsi-mode)
+    :diminish evil-rsi-mode)
 
-;; s to snipe for next occurrence of chars
-;; in operator mode, z or x to operate including/excluding next ocurrence of chars
-(use-package evil-snipe
-  :ensure t
-  :config
-  ;; (evil-snipe-override-mode nil)
-  (evil-snipe-mode 1)
-  (setq evil-snipe-spillover-scope 'whole-visible)
-  (evil-define-key 'visual evil-snipe-local-mode-map "z" 'evil-snipe-s)
-  (evil-define-key 'visual evil-snipe-local-mode-map "Z" 'evil-snipe-S)
-  (add-hook 'magit-mode-hook 'turn-off-evil-snipe-override-mode)
-  :diminish evil-snipe-mode)
+  ;; s to snipe for next occurrence of chars
+  ;; in operator mode, z or x to operate including/excluding next ocurrence of chars
+  (use-package evil-snipe
+    :ensure t
+    :config
+    ;; (evil-snipe-override-mode nil)
+    (evil-snipe-mode 1)
+    (setq evil-snipe-spillover-scope 'whole-visible)
+    (evil-define-key 'visual evil-snipe-local-mode-map "z" 'evil-snipe-s)
+    (evil-define-key 'visual evil-snipe-local-mode-map "Z" 'evil-snipe-S)
+    (add-hook 'magit-mode-hook 'turn-off-evil-snipe-override-mode)
+    :diminish evil-snipe-mode)
 
-;; Hit ; or , (originally <SPC>) to repeat last movement.
-;; (use-package evil-space
-;;   :ensure t
-;;   :init
-;;   (evil-space-mode)
-;;   (setq evil-space-next-key ";")
-;;   (setq evil-space-prev-key ","))
+  ;; Hit ; or , (originally <SPC>) to repeat last movement.
+  ;; (use-package evil-space
+  ;;   :ensure t
+  ;;   :init
+  ;;   (evil-space-mode)
+  ;;   (setq evil-space-next-key ";")
+  ;;   (setq evil-space-prev-key ","))
 
-;; Select with visual-mode and hit * or # to find next occurrence
-(use-package evil-visualstar
-  :ensure t
-  :config
-  (global-evil-visualstar-mode)
-  (setq evil-visualstar/persistent t))
+  ;; Select with visual-mode and hit * or # to find next occurrence
+  (use-package evil-visualstar
+    :ensure t
+    :config
+    (global-evil-visualstar-mode)
+    (setq evil-visualstar/persistent t))
+  )
 
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(default ((t (:family "Fantasque Sans Mono" :foundry "PfEd" :slant normal :weight normal :height 125 :width normal)))))

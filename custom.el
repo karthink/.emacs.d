@@ -9,8 +9,26 @@
  '(fringe-mode (quote (nil . 0)) nil (fringe))
  '(package-selected-packages
    (quote
-    (wrap-region magit ivy-bibtex ivy-hydra ivy-rich which-key counsel swiper ivy evil-exchange evil-lion evil-matchit evil-numbers evil-rsi evil-snipe evil-space evil-visualstar org-bullets smart-mode-line rainbow-mode dracula-theme evil-magit undo-tree evil-tabs evil-leader org-evil god-mode use-package evil-surround gruvbox-theme ido-completing-read+ cdlatex evil-commentary evil-goggles evil-paredit evil-replace-with-register iy-go-to-char smex ido-grid-mode composable evil ace-jump-mode wolfram-mode auto-complete julia-repl julia-shell julia-mode matlab-mode auctex dash deferred request-deferred s dash-functional ein ein-mumamo color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet expand-region multiple-cursors)))
- '(pdf-view-midnight-colors (quote ("#DCDCCC" . "#383838"))))
+    (company-auctex company-dict company-jedi company company-bibtex evil-collection evil-embrace helpful shackle wrap-region magit ivy-bibtex ivy-hydra ivy-rich which-key counsel swiper ivy evil-exchange evil-lion evil-matchit evil-numbers evil-rsi evil-snipe evil-space evil-visualstar org-bullets smart-mode-line rainbow-mode dracula-theme evil-magit undo-tree evil-tabs evil-leader org-evil god-mode use-package evil-surround gruvbox-theme ido-completing-read+ cdlatex evil-commentary evil-goggles evil-paredit evil-replace-with-register iy-go-to-char smex ido-grid-mode composable evil ace-jump-mode wolfram-mode auto-complete julia-repl julia-shell julia-mode matlab-mode auctex dash deferred request-deferred s dash-functional ein ein-mumamo color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet expand-region multiple-cursors)))
+ '(pdf-view-midnight-colors (quote ("#DCDCCC" . "#383838")))
+ '(shackle-default-size 0.33)
+ '(shackle-rules
+   (quote
+    ((help-mode :select t :popup t :align t)
+     ("*TeX Help*" :select nil :popup t :align t)
+     ("*eshell*" :select t :popup t :align t :size 0.25)
+     (compilation-mode :select nil :popup t :align t :size 0.15)
+     (grep-mode :select t :popup t :align t :size 0.25)
+     (helpful-mode :select t :popup t :align
+                   (quote right))
+     ("*Warnings*" :select nil :popup nil :align t)
+     ("*evil-registers* " :select nil :popup t :align
+      (quote right)
+      :size 0.15)
+     (inferior-emacs-lisp-mode :select t :popup t :align
+                               (quote below)
+                               :size 0.25)
+     (debugger-mode :select nil :popup t :align t :size 0.2)))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.

@@ -240,8 +240,9 @@ show verbose descriptions with hyperlinks."
 (require 'better-buffers nil t)
 (require 'popup-buffers nil t)
 (global-set-key (kbd "C-`") 'popup-buffers-latest-toggle) 
-(global-set-key (kbd "<f7>") 'popup-buffers-latest-close)
-(global-set-key (kbd "<f8>") 'popup-buffers-latest-open)
+(global-set-key (kbd "M-`") 'popup-buffers-cycle)
+;; (global-set-key (kbd "<f7>") 'popup-buffers-latest-close)
+;; (global-set-key (kbd "<f8>") 'popup-buffers-latest-open)
 
 (winner-mode)
 
@@ -454,7 +455,7 @@ show verbose descriptions with hyperlinks."
 ;;----------------------------------------------------------------------
 (use-package company
   :ensure t
-  :defer 
+  ;;:defer 
   ;; :diminish company-mode
   :config
   ;; (add-to-list 'company-backends 'company-files)
@@ -476,7 +477,7 @@ show verbose descriptions with hyperlinks."
         '(not erc-mode message-mode
               help-mode gud-mode eshell-mode
               package-menu-mode)
-        company-backends '(company-files company-dabbrev company-capf)
+        company-backends '(company-files company-capf company-dabbrev)
         company-frontends
         '(company-pseudo-tooltip-frontend
           company-echo-metadata-frontend)
@@ -500,6 +501,11 @@ show verbose descriptions with hyperlinks."
   ;;   :config
   ;;   (add-to-list 'company-backends 'company-auctex)
   ;;   (company-auctex-init))
+
+  (use-package company-statistics
+    :ensure t
+    :init
+    (add-hook 'after-init-hook #'company-statistics-mode))
   )
 
 ;;----------------------------------------------------------------------
@@ -518,28 +524,39 @@ show verbose descriptions with hyperlinks."
 ;;---------------------------------------------------------------------
 ;; PAREDIT-MODE
 ;;---------------------------------------------------------------------
-(use-package paredit
-  :ensure t
-  :commands enable-paredit-mode
-  :hook ((emacs-lisp-mode
-          eval-expression-minibuffer-setup
-          ielm-mode
-          lisp-mode
-          lisp-interaction-mode
-          scheme-mode) . enable-paredit-mode)
+;; (use-package paredit
+;;   :ensure t
+;;   :commands enable-paredit-mode
+;;   :hook ((emacs-lisp-mode
+;;           eval-expression-minibuffer-setup
+;;           ielm-mode
+;;           lisp-mode
+;;           lisp-interaction-mode
+;;           scheme-mode) . enable-paredit-mode)
 
-  ;; (autoload 'enable-paredit-mode "paredit"
-  ;; "Turn on pseudo-structural editing of Lisp code." t)
-  ;; :bind (:map paredit-mode-map
-  ;;             ;; ("M-s" . nil)
-  ;;             ;; ("M-r" . nil)
-  ;;             ;; ("<M-up>" . nil)
-  ;;             ;; ("<M-down>" . nil)
-  ;;             ("C-c <up>" . 'paredit-splice-sexp-killing-backward)
-  ;;             ("C-c <down>" . 'paredit-splice-sexp-killing-forward)
-  ;;             ("C-c s" . 'paredit-splice-sexp)
-  ;;             ("C-c r" . 'paredit-raise-sexp))
-  )
+;;   ;; (autoload 'enable-paredit-mode "paredit"
+;;   ;; "Turn on pseudo-structural editing of Lisp code." t)
+;;   ;; :bind (:map paredit-mode-map
+;;   ;;             ;; ("M-s" . nil)
+;;   ;;             ;; ("M-r" . nil)
+;;   ;;             ;; ("<M-up>" . nil)
+;;   ;;             ;; ("<M-down>" . nil)
+;;   ;;             ("C-c <up>" . 'paredit-splice-sexp-killing-backward)
+;;   ;;             ("C-c <down>" . 'paredit-splice-sexp-killing-forward)
+;;   ;;             ("C-c s" . 'paredit-splice-sexp)
+;;   ;;             ("C-c r" . 'paredit-raise-sexp))
+;;   )
+
+;;----------------------------------------------------------------------
+;; SMARTPARENS-MODE
+;;----------------------------------------------------------------------
+(use-package smartparens
+  :ensure t
+  :init
+  (add-hook 'emacs-lisp-mode-hook #'smartparens-strict-mode)
+  (add-hook 'lisp-interaction-mode-hook #'smartparens-strict-mode)
+  :config
+  (require 'smartparens-config))
 
 ;;----------------------------------------------------------------------
 ;; EXPAND-REGION

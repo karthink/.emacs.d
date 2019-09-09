@@ -17,6 +17,12 @@
 ;;; popup-buffers-latest-open
 ;;; popup-buffers-toggle-latest
 ;;;
+;;; TODO: Handle buffer deletion carefully. Killed buffers should be
+;;; wiped from popup-buffers-open-buffer-window-alist, by hooking into
+;;; kill-buffer-hook
+;;;
+;;; TODO: Add support for popup classification based on other
+;;; attributes, such as major-mode
 ;;;
 ;;; by Karthik Chikmagalur
 
@@ -27,14 +33,31 @@
     "^\\*Compile-Log\\*"
     "^\\*Messages\\*"
     "^\\*Backtrace\\*"
-    "^\\*evil-registers\\*")
+    "^\\*evil-registers\\*"
+    "^\\*Apropos"
+    "^Calc:"
+    "^\\*ielm\\*"
+    "^\\*TeX Help\\*"
+    ;; "^\\*"
+)
   "List of buffer names whose windows are treated as popups.")
 
+;; (setq popup-buffers-reference-buffer-list
+;;         '("^\\*Help\\*"
+;;           "^\\*helpful"
+;;           "^\\*Warnings\\*"
+;;           "^\\*Compile-Log\\*"
+;;           "^\\*Messages\\*"
+;;           "^\\*Backtrace\\*"
+;;           "^\\*evil-registers\\*"
+;;           "^\\*Apropos"
+;;           "^Calc:"))
+
 (defvar popup-buffers-open-buffer-window-alist '()
-  "List of currently open (window . buffer)s that are treated as popups")
+  "Alist of currently live (window . buffer)s that are treated as popups")
 
 (defvar popup-buffers-buried-buffer-window-alist nil
-  "List of currently buried (window . buffer)s that are treated as popups")
+  "Alist of currently buried (window . buffer)s that are treated as popups")
 
 (defvar popup-buffers--toggle-state nil
   "Current state of latest popup. Aternates between nil and t")
@@ -56,6 +79,7 @@
 
 (defun popup-buffers-find-open-popups ()
   "Find open popup windows in the frame and TODO make a list sorting them by active time"
+  ;; use buffer-display-time to get timestamps
   (let* ((open-windows (window-list))
          (open-buffers (mapcar #'window-buffer open-windows))
          (open-popups nil))
@@ -70,8 +94,12 @@
   (setq popup-buffers-open-buffer-window-alist
         (popup-buffers-find-open-popups)))
 
-;; Add popup maintenance to `window-configuration-change-hook',
+;;; HOOKS
+;; Add popup list maintenance to `window-configuration-change-hook',
 (add-hook 'window-configuration-change-hook 'popup-buffers-update-open-popups)
+
+;; Add popup list maintenance to `make-frame-finish-functions',
+(add-hook 'after-make-frame-functions 'popup-buffers-update-open-popups)
 
 ;; TODO Remove current buffer from the list of buried popups (will be added to `kill-buffer-hook')
 
@@ -103,8 +131,34 @@
   "Toggle visibility of the last opened popup window"
   (interactive)
   (setq popup-buffers--toggle-state (not popup-buffers--toggle-state))
-  (if popup-buffers--toggle-state
-      (popup-buffers-latest-open)
+  (if popup-buffers-open-buffer-window-alist
+      (popup-buffers-latest-close)
+    (if popup-buffers--toggle-state
+        (popup-buffers-latest-close)
+      (popup-buffers-latest-open))))
+
+(defun popup-buffers-all-buffers-bury ()
+  (do () ((null popup-buffers-open-buffer-window-alist) t)
     (popup-buffers-latest-close)))
+
+(defun popup-buffers-all-buffers-raise ()
+  (do () ((null popup-buffers-buried-buffer-window-alist) t)
+    (popup-buffers-latest-open)))
+
+(defun popup-buffers-cycle (&optional arg)
+  "Cycle visibility of popup windows one at a time. With a prefix argument, cycle in the opposite direction."
+  (interactive "p")
+  (if (null (cdr popup-buffers-open-buffer-window-alist))
+      ;; Only zero or one popups on screen
+      (progn (popup-buffers-latest-close)
+             (let ((bufs popup-buffers-buried-buffer-window-alist)) 
+               (setq popup-buffers-buried-buffer-window-alist
+                     (if arg
+                         (append (last bufs) (butlast bufs))
+                       (append (rest bufs) (cons (first bufs) ()))))
+               (popup-buffers-latest-open)))
+    ;; Else two or more popups on screen
+    (progn (popup-buffers-all-buffers-bury)
+           (popup-buffers-latest-open))))
 
 (provide 'popup-buffers)

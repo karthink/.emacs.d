@@ -11,8 +11,8 @@
                                 (swiper-isearch . ivy--regex-plus)
                                 (counsel-ag . ivy--regex-plus)
                                 (t . ivy--regex-ignore-order)))
-  (setq enable-recursive-minibuffers t
-        ivy-initial-inputs-alist nil)
+  (setq enable-recursive-minibuffers t)
+  ;; (setq ivy-initial-inputs-alist nil)
   
   ;; Ensure a jump point is registered before jumping to new locations with ivy
   (defvar +ivy--origin nil)
@@ -44,7 +44,7 @@
     "Switch to counsel-file-jump, preserving current input."
     (interactive)
     (let ((input (ivy--input)))
-      (ivy-quit-and-run (counsel-file-jump))))
+      (ivy-quit-and-run (counsel-file-jump "" ivy--directory))))
 
   (define-key ivy-minibuffer-map (kbd "M-j") '+ivy-switch-file-search)
 
@@ -53,7 +53,7 @@
     "Change `ivy-counsel-file-jump' to use fd or ripgrep if available"
     (cl-destructuring-bind (find-program . args)
         (cond ((executable-find "fd")
-               (cons "fd" (list "-t" "f" "-E" ".git" "-H")))
+               (cons "fd" (list "--hidden" "-L" "-t" "f" "-E" ".git")))
               ((executable-find "rg")
                (cons "rg" (list "--files" "--hidden" "--no-messages")))
               ((cons find-program args)))

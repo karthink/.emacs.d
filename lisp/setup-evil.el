@@ -4,7 +4,10 @@
   :init
   (global-evil-leader-mode 1)
   (evil-leader/set-leader "<SPC>")
-  (evil-leader/set-key-for-mode 'emacs-lisp-mode "B" 'byte-compile-file)
+  (evil-leader/set-key-for-mode 'emacs-lisp-mode "B" (lambda () "Byte-compile file"
+                                                       (if buffer-file-truename
+                                                           (byte-compile-file buffer-true-filename)
+                                                         (message "Not visiting a file!"))))
   (evil-leader/set-key-for-mode 'latex-mode "cc" 'TeX-command-master)
   (evil-leader/set-key
     ;; "e" 'find-file
@@ -31,7 +34,8 @@
     ;; Navigation commands
     "j" 'ace-jump-mode
 
-    "k" (lambda () "Kill buffer" (interactive) (kill-buffer (current-buffer)))
+    "k" '(lambda () (interactive) (kill-buffer (current-buffer)))
+    "K" 'kill-buffer-and-window
     "n" (lambda (&optional arg)
           "Next Buffer"
                   (interactive "P")
@@ -40,6 +44,8 @@
           "Previous Buffer"
                   (interactive "P")
                   (if arg (next-user-buffer) (previous-user-buffer)))
+    "N" 'next-buffer
+    "P" 'previous-buffer
     "B" (lambda ()
           "Open Bibtex file"
           (interactive)
@@ -57,7 +63,7 @@
   (setq evil-want-C-u-scroll t)
   (setq evil-want-integration t)
   (setq evil-want-keybinding nil)
-  (setq evil-symbol-word-search t)
+  (setq-default evil-symbol-word-search t)
   (setq evil-emacs-state-cursor '(hbar . 4))
   (setq evil-vsplit-window-right t)
   (setq evil-spilt-window-below t)
@@ -166,6 +172,7 @@
     (setq evil-snipe-smart-case t)
     (evil-define-key 'visual evil-snipe-local-mode-map "z" 'evil-snipe-s)
     (evil-define-key 'visual evil-snipe-local-mode-map "Z" 'evil-snipe-S)
+    (evil-define-key 'normal snipe-local-mode-map "S" 'evil-snipe-S)
     (add-hook 'magit-mode-hook 'turn-off-evil-snipe-override-mode)
     :diminish evil-snipe-mode)
 
@@ -185,11 +192,21 @@
     (setq evil-visualstar/persistent t)
     :diminish visualstar-mode)
   
-  (use-package evil-paredit
-    :ensure t
-    :config
-    (add-hook 'emacs-lisp-mode-hook 'evil-paredit-mode))
+  ;; (use-package evil-paredit
+  ;;   :ensure t
+  ;;   :config
+  ;;   (add-hook 'emacs-lisp-mode-hook 'evil-paredit-mode))
   
+;;----------------------------------------------
+;; EVIL-SMARTPARENS
+;;----------------------------------------------
+  (use-package evil-smartparens
+    :ensure t
+    :init
+    (add-hook 'lisp-interaction-mode-hook #'evil-smartparens-mode)
+    (add-hook 'emacs-lisp-mode-hook #'evil-smartparens-mode)
+    ;; (add-hook 'lisp-interaction-mode-hook #'evil-smartparens-mode)
+    )
   )
 
 (use-package evil-collection

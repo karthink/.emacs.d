@@ -41,7 +41,6 @@
 
 ;; Get rid of the splash screen
 ;; Make *scratch* buffer suitable for writing
-;; (setq initial-scratch-message nil)
 (setq inhibit-startup-message t
       inhibit-splash-screen t
       inhibit-startup-echo-area-message user-login-name
@@ -52,18 +51,82 @@
 
 ;; Stop cursor from blinking
 (blink-cursor-mode 0)
+;; No fat cursors
+(setq x-stretch-cursor nil)
 
 ;; Turn off the menu, tool bars, tooltips and the scroll bar
 (menu-bar-mode 0)
 (tool-bar-mode 0)
 (tooltip-mode 0)
 (scroll-bar-mode 0)
-(show-paren-mode 1)
 ;; Turn on image viewing
 (auto-image-file-mode t)
 
 ;; Show me what I type, immediately
 (setq echo-keystrokes 0.01)
+
+;; Middle-click paste at point, not at cursor
+(setq mouse-yank-at-point t)
+;; Mouse available in terminal
+(add-hook 'tty-setup-hook #'xterm-mouse-mode)
+
+;; Scrolling
+(setq scroll-margin 0
+      scroll-preserve-screen-position t)
+      ;; mouse
+;; (setq mouse-wheel-scroll-amount '(t ((shift) . 2))
+;;       mouse-wheel-progressive-speed t)
+
+;; (setq-hook! '(eshell-mode-hook term-mode-hook) hscroll-margin 0)
+
+;;; Fringes
+
+;; Reduce the clutter in the fringes; we'd like to reserve that space for more
+;; useful information, like git-gutter and flycheck.
+(setq indicate-buffer-boundaries nil
+      indicate-empty-lines nil)
+
+;; remove continuation arrow on right fringe
+;; (delq! 'continuation fringe-indicator-alist 'assq)
+
+;; Don't resize emacs in steps.
+(setq window-resize-pixelwise t
+      frame-resize-pixelwise t)
+
+;; The native border "consumes" a pixel of the fringe on righter-most splits,
+;; `window-divider' does not. Available since Emacs 25.1.
+(setq window-divider-default-places t
+      window-divider-default-bottom-width 1
+      window-divider-default-right-width 1)
+(add-hook 'after-init-hook #'window-divider-mode)
+
+;; No popup dialogs
+(setq use-dialog-box nil)
+(if (bound-and-true-p tooltip-mode) (tooltip-mode -1))
+;; native linux tooltips are ugly
+(when IS-LINUX
+  (setq x-gtk-use-system-tooltips nil))
+
+;; WINDOW SPLITTING
+;; Set horizontal splits as the default
+;; (setq split-width-threshold 120
+;;       split-height-threshold 80)
+ ;; Favor vertical splits over horizontal ones
+(setq split-width-threshold 160
+      split-height-threshold nil)
+
+;; ;;;###package pos-tip
+;; (setq pos-tip-internal-border-width 6
+;;       pos-tip-border-width 1)
+;; ;; Better fontification of number literals in code
+
+;; (use-package! highlight-numbers
+;;   :hook ((prog-mode conf-mode) . highlight-numbers-mode)
+;;   :config (setq highlight-numbers-generic-regexp "\\_<[[:digit:]]+\\(?:\\.[0-9]*\\)?\\_>"))
+
+;; ;;;###package hide-mode-line-mode
+;; (add-hook! '(completion-list-mode-hook Man-mode-hook)
+;;            #'hide-mode-line-mode)
 
 ;;########################################################################
 ;; SAVE AND BACKUP
@@ -95,21 +158,72 @@
 ;; highlight the current line, as in Matlab
 ;; (global-hl-line-mode)
 
+;; (use-package! hl-line
+;;   ;; Highlights the current line
+;;   :hook ((prog-mode text-mode conf-mode) . hl-line-mode)
+;;   :config
+;;   ;; Not having to render the hl-line overlay in multiple buffers offers a tiny
+;;   ;; performance boost. I also don't need to see it in other buffers.
+;;   (setq hl-line-sticky-flag nil
+;;         global-hl-line-sticky-flag nil)
+
+;;   ;; Disable `hl-line' in evil-visual mode (temporarily). `hl-line' can make the
+;;   ;; selection region harder to see while in evil visual mode.
+;;   (after! evil
+;;     (defvar doom-buffer-hl-line-mode nil)
+;;     (add-hook! 'evil-visual-state-entry-hook
+;;       (defun doom-disable-hl-line-h ()
+;;         (when hl-line-mode
+;;           (setq-local doom-buffer-hl-line-mode t)
+;;           (hl-line-mode -1))))
+;;     (add-hook! 'evil-visual-state-exit-hook
+;;       (defun doom-enable-hl-line-maybe-h ()
+;;         (when doom-buffer-hl-line-mode
+;;           (hl-line-mode +1))))))
+
+
+;; ;;;###package whitespace
+;; (setq whitespace-line-column nil
+;;       whitespace-style
+;;       '(face indentation tabs tab-mark spaces space-mark newline newline-mark
+;;         trailing lines-tail)
+;;       whitespace-display-mappings
+;;       '((tab-mark ?\t [?› ?\t])
+;;         (newline-mark ?\n [?¬ ?\n])
+;;         (space-mark ?\  [?·] [?.])))
+;; (after! whitespace
+;;   (defun doom-disable-whitespace-mode-in-childframes-a (orig-fn)
+;;     "`whitespace-mode' inundates child frames with whitspace markers, so disable
+;; it to fix all that visual noise."
+;;     (unless (frame-parameter nil 'parent-frame)
+;;       (funcall orig-fn)))
+;;   (add-function :around whitespace-enable-predicate #'doom-disable-whitespace-mode-in-childframes-a))
+
 ;; when you mark a region, you can delete it or replace it as in other
 ;; Windows programs. simply hit delete or type whatever you want or
 ;; yank
 (delete-selection-mode)
 
 ; show the matching parentheses immediately
-(setq show-paren-delay 0)
+(setq show-paren-delay 0.1
+      show-paren-highlight-openparen t
+      show-paren-when-point-inside-paren t)
+(show-paren-mode 1)
+
+;; (use-package! paren
+;;   ;; highlight matching delimiters
+;;   :after-call after-find-file doom-switch-buffer-hook
+;;   :config
+;;   (setq show-paren-delay 0.1
+;;         show-paren-highlight-openparen t
+;;         show-paren-when-point-inside-paren t)
+;;   (show-paren-mode +1))
+
+;; Underline looks a bit better when drawn lower
+(setq x-underline-at-descent-line t)
 
 ;; FULLSCREEN
 (global-set-key [f11] 'toggle-frame-fullscreen)
-
-;; WINDOW SPLITTING
-;; Set horizontal splits as the default
-(setq split-width-threshold 120)
-(setq split-height-threshold 80)
 
 ;; Byte-compile elisp files immediately after saving them if .elc exists:
 (defun auto-byte-recompile ()
@@ -120,6 +234,8 @@ file corresponding to the current buffer file, then recompile the file."
              (file-exists-p (byte-compile-dest-file buffer-file-name)))
     (byte-compile-file buffer-file-name)))
 (add-hook 'after-save-hook 'auto-byte-recompile)
+
+(global-prettify-symbols-mode 1)
 
 ;;######################################################################
 ;; PACKAGE MANAGEMENT
@@ -163,6 +279,9 @@ file corresponding to the current buffer file, then recompile the file."
 ;; Arrange for Emacs to notice password prompts and turn off echoing for them, as follows:
 (add-hook 'comint-output-filter-functions
           'comint-watch-for-password-prompt)
+
+;;;###package ansi-color
+(setq ansi-color-for-comint-mode t)
 
 ;; Get rid of the annoying system beep
 ;; (setq visible-bell t)
@@ -239,12 +358,19 @@ show verbose descriptions with hyperlinks."
 ;;######################################################################
 (require 'better-buffers nil t)
 (require 'popup-buffers nil t)
-(global-set-key (kbd "C-`") 'popup-buffers-latest-toggle) 
+(global-set-key (kbd "C-`") 'popup-buffers-toggle-latest) 
 (global-set-key (kbd "M-`") 'popup-buffers-cycle)
-;; (global-set-key (kbd "<f7>") 'popup-buffers-latest-close)
-;; (global-set-key (kbd "<f8>") 'popup-buffers-latest-open)
+;; (global-set-key (kbd "<f7>") 'popup-buffers-close-latest)
+;; (global-set-key (kbd "<f8>") 'popup-buffers-open-latest)
 
 (winner-mode)
+;; (use-package! winner
+;;   ;; undo/redo changes to Emacs' window layout
+;;   :after-call after-find-file doom-switch-window-hook
+;;   :preface (defvar winner-dont-bind-my-keys t)
+;;   :config (winner-mode +1)) ; I'll bind keys myself
+
+
 
 ;;######################################################################
 ;; UTILITY
@@ -254,7 +380,9 @@ show verbose descriptions with hyperlinks."
 ;; Colorize color names in buffers
 (use-package rainbow-mode
   :ensure t
-  :config (rainbow-mode))
+  :config
+  (setq rainbow-delimiters-max-face-count 3)
+  (rainbow-mode))
 
 (defun sudo-find-file (file)
   "Open FILE as root."
@@ -280,21 +408,35 @@ show verbose descriptions with hyperlinks."
 ;;######################################################################
 
 ;; compile!
-(global-set-key [(f9)] 'compile)
-(global-set-key [(f10)] 'recompile)
-(add-hook 'compilation-finish-functions
-          (lambda (buf str)
+(use-package compile
+  :defer t
+  :config
+  (setq compilation-always-kill t
+        compilation-ask-about-save nil
+        compilation-scroll-output 'first-error)
+  (global-set-key [(f9)] 'compile)
+  (global-set-key [(f10)] 'recompile)
+  
+  (defun +apply-ansi-color-to-compilation-buffer-h ()
+    "Applies ansi codes to the compilation buffers. Meant for
+`compilation-filter-hook'."
+    (with-silent-modifications
+      (ansi-color-apply-on-region compilation-filter-start (point))))
 
-            (if (or
-                 (string-match "exited abnormally" str)
-                 (string-match "matches found" str))
-                ;;there were errors
-                (message "Press M-g n/p to visit")
+  (add-hook 'compilation-filter-hook #'+apply-ansi-color-to-compilation-buffer-h)
+  (add-hook 'compilation-finish-functions
+            (lambda (buf str)
 
-              ;;no errors, make the compilation window go away in 0.5 seconds
-              (save-excursion
-                (run-at-time 1.0 nil 'bury-buffer buf))
-              (message "NO COMPILATION ERRORS!"))))
+              (if (or
+                   (string-match "exited abnormally" str)
+                   (string-match "matches found" str))
+                  ;;there were errors
+                  (message "Press M-g n/p to visit")
+
+                ;;no errors, make the compilation window go away in 0.5 seconds
+                (save-excursion
+                  (run-at-time 1.0 nil 'bury-buffer buf))
+                (message "NO COMPILATION ERRORS!")))))
 
 ;;######################################################################
 ;; LANGUAGE MODES
@@ -310,7 +452,7 @@ show verbose descriptions with hyperlinks."
               ("C-M-9" . TeX-insert-smallmatrix)
               ("C-M-]" . TeX-insert-bmatrix)
               ("C-;" . TeX-complete-symbol))
-  :init
+  :config
   (progn  (defun TeX-matrix-spacer () (interactive) (insert " & "))
           (defun TeX-insert-smallmatrix () (interactive)
             (insert "[\\begin{smallmatrix}  \\end{smallmatrix}]")
@@ -346,7 +488,17 @@ show verbose descriptions with hyperlinks."
                         (output-pdf "Zathura")
                         (output-html "xdg-open"))))
                )
-         (TeX-fold-mode 1)))
+         (TeX-fold-mode 1)
+         ))
+
+(use-package reftex
+  :defer t
+  :commands turn-on-reftex
+  :config
+  (progn (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
+         (add-hook 'latex-mode-hook 'turn-on-reftex)
+         (setq reftex-plug-into-AUCTeX t)))
+;; (autoload 'reftex "reftex")
 
 ;; (setq-default TeX-master nil)
 (use-package cdlatex
@@ -381,9 +533,166 @@ show verbose descriptions with hyperlinks."
     (setq cdlatex-paired-parens "$[{("))
   :hook (LaTeX-mode . turn-on-cdlatex))
 
+;;----------------------------------------------------------------------
+;; MATLAB
+;;----------------------------------------------------------------------
+(use-package matlab
+  ;; :after 'evil
+  ;; :commands (matlab-mode matlab-shell matlab-shell-run-block)
+  :bind (:map matlab-mode-map
+              ("C-c C-b" . 'matlab-shell-run-block))
+  :init
+  (add-hook 'matlab-mode-hook #'company-mode-on)
+  (add-hook 'matlab-mode-hook #'hs-minor-mode)
+  (add-hook 'matlab-mode-hook #'turn-on-evil-matlab-textobjects-mode)
+  (add-hook 'matlab-shell-mode-hook #'company-mode-on)
+
+  ;; (define-key matlab-mode-map (kbd "C-c C-b") #'matlab-shell-run-block)  
+  
+  ;; :config
+  (add-hook 'matlab-shell-mode-hook (lambda () (interactive)
+                                      (define-key matlab-shell-mode-map (kbd "C-<tab>") nil)))
+  
+  (defun matlab-select-block ()
+    (save-excursion
+      (let ((block-beg (search-backward-regexp "^%%" nil t))
+            (block-end (search-forward-regexp "^%%" nil t 2)))
+        (cons block-beg block-end))))
+
+  (defun matlab-shell-run-block (&optional prefix)
+    "Run a block of code around point separated by %% and display
+result in MATLAB shell. If prefix argument is non-nil, replace
+newlines with commas to suppress output. This command requires an
+active MATLAB shell."
+    (interactive "P")
+    (let* ((block (matlab-select-block))
+           (beg (car block))
+           (end (cdr block)))
+      (if prefix
+          (matlab-shell-run-region beg end prefix)
+        (matlab-shell-run-region beg end))))
+  
+(defun matlab-forward-section ()
+  "Move forward section in matlab mode"
+  (interactive)
+  (beginning-of-line 2)
+  (re-search-forward "^%%" nil t)
+  (match-end 0))
+
+(defun matlab-backward-section ()
+  "Move forward section in matlab mode"
+  (interactive)
+  (re-search-backward "^%%" nil t)
+  (match-beginning 0))
+
+  )
+
 ;;######################################################################
 ;; PLUGINS
 ;;######################################################################
+
+;;----------------------------------------------------------------------
+;; YASNIPPET
+;;----------------------------------------------------------------------
+
+;; (use-package yasnippet
+
+;;   :config
+;;   ;; Redefine yas expand key from TAB because company-mode uses TAB.
+;;   (define-key yas-minor-mode-map (kbd "C-j") 'yas-expand)
+;;   (define-key yas-keymap "\C-j" 'yas-next-field-or-maybe-expand)
+;;   (dolist (keymap (list yas-minor-mode-map yas-keymap))
+;;     (define-key keymap (kbd "TAB") nil)
+;;     (define-key keymap [(tab)] nil))
+;;   )
+
+;;----------------------------------------------------------------------
+;; HIDESHOW is built in
+;;----------------------------------------------------------------------
+(use-package hideshow ; built-in
+  :commands (hs-toggle-hiding
+             hs-hide-block
+             hs-hide-level
+             hs-show-all
+             hs-hide-all)
+  :config
+  (setq hs-hide-comments-when-hiding-all nil)
+  ;; (setq hs-hide-comments-when-hiding-all nil
+  ;;       ;; Nicer code-folding overlays (with fringe indicators)
+  ;;       hs-set-up-overlay #'+fold-hideshow-set-up-overlay-fn)
+
+  (dolist (hs-command (list #'hs-toggle-hiding 
+                            #'hs-hide-block 
+                            #'hs-hide-level 
+                            #'hs-show-all 
+                            #'hs-hide-all))
+    (advice-add hs-command :before
+                (lambda () "Advice to ensure `hs-minor-mode' is enabled"
+                  (unless (bound-and-true-p hs-minor-mode)
+                    (hs-minor-mode +1)))))
+  
+  ;; (defadvice! +fold--hideshow-ensure-mode-a (&rest _)
+  ;;   "Ensure `hs-minor-mode' is enabled."
+  ;;   :before '(hs-toggle-hiding hs-hide-block hs-hide-level hs-show-all hs-hide-all)
+  ;;   (unless (bound-and-true-p hs-minor-mode)
+  ;;     (hs-minor-mode +1)))
+
+  ;; extra folding support for more languages
+  (unless (assq 't hs-special-modes-alist)
+    (setq hs-special-modes-alist
+          (append
+           '((vimrc-mode "{{{" "}}}" "\"")
+             ;; (yaml-mode "\\s-*\\_<\\(?:[^:]+\\)\\_>"
+             ;;            ""
+             ;;            "#"
+             ;;            +fold-hideshow-forward-block-by-indent-fn nil)
+             ;; (haml-mode "[#.%]" "\n" "/" +fold-hideshow-haml-forward-sexp-fn nil)
+             ;; (ruby-mode "class\\|d\\(?:ef\\|o\\)\\|module\\|[[{]"
+             ;;            "end\\|[]}]"
+             ;;            "#\\|=begin"
+             ;;            ruby-forward-sexp)
+             ;; (enh-ruby-mode "class\\|d\\(?:ef\\|o\\)\\|module\\|[[{]"
+             ;;                "end\\|[]}]"
+             ;;                "#\\|=begin"
+             ;;                enh-ruby-forward-sexp nil)
+             (matlab-mode "if\\|switch\\|case\\|otherwise\\|while\\|for\\|try\\|catch\\|function\\|^%%"
+                          "end\\|^%%"
+                          "%[^%]" (lambda (_arg) (matlab-forward-sexp)))
+             (nxml-mode "<!--\\|<[^/>]*[^/]>"
+                        "-->\\|</[^/>]*[^/]>"
+                        "<!--" sgml-skip-tag-forward nil))
+           hs-special-modes-alist
+           '((t))))))
+
+;;----------------------------------------------------------------------
+;; VIMISH-FOLD
+;;----------------------------------------------------------------------
+;; (use-package vimish-fold
+;;   :ensure t
+;;   )
+
+;;----------------------------------------------------------------------
+;; EDIFF (built-in)
+;;----------------------------------------------------------------------
+(use-package ediff
+  :defer t
+  :init
+  (setq ediff-diff-options "-w" ; turn off whitespace checking
+        ediff-split-window-function #'split-window-horizontally
+        ediff-window-setup-function #'ediff-setup-windows-plain)
+  :config
+  (defvar +ediff-saved-wconf nil)
+  (defun +ediff-save-wconf-h ()
+      (setq +ediff-saved-wconf (current-window-configuration)))
+  (defun +ediff-restore-wconf-h ()
+    (when (window-configuration-p +ediff-saved-wconf)
+      (set-window-configuration +ediff-saved-wconf)))
+  ;; Restore window config after quitting ediff
+  (add-hook 'ediff-before-setup-hook #'+ediff-save-wconf-h)
+  (add-hook 'ediff-quit-hook #'+ediff-restore-wconf-h t)
+  (add-hook 'ediff-suspend-hook #'+ediff-restore-wconf-h t)
+)
+
 ;;----------------------------------------------------------------------
 ;; HELPFUl
 ;;----------------------------------------------------------------------
@@ -415,19 +724,25 @@ show verbose descriptions with hyperlinks."
 ;;----------------------------------------------------------------------
 (use-package which-key
   :ensure t
-  :init (which-key-mode)
-  :diminish which-key-mode)
+  :defer 1
+  :init
+  (setq which-key-sort-order #'which-key-prefix-then-key-order
+        which-key-sort-uppercase-first nil
+        which-key-add-column-padding 1
+        which-key-max-display-columns nil
+        which-key-min-display-lines 6
+        which-key-side-window-slot -10)
+  :config
+  (set-face-attribute 'which-key-local-map-description-face nil :weight 'bold)
+  (which-key-setup-side-window-bottom)
+  (add-hook 'which-key-init-buffer-hook 
+            (lambda () (setq-local line-spacing 3)))
 
-;;----------------------------------------------------------------------
-;; PRETTY LAMBDA MODE
-;;----------------------------------------------------------------------
-(require 'pretty-lambdada)
-(add-hook 'emacs-lisp-mode-hook 'pretty-lambda)
-(add-hook 'scheme-mode-hook 'pretty-lambda)
-(add-hook 'lisp-mode-hook 'pretty-lambda)
-(add-hook 'lisp-interaction-mode-hook 'pretty-lambda)
-(add-hook 'inferior-scheme-mode-hook 'pretty-lambda)
-;;(pretty-lambda-for-modes)
+  ;; (which-key-add-key-based-replacements doom-leader-key "<leader>")
+  ;; (which-key-add-key-based-replacements doom-localleader-key "<localleader>")
+  (which-key-mode +1)
+  
+  :diminish "")
 
 ;;----------------------------------------------------------------------
 ;; CALC
@@ -449,14 +764,13 @@ show verbose descriptions with hyperlinks."
 (if (file-exists-p abbrev-file-name)
     (quietly-read-abbrev-file))
 
-
 ;;----------------------------------------------------------------------
 ; COMPANY-MODE
 ;;----------------------------------------------------------------------
 (use-package company
   :ensure t
   ;;:defer 
-  ;; :diminish company-mode
+  :diminish "c->"
   :config
   ;; (add-to-list 'company-backends 'company-files)
   ;; (add-to-list 'company-backends 'company-dabbrev)
@@ -464,7 +778,8 @@ show verbose descriptions with hyperlinks."
   ;; (add-to-list 'company-backends 'company-dict)
 
   (global-company-mode)
-  (setq company-dabbrev-downcase 0
+  (setq company-idle-delay 0.2
+        company-dabbrev-downcase 0
         company-minimum-prefix-length 2
         company-selection-wrap-around t
         company-tooltip-align-annotations t
@@ -479,14 +794,23 @@ show verbose descriptions with hyperlinks."
               package-menu-mode)
         company-backends '(company-files company-capf company-dabbrev)
         company-frontends
-        '(company-pseudo-tooltip-frontend
+        '(company-pseudo-tooltip-unless-just-one-frontend
+          company-tng-frontend
+          ;; company-preview-frontend
           company-echo-metadata-frontend)
         ) 
   (define-key company-active-map (kbd "M-n") nil)
   (define-key company-active-map (kbd "M-p") nil)
   (define-key company-active-map (kbd "C-n") 'company-select-next)
   (define-key company-active-map (kbd "C-p") 'company-select-previous)
-  
+  (define-key company-active-map (kbd "<tab>") 'company-select-next)
+  (define-key company-active-map (kbd "TAB") 'company-select-next)
+  (define-key company-active-map (kbd "<backtab>") 'company-select-previous)
+  (define-key company-active-map (kbd "S-TAB") 'company-select-previous)
+  (define-key company-active-map (kbd "<ret>") nil)
+  (define-key company-active-map (kbd "C-w") nil)
+  (define-key company-active-map (kbd "C-f") 'company-show-location)
+   
   ;; (setq company-idle-delay 0)
   ;; (setq company-echo-delay 0)
   ;; (setq company-require-match nil)
@@ -501,51 +825,12 @@ show verbose descriptions with hyperlinks."
   ;;   :config
   ;;   (add-to-list 'company-backends 'company-auctex)
   ;;   (company-auctex-init))
-
+  
   (use-package company-statistics
     :ensure t
     :init
     (add-hook 'after-init-hook #'company-statistics-mode))
   )
-
-;;----------------------------------------------------------------------
-;; AUTO-COMPLETE MODE
-;;----------------------------------------------------------------------
-;;; ELPA package, run (package-initialize) first
-
-;; (use-package auto-complete
-;;   :ensure t
-;;   :commands global-auto-complete-mode
-;;   :init
-;;   (progn
-;;     (ac-config-default)
-;;     (global-auto-complete-mode 1)))
-
-;;---------------------------------------------------------------------
-;; PAREDIT-MODE
-;;---------------------------------------------------------------------
-;; (use-package paredit
-;;   :ensure t
-;;   :commands enable-paredit-mode
-;;   :hook ((emacs-lisp-mode
-;;           eval-expression-minibuffer-setup
-;;           ielm-mode
-;;           lisp-mode
-;;           lisp-interaction-mode
-;;           scheme-mode) . enable-paredit-mode)
-
-;;   ;; (autoload 'enable-paredit-mode "paredit"
-;;   ;; "Turn on pseudo-structural editing of Lisp code." t)
-;;   ;; :bind (:map paredit-mode-map
-;;   ;;             ;; ("M-s" . nil)
-;;   ;;             ;; ("M-r" . nil)
-;;   ;;             ;; ("<M-up>" . nil)
-;;   ;;             ;; ("<M-down>" . nil)
-;;   ;;             ("C-c <up>" . 'paredit-splice-sexp-killing-backward)
-;;   ;;             ("C-c <down>" . 'paredit-splice-sexp-killing-forward)
-;;   ;;             ("C-c s" . 'paredit-splice-sexp)
-;;   ;;             ("C-c r" . 'paredit-raise-sexp))
-;;   )
 
 ;;----------------------------------------------------------------------
 ;; SMARTPARENS-MODE
@@ -556,7 +841,13 @@ show verbose descriptions with hyperlinks."
   (add-hook 'emacs-lisp-mode-hook #'smartparens-strict-mode)
   (add-hook 'lisp-interaction-mode-hook #'smartparens-strict-mode)
   :config
-  (require 'smartparens-config))
+  (require 'smartparens-config)
+  (define-key smartparens-mode-map (kbd "M-<up>") 'sp-raise-sexp)
+  (define-key smartparens-mode-map (kbd "C-<right>") 'sp-forward-slurp-sexp)
+  (define-key smartparens-mode-map (kbd "C-<left>") 'sp-backward-slurp-sexp)
+  (define-key smartparens-mode-map (kbd "M-<right>") 'sp-forward-barf-sexp)
+  (define-key smartparens-mode-map (kbd "M-<left>") 'sp-backward-barf-sexp)
+  )
 
 ;;----------------------------------------------------------------------
 ;; EXPAND-REGION
@@ -592,66 +883,9 @@ show verbose descriptions with hyperlinks."
 ;; (add-hook 'text-mode-hook 'wrap-region-mode)
 
 ;;----------------------------------------------------------------------
-;; IDO-MODE.
-;;----------------------------------------------------------------------
-;; (require 'ido nil t)
-
-;; (when (featurep 'ido)
-
-;;   (ido-mode t)
-;;   (setq ido-enable-flex-matching t) ;; enable fuzzy matching
-;;   (ido-everywhere 1)
-;;   ;; (if (require 'ido-completing-read+))
-;;   (ido-ubiquitous-mode 1)
-;;   (require 'icomplete)
-;;   (icomplete-mode 1)
-
-;;   (autoload 'idomenu "idomenu" nil t)
-;;   (eval-after-load "idomenu"
-;;     (global-set-key (kbd "M-.") 'imenu))
-
-;;   ;; Custom keybindings
-;;   (defun ido-my-keys ()
-;;     (mapc (lambda (K)
-;;             (let* ((key (car K)) (fun (cdr K)))
-;;               (define-key ido-completion-map (edmacro-parse-keys key) fun)))
-;;           '(("C-n" . ido-next-match)
-;;             ("C-p"  . ido-prev-match))))
-
-
-;;   ;; Enable ido-completion over TAGS
-;;   (defun ido-find-file-in-tag-files ()
-;;     (interactive)
-;;     (save-excursion
-;;       (let ((enable-recursive-minibuffers t))
-;;         (visit-tags-table-buffer))
-;;       (find-file
-;;        (expand-file-name
-;;         (ido-completing-read
-;;          "Project file: " (tags-table-files) nil t)))))
-
-;;   ;; (define-key ido-mode-map (kbd "C-x t") 'ido-find-file-in-tag-files)
-
-;;   (add-hook 'ido-setup-hook (lambda nil
-;;                               (ido-my-keys)))
-
-;;   (require 'ido-other-window nil t))
-
-;; (use-package ido-grid-mode
-;;   :ensure
-;;   :init
-;;   (ido-grid-mode 1))
-
-;; (smex-initialize)
-;; (global-set-key (kbd "M-x") 'smex)
-;; (global-set-key (kbd "M-S-x") 'smex-major-mode-commands)
-
-;;----------------------------------------------------------------------
 ;; IVY/COUNSEL/SWIPER
 ;;----------------------------------------------------------------------
-
 (require 'setup-ivy)
-
 ;;; Bibtex management from ivy. Call ivy-bibtex.
 (use-package ivy-bibtex
   :ensure t
@@ -699,23 +933,10 @@ show verbose descriptions with hyperlinks."
 (use-package org-bullets
   :ensure t
   :hook (org-mode . org-bullets-mode))
-(use-package org-evil
-  :ensure t)
-
-;;----------------------------------------------------------------------
-;; DOT-MODE
-;;----------------------------------------------------------------------
-;; (Vi like redo edits with C-.)
-;; (require 'dot-mode nil t)
-;; (when (featurep 'dot-mode)
-;;   (add-hook 'find-file-hooks 'dot-mode-on)
-;;   (global-set-key [(control ?.)] (lambda () (interactive) (dot-mode 1)
-;;                                    (message "Dot mode activated."))))
 
 ;;----------------------------------------------------------------------
 ;; MACROS
 ;;----------------------------------------------------------------------
-
 ;; Bind call last macro to F4
 (global-set-key (kbd "<f3>") 'kmacro-start-macro)
 (global-set-key (kbd "<f4>") 'kmacro-end-or-call-macro)
@@ -725,11 +946,11 @@ show verbose descriptions with hyperlinks."
 ;;######################################################################
 
 ;;; Load theme after the frame is created.
-(add-hook 'after-make-frame-functions
-          (lambda (frame)
-            (load-theme 'gruvbox-dark-hard t)
-            ;; (load-theme 'smart-mode-line-dark t)
-))
+;; (add-hook 'after-make-frame-functions
+;;           (lambda (frame)
+;;             (load-theme 'gruvbox-dark-hard t)
+;;             ;; (load-theme 'smart-mode-line-dark t)
+;; ))
 
 ;;######################################################################
 ;; MODELINE:
@@ -738,6 +959,20 @@ show verbose descriptions with hyperlinks."
 (use-package smart-mode-line
   :ensure t
   :init (sml/setup))
+
+;; (use-package doom-modeline
+;;   :ensure t
+;;   :hook (after-init . doom-modeline-mode))
+
+;; Disable help mouse-overs for mode-line segments (i.e. :help-echo text).
+;; They're generally unhelpful and only add confusing visual clutter.
+(setq mode-line-default-help-echo nil
+      show-help-function nil)
+
+;; Try really hard to keep the cursor from getting stuck in the read-only prompt
+;; portion of the minibuffer.
+(setq minibuffer-prompt-properties '(read-only t intangible t cursor-intangible t face minibuffer-prompt))
+(add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
 
 ; (defvar mode-line-cleaner-alist
 ;   `((auto-complete-mode . " α")

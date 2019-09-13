@@ -128,6 +128,124 @@
 
 ;; (when (commandp 'ido-grid-mode)
   ;; (ido-grid-mode 1))
+;;----------------------------------------------------------------------
+;; AUTO-COMPLETE MODE
+;;----------------------------------------------------------------------
+;;; ELPA package, run (package-initialize) first
+
+;; (use-package auto-complete
+;;   :ensure t
+;;   :commands global-auto-complete-mode
+;;   :init
+;;   (progn
+;;     (ac-config-default)
+;;     (global-auto-complete-mode 1)))
+
+;;---------------------------------------------------------------------
+;; PAREDIT-MODE
+;;---------------------------------------------------------------------
+;; (use-package paredit
+;;   :ensure t
+;;   :commands enable-paredit-mode
+;;   :hook ((emacs-lisp-mode
+;;           eval-expression-minibuffer-setup
+;;           ielm-mode
+;;           lisp-mode
+;;           lisp-interaction-mode
+;;           scheme-mode) . enable-paredit-mode)
+
+;;   ;; (autoload 'enable-paredit-mode "paredit"
+;;   ;; "Turn on pseudo-structural editing of Lisp code." t)
+;;   ;; :bind (:map paredit-mode-map
+;;   ;;             ;; ("M-s" . nil)
+;;   ;;             ;; ("M-r" . nil)
+;;   ;;             ;; ("<M-up>" . nil)
+;;   ;;             ;; ("<M-down>" . nil)
+;;   ;;             ("C-c <up>" . 'paredit-splice-sexp-killing-backward)
+;;   ;;             ("C-c <down>" . 'paredit-splice-sexp-killing-forward)
+;;   ;;             ("C-c s" . 'paredit-splice-sexp)
+;;   ;;             ("C-c r" . 'paredit-raise-sexp))
+;;   )
+
+;;----------------------------------------------------------------------
+;; PRETTY LAMBDA MODE
+;;----------------------------------------------------------------------
+
+;; Superceded by prettify-symbols-mode
+
+;; (require 'pretty-lambdada)
+;; (add-hook 'emacs-lisp-mode-hook 'pretty-lambda)
+;; (add-hook 'scheme-mode-hook 'pretty-lambda)
+;; (add-hook 'lisp-mode-hook 'pretty-lambda)
+;; (add-hook 'lisp-interaction-mode-hook 'pretty-lambda)
+;; (add-hook 'inferior-scheme-mode-hook 'pretty-lambda)
+;; ;;(pretty-lambda-for-modes)
+
+;;----------------------------------------------------------------------
+;; IDO-MODE.
+;;----------------------------------------------------------------------
+;; (require 'ido nil t)
+
+;; (when (featurep 'ido)
+
+;;   (ido-mode t)
+;;   (setq ido-enable-flex-matching t) ;; enable fuzzy matching
+;;   (ido-everywhere 1)
+;;   ;; (if (require 'ido-completing-read+))
+;;   (ido-ubiquitous-mode 1)
+;;   (require 'icomplete)
+;;   (icomplete-mode 1)
+
+;;   (autoload 'idomenu "idomenu" nil t)
+;;   (eval-after-load "idomenu"
+;;     (global-set-key (kbd "M-.") 'imenu))
+
+;;   ;; Custom keybindings
+;;   (defun ido-my-keys ()
+;;     (mapc (lambda (K)
+;;             (let* ((key (car K)) (fun (cdr K)))
+;;               (define-key ido-completion-map (edmacro-parse-keys key) fun)))
+;;           '(("C-n" . ido-next-match)
+;;             ("C-p"  . ido-prev-match))))
+
+
+;;   ;; Enable ido-completion over TAGS
+;;   (defun ido-find-file-in-tag-files ()
+;;     (interactive)
+;;     (save-excursion
+;;       (let ((enable-recursive-minibuffers t))
+;;         (visit-tags-table-buffer))
+;;       (find-file
+;;        (expand-file-name
+;;         (ido-completing-read
+;;          "Project file: " (tags-table-files) nil t)))))
+
+;;   ;; (define-key ido-mode-map (kbd "C-x t") 'ido-find-file-in-tag-files)
+
+;;   (add-hook 'ido-setup-hook (lambda nil
+;;                               (ido-my-keys)))
+
+;;   (require 'ido-other-window nil t))
+
+;; (use-package ido-grid-mode
+;;   :ensure
+;;   :init
+;;   (ido-grid-mode 1))
+
+;; (smex-initialize)
+;; (global-set-key (kbd "M-x") 'smex)
+;; (global-set-key (kbd "M-S-x") 'smex-major-mode-commands)
+
+
+;;----------------------------------------------------------------------
+;; DOT-MODE
+;;----------------------------------------------------------------------
+;; (Vi like redo edits with C-.)
+;; (require 'dot-mode nil t)
+;; (when (featurep 'dot-mode)
+;;   (add-hook 'find-file-hooks 'dot-mode-on)
+;;   (global-set-key [(control ?.)] (lambda () (interactive) (dot-mode 1)
+;;                                    (message "Dot mode activated."))))
 
 ;;----------------------------------------------------------------------
 ;; AUTOPAIR and WRAP-REGION

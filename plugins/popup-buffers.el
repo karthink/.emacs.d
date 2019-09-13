@@ -13,8 +13,8 @@
 ;;;
 ;;; COMMANDS:
 ;;;
-;;; popup-buffers-latest-close
-;;; popup-buffers-latest-open
+;;; popup-buffers-close-latest
+;;; popup-buffers-open-latest
 ;;; popup-buffers-toggle-latest
 ;;;
 ;;; TODO: Handle buffer deletion carefully. Killed buffers should be
@@ -38,6 +38,11 @@
     "^Calc:"
     "^\\*ielm\\*"
     "^\\*TeX Help\\*"
+    "^\\*eshell\\*"
+    "\\*Shell Command Output\\*"
+    "\\*Matlab Help\\*"
+    "\\*Completions\\*"
+    "Output\\*"
     ;; "^\\*"
 )
   "List of buffer names whose windows are treated as popups.")
@@ -77,6 +82,25 @@
 ;;           (push (cons (get-buffer-window new-buffer-name) (get-buffer new-buffer-name)) 
 ;;                 popup-buffers-open-buffer-window-alist)))))
 
+;; ;; Start by adding the *Messages* buffer to the state of popup-buffers:
+;; (defun popup-buffers-init ()
+;;   "Initialize popup-buffers"
+;;   (interactive)
+;;   ;; Start by adding the *Messages* buffer to the popup-list.
+;;   (let* ((messages-buffer (get-buffer "*Messages*"))
+;;          (messages-window (get-buffer-window messages-buffer)))
+;;     (if messages-buffer
+;;         (if messages-window
+;;             ;; The messages buffer is being displayed:
+;;             (push (cons messages-window messages-buffer)
+;;                   popup-buffers-open-buffer-window-alist)
+;;           ;; The messages buffer is currently buried:
+;;           (save-excursion
+;;             (with-current-buffer-window messages-buffer () ()
+;;                                         (push (cons (get-buffer-window messages-buffer) . messages-buffer)
+;;                                               popup-buffers-buried-buffer-window-alist)))
+;;           ))))
+
 (defun popup-buffers-find-open-popups ()
   "Find open popup windows in the frame and TODO make a list sorting them by active time"
   ;; use buffer-display-time to get timestamps
@@ -109,7 +133,7 @@
 
 ;;; COMMANDS:
 
-(defun popup-buffers-latest-close ()
+(defun popup-buffers-close-latest ()
   "Close the last opened popup"
   (interactive)
   (unless (null popup-buffers-open-buffer-window-alist)
@@ -119,46 +143,50 @@
         (bury-buffer)
         (delete-window)))))
 
-(defun popup-buffers-latest-open ()
+(defun popup-buffers-open-latest ()
   "Open the last closed popup"
   (interactive)
   (unless (null popup-buffers-buried-buffer-window-alist)
-    (let ((new-popup (pop popup-buffers-buried-buffer-window-alist)))
-      (display-buffer (cdr new-popup)))
+    (let* ((new-popup (pop popup-buffers-buried-buffer-window-alist))
+           (buf (cdr new-popup)))
+      (if (buffer-live-p buf)
+          (display-buffer buf)
+        (popup-buffers-open-latest)))
     ))
 
-(defun popup-buffers-latest-toggle ()
+(defun popup-buffers-toggle-latest ()
   "Toggle visibility of the last opened popup window"
   (interactive)
   (setq popup-buffers--toggle-state (not popup-buffers--toggle-state))
   (if popup-buffers-open-buffer-window-alist
-      (popup-buffers-latest-close)
+      (popup-buffers-close-latest)
     (if popup-buffers--toggle-state
-        (popup-buffers-latest-close)
-      (popup-buffers-latest-open))))
+        (popup-buffers-close-latest)
+      (popup-buffers-open-latest))))
 
-(defun popup-buffers-all-buffers-bury ()
-  (do () ((null popup-buffers-open-buffer-window-alist) t)
-    (popup-buffers-latest-close)))
+(defun popup-buffers-bury-all ()
+  (cl-do () ((null popup-buffers-open-buffer-window-alist) t)
+    (popup-buffers-close-latest)))
 
-(defun popup-buffers-all-buffers-raise ()
-  (do () ((null popup-buffers-buried-buffer-window-alist) t)
-    (popup-buffers-latest-open)))
+(defun popup-buffers-raise-all ()
+  (cl-do () ((null popup-buffers-buried-buffer-window-alist) t)
+    (popup-buffers-open-latest)))
 
 (defun popup-buffers-cycle (&optional arg)
   "Cycle visibility of popup windows one at a time. With a prefix argument, cycle in the opposite direction."
   (interactive "p")
   (if (null (cdr popup-buffers-open-buffer-window-alist))
       ;; Only zero or one popups on screen
-      (progn (popup-buffers-latest-close)
+      (progn (popup-buffers-close-latest)
              (let ((bufs popup-buffers-buried-buffer-window-alist)) 
                (setq popup-buffers-buried-buffer-window-alist
                      (if arg
                          (append (last bufs) (butlast bufs))
-                       (append (rest bufs) (cons (first bufs) ()))))
-               (popup-buffers-latest-open)))
+                       (append (cdr bufs) (cons (car bufs) ()))))
+               (popup-buffers-open-latest)))
     ;; Else two or more popups on screen
-    (progn (popup-buffers-all-buffers-bury)
-           (popup-buffers-latest-open))))
+    (progn (popup-buffers-bury-all)
+           (popup-buffers-open-latest))))
 
 (provide 'popup-buffers)
+

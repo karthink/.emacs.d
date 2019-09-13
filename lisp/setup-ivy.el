@@ -47,6 +47,7 @@
       (ivy-quit-and-run (counsel-file-jump "" ivy--directory))))
 
   (define-key ivy-minibuffer-map (kbd "M-j") '+ivy-switch-file-search)
+  (define-key ivy-minibuffer-map (kbd "C-SPC") 'ivy-mark)
 
   ;; Define a function to replace `counsel--find-return-list' that uses `fd' or `ripgrep' (if available) in place of `find' to find files, and...
   (defun +ivy--counsel-file-jump-use-fd-rg-a (&rest args)
@@ -158,21 +159,27 @@
                         (+ivy-rich-describe-variable-transformer (:width 50))
                         (ivy-rich-counsel-variable-docstring (:face font-lock-doc-face))))))
     
-    (ivy-rich-mode +1))
+    (ivy-rich-mode +1)
+
+   :diminish "" 
+    )
   
 ;;; ivy-hydra allows additional actions and vim-like navigation on ivy candidates.
 ;;; Initialize in ivy with C-o
-  ;; (use-package  ivy-hydra
-  ;;               :commands (ivy-dispatching-done-hydra ivy--matcher-desc ivy-hydra/body)
-  ;;               :init
-  ;;               (define-key! ivy-minibuffer-map
-  ;;                 "C-o" #'ivy-dispatching-done-hydra
-  ;;                 "M-o" #'hydra-ivy/body)
-  ;;               :config
-  ;;               ;; ivy-hydra rebinds this, so we have to do so again
-  ;;               (define-key ivy-minibuffer-map (kbd "M-o") #'hydra-ivy/body))
   
-  :diminish ivy-mode
+  (use-package  ivy-hydra
+    :ensure t
+    :commands (ivy-dispatching-done-hydra ivy--matcher-desc ivy-hydra/body)
+    :init
+    ;; (define-key! ivy-minibuffer-map
+    ;;   "C-o" #'ivy-dispatching-done-hydra
+    ;;   "M-o" #'hydra-ivy/body)
+    :config
+    ;; ivy-hydra rebinds this, so we have to do so again
+    ;; (define-key ivy-minibuffer-map (kbd "M-o") #'hydra-ivy/body)
+    )
+  
+  :diminish ""
 
 )
 

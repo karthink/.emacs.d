@@ -2,6 +2,7 @@
   :ensure
   :commands global-evil-leader-mode
   :init
+  (setq evil-want-keybinding nil)
   (global-evil-leader-mode 1)
   (evil-leader/set-leader "<SPC>")
   (evil-leader/set-key-for-mode 'emacs-lisp-mode "B" (lambda () "Byte-compile file"
@@ -9,6 +10,11 @@
                                                            (byte-compile-file buffer-true-filename)
                                                          (message "Not visiting a file!"))))
   (evil-leader/set-key-for-mode 'latex-mode "cc" 'TeX-command-master)
+  (evil-leader/set-key-for-mode 'latex-mode "ca" 'TeX-command-run-all)
+  (evil-leader/set-key-for-mode 'latex-mode "=" 'reftex-toc)
+  (evil-leader/set-key-for-mode 'latex-mode "("  'reftex-label)
+  (evil-leader/set-key-for-mode 'latex-mode ")" 'reftex-reference)
+  (evil-leader/set-key-for-mode 'latex-mode "[" 'reftex-citation)
   (evil-leader/set-key
     ;; "e" 'find-file
     "u"  'universal-argument
@@ -23,8 +29,20 @@
     "fr" 'counsel-recentf
     "fj" 'counsel-file-jump
     "fg" 'counsel-git
-    "fa" 'counsel-ag
     "f'" 'counsel-bookmark
+    "fE" 'find-file-emacs-config
+    "fD" 'find-file-Documents
+    "fR" 'find-file-Research
+    "fC" 'find-file-system-config
+    
+    ;; Searching
+    "//" 'counsel-grep-or-swiper
+    "/q" 'query-replace-regexp
+    "/s" 'replace-regexp
+    "/r" 'query-replace
+    "/S" 'batch-replace-strings
+    "/a" 'counsel-ag
+    "/g" 'counsel-grep
     
     ;; Buffer commands
     "b" 'switch-to-buffer
@@ -54,11 +72,43 @@
     "cn" 'next-error
     "cp" 'previous-error
     "vf" 'ido-find-file-other-window
-    "vb" 'ido-switch-buffer-other-window))
+    "vb" 'ido-switch-buffer-other-window)
+  :config
+  ;; Helper functions
+  (defun find-file-system-config ()
+    "Find file in system config"
+    (interactive)
+    (let ((configdir (getenv "CONFIGDIR")))
+      (if configdir
+          (counsel-file-jump "" (getenv "CONFIGDIR"))
+        (message "ENV variable $CONFIGDIR not set"))))
+
+  (defun find-file-emacs-config ()
+    "Find file in emacs config"
+    (interactive)
+    (counsel-file-jump "" (concat
+                           (file-name-as-directory (getenv "HOME"))
+                           ".emacs.d")))
+
+  (defun find-file-Documents ()
+    "Find file in user documents"
+    (interactive)
+    (counsel-file-jump "" (concat
+                           (file-name-as-directory (getenv "HOME"))
+                           "Documents")))
+
+  (defun find-file-Research ()
+    "Find file in user research documents"
+    (interactive)
+    (counsel-file-jump "" (concat
+                           (file-name-as-directory (getenv "HOME"))
+                           (file-name-as-directory"Documents")
+                           "research")))
+  )
 
 (use-package evil
   :ensure t
-  ;; :after evil-leader
+  :after evil-leader
   :init
   (setq evil-want-C-u-scroll t)
   (setq evil-want-integration t)
@@ -91,6 +141,13 @@
     (define-key evil-motion-state-map (kbd "C-u") 'evil-scroll-up))
   (evil-define-key '(normal visual insert) helpful-mode-map "q" 'quit-window)
   (evil-define-key '(normal visual insert) special-mode-map "q" 'quit-window)
+  
+  (progn
+    (evil-define-key '(visual normal) matlab-mode-map (kbd "zb") 'matlab-shell-run-block)
+    (evil-define-key '(visual normal) matlab-mode-map (kbd "zr") 'matlab-shell-run-region-or-line)
+    (evil-define-key '(normal visual) matlab-mode-map (kbd "[[") #'matlab-backward-section)
+    (evil-define-key '(normal visual) matlab-mode-map (kbd "]]") #'matlab-forward-section))
+  
   (defvar dotemacs--original-mode-line-bg (face-background 'mode-line))
   (defadvice evil-set-cursor-color (after dotemacs activate)
     (cond ((evil-emacs-state-p)
@@ -123,10 +180,11 @@
   ;; gc{motion} to comment/uncomment
   (use-package evil-commentary
     :ensure
+    :diminish ""
     :commands evil-commentary-mode
     :init
     (evil-commentary-mode 1)
-    :diminish)
+    )
 
   ;; gx{motion} to select, gx{motion} on second object to exchange
   (use-package evil-exchange
@@ -158,7 +216,7 @@
     :ensure t
     :config
     (evil-rsi-mode)
-    :diminish evil-rsi-mode)
+    :diminish "")
 
   ;; s to snipe for next occurrence of chars
   ;; in operator mode, z or x to operate including/excluding next ocurrence of chars
@@ -170,11 +228,11 @@
     (evil-snipe-mode 1)
     (setq evil-snipe-spillover-scope 'whole-visible)
     (setq evil-snipe-smart-case t)
-    (evil-define-key 'visual evil-snipe-local-mode-map "z" 'evil-snipe-s)
-    (evil-define-key 'visual evil-snipe-local-mode-map "Z" 'evil-snipe-S)
+    ;; (evil-define-key 'visual evil-snipe-local-mode-map "z" 'evil-snipe-s)
+    ;; (evil-define-key 'visual evil-snipe-local-mode-map "Z" 'evil-snipe-S)
     (evil-define-key 'normal snipe-local-mode-map "S" 'evil-snipe-S)
     (add-hook 'magit-mode-hook 'turn-off-evil-snipe-override-mode)
-    :diminish evil-snipe-mode)
+    :diminish "")
 
   ;; Hit ; or , (originally <SPC>) to repeat last movement.
   ;; (use-package evil-space
@@ -190,13 +248,14 @@
     :config
     (global-evil-visualstar-mode)
     (setq evil-visualstar/persistent t)
-    :diminish visualstar-mode)
+    :diminish "")
   
   ;; (use-package evil-paredit
   ;;   :ensure t
   ;;   :config
   ;;   (add-hook 'emacs-lisp-mode-hook 'evil-paredit-mode))
-  
+  (use-package org-evil
+  :ensure t)
 ;;----------------------------------------------
 ;; EVIL-SMARTPARENS
 ;;----------------------------------------------
@@ -206,7 +265,13 @@
     (add-hook 'lisp-interaction-mode-hook #'evil-smartparens-mode)
     (add-hook 'emacs-lisp-mode-hook #'evil-smartparens-mode)
     ;; (add-hook 'lisp-interaction-mode-hook #'evil-smartparens-mode)
+    :config
+    (evil-define-key 'normal evil-smartparens-mode-map (kbd "(") #'sp-backward-sexp)
+    (evil-define-key 'normal evil-smartparens-mode-map (kbd ")") #'sp-forward-sexp)
+    ;; (evil-define-key 'normal evil-smartparens-mode-map (kbd "J") #'sp-join-sexp)
     )
+ 
+   (require 'evil-matlab-textobjects nil t)
   )
 
 (use-package evil-collection
@@ -229,7 +294,8 @@
       diff-mode
       ediff
       calc
-      which-key)
+      which-key
+      reftex)
     "The list of `evil-collection' modules to load. evil-mode bindings will be enabled for these modes. See `evil-collection-mode-list' for the full set of supported modes.")
   :config
   (evil-collection-init evil-collection-enabled-mode-list)

@@ -4,6 +4,7 @@
 
 ; Karthik's .emacs file
 
+(setq gc-cons-threshold most-positive-fixnum)
 
 (setq user-full-name "Karthik C")
 ; (setq user-mail-address "karthik[AT]gmail.com")
@@ -264,12 +265,12 @@ file corresponding to the current buffer file, then recompile the file."
 (if (equal (system-name) 'windows-nt)
     (setq shell-file-name "C:/cygwin/cygwin.bat"))
 
-;; ;; Set default www browser
-;; (if (equal system-type 'gnu/linux)
-;;     (setq
-;;      ;browse-url-browser-function 'browse-url-generic
-;;      ;browse-url-generic-program "/usr/bin/palemoon"
-;;      ))
+;; Set default www browser
+(if (equal system-type 'gnu/linux)
+    (setq
+     ;browse-url-browser-function 'browse-url-generic
+     browse-url-generic-program "/usr/bin/qutebrowser"
+     ))
 
 ;; Consult clipboard before primary selection
 ;; http://www.gnu.org/software/emacs/manual/
@@ -358,6 +359,9 @@ show verbose descriptions with hyperlinks."
 ;;######################################################################
 (require 'better-buffers nil t)
 (require 'popup-buffers nil t)
+;; (autoload 'popup-buffers-find-open-popups "popup-buffers")
+;; (autoload 'popup-buffers-cycle "popup-buffers")
+;; (autoload 'popup-buffers-toggle-latest "popup-buffers")
 (global-set-key (kbd "C-`") 'popup-buffers-toggle-latest) 
 (global-set-key (kbd "M-`") 'popup-buffers-cycle)
 ;; (global-set-key (kbd "<f7>") 'popup-buffers-close-latest)
@@ -951,6 +955,30 @@ active MATLAB shell."
 ;;             (load-theme 'gruvbox-dark-hard t)
 ;;             ;; (load-theme 'smart-mode-line-dark t)
 ;; ))
+
+;; Create function for line number format
+;; Basic idea is to align line number to the right and to make
+;; height of linum dependent of total line numbers.
+
+;; (defun linum-format-func (line)
+;;   "Format LINE for 'linum-mode'."
+;;   (let ((w (length (number-to-string (count-lines (point-min) (point-max))))))
+;;     (propertize (format (format "%%%dd%c" w ?\x2007) line) 'face 'linum)))
+;; ;; Set last function as linum formatter
+;; (setq linum-format 'linum-format-func)
+
+;; before loading new theme
+(defun load-theme--disable-old-theme(theme &rest args)
+  "Disable current theme before loading new one."
+  (mapcar #'disable-theme custom-enabled-themes))
+(advice-add 'load-theme :before #'load-theme--disable-old-theme)
+
+;; After loading new theme
+
+;; (defun load-theme--restore-line-numbering(theme &rest args)
+;;   "Set linum-format again after loading any theme."
+;;   (setq linum-format 'linum-format-func))
+;; (advice-add 'load-theme :after #'load-theme--restore-line-numbering)
 
 ;;######################################################################
 ;; MODELINE:

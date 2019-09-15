@@ -12,14 +12,23 @@
              (define-key org-mode-map (kbd "<C-S-tab>") (lambda () (other-window -1)))))
 
 ;;(add-to-list 'org-file-apps '("\\.pdf\\'" . "zathura %s"))
+(setq org-file-apps '((auto-mode . emacs)
+                      ("\\.mm\\'" . default)
+                      ("\\.x?html?\\'" . default)
+                      ("\\.pdf\\'" . "zathura %s")))
 ;; Completion
 ;;(add-hook 'org-mode-hook '(lambda ()
 ;;			   (define-key org-mode-map (kbd "C-;") 'org-complete))
 
 ;; Enable longline-truncation in org-mode buffers
 (add-hook 'org-mode-hook 'toggle-truncate-lines)
+
 ;; Hide all stars except the last one on each line:
 (setq org-hide-leading-stars 1)
+
+;; Avoid invisible edits
+(setq org-catch-invisible-edits 'show)
+;; (setq org-catch-invisible-edits 'smart)
 
 ;;; Org-agenda mode
 ;; (defvar org-agenda-files nil)

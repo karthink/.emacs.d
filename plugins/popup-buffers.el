@@ -66,6 +66,8 @@
 
 (defvar popup-buffers--toggle-state nil
   "Current state of latest popup. Aternates between nil and t")
+(defvar popup-buffers--cycle-state nil
+  "Current state of popup cycling. Aternates between nil and t")
 
 ;; (defvar popup-buffers-old-window-list nil
 ;;   "List of displayed windows that is updated when the window configuration changes")
@@ -101,6 +103,7 @@
 ;;                                               popup-buffers-buried-buffer-window-alist)))
 ;;           ))))
 
+;;;###autoload
 (defun popup-buffers-find-open-popups ()
   "Find open popup windows in the frame and TODO make a list sorting them by active time"
   ;; use buffer-display-time to get timestamps
@@ -129,11 +132,9 @@
 
 ;; (defun popup-buffers-update-killed-popups ()
 ;;   )
-;; (add-hook 'kill-buffer-hook 'popup-buffers-update-killed-popups)
+;; (add-hook 'kill-buffer-hook 'popup-buffers-update-killed-popups)popup-buffers-close-latest(defun popup-buffers-close-latest ()
 
-;;; COMMANDS:
-
-(defun popup-buffers-close-latest ()
+(defun popup-buffers-close-latest () 
   "Close the last opened popup"
   (interactive)
   (unless (null popup-buffers-open-buffer-window-alist)
@@ -154,6 +155,15 @@
         (popup-buffers-open-latest)))
     ))
 
+(defun popup-buffers-bury-all ()
+  (cl-do () ((null popup-buffers-open-buffer-window-alist) t)
+    (popup-buffers-close-latest)))
+
+(defun popup-buffers-raise-all ()
+  (cl-do () ((null popup-buffers-buried-buffer-window-alist) t)
+    (popup-buffers-open-latest)))
+
+;;;###autoload
 (defun popup-buffers-toggle-latest ()
   "Toggle visibility of the last opened popup window"
   (interactive)
@@ -164,29 +174,22 @@
         (popup-buffers-close-latest)
       (popup-buffers-open-latest))))
 
-(defun popup-buffers-bury-all ()
-  (cl-do () ((null popup-buffers-open-buffer-window-alist) t)
-    (popup-buffers-close-latest)))
-
-(defun popup-buffers-raise-all ()
-  (cl-do () ((null popup-buffers-buried-buffer-window-alist) t)
-    (popup-buffers-open-latest)))
-
+;;;###autoload
 (defun popup-buffers-cycle (&optional arg)
   "Cycle visibility of popup windows one at a time. With a prefix argument, cycle in the opposite direction."
   (interactive "p")
-  (if (null (cdr popup-buffers-open-buffer-window-alist))
-      ;; Only zero or one popups on screen
+  (if (equal last-command 'popup-buffers-cycle)
+      ;; cycle through buffers: rest of logic
       (progn (popup-buffers-close-latest)
              (let ((bufs popup-buffers-buried-buffer-window-alist)) 
                (setq popup-buffers-buried-buffer-window-alist
-                     (if arg
-                         (append (last bufs) (butlast bufs))
-                       (append (cdr bufs) (cons (car bufs) ()))))
+                     (append (cdr bufs) (cons (car bufs) ())))
                (popup-buffers-open-latest)))
-    ;; Else two or more popups on screen
-    (progn (popup-buffers-bury-all)
-           (popup-buffers-open-latest))))
+    ;; starting new cycle, so bury everything first.
+    (if (null popup-buffers-open-buffer-window-alist)
+        (popup-buffers-open-latest)
+      (popup-buffers-bury-all))
+      )
+  )
 
 (provide 'popup-buffers)
-

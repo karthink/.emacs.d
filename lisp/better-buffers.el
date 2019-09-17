@@ -31,7 +31,7 @@
 (global-set-key (kbd "C-x C-b") 'ibuffer)
 
 ;; Keys to traverse buffers
-(global-set-key (kbd "<C-M-return>") 'ido-display-buffer)
+;; (global-set-key (kbd "<C-M-return>") 'ido-display-buffer)
 (global-set-key (kbd "C-<prior>") 'previous-buffer) ; Ctrl+PageDown
 (global-set-key (kbd "C-<next>") 'next-buffer) ; Ctrl+PageUp
 
@@ -69,6 +69,7 @@
 
 ;; (add-hook 'iswitchb-define-mode-map-hook 'iswitchb-local-keys)
 
+;;;###autoload
 (defun toggle-window-split ()
   (interactive)
   "Toggles the window split between horizontal and vertical when
@@ -97,6 +98,7 @@ the fram has exactly two windows."
 	  (if this-win-2nd (other-window 1))))))
 
 ;; Swap windows if there are two of them
+;;;###autoload
 (defun swap-windows ()
  "If you have 2 windows, it swaps them." (interactive) (cond ((not (= (count-windows) 2)) (message "You need exactly 2 windows to do this."))
  (t
@@ -112,6 +114,7 @@ the fram has exactly two windows."
  (set-window-start w2 s1)))))
 
 ;; Skip to next/previous user buffer
+;;;###autoload
 (defun next-user-buffer ()
   "Switch to the next user buffer in cyclic order.\n
 User buffers are those not starting with *."
@@ -123,6 +126,7 @@ User buffers are those not starting with *."
                 (< i 50))
       (setq i (1+ i)) (next-buffer) )))
 
+;;;###autoload
 (defun previous-user-buffer ()
   "Switch to the previous user buffer in cyclic order.\n
 User buffers are those not starting with *."
@@ -136,18 +140,21 @@ User buffers are those not starting with *."
 
 ;;; scroll-buffer: Functions to do exactly that.
 
+;;;###autoload
 (defun scroll-buffer-down (&optional arg)
   "Scroll buffer by (optional) ARG paragraphs."
   (interactive "p")
   (forward-paragraph arg)
   (recenter))
 
+;;;###autoload
 (defun scroll-buffer-up (&optional arg)
   "Scroll buffer by (optional) ARG paragraphs."
   (interactive "p")
   (backward-paragraph arg)
   (recenter))
 
+;;;###autoload
 (defun rename-file-and-buffer (new-name)
   "Renames both current buffer and file it's visiting to NEW-NAME." 
   (interactive "sNew name: ")
@@ -162,6 +169,7 @@ User buffers are those not starting with *."
                (set-visited-file-name new-name)
                (set-buffer-modified-p nil))))))
 
+;;;###autoload
 (defun move-buffer-file (dir)
   "Moves both current buffer and file it's visiting to DIR."
   (interactive "DNew directory: ")

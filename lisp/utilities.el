@@ -5,6 +5,7 @@
 ;; COUNT-WORDS-REGION: USING `while'
 ;;----------------------------------------------------------------------
 
+;;;###autoload
 (defun count-words-region (beginning end)
   "Print number of words in the region."
   (interactive "r")
@@ -31,6 +32,7 @@
 ;; count words in region
 ;; (global-set-key (kbd "C-=") 'count-words-region)
 
+;;;###autoload
 (defun count-words-buffer ()
   "Print number of words in the region."
 ;;; 1. Set up appropriate conditions.
@@ -56,6 +58,7 @@
 ;;----------------------------------------------------------------------
 ;; PRINT ASCII TABLE
 ;;----------------------------------------------------------------------
+;;;###autoload
 (defun ascii-table ()
   "Display basic ASCII table (0 thru 127)"
   (interactive)
@@ -76,6 +79,7 @@
 ;;----------------------------------------------------------------------
 ;; INSERT FUNCTION DEFINITION AT POINT
 ;;----------------------------------------------------------------------
+;;;###autoload
 (defun insert-definition-at-point ()
   "Function to find the definition of the defun at point and insert it there."
   (interactive)

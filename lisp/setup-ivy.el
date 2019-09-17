@@ -183,5 +183,34 @@
 
 )
 
+(use-package ivy-prescient
+  :hook (ivy-mode . ivy-prescient-mode)
+  :init
+  (setq ;; prescient-filter-method
+        ;; (if (featurep +fuzzy)
+        ;;     '(literal regexp initialism fuzzy)
+        ;;   '(literal regexp initialism))
+        ivy-prescient-enable-filtering nil  ; we do this ourselves
+        ivy-prescient-enable-sorting t
+        ivy-prescient-retain-classic-highlighting t
+        ;; ivy-initial-inputs-alist nil
+        ;; ivy-re-builders-alist
+        ;; '((counsel-ag . +ivy-prescient-non-fuzzy)
+        ;;   (counsel-rg . +ivy-prescient-non-fuzzy)
+        ;;   (counsel-grep . +ivy-prescient-non-fuzzy)
+        ;;   (swiper . +ivy-prescient-non-fuzzy)
+        ;;   (swiper-isearch . +ivy-prescient-non-fuzzy)
+        ;;   (t . ivy-prescient-re-builder))
+        )
+
+  :config
+  ;; (defun +ivy-prescient-non-fuzzy (str)
+  ;;   (let ((prescient-filter-method '(literal regexp)))
+  ;;     (ivy-prescient-re-builder str)))
+
+  ;; NOTE prescient config duplicated with `company'
+  (setq prescient-save-file (concat (getenv "HOME") "/.cache/prescient-save.el"))
+  (prescient-persist-mode +1))
+
 
 (provide 'setup-ivy)

@@ -43,20 +43,31 @@
     "\\*Matlab Help\\*"
     "\\*Completions\\*"
     "Output\\*"
+    "\\*shell\\*"
     ;; "^\\*"
 )
   "List of buffer names whose windows are treated as popups.")
 
 ;; (setq popup-buffers-reference-buffer-list
-;;         '("^\\*Help\\*"
-;;           "^\\*helpful"
-;;           "^\\*Warnings\\*"
-;;           "^\\*Compile-Log\\*"
-;;           "^\\*Messages\\*"
-;;           "^\\*Backtrace\\*"
-;;           "^\\*evil-registers\\*"
-;;           "^\\*Apropos"
-;;           "^Calc:"))
+;;  '("^\\*Help\\*"
+;;     "^\\*helpful"
+;;     "^\\*Warnings\\*"
+;;     "^\\*Compile-Log\\*"
+;;     "^\\*Messages\\*"
+;;     "^\\*Backtrace\\*"
+;;     "^\\*evil-registers\\*"
+;;     "^\\*Apropos"
+;;     "^Calc:"
+;;     "^\\*ielm\\*"
+;;     "^\\*TeX Help\\*"
+;;     "^\\*eshell\\*"
+;;     "\\*Shell Command Output\\*"
+;;     "\\*Matlab Help\\*"
+;;     "\\*Completions\\*"
+;;     "Output\\*"
+;;     "\\*shell\\*"
+;;     ;; "^\\*"
+;; ))
 
 (defvar popup-buffers-open-buffer-window-alist '()
   "Alist of currently live (window . buffer)s that are treated as popups")
@@ -103,7 +114,6 @@
 ;;                                               popup-buffers-buried-buffer-window-alist)))
 ;;           ))))
 
-;;;###autoload
 (defun popup-buffers-find-open-popups ()
   "Find open popup windows in the frame and TODO make a list sorting them by active time"
   ;; use buffer-display-time to get timestamps
@@ -117,13 +127,14 @@
           (push (cons (get-buffer-window b) b)
                 open-popups)))))
 
+;;;###autoload
 (defun popup-buffers-update-open-popups ()
   (setq popup-buffers-open-buffer-window-alist
         (popup-buffers-find-open-popups)))
 
 ;;; HOOKS
 ;; Add popup list maintenance to `window-configuration-change-hook',
-(add-hook 'window-configuration-change-hook 'popup-buffers-update-open-popups)
+;; (add-hook 'window-configuration-change-hook 'popup-buffers-update-open-popups)
 
 ;; Add popup list maintenance to `make-frame-finish-functions',
 (add-hook 'after-make-frame-functions 'popup-buffers-update-open-popups)

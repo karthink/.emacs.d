@@ -15,6 +15,7 @@
                       (define-key dired-mode-map "e" 'ora-ediff-files)
                       )))
 ;; -*- lexical-binding: t -*-
+;;;###autoload
 (defun ora-ediff-files ()
   (interactive)
   (let ((files (dired-get-marked-files))

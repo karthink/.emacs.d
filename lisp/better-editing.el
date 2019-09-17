@@ -191,6 +191,7 @@
 ;;     (beginning-of-line)))
 
 
+;;;###autoload
 (defun duplicate-line (&optional arg)
   "Duplicate it. With prefix ARG, duplicate ARG lines following the current one."
   (interactive "p")
@@ -223,6 +224,7 @@
 ;;   (next-line arg))
 
 ;;; behave like vi's o command
+;;;###autoload
 (defun open-next-line (arg)
   "Move to the next line and then opens a line.
 
@@ -247,6 +249,7 @@
 
 
 ;;; zap-up-to-char: Leave char unchanged!
+;;;###autoload
 (defun zap-up-to-char (arg char)
   "Zap up to CHAR, (optional) ARG number of times"
   (interactive "p\ncZap up to char: ")
@@ -266,6 +269,7 @@
                  (point))))
 
 ;;; zap-to-char, but copy instead of killing
+;;;###autoload
 (defun zap-to-char-save (arg char)
   "Zap to CHAR, (optional) ARG number of times, but save instead of kill."
   (interactive "p\ncSave to char: ")
@@ -280,6 +284,7 @@
                                          (point)))))
 
 ;;; goto matching parenthesis, Vi style. The last statement is a bit conked; also look at the keybinding for this function above.
+;;;###autoload
 (defun goto-match-paren (arg)
   "Go to the matching parenthesis if on parenthesis, otherwise do nothing"
   (interactive "p")
@@ -299,6 +304,7 @@
            (line-beginning-position 2)))))
 
 ;; Bind C-w to backward-kill-word ulness region is active
+;;;###autoload
 (defun backward-kill-word-or-region (&optional arg)
   "Kill word backward if region is inactive; else kill region"
   (interactive "p")
@@ -316,6 +322,7 @@
 ;;      (list (line-beginning-position)
 ;;            (line-beginning-position 2)))))
 
+;;;###autoload
 (defun insert-parentheses-sentence ()
   "Insert () around the sentence at point."
   (interactive)
@@ -328,6 +335,7 @@
     (insert ")")
     ))
 
+;;;###autoload
 (defun uniquify-all-lines-region (start end)
   "Find duplicate lines in region START to END keeping first occurrence."
   (interactive "*r")
@@ -339,17 +347,20 @@
             (re-search-forward "^\\(.*\\)\n\\(\\(.*\n\\)*\\)\\1\n" end t))
         (replace-match "\\1\n\\2")))))
 
+;;;###autoload
 (defun uniquify-all-lines-buffer ()
   "Delete duplicate lines in buffer and keep first occurrence."
   (interactive "*")
   (uniquify-all-lines-region (point-min) (point-max)))
 
+;;;###autoload
 (defun isearch-occur ()
   "*Invoke `occur' from within isearch."
   (interactive)
   (let ((case-fold-search isearch-case-fold-search))
     (occur (if isearch-regexp isearch-string (regexp-quote isearch-string)))))
 
+;;;###autoload
 (defun isearch-backward-other-buffer (prefix)
   "Function to isearch-forward in other-window."
   (interactive "P")
@@ -360,6 +371,7 @@
     (other-window (- next))
     )))
   
+;;;###autoload
 (defun isearch-forward-other-buffer (prefix)
   "Function to isearch-backward in other-window."
   (interactive "P")
@@ -370,6 +382,7 @@
     (other-window (- next))
     )))
 
+;;;###autoload
 (defun save-buffer-if-visiting-file (&optional args)
   "Save the current buffer only if it is visiting a file"
   (interactive)
@@ -381,6 +394,7 @@
 ;; MOVE-LINE-REGION
 ;;----------------------------------------------------------------------
 ;; Functions to move blocks of text (or single lines) up and down
+;;;###autoload
 (defun move-text-internal (arg)
   (cond
    ((and mark-active transient-mark-mode)
@@ -411,12 +425,14 @@
         (forward-line -1))
       (move-to-column column t)))))
 
+;;;###autoload
 (defun move-text-down (arg)
   "Move region (transient-mark-mode active) or current line
   arg lines down."
   (interactive "*p")
   (move-text-internal arg))
 
+;;;###autoload
 (defun move-text-up (arg)
   "Move region (transient-mark-mode active) or current line
   arg lines up."
@@ -428,6 +444,7 @@
 ;; Multiple search and replace
 ;;----------------------------------------------------------------------
 
+;;;###autoload
 (defun batch-replace-strings (replacement-alist)
   "Prompt user for pairs of strings to search/replace, then do so in the current buffer"
   (interactive (list (batch-replace-strings-prompt)))
@@ -435,6 +452,7 @@
     (save-excursion
       (replace-string (car pair) (cdr pair)))))
 
+;;;###autoload
 (defun batch-replace-strings-prompt ()
   "prompt for string pairs and return as an association list"
   (let (from-string
@@ -453,6 +471,7 @@
 ;;  word (as mark-word would select it). The suggested text for the
 ;;  replacement is the same as the OLD text.
 
+;;;###autoload
 (defun replace-in-buffer ()
   (interactive)
   (save-excursion

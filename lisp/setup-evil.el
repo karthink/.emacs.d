@@ -5,10 +5,18 @@
   (setq evil-want-keybinding nil)
   (global-evil-leader-mode 1)
   (evil-leader/set-leader "<SPC>")
-  (evil-leader/set-key-for-mode 'emacs-lisp-mode "B" (lambda () "Byte-compile file"
-                                                       (if buffer-file-truename
-                                                           (byte-compile-file buffer-true-filename)
-                                                         (message "Not visiting a file!"))))
+  (evil-leader/set-key-for-mode 'emacs-lisp-mode "cB"
+    (lambda () "Byte-compile file"
+      (interactive)
+      (if buffer-file-name
+          (byte-compile-file buffer-file-name)
+        (message "Not visiting a file!"))))
+  (evil-leader/set-key-for-mode 'emacs-lisp-mode "cL"
+    (lambda () "Load current file"
+      (interactive)
+      (if buffer-file-name
+          (load-file buffer-file-name)
+        (message "Not visiting a file!"))))
   (evil-leader/set-key-for-mode 'latex-mode "cc" 'TeX-command-master)
   (evil-leader/set-key-for-mode 'latex-mode "ca" 'TeX-command-run-all)
   (evil-leader/set-key-for-mode 'latex-mode "=" 'reftex-toc)
@@ -87,6 +95,7 @@
     )
   :config
   ;; Helper functions
+;;;###autoload
   (defun find-file-system-config ()
     "Find file in system config"
     (interactive)
@@ -94,14 +103,16 @@
       (if configdir
           (counsel-file-jump "" (getenv "CONFIGDIR"))
         (message "ENV variable $CONFIGDIR not set"))))
-
+  
+;;;###autoload
   (defun find-file-emacs-config ()
     "Find file in emacs config"
     (interactive)
     (counsel-file-jump "" (concat
                            (file-name-as-directory (getenv "HOME"))
                            ".emacs.d")))
-
+  
+;;;###autoload
   (defun find-file-Documents ()
     "Find file in user documents"
     (interactive)
@@ -109,6 +120,7 @@
                            (file-name-as-directory (getenv "HOME"))
                            "Documents")))
 
+;;;###autoload
   (defun find-file-Research ()
     "Find file in user research documents"
     (interactive)
@@ -121,6 +133,7 @@
 (use-package evil
   :ensure t
   :after evil-leader
+  :defines (turn-on-evil-matlab-textobjects-mode turn-on-evil-latex-textobjects-mode)
   :init
   (setq evil-want-C-u-scroll t)
   (setq evil-want-integration t)
@@ -128,7 +141,7 @@
   (setq-default evil-symbol-word-search t)
   (setq evil-emacs-state-cursor '(hbar . 4))
   (setq evil-vsplit-window-right t)
-  (setq evil-spilt-window-below t)
+  (setq evil-split-window-below t)
   (add-hook 'evil-jumps-post-jump-hook #'recenter)
   :bind (:map evil-motion-state-map
               ("C-w C-h" . evil-window-left)
@@ -356,19 +369,22 @@
 ;; s to snipe for next occurrence of chars
 ;; in operator mode, z or x to operate including/excluding next ocurrence of chars
 (use-package evil-snipe
-  :after evil-collection
+  ;; :after evil-collection
+  :ensure t
   :commands (evil-snipe-mode
              evil-snipe-override-mode
              evil-snipe-local-mode
              evil-snipe-override-local-mode)
-  :ensure t
   :init
   (setq evil-snipe-spillover-scope 'whole-visible
         evil-snipe-smart-case t
         evil-snipe-char-fold t)
+  (evil-snipe-mode +1)
+  (evil-snipe-override-mode +1)
+  
   :config
-  ;; (evil-snipe-override-mode +1)
-  (evil-snipe-mode 1)
+  (dolist (mode '(Info-mode calc-mode))
+    (push mode evil-snipe-disabled-modes))
   ;; (evil-define-key 'visual evil-snipe-local-mode-map "z" 'evil-snipe-s)
   ;; (evil-define-key 'visual evil-snipe-local-mode-map "Z" 'evil-snipe-S)
   (evil-define-key 'normal snipe-local-mode-map "S" 'evil-snipe-S)

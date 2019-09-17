@@ -30,7 +30,8 @@
 ;; Adds ~/.emacs.d to the load-path
 (add-to-list 'load-path "~/.emacs.d/plugins/")
 (add-to-list 'load-path "~/.emacs.d/lisp/")
-
+(eval-after-load "setup-org"
+  (setq initial-buffer-choice (concat(getenv "HOME") "/do.org")))
 ;;########################################################################
 ;; CORE
 ;;########################################################################
@@ -142,6 +143,11 @@
       kept-new-versions 10 ; Newest versions to keep
       kept-old-versions 5 ; Old versions to keep
       )
+
+;;######################################################################
+;; AUTOLOADS
+;;######################################################################
+(require 'loaddefs nil t)
 
 ;;######################################################################
 ;; MISCELLANEOUS PREFERENCES
@@ -358,16 +364,19 @@ show verbose descriptions with hyperlinks."
 ;; BUFFER MANAGEMENT
 ;;######################################################################
 (require 'better-buffers nil t)
-(require 'popup-buffers nil t)
-;; (autoload 'popup-buffers-find-open-popups "popup-buffers")
-;; (autoload 'popup-buffers-cycle "popup-buffers")
-;; (autoload 'popup-buffers-toggle-latest "popup-buffers")
+;; (require 'popup-buffers nil t)
+(autoload 'popup-buffers-update-open-popups "popup-buffers")
+(add-hook 'window-configuration-change-hook 'popup-buffers-update-open-popups)
 (global-set-key (kbd "C-`") 'popup-buffers-toggle-latest) 
 (global-set-key (kbd "M-`") 'popup-buffers-cycle)
 ;; (global-set-key (kbd "<f7>") 'popup-buffers-close-latest)
 ;; (global-set-key (kbd "<f8>") 'popup-buffers-open-latest)
 
-(winner-mode)
+(use-package winner
+  :commands winner-undo
+  ;; :bind ("C-c <left>" . winner-undo)
+  :config 
+  (winner-mode +1))
 ;; (use-package! winner
 ;;   ;; undo/redo changes to Emacs' window layout
 ;;   :after-call after-find-file doom-switch-window-hook
@@ -451,6 +460,15 @@ show verbose descriptions with hyperlinks."
 ;;----------------------------------------------------------------------
 (use-package auctex
   :ensure t
+  :defines (TeX-auto-save
+            TeX-parse-self
+            TeX-electric-escape
+            TeX-PDF-mode
+            TeX-source-correlate-method
+            TeX-newline-function
+            TeX-view-program-list
+            TeX-view-program-selection
+            TeX-mode-map)
   :bind (:map TeX-mode-map
               ("M-SPC" . TeX-matrix-spacer)
               ("C-M-9" . TeX-insert-smallmatrix)
@@ -496,7 +514,7 @@ show verbose descriptions with hyperlinks."
          ))
 
 (use-package reftex
-  :defer t
+  ;; :defer 3
   :commands turn-on-reftex
   :config
   (progn (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
@@ -507,7 +525,7 @@ show verbose descriptions with hyperlinks."
 ;; (setq-default TeX-master nil)
 (use-package cdlatex
   :ensure t
-  :defer t
+  ;; :defer 2
   :commands turn-on-cdlatex
   :config
   (progn
@@ -548,7 +566,7 @@ show verbose descriptions with hyperlinks."
   :init
   (add-hook 'matlab-mode-hook #'company-mode-on)
   (add-hook 'matlab-mode-hook #'hs-minor-mode)
-  (add-hook 'matlab-mode-hook #'turn-on-evil-matlab-textobjects-mode)
+  ;; (add-hook 'matlab-mode-hook #'turn-on-evil-matlab-textobjects-mode)
   (add-hook 'matlab-shell-mode-hook #'company-mode-on)
 
   ;; (define-key matlab-mode-map (kbd "C-c C-b") #'matlab-shell-run-block)  
@@ -594,6 +612,11 @@ active MATLAB shell."
 ;;######################################################################
 ;; PLUGINS
 ;;######################################################################
+
+;;----------------------------------------------------------------------
+;; NAV-FLASH
+;;----------------------------------------------------------------------
+;; (use-package nav-flash)
 
 ;;----------------------------------------------------------------------
 ;; YASNIPPET
@@ -680,6 +703,7 @@ active MATLAB shell."
 ;;----------------------------------------------------------------------
 (use-package ediff
   :defer t
+  :functions ediff-setup-windows-plain
   :init
   (setq ediff-diff-options "-w" ; turn off whitespace checking
         ediff-split-window-function #'split-window-horizontally
@@ -702,6 +726,7 @@ active MATLAB shell."
 ;;----------------------------------------------------------------------
 (use-package helpful
   :ensure t
+  :commands (helpful-callable helpful-variable)
   :init
   (setq counsel-describe-function-function #'helpful-callable)
   (setq counsel-describe-variable-function #'helpful-variable)
@@ -721,6 +746,8 @@ active MATLAB shell."
 ;; VERSION CONTROL
 ;;----------------------------------------------------------------------
 (use-package magit
+  ;; :defer 4
+  :commands magit-status
   :ensure t)
 
 ;;----------------------------------------------------------------------
@@ -773,7 +800,7 @@ active MATLAB shell."
 ;;----------------------------------------------------------------------
 (use-package company
   :ensure t
-  ;;:defer 
+  :defer 1
   :diminish "c->"
   :config
   ;; (add-to-list 'company-backends 'company-files)
@@ -782,7 +809,7 @@ active MATLAB shell."
   ;; (add-to-list 'company-backends 'company-dict)
 
   (global-company-mode)
-  (setq company-idle-delay 0.2
+  (setq company-idle-delay 0.15
         company-dabbrev-downcase 0
         company-minimum-prefix-length 2
         company-selection-wrap-around t
@@ -797,24 +824,50 @@ active MATLAB shell."
               help-mode gud-mode eshell-mode
               package-menu-mode)
         company-backends '(company-files company-capf company-dabbrev)
-        company-frontends
-        '(company-pseudo-tooltip-unless-just-one-frontend
-          company-tng-frontend
-          ;; company-preview-frontend
-          company-echo-metadata-frontend)
         ) 
   (define-key company-active-map (kbd "M-n") nil)
   (define-key company-active-map (kbd "M-p") nil)
   (define-key company-active-map (kbd "C-n") 'company-select-next)
   (define-key company-active-map (kbd "C-p") 'company-select-previous)
-  (define-key company-active-map (kbd "<tab>") 'company-select-next)
-  (define-key company-active-map (kbd "TAB") 'company-select-next)
-  (define-key company-active-map (kbd "<backtab>") 'company-select-previous)
-  (define-key company-active-map (kbd "S-TAB") 'company-select-previous)
-  (define-key company-active-map (kbd "<ret>") nil)
+  
+  ;; (define-key company-active-map (kbd "<tab>") 'company-complete-common-or-cycle)
+  ;; (define-key company-active-map (kbd "TAB") 'company-complete-common-or-cycle)
+  ;; (define-key company-active-map (kbd "<backtab>") 'company-select-previous)
+  ;; (define-key company-active-map (kbd "S-TAB") 'company-select-previous)
+  
   (define-key company-active-map (kbd "C-w") nil)
-  (define-key company-active-map (kbd "C-f") 'company-show-location)
+  (define-key company-active-map (kbd "C-]") 'company-show-location)
    
+  ;; AC-mode style settings
+  (defun company-ac-setup ()
+    "Sets up `company-mode' to behave similarly to `auto-complete-mode'."
+    (defun my-company-visible-and-explicit-action-p ()
+      (and (company-tooltip-visible-p)
+           (company-explicit-action-p)))
+    (setq company-require-match nil)
+    (setq company-auto-complete #'my-company-visible-and-explicit-action-p)
+  ;; (setq company-frontends
+  ;;       '(company-pseudo-tooltip-unless-just-one-frontend
+  ;;         company-preview-frontend
+  ;;         company-echo-metadata-frontend))
+    (setq company-frontends '(company-echo-metadata-frontend
+                              company-pseudo-tooltip-unless-just-one-frontend-with-delay
+                              company-preview-frontend))
+    (define-key company-active-map [tab]
+      'company-select-next-if-tooltip-visible-or-complete-selection)
+    (define-key company-active-map (kbd "TAB")
+      'company-select-next-if-tooltip-visible-or-complete-selection))
+  
+  ;; Tab'n'Go style settings
+  (defun company-tng-setup ()
+    (define-key company-active-map (kbd "TAB") 'company-select-next)
+    (define-key company-active-map (kbd "<tab>") 'company-select-next)
+    (define-key company-active-map (kbd "<ret>") nil)
+    (setq company-frontends
+          '(company-pseudo-tooltip-unless-just-one-frontend
+            company-tng-frontend
+            company-echo-metadata-frontend)))
+
   ;; (setq company-idle-delay 0)
   ;; (setq company-echo-delay 0)
   ;; (setq company-require-match nil)
@@ -824,26 +877,28 @@ active MATLAB shell."
   ;; (define-key company-active-map (kbd "S-TAB") 'company-select-previous)
   ;; (define-key company-active-map (kbd "<backtab>") 'company-select-previous)
   
+  ;; Not needed. cdlatex mode handles completion just fine
   ;; (use-package company-auctex
   ;;   :defer t
   ;;   :config
   ;;   (add-to-list 'company-backends 'company-auctex)
   ;;   (company-auctex-init))
   
+  (company-ac-setup)
+  ;; (company-tng-setup)
+  
   (use-package company-statistics
     :ensure t
     :init
-    (add-hook 'after-init-hook #'company-statistics-mode))
-  )
+    (add-hook 'after-init-hook #'company-statistics-mode)))
 
 ;;----------------------------------------------------------------------
 ;; SMARTPARENS-MODE
 ;;----------------------------------------------------------------------
 (use-package smartparens
+  ;; :defer 5
   :ensure t
-  :init
-  (add-hook 'emacs-lisp-mode-hook #'smartparens-strict-mode)
-  (add-hook 'lisp-interaction-mode-hook #'smartparens-strict-mode)
+  :hook ((emacs-lisp-mode lisp-interaction-mode) . smartparens-strict-mode)
   :config
   (require 'smartparens-config)
   (define-key smartparens-mode-map (kbd "M-<up>") 'sp-raise-sexp)
@@ -857,7 +912,7 @@ active MATLAB shell."
 ;; EXPAND-REGION
 ;;----------------------------------------------------------------------
 (use-package expand-region
-  :ensure
+  :ensure t
   :commands expand-region
   :bind ("C-," . 'er/expand-region))
 
@@ -867,7 +922,7 @@ active MATLAB shell."
 (use-package ace-jump-mode
   :ensure t
   :commands ace-jump-mode
-  :bind ("M-j" . 'ace-jump-mode))
+  :bind ("C-'" . 'ace-jump-mode))
 
 ;;----------------------------------------------------------------------
 ;; IY-GO-TO-CHAR
@@ -893,9 +948,11 @@ active MATLAB shell."
 ;;; Bibtex management from ivy. Call ivy-bibtex.
 (use-package ivy-bibtex
   :ensure t
+  :functions bibtex-completion-open-pdf
   :commands ivy-bibtex
   :config
-  (setq ivy-re-builders-alist '((ivy-bibtex . ivy--regex-ignore-order)
+  (setq ivy-bibtex-default-action 'ivy-bibtex-insert-key
+        ivy-re-builders-alist '((ivy-bibtex . ivy--regex-ignore-order)
                                 (t . ivy--regex-plus))
         bibtex-completion-bibliography (getenv "BIB")
         bibtex-completion-library-path '("~/Documents/research/lit")
@@ -1002,41 +1059,55 @@ active MATLAB shell."
 (setq minibuffer-prompt-properties '(read-only t intangible t cursor-intangible t face minibuffer-prompt))
 (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
 
-; (defvar mode-line-cleaner-alist
-;   `((auto-complete-mode . " α")
-;     (yas-minor-mode . " Υ")
-;     (paredit-mode . " π")
-;     (eldoc-mode . "")
-;     (abbrev-mode . "")
-;     ;; Major modes
-;     (lisp-interaction-mode . "λ")
-;     (hi-lock-mode . "")
-;     (python-mode . "Py")
-;     (emacs-lisp-mode . "Eλ")
-;     (nxhtml-mode . "nx")
-;     (dot-mode . " .")
-;     (scheme-mode . " SCM"))
-;   "Alist for `clean-mode-line'.
+(defvar mode-line-cleaner-alist
+  `((company-mode . " Ĉ")
+    (yas-minor-mode . " Υ")
+    (smartparens-mode . " )(")
+    (evil-smartparens-mode . "")
+    (eldoc-mode . "")
+    (abbrev-mode . "")
+    (evil-snipe-local-mode . "")
+    (evil-owl-mode . "")
+    (evil-rsi-mode . "")
+    (evil-commentary-mode . "")
+    (ivy-mode . "")
+    (wrap-region-mode . "")
+    (rainbow-mode . "")
+    (which-key-mode . "")
+    (undo-tree-mode . " ⎌")
+    (auto-revert-mode . "")
+    ;; Major modes
+    (lisp-interaction-mode . "λ")
+    (hi-lock-mode . "")
+    (python-mode . "Py")
+    (emacs-lisp-mode . "Eλ")
+    (nxhtml-mode . "nx")
+    (dot-mode . " .")
+    (scheme-mode . " SCM")
+    (matlab-mode . "M")
+    (org-mode . "⦿")
+    (latex-mode . "TeX"))
+  "Alist for `clean-mode-line'.
 
 ; ;; When you add a new element to the alist, keep in mind that you
 ; ;; must pass the correct minor/major mode symbol and a string you
 ; ;; want to use in the modeline *in lieu of* the original.")
 
 
-; (defun clean-mode-line ()
-;   (interactive)
-;   (loop for cleaner in mode-line-cleaner-alist
-;         do (let* ((mode (car cleaner))
-;                  (mode-str (cdr cleaner))
-;                  (old-mode-str (cdr (assq mode minor-mode-alist))))
-;              (when old-mode-str
-;                  (setcar old-mode-str mode-str))
-;                ;; major mode
-;              (when (eq mode major-mode)
-;                (setq mode-name mode-str)))))
+(defun clean-mode-line ()
+  (interactive)
+  (loop for cleaner in mode-line-cleaner-alist
+        do (let* ((mode (car cleaner))
+                 (mode-str (cdr cleaner))
+                 (old-mode-str (cdr (assq mode minor-mode-alist))))
+             (when old-mode-str
+                 (setcar old-mode-str mode-str))
+               ;; major mode
+             (when (eq mode major-mode)
+               (setq mode-name mode-str)))))
 
 
-; (add-hook 'after-change-major-mode-hook 'clean-mode-line)
+(add-hook 'after-change-major-mode-hook 'clean-mode-line)
 
 ; (display-time-mode 0)
 

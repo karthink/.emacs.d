@@ -57,6 +57,11 @@ Moves both current buffer and file it's visiting to DIR.
 ;;;;;;  0))
 ;;; Generated autoloads from better-editing.el
 
+(autoload 'unfill-paragraph "better-editing" "\
+Takes a multi-line paragraph and makes it into a single line of text.
+
+\(fn &optional REGION)" t nil)
+
 (autoload 'duplicate-line "better-editing" "\
 Duplicate it. With prefix ARG, duplicate ARG lines following the current one.
 
@@ -156,7 +161,7 @@ prompt for string pairs and return as an association list
 
 \(fn)" t nil)
 
-(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "better-editing" '(#("open-previous-line" 0 18 (face font-lock-function-name-face fontified nil)) #("back-to-indentation-or-beginning" 0 32 (face font-lock-function-name-face fontified nil)) #("qrr" 0 3 (face font-lock-function-name-face fontified nil)) #("newline-and-indent" 0 18 (face font-lock-variable-name-face fontified nil)))))
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "better-editing" '(#("open-previous-line" 0 18 (fontified nil)) #("back-to-indentation-or-beginning" 0 32 (face font-lock-function-name-face fontified t)) #("qrr" 0 3 (face font-lock-function-name-face fontified nil)) #("newline-and-indent" 0 18 (face font-lock-variable-name-face fontified nil)))))
 
 ;;;***
 
@@ -177,11 +182,35 @@ prompt for string pairs and return as an association list
 
 ;;;***
 
+;;;### (autoloads nil "setup-email" "setup-email.el" (0 0 0 0))
+;;; Generated autoloads from setup-email.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "setup-email" '("cg-feed-msmtp")))
+
+;;;***
+
+;;;### (autoloads nil "setup-evil" "setup-evil.el" (0 0 0 0))
+;;; Generated autoloads from setup-evil.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "setup-evil" '("+evil-addons-enabled-modes")))
+
+;;;***
+
 ;;;### (autoloads nil "setup-keybinds" "setup-keybinds.el" (0 0 0
 ;;;;;;  0))
 ;;; Generated autoloads from setup-keybinds.el
 
 (if (fboundp 'register-definition-prefixes) (register-definition-prefixes "setup-keybinds" '("incremental-escape" "doom-l")))
+
+;;;***
+
+;;;### (autoloads nil "setup-org" "setup-org.el" (0 0 0 0))
+;;; Generated autoloads from setup-org.el
+
+(autoload '+org-prettify-symbols "setup-org" "\
+Set `prettify-symbols-alist' to display LaTeX code as pretty symbols in org-mode.
+
+\(fn)" t nil)
 
 ;;;***
 
@@ -217,8 +246,8 @@ Function to find the definition of the defun at point and insert it there.
 
 ;;;***
 
-;;;### (autoloads nil nil ("backup.el" "setup-evil.el" "setup-helm.el"
-;;;;;;  "setup-ivy.el" "setup-org.el" "setup-scheme.el") (0 0 0 0))
+;;;### (autoloads nil nil ("backup.el" "setup-helm.el" "setup-ivy.el"
+;;;;;;  "setup-scheme.el") (0 0 0 0))
 
 ;;;***
 

@@ -1,13 +1,8 @@
-                        ; my dot emacs grows ;
-                     ; one day i look inside it ;
-                           ; singularity ;
-
-; Karthik's .emacs file
+                                        ; my dot emacs grows ;
+                                        ; one day i look inside it ;
+                                        ; singularity ;
 
 (setq gc-cons-threshold most-positive-fixnum)
-
-(setq user-full-name "Karthik C")
-; (setq user-mail-address "karthik[AT]gmail.com")
 
 ;;######################################################################
 ;; PATHS
@@ -30,12 +25,22 @@
 ;; Adds ~/.emacs.d to the load-path
 (add-to-list 'load-path "~/.emacs.d/plugins/")
 (add-to-list 'load-path "~/.emacs.d/lisp/")
-(eval-after-load "setup-org"
-  (setq initial-buffer-choice (concat(getenv "HOME") "/do.org")))
+
+;; (eval-after-load "setup-org"
+;;   (setq initial-buffer-choice (concat (file-name-as-directory (getenv "HOME"))
+;;                                       "do.org")))
+
 ;;########################################################################
 ;; CORE
 ;;########################################################################
 (require 'setup-core)
+
+;;########################################################################
+;; Personal info
+;;########################################################################
+(require 'personal)
+(setq user-full-name my-full-name)
+(setq user-mail-address my-email-address)
 
 ;;########################################################################
 ;; UI FIXES
@@ -75,13 +80,13 @@
 ;; Scrolling
 (setq scroll-margin 0
       scroll-preserve-screen-position t)
-      ;; mouse
+;; mouse
 ;; (setq mouse-wheel-scroll-amount '(t ((shift) . 2))
 ;;       mouse-wheel-progressive-speed t)
 
 ;; (setq-hook! '(eshell-mode-hook term-mode-hook) hscroll-margin 0)
 
-;;; Fringes
+  ;;; Fringes
 
 ;; Reduce the clutter in the fringes; we'd like to reserve that space for more
 ;; useful information, like git-gutter and flycheck.
@@ -113,9 +118,9 @@
 ;; Set horizontal splits as the default
 ;; (setq split-width-threshold 120
 ;;       split-height-threshold 80)
- ;; Favor vertical splits over horizontal ones
-(setq split-width-threshold 160
-      split-height-threshold nil)
+;; Favor vertical splits over horizontal ones
+(setq split-width-threshold 170
+      split-height-threshold 80)
 
 ;; ;;;###package pos-tip
 ;; (setq pos-tip-internal-border-width 6
@@ -211,7 +216,7 @@
 ;; yank
 (delete-selection-mode)
 
-; show the matching parentheses immediately
+                                        ; show the matching parentheses immediately
 (setq show-paren-delay 0.1
       show-paren-highlight-openparen t
       show-paren-when-point-inside-paren t)
@@ -234,8 +239,8 @@
 
 ;; Byte-compile elisp files immediately after saving them if .elc exists:
 (defun auto-byte-recompile ()
-"If the current buffer is in emacs-lisp-mode and there already exists an `.elc'
-file corresponding to the current buffer file, then recompile the file."
+  "If the current buffer is in emacs-lisp-mode and there already exists an `.elc'
+  file corresponding to the current buffer file, then recompile the file."
   (interactive)
   (when (and (eq major-mode 'emacs-lisp-mode)
              (file-exists-p (byte-compile-dest-file buffer-file-name)))
@@ -247,10 +252,10 @@ file corresponding to the current buffer file, then recompile the file."
 ;;######################################################################
 ;; PACKAGE MANAGEMENT
 ;;######################################################################
-;;; Set load paths for ELPA packages
+  ;;; Set load paths for ELPA packages
 (package-initialize)
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
-;(add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/"))
+                                        ;(add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/"))
 ;; (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
 (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
 
@@ -274,10 +279,12 @@ file corresponding to the current buffer file, then recompile the file."
 ;; Set default www browser
 (if (equal system-type 'gnu/linux)
     (setq
-     ;browse-url-browser-function 'browse-url-generic
+                                        ;browse-url-browser-function 'browse-url-generic
      browse-url-generic-program "/usr/bin/qutebrowser"
      ))
 
+(use-package auth-source-pass
+  :init (auth-source-pass-enable))
 ;; Consult clipboard before primary selection
 ;; http://www.gnu.org/software/emacs/manual/
 ;; html_node/emacs/Clipboard.html
@@ -287,14 +294,19 @@ file corresponding to the current buffer file, then recompile the file."
 (add-hook 'comint-output-filter-functions
           'comint-watch-for-password-prompt)
 
-;;;###package ansi-color
+  ;;;###package ansi-color
 (setq ansi-color-for-comint-mode t)
 
 ;; Get rid of the annoying system beep
 ;; (setq visible-bell t)
-(setq ring-bell-function (lambda ()
-                           (call-process-shell-command
-                            "xset led 3; xset -led 3" nil 0 nil)))
+(setq ring-bell-function 'ignore)
+;; (setq ring-bell-function
+;;       (lambda ()
+;;         (let ((orig-fg (face-foreground 'mode-line)))
+;;           (set-face-foreground 'mode-line "#F2804F")
+;;           (run-with-idle-timer 0.1 nil
+;;                                (lambda (fg) (set-face-foreground 'mode-line fg))
+;;                                orig-fg))))
 
 ;; Key to run current line as bash command
 (global-set-key (kbd "C-!") 'shell-command-at-line)
@@ -312,18 +324,18 @@ file corresponding to the current buffer file, then recompile the file."
 
 (defun describe-word-at-point (&optional prefix)
   "Briefly describe word at point. With PREFIX argument, show
-verbose descriptions with hyperlinks."
+  verbose descriptions with hyperlinks."
   (interactive "P")
   (let ( (word (thing-at-point 'word)) )
     (shell-command (concat "dict " word (cond ((null prefix) nil)
-                                                  (t " -v"))))))
+                                              (t " -v"))))))
 
 (defun describe-word (word &optional prefix)
   "Briefly describe WORD entered by user. With PREFIX argument,
-show verbose descriptions with hyperlinks."
+  show verbose descriptions with hyperlinks."
   (interactive "sDescribe word: \nP")
   (shell-command (concat "dict " word (cond ((null prefix) nil)
-                                                (t " -v")))))
+                                            (t " -v")))))
 
 ;;----------------------------------------------------------------------
 ;; ESHELL PREFERENCES
@@ -340,13 +352,16 @@ show verbose descriptions with hyperlinks."
 ;;######################################################################
 (cond ((equal system-type 'gnu/linux)
        (custom-set-faces
-         '(default ((t (:family "Fantasque Sans Mono" :foundry "PfEd" :slant normal :weight normal :height 125 :width normal))))))
+        '(default ((t (:family "Fantasque Sans Mono" :foundry "PfEd" :slant normal :weight normal :height 125 :width normal))))))
       ((equal system-type 'windows-nt)
        (custom-set-faces
         '(default ((t (:inherit nil :stipple nil :background "white" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 98 :width normal :foundry "outline" :family "Consolas"))))))
       ((equal system-type 'cygwin)
        (custom-set-faces
         '(default ((t (:family "Consolas" :foundry "outline" :slant normal :weight normal :height 120 :width normal)))))))
+
+;; Unicode symbols
+(set-fontset-font t 'unicode "Symbola" nil 'prepend)
 
 ;;######################################################################
 ;; LINE NUMBERS
@@ -359,15 +374,23 @@ show verbose descriptions with hyperlinks."
 ;; EDITING
 ;;######################################################################
 (require 'better-editing nil t)
+(use-package visual-fill-column-mode
+  :hook (visual-line-mode . visual-fill-column-mode)
+  :config
+  (setq split-window-preferred-function #'visual-fill-column-mode-split-window-sensibly)
+  (advice-add 'text-scale-adjust :after #'visual-fill-column-adjust)
+  ;; :init (setq visual-line-fringe-indicators '(left-curly-arrow right-curly-arrow))
+  )
 
 ;;######################################################################
-;; BUFFER MANAGEMENT
+;; BUFFER AND WINDOW MANAGEMENT
 ;;######################################################################
 (require 'better-buffers nil t)
 ;; (require 'popup-buffers nil t)
+
 (autoload 'popup-buffers-update-open-popups "popup-buffers")
 (add-hook 'window-configuration-change-hook 'popup-buffers-update-open-popups)
-(global-set-key (kbd "C-`") 'popup-buffers-toggle-latest) 
+(global-set-key (kbd "C-`") 'popup-buffers-toggle-latest)
 (global-set-key (kbd "M-`") 'popup-buffers-cycle)
 ;; (global-set-key (kbd "<f7>") 'popup-buffers-close-latest)
 ;; (global-set-key (kbd "<f8>") 'popup-buffers-open-latest)
@@ -375,7 +398,7 @@ show verbose descriptions with hyperlinks."
 (use-package winner
   :commands winner-undo
   ;; :bind ("C-c <left>" . winner-undo)
-  :config 
+  :config
   (winner-mode +1))
 ;; (use-package! winner
 ;;   ;; undo/redo changes to Emacs' window layout
@@ -383,7 +406,28 @@ show verbose descriptions with hyperlinks."
 ;;   :preface (defvar winner-dont-bind-my-keys t)
 ;;   :config (winner-mode +1)) ; I'll bind keys myself
 
-
+(use-package ace-window
+  :ensure t
+  :defer t
+  :commands ace-window
+  :config
+  (setq aw-dispatch-always t
+        aw-scope 'frame
+        aw-background nil
+        aw-keys '(?q ?w ?e ?r ?u ?i ?o ?p))
+  (setq aw-dispatch-alist
+        '((?k aw-delete-window "Delete Window")
+          (?m aw-swap-window "Swap Windows")
+          (?M aw-move-window "Move Window")
+          (?c aw-copy-window "Copy Window")
+          (?j aw-switch-buffer-in-window "Select Buffer")
+          (?\t aw-flip-window)
+          (?b aw-switch-buffer-other-window "Switch Buffer Other Window")
+          (?c aw-split-window-fair "Split Fair Window")
+          (?s aw-split-window-vert "Split Vert Window")
+          (?v aw-split-window-horz "Split Horz Window")
+          (?o delete-other-windows "Delete Other Windows")
+          (?? aw-show-dispatch-help))))
 
 ;;######################################################################
 ;; UTILITY
@@ -409,7 +453,7 @@ show verbose descriptions with hyperlinks."
                          (file-remote-p file 'host) ":" (file-remote-p file 'localname))
                (concat "/sudo:root@localhost:" file))))
 
-(defun doom/sudo-this-file ()
+(defun sudo-this-file ()
   "Open the current file as root."
   (interactive)
   (sudo-find-file (file-truename buffer-file-name)))
@@ -429,10 +473,10 @@ show verbose descriptions with hyperlinks."
         compilation-scroll-output 'first-error)
   (global-set-key [(f9)] 'compile)
   (global-set-key [(f10)] 'recompile)
-  
+
   (defun +apply-ansi-color-to-compilation-buffer-h ()
     "Applies ansi codes to the compilation buffers. Meant for
-`compilation-filter-hook'."
+  `compilation-filter-hook'."
     (with-silent-modifications
       (ansi-color-apply-on-region compilation-filter-start (point))))
 
@@ -451,6 +495,11 @@ show verbose descriptions with hyperlinks."
                   (run-at-time 1.0 nil 'bury-buffer buf))
                 (message "NO COMPILATION ERRORS!")))))
 
+;; (add-hook 'compilation-mode-hook
+;;           (lambda (&optional args)
+;;             (run-at-time 3 nil
+;;                          (lambda () (delete-windows-on (get-buffer "*Compile-Log*"))))))
+
 ;;######################################################################
 ;; LANGUAGE MODES
 ;;######################################################################
@@ -458,8 +507,11 @@ show verbose descriptions with hyperlinks."
 ;;----------------------------------------------------------------------
 ;; AUCTEX-MODE & ADDITIONS
 ;;----------------------------------------------------------------------
-(use-package auctex
-  :ensure t
+(use-package tex
+  :defer t
+  :ensure auctex
+  :mode
+  ("\\.tex\\'" . latex-mode)
   :defines (TeX-auto-save
             TeX-parse-self
             TeX-electric-escape
@@ -477,50 +529,51 @@ show verbose descriptions with hyperlinks."
   :config
   (progn  (defun TeX-matrix-spacer () (interactive) (insert " & "))
           (defun TeX-insert-smallmatrix () (interactive)
-            (insert "[\\begin{smallmatrix}  \\end{smallmatrix}]")
-            (backward-char 19))
+                 (insert "[\\begin{smallmatrix}  \\end{smallmatrix}]")
+                 (backward-char 19))
           (defun TeX-insert-bmatrix () (interactive)
-            (insert "\\begin{bmatrix}  \\end{bmatrix}")
-            (backward-char 14))
+                 (insert "\\begin{bmatrix}  \\end{bmatrix}")
+                 (backward-char 14))
           (setq
            TeX-auto-save t
            TeX-parse-self t
            TeX-electric-escape nil
-           TeX-PDF-mode t)
-         (setq-default TeX-source-correlate-mode t)
-         (setq TeX-source-correlate-method 'synctex)
-         (setq-default TeX-source-correlate-start-server t)
-         (setq TeX-newline-function 'reindent-then-newline-and-indent)
-         (cond ((equal system-type 'cygwin)
-                (setq TeX-view-program-list
-                      '(("Sumatra PDF" ("\"/cygdrive/c/Program Files/SumatraPDF/SumatraPDF.exe\" -reuse-instance"
-                                        (mode-io-correlate " -forward-search %b %n ") " %o"))))
+           ;; Setting this to t messes up previews
+           ;; If previews still don't show disable the hyperref package
+           TeX-PDF-mode nil)
+          (setq-default TeX-source-correlate-mode t)
+          (setq TeX-source-correlate-method 'synctex)
+          (setq-default TeX-source-correlate-start-server t)
+          (setq TeX-newline-function 'reindent-then-newline-and-indent)
+          (setq TeX-PDF-from-DVI "Dvips")
+          (cond ((equal system-type 'cygwin)
+                 (setq TeX-view-program-list
+                       '(("Sumatra PDF" ("\"/cygdrive/c/Program Files/SumatraPDF/SumatraPDF.exe\" -reuse-instance"
+                                         (mode-io-correlate " -forward-search %b %n ") " %o"))))
 
-                (setq TeX-view-program-selection
-                      '(((output-dvi has-no-display-manager) "dvi2tty")
-                        ((output-dvi style-pstricks) "dvips and gv")
-                        (output-dvi "xdvi")
-                        (output-pdf "pdf-tools")
-                        (output-html "xdg-open"))))
-               ((equal system-type 'gnu/linux)
-                (setq TeX-view-program-selection
-                      '(((output-dvi has-no-display-manager) "dvi2tty")
-                        ((output-dvi style-pstricks) "dvips and gv")
-                        (output-dvi "xdvi")
-                        (output-pdf "Zathura")
-                        (output-html "xdg-open"))))
-               )
-         (TeX-fold-mode 1)
-         ))
+                 (setq TeX-view-program-selection
+                       '(((output-dvi has-no-display-manager) "dvi2tty")
+                         ((output-dvi style-pstricks) "dvips and gv")
+                         (output-dvi "xdvi")
+                         (output-pdf "pdf-tools")
+                         (output-html "xdg-open"))))
+                ((equal system-type 'gnu/linux)
+                 (setq TeX-view-program-selection
+                       '(((output-dvi has-no-display-manager) "dvi2tty")
+                         ((output-dvi style-pstricks) "dvips and gv")
+                         (output-dvi "xdvi")
+                         (output-pdf "Zathura")
+                         (output-html "xdg-open"))))
+                )
+          (TeX-fold-mode 1)
+          ))
 
 (use-package reftex
   ;; :defer 3
   :commands turn-on-reftex
+  :hook ((latex-mode LaTeX-mode) . turn-on-reftex)
   :config
-  (progn (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
-         (add-hook 'latex-mode-hook 'turn-on-reftex)
-         (setq reftex-plug-into-AUCTeX t)))
-;; (autoload 'reftex "reftex")
+  (setq reftex-plug-into-AUCTeX t))
 
 ;; (setq-default TeX-master nil)
 (use-package cdlatex
@@ -569,12 +622,12 @@ show verbose descriptions with hyperlinks."
   ;; (add-hook 'matlab-mode-hook #'turn-on-evil-matlab-textobjects-mode)
   (add-hook 'matlab-shell-mode-hook #'company-mode-on)
 
-  ;; (define-key matlab-mode-map (kbd "C-c C-b") #'matlab-shell-run-block)  
-  
+  ;; (define-key matlab-mode-map (kbd "C-c C-b") #'matlab-shell-run-block)
+
   ;; :config
   (add-hook 'matlab-shell-mode-hook (lambda () (interactive)
                                       (define-key matlab-shell-mode-map (kbd "C-<tab>") nil)))
-  
+
   (defun matlab-select-block ()
     (save-excursion
       (let ((block-beg (search-backward-regexp "^%%" nil t))
@@ -583,9 +636,9 @@ show verbose descriptions with hyperlinks."
 
   (defun matlab-shell-run-block (&optional prefix)
     "Run a block of code around point separated by %% and display
-result in MATLAB shell. If prefix argument is non-nil, replace
-newlines with commas to suppress output. This command requires an
-active MATLAB shell."
+  result in MATLAB shell. If prefix argument is non-nil, replace
+  newlines with commas to suppress output. This command requires an
+  active MATLAB shell."
     (interactive "P")
     (let* ((block (matlab-select-block))
            (beg (car block))
@@ -593,26 +646,104 @@ active MATLAB shell."
       (if prefix
           (matlab-shell-run-region beg end prefix)
         (matlab-shell-run-region beg end))))
-  
-(defun matlab-forward-section ()
-  "Move forward section in matlab mode"
-  (interactive)
-  (beginning-of-line 2)
-  (re-search-forward "^%%" nil t)
-  (match-end 0))
 
-(defun matlab-backward-section ()
-  "Move forward section in matlab mode"
-  (interactive)
-  (re-search-backward "^%%" nil t)
-  (match-beginning 0))
+  (defun matlab-forward-section ()
+    "Move forward section in matlab mode"
+    (interactive)
+    (beginning-of-line 2)
+    (re-search-forward "^%%" nil t)
+    (match-end 0))
+
+  (defun matlab-backward-section ()
+    "Move forward section in matlab mode"
+    (interactive)
+    (re-search-backward "^%%" nil t)
+    (match-beginning 0))
 
   )
+
+;;----------------------------------------------------------------------
+;; PYTHON-MODE
+;;----------------------------------------------------------------------
+
+;; (add-hook
+;;  'python-mode-hook
+;;  (lambda ()
+;;    (mapc (lambda (pair) (push pair prettify-symbols-alist))
+;;          '(;; Syntax
+;;            ("def" .      #x2131)
+;;            ("not" .      #x2757)
+;;            ("in" .       #x2208)
+;;            ("not in" .   #x2209)
+;;            ("return" .   #x27fc)
+;;            ("yield" .    #x27fb)
+;;            ("for" .      #x2200)
+;;            ;; Base Types
+;;            ("int" .      #x2124)
+;;            ("float" .    #x211d)
+;;            ("str" .      #x1d54a)
+;;            ("True" .     #x1d54b)
+;;            ("False" .    #x1d53d)
+;;            ;; Mypy
+;;            ("Dict" .     #x1d507)
+;;            ("List" .     #x2112)
+;;            ("Tuple" .    #x2a02)
+;;            ("Set" .      #x2126)
+;;            ("Iterable" . #x1d50a)
+;;            ("Any" .      #x2754)
+;;            ("Union" .    #x22c3)))))
 
 ;;######################################################################
 ;; PLUGINS
 ;;######################################################################
 
+;;----------------------------------------------------------------------
+;; NOTMUCH
+;; ----------------------------------------------------------------------
+;; Left unchecked, every program grows to the point where it can be
+;; used to manage your email
+(require 'setup-email)
+
+
+;;----------------------------------------------------------------------
+;; EYEBROWSE - tab emulation for emacs
+;;----------------------------------------------------------------------
+(use-package eyebrowse
+  ;; :bind ("C-c C-w c" . eyebrowse-create-window-config)
+  ;; :commands eyebrowse-create-window-config
+  :hook (after-init . eyebrowse-mode)
+  :init (setq eyebrowse-keymap-prefix (kbd "C-x t"))
+  :config
+  (setq eyebrowse-new-workspace (lambda nil "Buffer menu for user buffers" (buffer-menu 1))
+        eyebrowse-wrap-around t
+        eyebrowse-switch-back-and-forth t)
+  (define-key eyebrowse-mode-map (kbd "C-M-TAB") 'eyebrowse-next-window-config)
+  (define-key eyebrowse-mode-map (kbd "C-M-<tab>") 'eyebrowse-next-window-config)
+  (define-key eyebrowse-mode-map (kbd "<C-M-iso-lefttab>") 'eyebrowse-last-window-config)
+  ;; (define-key eyebrowse-mode-map (kbd "M-1") 'eyebrowse-switch-to-window-config-1)
+  ;; (define-key eyebrowse-mode-map (kbd "M-2") 'eyebrowse-switch-to-window-config-2)
+  ;; (define-key eyebrowse-mode-map (kbd "M-3") 'eyebrowse-switch-to-window-config-3)
+  ;; (defmacro eyebrowse-remap-tab-keys () )
+  ;; (eyebrowse-setup-opinionated-keys)
+
+  ;; Display tab configuration in Emacs title bar
+  (defun my-title-bar-format()
+    (let* ((current-slot (eyebrowse--get 'current-slot))
+           (window-configs (eyebrowse--get 'window-configs))
+           (window-config (assoc current-slot window-configs))
+           (window-config-name (nth 2 window-config))
+           (num-slots (length window-configs)))
+      (concat window-config-name " [" (number-to-string current-slot)
+              "/" (number-to-string num-slots) "] | " "%b")))
+
+  (if (display-graphic-p)
+      (progn
+        (setq frame-title-format
+              '(:eval (my-title-bar-format)))))
+
+
+  )
+;; (define-key ivy-minibuffer-map (kbd "C-M-w") 'ivy-yank-word)
 ;;----------------------------------------------------------------------
 ;; NAV-FLASH
 ;;----------------------------------------------------------------------
@@ -648,16 +779,16 @@ active MATLAB shell."
   ;;       ;; Nicer code-folding overlays (with fringe indicators)
   ;;       hs-set-up-overlay #'+fold-hideshow-set-up-overlay-fn)
 
-  (dolist (hs-command (list #'hs-toggle-hiding 
-                            #'hs-hide-block 
-                            #'hs-hide-level 
-                            #'hs-show-all 
+  (dolist (hs-command (list #'hs-toggle-hiding
+                            #'hs-hide-block
+                            #'hs-hide-level
+                            #'hs-show-all
                             #'hs-hide-all))
     (advice-add hs-command :before
                 (lambda () "Advice to ensure `hs-minor-mode' is enabled"
                   (unless (bound-and-true-p hs-minor-mode)
                     (hs-minor-mode +1)))))
-  
+
   ;; (defadvice! +fold--hideshow-ensure-mode-a (&rest _)
   ;;   "Ensure `hs-minor-mode' is enabled."
   ;;   :before '(hs-toggle-hiding hs-hide-block hs-hide-level hs-show-all hs-hide-all)
@@ -682,9 +813,9 @@ active MATLAB shell."
              ;;                "end\\|[]}]"
              ;;                "#\\|=begin"
              ;;                enh-ruby-forward-sexp nil)
-             (matlab-mode "if\\|switch\\|case\\|otherwise\\|while\\|for\\|try\\|catch\\|function\\|^%%"
-                          "end\\|^%%"
-                          "%[^%]" (lambda (_arg) (matlab-forward-sexp)))
+             (matlab-mode "if\\|switch\\|case\\|otherwise\\|while\\|for\\|try\\|catch\\|function\\|%{"
+                          "end\\|%}"
+                          "%%" (lambda (_arg) (matlab-forward-sexp)))
              (nxml-mode "<!--\\|<[^/>]*[^/]>"
                         "-->\\|</[^/>]*[^/]>"
                         "<!--" sgml-skip-tag-forward nil))
@@ -711,7 +842,7 @@ active MATLAB shell."
   :config
   (defvar +ediff-saved-wconf nil)
   (defun +ediff-save-wconf-h ()
-      (setq +ediff-saved-wconf (current-window-configuration)))
+    (setq +ediff-saved-wconf (current-window-configuration)))
   (defun +ediff-restore-wconf-h ()
     (when (window-configuration-p +ediff-saved-wconf)
       (set-window-configuration +ediff-saved-wconf)))
@@ -719,7 +850,7 @@ active MATLAB shell."
   (add-hook 'ediff-before-setup-hook #'+ediff-save-wconf-h)
   (add-hook 'ediff-quit-hook #'+ediff-restore-wconf-h t)
   (add-hook 'ediff-suspend-hook #'+ediff-restore-wconf-h t)
-)
+  )
 
 ;;----------------------------------------------------------------------
 ;; HELPFUl
@@ -766,26 +897,26 @@ active MATLAB shell."
   :config
   (set-face-attribute 'which-key-local-map-description-face nil :weight 'bold)
   (which-key-setup-side-window-bottom)
-  (add-hook 'which-key-init-buffer-hook 
+  (add-hook 'which-key-init-buffer-hook
             (lambda () (setq-local line-spacing 3)))
 
   ;; (which-key-add-key-based-replacements doom-leader-key "<leader>")
   ;; (which-key-add-key-based-replacements doom-localleader-key "<localleader>")
   (which-key-mode +1)
-  
+
   :diminish "")
 
 ;;----------------------------------------------------------------------
 ;; CALC
 ;;----------------------------------------------------------------------
 (defun calc-on-line () (interactive)
-  (cond ((region-active-p)
-         (let* ((beg (region-beginning))
-                (end (region-end))
-                (string (buffer-substring-no-properties beg end)))
-           (kill-region beg end)
-           (insert (calc-eval string))))
-        (t (end-of-line) (insert " = " (calc-eval (thing-at-point 'line))))))
+       (cond ((region-active-p)
+              (let* ((beg (region-beginning))
+                     (end (region-end))
+                     (string (buffer-substring-no-properties beg end)))
+                (kill-region beg end)
+                (insert (calc-eval string))))
+             (t (end-of-line) (insert " = " (calc-eval (thing-at-point 'line))))))
 (global-set-key (kbd "C-S-e") 'calc-on-line)
 
 ;;----------------------------------------------------------------------
@@ -796,12 +927,11 @@ active MATLAB shell."
     (quietly-read-abbrev-file))
 
 ;;----------------------------------------------------------------------
-; COMPANY-MODE
+                                        ; COMPANY-MODE
 ;;----------------------------------------------------------------------
 (use-package company
   :ensure t
   :defer 1
-  :diminish "c->"
   :config
   ;; (add-to-list 'company-backends 'company-files)
   ;; (add-to-list 'company-backends 'company-dabbrev)
@@ -809,10 +939,11 @@ active MATLAB shell."
   ;; (add-to-list 'company-backends 'company-dict)
 
   (global-company-mode)
-  (setq company-idle-delay 0.15
+  (setq company-idle-delay 0.20
         company-dabbrev-downcase 0
         company-minimum-prefix-length 2
         company-selection-wrap-around t
+        ;;company-tooltip-flip-when-above t
         company-tooltip-align-annotations t
         company-require-match 'never
         company-dabbrev-downcase nil
@@ -824,20 +955,21 @@ active MATLAB shell."
               help-mode gud-mode eshell-mode
               package-menu-mode)
         company-backends '(company-files company-capf company-dabbrev)
-        ) 
+        )
+
   (define-key company-active-map (kbd "M-n") nil)
   (define-key company-active-map (kbd "M-p") nil)
   (define-key company-active-map (kbd "C-n") 'company-select-next)
   (define-key company-active-map (kbd "C-p") 'company-select-previous)
-  
+
   ;; (define-key company-active-map (kbd "<tab>") 'company-complete-common-or-cycle)
   ;; (define-key company-active-map (kbd "TAB") 'company-complete-common-or-cycle)
   ;; (define-key company-active-map (kbd "<backtab>") 'company-select-previous)
   ;; (define-key company-active-map (kbd "S-TAB") 'company-select-previous)
-  
+
   (define-key company-active-map (kbd "C-w") nil)
   (define-key company-active-map (kbd "C-]") 'company-show-location)
-   
+
   ;; AC-mode style settings
   (defun company-ac-setup ()
     "Sets up `company-mode' to behave similarly to `auto-complete-mode'."
@@ -846,10 +978,10 @@ active MATLAB shell."
            (company-explicit-action-p)))
     (setq company-require-match nil)
     (setq company-auto-complete #'my-company-visible-and-explicit-action-p)
-  ;; (setq company-frontends
-  ;;       '(company-pseudo-tooltip-unless-just-one-frontend
-  ;;         company-preview-frontend
-  ;;         company-echo-metadata-frontend))
+    ;; (setq company-frontends
+    ;;       '(company-pseudo-tooltip-unless-just-one-frontend
+    ;;         company-preview-frontend
+    ;;         company-echo-metadata-frontend))
     (setq company-frontends '(company-echo-metadata-frontend
                               company-pseudo-tooltip-unless-just-one-frontend-with-delay
                               company-preview-frontend))
@@ -857,7 +989,7 @@ active MATLAB shell."
       'company-select-next-if-tooltip-visible-or-complete-selection)
     (define-key company-active-map (kbd "TAB")
       'company-select-next-if-tooltip-visible-or-complete-selection))
-  
+
   ;; Tab'n'Go style settings
   (defun company-tng-setup ()
     (define-key company-active-map (kbd "TAB") 'company-select-next)
@@ -868,28 +1000,23 @@ active MATLAB shell."
             company-tng-frontend
             company-echo-metadata-frontend)))
 
-  ;; (setq company-idle-delay 0)
-  ;; (setq company-echo-delay 0)
-  ;; (setq company-require-match nil)
-  ;; (setq company-tooltip-flip-when-above t)
-  ;; (define-key company-active-map (kbd "TAB") 'company-complete-common-or-cycle)
-  ;; (define-key company-active-map (kbd "<tab>") 'company-complete-common-or-cycle)
-  ;; (define-key company-active-map (kbd "S-TAB") 'company-select-previous)
-  ;; (define-key company-active-map (kbd "<backtab>") 'company-select-previous)
-  
+
   ;; Not needed. cdlatex mode handles completion just fine
   ;; (use-package company-auctex
   ;;   :defer t
   ;;   :config
   ;;   (add-to-list 'company-backends 'company-auctex)
   ;;   (company-auctex-init))
-  
-  (company-ac-setup)
+
+  (company-tng-setup)
   ;; (company-tng-setup)
-  
+
   (use-package company-statistics
     :ensure t
     :init
+    (setq company-statistics-file (concat (expand-file-name
+                                           (file-name-as-directory "~/.cache"))
+                                          "company-statistics-cache.el"))
     (add-hook 'after-init-hook #'company-statistics-mode)))
 
 ;;----------------------------------------------------------------------
@@ -945,13 +1072,15 @@ active MATLAB shell."
 ;; IVY/COUNSEL/SWIPER
 ;;----------------------------------------------------------------------
 (require 'setup-ivy)
-;;; Bibtex management from ivy. Call ivy-bibtex.
+  ;;; Bibtex management from ivy. Call ivy-bibtex.
 (use-package ivy-bibtex
   :ensure t
   :functions bibtex-completion-open-pdf
   :commands ivy-bibtex
   :config
-  (setq ivy-bibtex-default-action 'ivy-bibtex-insert-key
+  (setq ivy-bibtex-default-action 'ivy-bibtex-insert-citation
+        bibtex-completion-cite-prompt-for-optional-arguments nil
+        bibtex-completion-cite-default-as-initial-input t
         ivy-re-builders-alist '((ivy-bibtex . ivy--regex-ignore-order)
                                 (t . ivy--regex-plus))
         bibtex-completion-bibliography (getenv "BIB")
@@ -964,7 +1093,7 @@ active MATLAB shell."
   (defun bibtex-completion-open-pdf-external (keys &optional fallback-action)
     (let* ((pdf-reader (getenv "READER"))
            (bibtex-completion-pdf-open-function
-               (lambda (fpath) (start-process pdf-reader "*ivy-bibtex-evince*" pdf-reader fpath))))
+            (lambda (fpath) (start-process pdf-reader "*ivy-bibtex-evince*" pdf-reader fpath))))
       (bibtex-completion-open-pdf keys fallback-action)))
 
   (ivy-bibtex-ivify-action bibtex-completion-open-pdf-external ivy-bibtex-open-pdf-external)
@@ -983,12 +1112,44 @@ active MATLAB shell."
 ;; DIRED
 ;;----------------------------------------------------------------------
 ;; Dired preferences
-(require 'setup-dired nil t)
+;; (require 'setup-dired nil t)
+(use-package dired-sidebar
+  :ensure t
+  :commands (dired-sidebar-toggle-sidebar)
+  :init
+  (add-hook 'dired-sidebar-mode-hook
+            (lambda ()
+              (unless (file-remote-p default-directory)
+                (auto-revert-mode))))
+  :config
+  (push 'toggle-window-split dired-sidebar-toggle-hidden-commands)
+  (push 'rotate-windows dired-sidebar-toggle-hidden-commands)
 
+  (setq dired-sidebar-subtree-line-prefix "__")
+  (setq dired-sidebar-theme 'ascii)
+  (setq dired-sidebar-use-term-integration t)
+  (setq dired-sidebar-use-custom-font t))
+
+(use-package ibuffer-sidebar
+  ;; :load-path "~/.emacs.d/fork/ibuffer-sidebar"
+  :ensure t
+  :commands (ibuffer-sidebar-toggle-sidebar)
+  :config
+  ;; (setq ibuffer-sidebar-use-custom-font t)
+  ;; (setq ibuffer-sidebar-face `(:family "Helvetica" :height 140))
+  (defun +sidebar-toggle ()
+    "Toggle both `dired-sidebar' and `ibuffer-sidebar'."
+    (interactive)
+    (dired-sidebar-toggle-sidebar)
+    (ibuffer-sidebar-toggle-sidebar)))
+
+;; (use-package projectile
+;;   :ensure t
+;;   :init (projectile-mode +1))
 ;;----------------------------------------------------------------------
 ;; ORG-MODE
 ;;----------------------------------------------------------------------
-;;;; Org mode
+  ;;;; Org mode
 ;; org-init.el is loaded from the "lisp" directory.
 (require 'setup-org nil t)
 (use-package org-bullets
@@ -1006,44 +1167,78 @@ active MATLAB shell."
 ;; COLORS & COLOR THEMES
 ;;######################################################################
 
-;;; Load theme after the frame is created.
-;; (add-hook 'after-make-frame-functions
-;;           (lambda (frame)
-;;             (load-theme 'gruvbox-dark-hard t)
-;;             ;; (load-theme 'smart-mode-line-dark t)
-;; ))
+;; Load theme after the frame is created.
+(add-hook 'after-init-hook ;'after-make-frame-functions
+          (lambda ()
+            (if (or (< (nth 2 (decode-time (current-time))) 7)
+                    (> (nth 2 (decode-time (current-time))) 18))
+                (progn (load-theme 'gruvbox-dark-hard t)
+                       (load-theme 'smart-mode-line-dark))
+              (progn (load-theme 'tsdh-light t)))
+            ;; (load-theme 'smart-mode-line-dark t)
+            ))
 
-;; Create function for line number format
-;; Basic idea is to align line number to the right and to make
-;; height of linum dependent of total line numbers.
+;; Other themes
+;; (list 'tsdh-light
+;;       'ample-flat-theme 'ample-light-theme 'ample-theme
+;;       'tao 'tao-yin 'tao-yang
+;;       'gruvbox-dark-hard 'gruvbox-light-hard
+;;       'spacemacs-light-theme 'spacemacs-dark-theme)
 
-;; (defun linum-format-func (line)
-;;   "Format LINE for 'linum-mode'."
-;;   (let ((w (length (number-to-string (count-lines (point-min) (point-max))))))
-;;     (propertize (format (format "%%%dd%c" w ?\x2007) line) 'face 'linum)))
-;; ;; Set last function as linum formatter
-;; (setq linum-format 'linum-format-func)
+;; Tao:
+;; (defun tao-palette () (tao-theme-golden-grayscale-yin-palette))
+;; (tao-with-color-variables tao-palette
+;;   (progn
+;;     (setq
+;;       hl-paren-colors (list color-14 color-11 color-9 color-7 color-6)
+;;       hl-paren-background-colors (list color-4 color-4 color-4 color-4 color-4))))
 
 ;; before loading new theme
-(defun load-theme--disable-old-theme(theme &rest args)
-  "Disable current theme before loading new one."
-  (mapcar #'disable-theme custom-enabled-themes))
-(advice-add 'load-theme :before #'load-theme--disable-old-theme)
-
-;; After loading new theme
-
-;; (defun load-theme--restore-line-numbering(theme &rest args)
-;;   "Set linum-format again after loading any theme."
-;;   (setq linum-format 'linum-format-func))
-;; (advice-add 'load-theme :after #'load-theme--restore-line-numbering)
+;; (defun load-theme--disable-old-theme(theme &rest args)
+;;   "Disable current theme before loading new one."
+;;   (mapcar #'disable-theme custom-enabled-themes))
+;; (advice-add 'load-theme :before #'load-theme--disable-old-theme)
 
 ;;######################################################################
 ;; MODELINE:
 ;;######################################################################
 
+;; (use-package telephone-line
+;;   :ensure t
+;;   :init
+;;   (telephone-line-mode 1))
+
 (use-package smart-mode-line
+  ;; :after evil
   :ensure t
-  :init (sml/setup))
+  :init (sml/setup)
+  :defines sml/fix-mode-line-a
+  :config
+  (defun sml/fix-mode-line-a (theme &rest args)
+    "Advice to `load-theme' to fix the mode-line height after activating/deactivating theme"
+    (set-face-attribute 'mode-line nil
+                        :box `(:line-width 3 :color ,(plist-get
+                                                      (custom-face-attributes-get 'mode-line nil)
+                                                      :background))))
+
+  (advice-add 'disable-theme :after #'sml/fix-mode-line-a)
+  (advice-add 'load-theme :after #'sml/fix-mode-line-a)
+  ;; (custom-set-faces
+  ;;  '(mode-line ((t (:box (:line-width 4 :color ))))))
+
+  ;;         (lexical-let ((default-color (cons (face-background 'mode-line)
+  ;;                                            (face-foreground 'mode-line))))
+  ;;           (add-hook 'post-command-hook
+  ;;                     (lambda ()
+  ;;                       (let ((color (cond ((minibufferp) default-color)
+  ;;                                          ((evil-insert-state-p) '("DarkGoldenrod2" . "black"))
+  ;;                                          ((evil-emacs-state-p)  '("SkyBlue2" . "black"))
+  ;;                                          ;; ((buffer-modified-p)   '("#006fa0" . "#ffffff"))
+  ;;                                          (t default-color))))
+  ;;                         (set-face-background 'mode-line (car color))
+  ;;                         (set-face-foreground 'mode-line (cdr color)))))))
+  ;;   )
+  )
 
 ;; (use-package doom-modeline
 ;;   :ensure t
@@ -1074,7 +1269,8 @@ active MATLAB shell."
     (wrap-region-mode . "")
     (rainbow-mode . "")
     (which-key-mode . "")
-    (undo-tree-mode . " ⎌")
+    (undo-tree-mode . "")
+    ;; (undo-tree-mode . " ⎌")
     (auto-revert-mode . "")
     ;; Major modes
     (lisp-interaction-mode . "λ")
@@ -1089,27 +1285,29 @@ active MATLAB shell."
     (latex-mode . "TeX"))
   "Alist for `clean-mode-line'.
 
-; ;; When you add a new element to the alist, keep in mind that you
-; ;; must pass the correct minor/major mode symbol and a string you
-; ;; want to use in the modeline *in lieu of* the original.")
+  ; ;; When you add a new element to the alist, keep in mind that you
+  ; ;; must pass the correct minor/major mode symbol and a string you
+  ; ;; want to use in the modeline *in lieu of* the original.")
 
 
 (defun clean-mode-line ()
   (interactive)
-  (loop for cleaner in mode-line-cleaner-alist
-        do (let* ((mode (car cleaner))
-                 (mode-str (cdr cleaner))
-                 (old-mode-str (cdr (assq mode minor-mode-alist))))
-             (when old-mode-str
-                 (setcar old-mode-str mode-str))
-               ;; major mode
-             (when (eq mode major-mode)
-               (setq mode-name mode-str)))))
+  (cl-loop for cleaner in mode-line-cleaner-alist
+           do (let* ((mode (car cleaner))
+                     (mode-str (cdr cleaner))
+                     (old-mode-str (cdr (assq mode minor-mode-alist))))
+                (when old-mode-str
+                  (setcar old-mode-str mode-str))
+                ;; major mode
+                (when (eq mode major-mode)
+                  (setq mode-name mode-str)))))
 
 
 (add-hook 'after-change-major-mode-hook 'clean-mode-line)
 
-; (display-time-mode 0)
+;; (display-time-mode 0)
+
+
 
 ;;######################################################################
 ;; MINIBUFFER
@@ -1122,4 +1320,3 @@ active MATLAB shell."
 ;; EVIL-MODE
 ;;######################################################################
 (require 'setup-evil)
-

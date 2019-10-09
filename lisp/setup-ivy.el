@@ -39,7 +39,10 @@
   ;; (global-set-key (kbd "C-x l") 'counsel-locate)
   ;; (global-set-key (kbd "C-S-o") 'counsel-rhythmbox)
   (define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
+  (define-key ivy-minibuffer-map (kbd "C-m") 'ivy-alt-done)
+  ;; (define-key ivy-minibuffer-map (kbd "C-j") 'ivy-alt-done)
 
+;;;###autoload
   (defun +ivy-switch-file-search ()
     "Switch to counsel-file-jump, preserving current input."
     (interactive)
@@ -50,11 +53,15 @@
   (define-key ivy-minibuffer-map (kbd "C-SPC") 'ivy-mark)
 
   ;; Define a function to replace `counsel--find-return-list' that uses `fd' or `ripgrep' (if available) in place of `find' to find files, and...
+;;;###autoload
   (defun +ivy--counsel-file-jump-use-fd-rg-a (&rest args)
     "Change `ivy-counsel-file-jump' to use fd or ripgrep if available"
     (cl-destructuring-bind (find-program . args)
         (cond ((executable-find "fd")
-               (cons "fd" (list "--hidden" "-L" "-t" "f" "-E" ".git")))
+               (cons "fd" (list "--hidden" "-L" "-t" "f"
+                                "-E" ".git*"
+                                "-E" "#*"
+                                "-E" "*~")))
               ((executable-find "rg")
                (cons "rg" (list "--files" "--hidden" "--no-messages")))
               ((cons find-program args)))
@@ -87,82 +94,34 @@
              (target (read-file-name (format "%s %s to:" prompt source))))
         (funcall cmd source target 1))))
   
+  ;; Configure `counsel-ag'
+  (setq counsel-ag-base-command "ag --nocolor --nogroup --hidden -f %s")
+  
   ;; Configure `counsel-find-file'
-  (ivy-add-actions
-   'counsel-find-file
-   `(("b" counsel-find-file-cd-bookmark-action "cd bookmark")
-     ("s" counsel-find-file-as-root "open as root")
-     ("m" counsel-find-file-mkdir-action "mkdir")
-     ("c" ,(+ivy-action-given-file #'copy-file "Copy file") "copy file")
-     ("d" ,(+ivy-action-reloading (lambda (x) (dired-delete-file x 'confirm-each-subdirectory))) "delete")
-     ("r" (lambda (path) (rename-file path (read-string "New name: "))) "rename")
-     ("R" ,(+ivy-action-reloading (+ivy-action-given-file #'rename-file "Move")) "move")
-     ("f" find-file-other-window "other window")
-     ("F" find-file-other-frame "other frame")
-     ("p" (lambda (path) (with-ivy-window (insert (file-relative-name path default-directory)))) "insert relative path")
-     ("P" (lambda (path) (with-ivy-window (insert path))) "insert absolute path")
-     ;; ("l" (lambda (path) "Insert org-link with relative path"
-     ;;        (with-ivy-window (insert (format "[[./%s]]" (file-relative-name path default-directory))))) "insert org-link (rel. path)")
-     ;; ("L" (lambda (path) "Insert org-link with absolute path"
-     ;;        (with-ivy-window (insert (format "[[%s]]" path)))) "insert org-link (abs. path)")
-     ))
+  (dolist (ivy-command '(counsel-find-file counsel-file-jump counsel-fzf counsel-git))
+    (ivy-add-actions
+     ivy-command
+     `(("'" counsel-find-file-cd-bookmark-action "cd bookmark")
+       ("S" counsel-find-file-as-root "open as root")
+       ("+" counsel-find-file-mkdir-action "mkdir")
+       ("c" ,(+ivy-action-given-file #'copy-file "Copy file") "copy file")
+       ("k" ,(+ivy-action-reloading (lambda (x) (dired-delete-file x 'confirm-each-subdirectory))) "delete")
+       ("r" (lambda (path) (rename-file path (read-string "New name: "))) "rename")
+       ("R" ,(+ivy-action-reloading (+ivy-action-given-file #'rename-file "Move")) "move")
+       ("f" find-file-other-window "other window")
+       ("F" find-file-other-frame "other frame")
+       ("p" (lambda (path) (with-ivy-window (insert (file-relative-name path default-directory)))) "insert relative path")
+       ("P" (lambda (path) (with-ivy-window (insert path))) "insert absolute path")
+       ;; ("l" (lambda (path) "Insert org-link with relative path"
+       ;;        (with-ivy-window (insert (format "[[./%s]]" (file-relative-name path default-directory))))) "insert org-link (rel. path)")
+       ;; ("L" (lambda (path) "Insert org-link with absolute path"
+       ;;        (with-ivy-window (insert (format "[[%s]]" path)))) "insert org-link (abs. path)")
+       )))
 
-
-  
-  
   (with-eval-after-load 'yasnippet
-          (defun +ivy-yas-prompt (prompt choices &optional display-fn)
-            (yas-completing-prompt prompt choices display-fn #'ivy-completing-read))
-          (add-to-list 'yas-prompt-functions #'+ivy-yas-prompt nil #'eq))
-  
-  ;; ivy-rich shows descriptions along with selection candidates in ivy
-  (use-package ivy-rich
-    :ensure t
-    :init (ivy-rich-mode 1)
-    :config
-    (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line)
-
-    (defun +ivy-rich-describe-variable-transformer (cand)
-  "Previews the value of the variable in the minibuffer"
-  (let* ((sym (intern cand))
-         (val (and (boundp sym) (symbol-value sym)))
-         (print-level 3))
-    (replace-regexp-in-string
-     "[\n\t\^[\^M\^@\^G]" " "
-     (cond ((booleanp val)
-            (propertize (format "%s" val) 'face
-                        (if (null val)
-                            'font-lock-comment-face
-                          'success)))
-           ((symbolp val)
-            (propertize (format "'%s" val)
-                        'face 'highlight-quoted-symbol))
-           ((keymapp val)
-            (propertize "<keymap>" 'face 'font-lock-constant-face))
-           ((listp val)
-            (prin1-to-string val))
-           ((stringp val)
-            (propertize (format "%S" val) 'face 'font-lock-string-face))
-           ((numberp val)
-            (propertize (format "%s" val) 'face 'highlight-numbers-number))
-           ((format "%s" val)))
-     t)))
-    
-    
-    ;; Include variable value in `counsel-describe-variable'
-    
-    (setq ivy-rich-display-transformers-list
-          (plist-put ivy-rich-display-transformers-list
-                     'counsel-describe-variable
-                     '(:columns
-                       ((counsel-describe-variable-transformer (:width 40)) ; the original transformer
-                        (+ivy-rich-describe-variable-transformer (:width 50))
-                        (ivy-rich-counsel-variable-docstring (:face font-lock-doc-face))))))
-    
-    (ivy-rich-mode +1)
-
-   :diminish "" 
-    )
+    (defun +ivy-yas-prompt (prompt choices &optional display-fn)
+      (yas-completing-prompt prompt choices display-fn #'ivy-completing-read))
+    (add-to-list 'yas-prompt-functions #'+ivy-yas-prompt nil #'eq))
   
 ;;; ivy-hydra allows additional actions and vim-like navigation on ivy candidates.
 ;;; Initialize in ivy with C-o
@@ -177,31 +136,40 @@
     :config
     ;; ivy-hydra rebinds this, so we have to do so again
     ;; (define-key ivy-minibuffer-map (kbd "M-o") #'hydra-ivy/body)
-    )
-  
-  :diminish ""
-
-)
+    ))
 
 (use-package ivy-prescient
+  :after ivy
   :hook (ivy-mode . ivy-prescient-mode)
   :init
+  (ivy-prescient-mode +1)
   (setq ;; prescient-filter-method
-        ;; (if (featurep +fuzzy)
-        ;;     '(literal regexp initialism fuzzy)
-        ;;   '(literal regexp initialism))
-        ivy-prescient-enable-filtering nil  ; we do this ourselves
-        ivy-prescient-enable-sorting t
-        ivy-prescient-retain-classic-highlighting t
-        ;; ivy-initial-inputs-alist nil
-        ;; ivy-re-builders-alist
-        ;; '((counsel-ag . +ivy-prescient-non-fuzzy)
-        ;;   (counsel-rg . +ivy-prescient-non-fuzzy)
-        ;;   (counsel-grep . +ivy-prescient-non-fuzzy)
-        ;;   (swiper . +ivy-prescient-non-fuzzy)
-        ;;   (swiper-isearch . +ivy-prescient-non-fuzzy)
-        ;;   (t . ivy-prescient-re-builder))
-        )
+   ;; (if (featurep +fuzzy)
+   ;;     '(literal regexp initialism fuzzy)
+   ;;   '(literal regexp initialism))
+   ivy-prescient-enable-filtering nil  ; we do this ourselves
+   ivy-prescient-enable-sorting t
+   ivy-prescient-retain-classic-highlighting t
+   ivy-initial-inputs-alist '((org-refile . "^")
+                              (org-agenda-refile . "^")
+                              (org-capture-refile . "^")
+                              (counsel-M-x . "^")
+                              (counsel-describe-function . "^")
+                              (counsel-describe-variable . "^")
+                              (counsel-org-capture . "^")
+                              (Man-completion-table . "^")
+                              (woman . "^"))
+   ivy-prescient-sort-commands (list 'counsel-file-jump
+                                     'counsel-fzf
+                                     'counsel-git)
+   ;; ivy-re-builders-alist
+   ;; '((counsel-ag . +ivy-prescient-non-fuzzy)
+   ;;   (counsel-rg . +ivy-prescient-non-fuzzy)
+   ;;   (counsel-grep . +ivy-prescient-non-fuzzy)
+   ;;   (swiper . +ivy-prescient-non-fuzzy)
+   ;;   (swiper-isearch . +ivy-prescient-non-fuzzy)
+   ;;   (t . ivy-prescient-re-builder))
+   )
 
   :config
   ;; (defun +ivy-prescient-non-fuzzy (str)
@@ -209,8 +177,62 @@
   ;;     (ivy-prescient-re-builder str)))
 
   ;; NOTE prescient config duplicated with `company'
-  (setq prescient-save-file (concat (getenv "HOME") "/.cache/prescient-save.el"))
+  (setq prescient-save-file (concat (expand-file-name
+                                     (file-name-as-directory "~/.cache"))
+                                    "prescient-save.el"))
   (prescient-persist-mode +1))
 
+;; ivy-rich shows descriptions along with selection candidates in ivy
+(use-package ivy-rich
+  :ensure t
+  :init 
+  (ivy-rich-mode +1)
+  
+  :config
+  (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line)
+  
+  (defun +ivy-rich-describe-variable-transformer (cand)
+    "Previews the value of the variable in the minibuffer"
+    (let* ((sym (intern cand))
+           (val (and (boundp sym) (symbol-value sym)))
+           (print-level 3))
+      (replace-regexp-in-string
+       "[\n\t\^[\^M\^@\^G]" " "
+       (cond ((booleanp val)
+              (propertize (format "%s" val) 'face
+                          (if (null val)
+                              'font-lock-comment-face
+                            'success)))
+             ((symbolp val)
+              (propertize (format "'%s" val)
+                          'face 'highlight-quoted-symbol))
+             ((keymapp val)
+              (propertize "<keymap>" 'face 'font-lock-constant-face))
+             ((listp val)
+              (prin1-to-string val))
+             ((stringp val)
+              (propertize (format "%S" val) 'face 'font-lock-string-face))
+             ((numberp val)
+              (propertize (format "%s" val) 'face 'highlight-numbers-number))
+             ((format "%s" val)))
+       t)))
+  
+  
+  ;;   ;; Include variable value in `counsel-describe-variable'
+  
+  (setq ivy-rich-display-transformers-list
+        (plist-put ivy-rich-display-transformers-list
+                   'counsel-describe-variable
+                   '(:columns
+                     ((counsel-describe-variable-transformer (:width 40)) ; the original transformer
+                      (+ivy-rich-describe-variable-transformer (:width 36))
+                      (ivy-rich-counsel-variable-docstring (:face font-lock-doc-face))))))
+
+  (run-at-time 5 nil (lambda ()
+                       (ivy-rich-mode nil)
+                       (ivy-rich-mode +1)))
+  
+  )
+  
 
 (provide 'setup-ivy)

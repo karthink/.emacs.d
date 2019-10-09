@@ -82,9 +82,9 @@
 
 ;;; Easy beginning/end of buffer (think < and >):
 (global-set-key (kbd "C-x ,") 'beginning-of-buffer)
-(global-set-key (kbd "C-x t") 'beginning-of-buffer)
+;; (global-set-key (kbd "C-x t") 'beginning-of-buffer)
 (global-set-key (kbd "C-x .") 'end-of-buffer)
-(global-set-key (kbd "C-x l") 'end-of-buffer)
+;; (global-set-key (kbd "C-x l") 'end-of-buffer)
 
 ;;; keybindings for Vi like o and O
 ;; autoindent open-*-lines
@@ -174,10 +174,22 @@
 (global-set-key [M-up] 'move-text-up)    
 (global-set-key [M-down] 'move-text-down)
 
-
+;; Unfill-region 
+(define-key global-map "\M-Q" 'unfill-paragraph)
 ;;----------------------------------------------------------------------
+
 ;; FUNCTIONS
 ;;----------------------------------------------------------------------
+
+;;;###autoload
+(defun unfill-paragraph (&optional region)
+  "Takes a multi-line paragraph and makes it into a single line of text."
+  (interactive (progn (barf-if-buffer-read-only) '(t)))
+  (let ((fill-column (point-max))
+        ;; This would override `fill-column' if it's an integer.
+        (emacs-lisp-docstring-fill-column t))
+    (fill-paragraph nil region)))
+
 
 (defun back-to-indentation-or-beginning () (interactive)
    (if (= (point) (progn (back-to-indentation) (point)))

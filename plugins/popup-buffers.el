@@ -114,6 +114,7 @@
 ;;                                               popup-buffers-buried-buffer-window-alist)))
 ;;           ))))
 
+;;;###autoload
 (defun popup-buffers-find-open-popups ()
   "Find open popup windows in the frame and TODO make a list sorting them by active time"
   ;; use buffer-display-time to get timestamps
@@ -127,7 +128,6 @@
           (push (cons (get-buffer-window b) b)
                 open-popups)))))
 
-;;;###autoload
 (defun popup-buffers-update-open-popups ()
   (setq popup-buffers-open-buffer-window-alist
         (popup-buffers-find-open-popups)))
@@ -137,7 +137,7 @@
 ;; (add-hook 'window-configuration-change-hook 'popup-buffers-update-open-popups)
 
 ;; Add popup list maintenance to `make-frame-finish-functions',
-(add-hook 'after-make-frame-functions 'popup-buffers-update-open-popups)
+;; (add-hook 'after-make-frame-functions 'popup-buffers-update-open-popups)
 
 ;; TODO Remove current buffer from the list of buried popups (will be added to `kill-buffer-hook')
 

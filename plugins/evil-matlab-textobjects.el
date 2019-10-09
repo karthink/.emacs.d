@@ -209,7 +209,33 @@
 
 ;; Function text objects
 ;; ---------------------
-;; TODO
+(defun evil-matlab-textobjects-function-beginning ()
+  "Return position of the beginning of the matlab function to the left of point."
+  (save-excursion
+    (let ((beg (save-excursion (matlab-beginning-of-defun)
+                               (point))))
+      beg))
+  )
+(defun evil-matlab-textobjects-function-end ()
+  "Return position of the end of the matlab function to the right of point."
+  (save-excursion
+    (let ((end (save-excursion (matlab-end-of-defun)
+                               (point))))
+      end))
+  )
+
+(evil-define-text-object evil-matlab-textobjects-inner-function (count &optional beg end type)
+  "Select a Matlab section"
+  :extend-selection nil
+  (let ((beg (evil-matlab-textobjects-function-beginning))
+        (end (evil-matlab-textobjects-function-end)))
+    (list beg end)))
+(evil-define-text-object evil-matlab-textobjects-a-function (count &optional beg end type)
+  "Select a Matlab section"
+  :extend-selection nil
+  (let ((beg (evil-matlab-textobjects-function-beginning))
+        (end (evil-matlab-textobjects-function-end)))
+    (list beg end)))
 
 ;; s-exp text objects
 ;; ---------------------
@@ -225,12 +251,10 @@
 
 (define-key evil-matlab-textobjects-inner-map "s" 'evil-matlab-textobjects-inner-command)
 (define-key evil-matlab-textobjects-outer-map "s" 'evil-matlab-textobjects-a-command)
-;; (define-key evil-latex-textobjects-inner-map "\\" 'evil-latex-textobjects-inner-math)
-;; (define-key evil-latex-textobjects-outer-map "\\" 'evil-latex-textobjects-a-math)
-;; (define-key evil-latex-textobjects-outer-map "m" 'evil-latex-textobjects-a-macro)
-;; (define-key evil-latex-textobjects-inner-map "m" 'evil-latex-textobjects-inner-macro)
 (define-key evil-matlab-textobjects-outer-map "S" 'evil-matlab-textobjects-a-section)
 (define-key evil-matlab-textobjects-inner-map "S" 'evil-matlab-textobjects-inner-section)
+(define-key evil-matlab-textobjects-inner-map "d" 'evil-matlab-textobjects-inner-function)
+(define-key evil-matlab-textobjects-outer-map "d" 'evil-matlab-textobjects-a-function)
 
 ;;;###autoload
 (define-minor-mode evil-matlab-textobjects-mode
@@ -238,10 +262,10 @@
 
 Installs the following additional text objects:
 \\<evil-latex-textobjects-outer-map>
-  \\[evil-latex-textobjects-a-math]\tDisplay math\t\t\\=\\[ .. \\=\\]
-  \\[evil-latex-textobjects-a-dollar]\tInline math\t\t$ .. $
-  \\[evil-latex-textobjects-a-macro]\tTeX macro\t\t\\foo{..}
-  \\[evil-latex-textobjects-an-env]\tLaTeX environment\t\\begin{foo}..\\end{foo}"
+  \\[evil-matlab-textobjects-a-math]\tDisplay math\t\t\\=\\[ .. \\=\\]
+  \\[evil-matlab-textobjects-a-dollar]\tInline math\t\t$ .. $
+  \\[evil-matlab-textobjects-a-macro]\tTeX macro\t\t\\foo{..}
+  \\[evil-matlab-textobjects-an-env]\tLaTeX environment\t\\begin{foo}..\\end{foo}"
   :keymap (make-sparse-keymap)
   (evil-normalize-keymaps))
 

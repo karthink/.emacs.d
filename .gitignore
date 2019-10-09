@@ -11,6 +11,7 @@ auto-save-list
 move-line-region.el
 personal.el
 ac-comphist.dat
+recentf*
 tramp
 eshell
 elpa/*

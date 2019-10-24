@@ -9,7 +9,9 @@
           '(lambda nil
 	     (define-key org-mode-map (kbd "C-c C-S-l") 'org-toggle-link-display)
              (define-key org-mode-map (kbd "<C-tab>") 'other-window)
-             (define-key org-mode-map (kbd "<C-S-tab>") (lambda () (other-window -1)))))
+             (define-key org-mode-map (kbd "<C-S-tab>") (lambda () (other-window -1)))
+             ;; Org-cdlatex options
+             (define-key org-cdlatex-mode-map (kbd "$") 'cdlatex-dollar)))
 
 ;;(add-to-list 'org-file-apps '("\\.pdf\\'" . "zathura %s"))
 (setq org-directory "~/.local/share/org")
@@ -32,10 +34,6 @@
 ;; Avoid invisible edits
 (setq org-catch-invisible-edits 'show)
 ;; (setq org-catch-invisible-edits 'smart)
-
-;; Org-cdlatex options
-(when (featurep 'cdlatex)
-  (define-key org-cdlatex-mode-map (kbd "$") 'cdlatex-dollar))
 
 ;;; Org-agenda mode
 ;; (defvar org-agenda-files nil)
@@ -92,7 +90,6 @@ See `org-capture-templates' for more information."
 ;;----------------------------------------------------------------------
 (use-package org-gcal
   :ensure t
-  :defer t
   :commands (org-gcal-sync org-gcal-fetch)
   :init
   (setq org-gcal-client-id my-org-gcal-client-id
@@ -101,6 +98,16 @@ See `org-capture-templates' for more information."
                                                     (file-name-as-directory org-directory)
                                                     "schedule.org"))))
   )
+
+
+;;----------------------------------------------------------------------
+;; ORG-REVEAL
+;;----------------------------------------------------------------------
+(use-package ox-reveal
+  :init
+  (setq org-reveal-root "file:///home/karthik/.local/share/git/reveal.js")
+  (setq org-reveal-hlevel 2))
+
 ;; Some formatting
 ;; (setq org-blank-before-new-entry
 ;;       '((heading . t) (plain-list-item . nil)))

@@ -40,6 +40,7 @@
   (evil-leader/set-key-for-mode 'org-mode
     "ce" 'org-export-dispatch
     "/t" 'org-tags-sparse-tree
+    "/T" 'org-show-todo-tree
     "/m" 'org-sparse-tree
     "/." 'org-sparse-tree
     "ol" 'org-insert-link
@@ -85,6 +86,7 @@
     "fr" 'counsel-recentf
     "fj" 'counsel-file-jump
     "fg" 'counsel-git
+    "fl" 'counsel-locate
     "f'" 'counsel-bookmark
     "fm" 'counsel-bookmark
     ;; "fE" 'find-file-emacs-config
@@ -183,7 +185,7 @@
                                                       dir))
                                             '(".local/bin" ".emacs.d" ".config"))))
   
-;;;###autoload
+;;;;###autoload
   (defun counsel-file-jump-multi-dir (initial-input initial-directories)
     (counsel-require-program find-program)
     (let ((all-files-list nil))
@@ -210,7 +212,54 @@
                 :keymap counsel-find-file-map
                 :caller 'counsel-file-jump))
     )
+
+ ;;###autoload
+  (defun my-read-file-into-lines (filename)
+    "Read file, split into lines, return a list"
+    (with-temp-buffer
+      (condition-case nil
+          (insert-file-contents filename)
+        (file-error (message "Could not read file %s" filename)))
+      (split-string (buffer-substring-no-properties (point-min) (point-max)) "\n" t)))  
+
+  (defun my-all-files-list ()
+    (my-read-file-into-lines "/tmp/dmenufindfile.cache")
+    ;; (delete-dups
+    ;;  (mapcar 'abbreviate-file-name
+    ;;          (append
+    ;;           (-take 1 recentf-list)
+    ;;           (my-read-file-into-lines "/tmp/dmenufindfile.cache")
+    ;;           (-drop 1 recentf-list)))
+    ;;  nil)
+    )
   
+  (defvar counsel-fzf-cached-cmd "cat /tmp/dmenufindfile.cache | fzf -f %s")
+  (setq counsel-fzf-cached-cmd "cat /tmp/dmenufindfile.cache | fzf -f \"%s\"")
+  (setq counsel-fzf-cached-cmd "fzf -f \"%s\"")
+
+  (defun counsel-fzf-cached-function (str)
+    (let ((default-directory counsel--fzf-dir))
+      (setq ivy--old-re (ivy--regex-fuzzy str))
+      (counsel--async-command
+       (format counsel-fzf-cached-cmd str)))
+    nil)
+
+  (defun counsel-fzf-cached (&optional initial-input fzf-prompt)
+    "Open a file using the fzf shell command.
+INITIAL-INPUT can be given as the initial minibuffer input.
+INITIAL-DIRECTORY, if non-nil, is used as the root directory for search.
+FZF-PROMPT, if non-nil, is passed as `ivy-read' prompt argument."
+    (interactive)
+    (counsel-require-program counsel-fzf-cmd)
+    (setq counsel--fzf-dir (getenv "HOME"))
+    (ivy-read (or fzf-prompt "fzf: ")
+              #'counsel-fzf-cached-function
+              :initial-input initial-input
+              :re-builder #'ivy--regex-fuzzy
+              :dynamic-collection t
+              :action #'counsel-fzf-action
+              :unwind #'counsel-delete-process
+              :caller 'counsel-fzf))
   )
 
 (use-package evil
@@ -256,13 +305,13 @@
                                                    (save-excursion
                                                      (end-of-line)
                                                      (open-line arg))))
-  (setq evil-normal-state-tag   (propertize " NORMAL " 'face '((bold :background "DarkGoldenrod2" :foreground "black")))
-        evil-emacs-state-tag    (propertize " EMACS  " 'face '((bold :background "SkyBlue2"       :foreground "black")))
-        evil-insert-state-tag   (propertize " INSERT " 'face '((bold :background "chartreuse3"    :foreground "black")))
-        evil-replace-state-tag  (propertize " REPLAC " 'face '((bold :background "chocolate"      :foreground "black")))
-        evil-motion-state-tag   (propertize " MOTION " 'face '((bold :background "plum3"          :foreground "black")))
-        evil-visual-state-tag   (propertize " VISUAL " 'face '((bold :background "gray"           :foreground "black")))
-        evil-operator-state-tag (propertize " OPERAT " 'face '((bold :background "sandy brown"    :foreground "black"))))
+  (setq evil-normal-state-tag   (propertize " <N> " 'face '((bold :background "DarkGoldenrod2" :foreground "black")))
+        evil-emacs-state-tag    (propertize " <E> " 'face '((bold :background "SkyBlue2"       :foreground "black")))
+        evil-insert-state-tag   (propertize " <I> " 'face '((bold :background "chartreuse3"    :foreground "black")))
+        evil-replace-state-tag  (propertize " <R> " 'face '((bold :background "chocolate"      :foreground "black")))
+        evil-motion-state-tag   (propertize " <M> " 'face '((bold :background "plum3"          :foreground "black")))
+        evil-visual-state-tag   (propertize " <V> " 'face '((bold :background "gray"           :foreground "black")))
+        evil-operator-state-tag (propertize " <O> " 'face '((bold :background "sandy brown"    :foreground "black"))))
 
   (setq evil-search-module 'evil-search)
   (add-to-list 'evil-emacs-state-modes 'undo-tree-visualizer-mode)

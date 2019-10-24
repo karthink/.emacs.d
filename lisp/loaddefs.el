@@ -161,7 +161,14 @@ prompt for string pairs and return as an association list
 
 \(fn)" t nil)
 
-(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "better-editing" '(#("open-previous-line" 0 18 (fontified nil)) #("back-to-indentation-or-beginning" 0 32 (face font-lock-function-name-face fontified t)) #("qrr" 0 3 (face font-lock-function-name-face fontified nil)) #("newline-and-indent" 0 18 (face font-lock-variable-name-face fontified nil)))))
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "better-editing" '("open-previous-line" "back-to-indentation-or-beginning" "qrr" "newline-and-indent")))
+
+;;;***
+
+;;;### (autoloads nil "personal" "personal.el" (0 0 0 0))
+;;; Generated autoloads from personal.el
+
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "personal" '("my-")))
 
 ;;;***
 
@@ -192,7 +199,7 @@ prompt for string pairs and return as an association list
 ;;;### (autoloads nil "setup-evil" "setup-evil.el" (0 0 0 0))
 ;;; Generated autoloads from setup-evil.el
 
-(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "setup-evil" '("+evil-addons-enabled-modes")))
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "setup-evil" '(#("+evil-addons-enabled-modes" 0 26 (fontified nil)))))
 
 ;;;***
 

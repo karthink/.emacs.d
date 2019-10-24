@@ -26,7 +26,7 @@
 ;;;
 ;;; by Karthik Chikmagalur
 
-(defvar popup-buffers-reference-buffer-list
+(defcustom popup-buffers-reference-buffer-list
   '("^\\*Help\\*"
     "^\\*helpful"
     "^\\*Warnings\\*"

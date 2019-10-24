@@ -41,6 +41,10 @@
 (require 'personal)
 (setq user-full-name my-full-name)
 (setq user-mail-address my-email-address)
+(defun encrypt-personal-data ()
+  "Automatically encrypt personal.el to personal.el.gpg when it is saved"
+  (if (equal (buffer-file-name) "personal.el")
+     (epa-encrypt-file (buffer-file-name) my-full-name)))
 
 ;;########################################################################
 ;; UI FIXES
@@ -374,13 +378,14 @@
 ;; EDITING
 ;;######################################################################
 (require 'better-editing nil t)
-(use-package visual-fill-column-mode
-  :hook (visual-line-mode . visual-fill-column-mode)
-  :config
-  (setq split-window-preferred-function #'visual-fill-column-mode-split-window-sensibly)
-  (advice-add 'text-scale-adjust :after #'visual-fill-column-adjust)
-  ;; :init (setq visual-line-fringe-indicators '(left-curly-arrow right-curly-arrow))
-  )
+;; (use-package visual-fill-column-mode
+;;   ;; :ensure t
+;;   ;; :hook (visual-line-mode . visual-fill-column-mode)
+;;   :config
+;;   (setq split-window-preferred-function #'visual-fill-column-mode-split-window-sensibly)
+;;   (advice-add 'text-scale-adjust :after #'visual-fill-column-adjust)
+;;   ;; :init (setq visual-line-fringe-indicators '(left-curly-arrow right-curly-arrow))
+;;   )
 
 ;;######################################################################
 ;; BUFFER AND WINDOW MANAGEMENT
@@ -596,6 +601,9 @@
              cdlatex-position-cursor nil nil t)
             ("equ*" "Insert equation* env"
              "\\begin{equation*}\n?\n\\end{equation*}"
+             cdlatex-position-cursor nil t nil)
+            ("sn*" "Insert subsection env"
+             "\\section*{?}"
              cdlatex-position-cursor nil t nil)
             ("ssn" "Insert subsection env"
              "\\subsection{?}"
@@ -1112,7 +1120,7 @@
 ;; DIRED
 ;;----------------------------------------------------------------------
 ;; Dired preferences
-;; (require 'setup-dired nil t)
+(require 'setup-dired nil t)
 (use-package dired-sidebar
   :ensure t
   :commands (dired-sidebar-toggle-sidebar)
@@ -1174,7 +1182,8 @@
                     (> (nth 2 (decode-time (current-time))) 18))
                 (progn (load-theme 'gruvbox-dark-hard t)
                        (load-theme 'smart-mode-line-dark))
-              (progn (load-theme 'tsdh-light t)))
+              (progn (load-theme 'tsdh-light t)
+                     (load-theme 'smart-mode-line-light)))
             ;; (load-theme 'smart-mode-line-dark t)
             ))
 

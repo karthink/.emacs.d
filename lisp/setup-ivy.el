@@ -13,14 +13,14 @@
                                 (t . ivy--regex-ignore-order)))
   (setq enable-recursive-minibuffers t)
   ;; (setq ivy-initial-inputs-alist nil)
-  
+
   ;; Ensure a jump point is registered before jumping to new locations with ivy
   (defvar +ivy--origin nil)
   (defun +ivy--record-position-maybe-fn ()
     (with-ivy-window
       (setq +ivy--origin (point-marker))))
   (setq ivy-hooks-alist '((t . +ivy--record-position-maybe-fn)))
-  
+
   ;; enable this if you want `swiper' to use it
   ;; (setq search-default-mode #'char-fold-to-regexp)
   (global-set-key "\C-s" 'swiper)
@@ -41,6 +41,24 @@
   (define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
   (define-key ivy-minibuffer-map (kbd "C-m") 'ivy-alt-done)
   ;; (define-key ivy-minibuffer-map (kbd "C-j") 'ivy-alt-done)
+
+;;;###autoload
+  (defun ivy-save-views ()
+    "Save current buffer view to file"
+    (interactive)
+    (with-temp-file "~/.local/share/ivy/ivy-views"
+      (prin1 ivy-views (current-buffer))
+      (message "save ivy-views to ~/.local/share/ivy/ivy-views")))
+
+;;;###autoload
+  (defun ivy-load-views ()
+    (interactive)
+    "Load current buffer view from file"
+    (setq ivy-views
+          (with-temp-buffer
+            (insert-file-contents "~/.local/share/ivy/ivy-views")
+            (read (current-buffer))))
+    (message "load ivy-views"))
 
 ;;;###autoload
   (defun +ivy-switch-file-search ()
@@ -78,11 +96,65 @@
                     (+ offset (line-beginning-position)) (line-end-position)) files)
              (forward-line 1))
            (nreverse files))))))
-  
+
   ;; ...then replace counsel--find-return-list
   (advice-add #'counsel--find-return-list :override '+ivy--counsel-file-jump-use-fd-rg-a)
 
-  ;; Factories
+  (with-eval-after-load 'yasnippet
+    (defun +ivy-yas-prompt (prompt choices &optional display-fn)
+      (yas-completing-prompt prompt choices display-fn #'ivy-completing-read))
+    (add-to-list 'yas-prompt-functions #'+ivy-yas-prompt nil #'eq))
+
+;;; ivy-hydra allows additional actions and vim-like navigation on ivy candidates.
+;;; Initialize in ivy with C-o
+
+  (use-package  ivy-hydra
+    :ensure t
+    :commands (ivy-dispatching-done-hydra ivy--matcher-desc ivy-hydra/body)
+    :init
+    ;; (define-key! ivy-minibuffer-map
+    ;;   "C-o" #'ivy-dispatching-done-hydra
+    ;;   "M-o" #'hydra-ivy/body)
+    :config
+    ;; ivy-hydra rebinds this, so we have to do so again
+    ;; (define-key ivy-minibuffer-map (kbd "M-o") #'hydra-ivy/body)
+    ))
+
+(use-package counsel
+  :commands counsel-describe-face
+  :init
+
+  ;; (dolist (switch-version
+  ;;          '((apropos                  . counsel-apropos)
+  ;;            (bookmark-jump            . counsel-bookmark)
+  ;;            (describe-face            . counsel-faces)
+  ;;            (describe-function        . counsel-describe-function)
+  ;;            (describe-variable        . counsel-describe-variable)
+  ;;            (describe-bindings        . counsel-descbinds)
+  ;;            (set-variable             . counsel-set-variable)
+  ;;            (execute-extended-command . counsel-M-x)
+  ;;            (find-file                . counsel-find-file)
+  ;;            (find-library             . counsel-find-library)
+  ;;            (info-lookup-symbol       . counsel-info-lookup-symbol)
+  ;;            (imenu                    . counsel-imenu)
+  ;;            (recentf-open-files       . counsel-recentf)
+  ;;            (org-capture              . counsel-org-capture)
+  ;;            (swiper                   . counsel-grep-or-swiper)
+  ;;            (evil-ex-registers        . counsel-evil-registers)
+  ;;            (yank-pop                 . counsel-yank-pop))
+  ;;          t)
+  ;;   (let ((old-cmd (car switch-version))
+  ;;         (new-cmd (symbol-function (cdr switch-version))))
+  ;;     (defalias old-cmd new-cmd)))
+
+  :config
+  ;; Configure `counsel-ag'
+  (setq counsel-ag-base-command "ag --nocolor --nogroup --hidden -f %s"
+        counsel-find-file-ignore-regexp  "\\(?:^[#.]\\)\\|\\(?:[#~]$\\)"
+        counsel-describe-function-function #'helpful-callable
+        counsel-describe-variable-function #'helpful-variable)
+
+    ;; Factories
   (defun +ivy-action-reloading (cmd)
     (lambda (x)
       (funcall cmd x)
@@ -93,10 +165,7 @@
       (let* ((enable-recursive-minibuffers t)
              (target (read-file-name (format "%s %s to:" prompt source))))
         (funcall cmd source target 1))))
-  
-  ;; Configure `counsel-ag'
-  (setq counsel-ag-base-command "ag --nocolor --nogroup --hidden -f %s")
-  
+
   ;; Configure `counsel-find-file'
   (dolist (ivy-command '(counsel-find-file counsel-file-jump counsel-fzf counsel-git))
     (ivy-add-actions
@@ -111,32 +180,13 @@
        ("f" find-file-other-window "other window")
        ("F" find-file-other-frame "other frame")
        ("p" (lambda (path) (with-ivy-window (insert (file-relative-name path default-directory)))) "insert relative path")
+       ("x" counsel-find-file-extern "xdg-open")
        ("P" (lambda (path) (with-ivy-window (insert path))) "insert absolute path")
        ;; ("l" (lambda (path) "Insert org-link with relative path"
        ;;        (with-ivy-window (insert (format "[[./%s]]" (file-relative-name path default-directory))))) "insert org-link (rel. path)")
        ;; ("L" (lambda (path) "Insert org-link with absolute path"
        ;;        (with-ivy-window (insert (format "[[%s]]" path)))) "insert org-link (abs. path)")
-       )))
-
-  (with-eval-after-load 'yasnippet
-    (defun +ivy-yas-prompt (prompt choices &optional display-fn)
-      (yas-completing-prompt prompt choices display-fn #'ivy-completing-read))
-    (add-to-list 'yas-prompt-functions #'+ivy-yas-prompt nil #'eq))
-  
-;;; ivy-hydra allows additional actions and vim-like navigation on ivy candidates.
-;;; Initialize in ivy with C-o
-  
-  (use-package  ivy-hydra
-    :ensure t
-    :commands (ivy-dispatching-done-hydra ivy--matcher-desc ivy-hydra/body)
-    :init
-    ;; (define-key! ivy-minibuffer-map
-    ;;   "C-o" #'ivy-dispatching-done-hydra
-    ;;   "M-o" #'hydra-ivy/body)
-    :config
-    ;; ivy-hydra rebinds this, so we have to do so again
-    ;; (define-key ivy-minibuffer-map (kbd "M-o") #'hydra-ivy/body)
-    ))
+       ))))
 
 (use-package ivy-prescient
   :after ivy
@@ -185,12 +235,12 @@
 ;; ivy-rich shows descriptions along with selection candidates in ivy
 (use-package ivy-rich
   :ensure t
-  :init 
+  :init
   (ivy-rich-mode +1)
-  
+
   :config
   (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line)
-  
+
   (defun +ivy-rich-describe-variable-transformer (cand)
     "Previews the value of the variable in the minibuffer"
     (let* ((sym (intern cand))
@@ -216,10 +266,10 @@
               (propertize (format "%s" val) 'face 'highlight-numbers-number))
              ((format "%s" val)))
        t)))
-  
-  
+
+
   ;;   ;; Include variable value in `counsel-describe-variable'
-  
+
   (setq ivy-rich-display-transformers-list
         (plist-put ivy-rich-display-transformers-list
                    'counsel-describe-variable
@@ -231,8 +281,7 @@
   (run-at-time 5 nil (lambda ()
                        (ivy-rich-mode nil)
                        (ivy-rich-mode +1)))
-  
+
   )
-  
 
 (provide 'setup-ivy)

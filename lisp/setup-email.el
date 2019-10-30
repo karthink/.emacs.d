@@ -37,6 +37,7 @@
 ;; NOTMUCH
 ;;----------------------------------------------------------------------
 (use-package notmuch
+  :ensure t
   :commands notmuch
   :hook (notmuch-message-mode . turn-off-auto-fill)
   :config
@@ -58,7 +59,7 @@
         notmuch-hello-sections
         '(notmuch-hello-insert-saved-searches
           notmuch-hello-insert-alltags))
-  
+
   ;; (defun +disable-C-tab (mode-map)
   ;;   "Disable Control-Tab in mode-map"
   ;;   (define-key mode-map (kbd "C-TAB") nil)
@@ -71,15 +72,15 @@
   ;;                 (notmuch-search-mode-hook . notmuch-search-mode-map)))
   ;;   (let ((mode-hook (car mode))
   ;;         (mode-map (cdr mode)))
-  ;;     (add-hook mode-hook  
+  ;;     (add-hook mode-hook
   ;;               (lambda ()
   ;;                 (+disable-C-tab mode-map)))))
 
-  
+
   ;; (define-key notmuch-common-keymap (kbd "C-TAB") nil)
   ;; (define-key notmuch-common-keymap (kbd "C-<tab>") nil)
 
-  
+
   ;; (add-hook 'notmuch-show-hook #'my-next-unread)
   ;; (defun my-next-unread ()
   ;;   (interactive)
@@ -98,6 +99,7 @@
   )
 
 (use-package counsel-notmuch
+  :ensure t
   :commands counsel-notmuch)
 
 (provide 'setup-email)

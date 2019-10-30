@@ -619,12 +619,15 @@
 ;;----------------------------------------------------------------------
 ;; MATLAB
 ;;----------------------------------------------------------------------
-(use-package matlab
+(use-package matlab-mode
+  :ensure t
+
   ;; :after 'evil
   ;; :commands (matlab-mode matlab-shell matlab-shell-run-block)
   :bind (:map matlab-mode-map
               ("C-c C-b" . 'matlab-shell-run-block))
   :init
+  (matlab-cedet-setup)
   (add-hook 'matlab-mode-hook #'company-mode-on)
   (add-hook 'matlab-mode-hook #'hs-minor-mode)
   ;; (add-hook 'matlab-mode-hook #'turn-on-evil-matlab-textobjects-mode)
@@ -717,6 +720,7 @@
 ;; EYEBROWSE - tab emulation for emacs
 ;;----------------------------------------------------------------------
 (use-package eyebrowse
+  :ensure t
   ;; :bind ("C-c C-w c" . eyebrowse-create-window-config)
   ;; :commands eyebrowse-create-window-config
   :hook (after-init . eyebrowse-mode)

@@ -121,6 +121,7 @@
     ))
 
 (use-package counsel
+  :ensure t
   :commands counsel-describe-face
   :init
 
@@ -189,6 +190,7 @@
        ))))
 
 (use-package ivy-prescient
+  :ensure t
   :after ivy
   :hook (ivy-mode . ivy-prescient-mode)
   :init

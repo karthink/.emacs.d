@@ -104,6 +104,7 @@ See `org-capture-templates' for more information."
 ;; ORG-REVEAL
 ;;----------------------------------------------------------------------
 (use-package ox-reveal
+  :ensure t
   :init
   (setq org-reveal-root "file:///home/karthik/.local/share/git/reveal.js")
   (setq org-reveal-hlevel 2))

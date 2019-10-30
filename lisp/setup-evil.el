@@ -63,7 +63,7 @@
       "hv" (if counselp 'counsel-describe-variable 'describe-variable)
       "hk" 'describe-key
       "hm" 'describe-mode
-      "ha" 'apropos-command
+      "ha" (if counselp 'counsel-apropos 'apropos-command)
       "hd" 'apropos-documentation
       "hc" 'describe-key-briefly
 
@@ -212,54 +212,7 @@
                 :keymap counsel-find-file-map
                 :caller 'counsel-file-jump))
     )
-
- ;;###autoload
-  (defun my-read-file-into-lines (filename)
-    "Read file, split into lines, return a list"
-    (with-temp-buffer
-      (condition-case nil
-          (insert-file-contents filename)
-        (file-error (message "Could not read file %s" filename)))
-      (split-string (buffer-substring-no-properties (point-min) (point-max)) "\n" t)))  
-
-  (defun my-all-files-list ()
-    (my-read-file-into-lines "/tmp/dmenufindfile.cache")
-    ;; (delete-dups
-    ;;  (mapcar 'abbreviate-file-name
-    ;;          (append
-    ;;           (-take 1 recentf-list)
-    ;;           (my-read-file-into-lines "/tmp/dmenufindfile.cache")
-    ;;           (-drop 1 recentf-list)))
-    ;;  nil)
-    )
   
-  (defvar counsel-fzf-cached-cmd "cat /tmp/dmenufindfile.cache | fzf -f %s")
-  (setq counsel-fzf-cached-cmd "cat /tmp/dmenufindfile.cache | fzf -f \"%s\"")
-  (setq counsel-fzf-cached-cmd "fzf -f \"%s\"")
-
-  (defun counsel-fzf-cached-function (str)
-    (let ((default-directory counsel--fzf-dir))
-      (setq ivy--old-re (ivy--regex-fuzzy str))
-      (counsel--async-command
-       (format counsel-fzf-cached-cmd str)))
-    nil)
-
-  (defun counsel-fzf-cached (&optional initial-input fzf-prompt)
-    "Open a file using the fzf shell command.
-INITIAL-INPUT can be given as the initial minibuffer input.
-INITIAL-DIRECTORY, if non-nil, is used as the root directory for search.
-FZF-PROMPT, if non-nil, is passed as `ivy-read' prompt argument."
-    (interactive)
-    (counsel-require-program counsel-fzf-cmd)
-    (setq counsel--fzf-dir (getenv "HOME"))
-    (ivy-read (or fzf-prompt "fzf: ")
-              #'counsel-fzf-cached-function
-              :initial-input initial-input
-              :re-builder #'ivy--regex-fuzzy
-              :dynamic-collection t
-              :action #'counsel-fzf-action
-              :unwind #'counsel-delete-process
-              :caller 'counsel-fzf))
   )
 
 (use-package evil
@@ -337,18 +290,19 @@ FZF-PROMPT, if non-nil, is passed as `ivy-read' prompt argument."
 
   (with-eval-after-load 'dired-sidebar
     (progn
+      (evil-define-key* 'normal 'global (kbd "C-w d") #'dired-sidebar-toggle-sidebar)
       (evil-define-key* '(normal visual) 'global (kbd "C-w C-d") 'dired-sidebar-toggle-sidebar)))
+
   (with-eval-after-load 'ivy
     (progn
       (evil-define-key* 'normal 'global (kbd "gI") #'ivy-resume)))
 
-  (with-eval-after-load 'dired-sidebar
-    (progn
-      (evil-define-key* 'normal 'global (kbd "C-w d") #'dired-sidebar-toggle-sidebar)))
-
   (with-eval-after-load 'org
     (progn
-      (evil-define-key 'normal org-mode-map (kbd "g-") 'org-narrow-to-subtree)))
+      (evil-define-key 'normal org-mode-map (kbd "g-") 'org-narrow-to-subtree)
+      (evil-define-key 'normal org-mode-map (kbd "gj") 'org-next-visible-heading)
+      (evil-define-key 'normal org-mode-map (kbd "gk") 'org-previous-visible-heading)
+      ))
 
   (with-eval-after-load 'eyebrowse
     (progn
@@ -699,7 +653,6 @@ FZF-PROMPT, if non-nil, is passed as `ivy-read' prompt argument."
       woman
       diff-mode
       ediff
-      calc
       which-key
       reftex
       notmuch

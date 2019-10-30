@@ -91,7 +91,6 @@
 ;; (setq-hook! '(eshell-mode-hook term-mode-hook) hscroll-margin 0)
 
   ;;; Fringes
-
 ;; Reduce the clutter in the fringes; we'd like to reserve that space for more
 ;; useful information, like git-gutter and flycheck.
 (setq indicate-buffer-boundaries nil
@@ -250,7 +249,7 @@
              (file-exists-p (byte-compile-dest-file buffer-file-name)))
     (byte-compile-file buffer-file-name)))
 (add-hook 'after-save-hook 'auto-byte-recompile)
-
+(add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p)
 (global-prettify-symbols-mode 1)
 
 ;;######################################################################
@@ -414,6 +413,7 @@
 (use-package ace-window
   :ensure t
   :defer t
+  :bind ("C-x o" . ace-window)
   :commands ace-window
   :config
   (setq aw-dispatch-always t
@@ -612,7 +612,9 @@
              "\\subsection*{?}"
              cdlatex-position-cursor nil t nil)))
     (setq cdlatex-math-symbol-alist '((?F ("\\Phi"))
-                                      (?o ("\\omega" "\\mho" "\\mathcal{O}"))))
+                                      (?o ("\\omega" "\\mho" "\\mathcal{O}"))
+                                      (?6 ("\\partial"))))
+    (setq cdlatex-math-modify-alist '(66 "\\mathbb" "\\textbf" t nil nil))
     (setq cdlatex-paired-parens "$[{("))
   :hook (LaTeX-mode . turn-on-cdlatex))
 
@@ -761,16 +763,26 @@
 ;; YASNIPPET
 ;;----------------------------------------------------------------------
 
-;; (use-package yasnippet
+(use-package yasnippet
+  :ensure t
+  :init (add-hook 'prog-mode-hook #'yas-minor-mode)
+  :config
+  ;; Redefine yas expand key from TAB because company-mode uses TAB.
+  (define-key yas-minor-mode-map (kbd "S-SPC") (lambda (&optional num) (interactive "P")
+                                                 (or (yas-expand)
+                                                     (insert (kbd "SPC")))))
+  (define-key yas-keymap (kbd "S-SPC") (lambda (&optional num) (interactive "P")
+                                         (or (yas-next-field-or-maybe-expand)
+                                             (insert (kbd "SPC")))))
+  (dolist (keymap (list yas-minor-mode-map yas-keymap))
+    (define-key keymap (kbd "TAB") nil)
+    (define-key keymap [(tab)] nil))
+  (global-set-key (kbd "M-S-SPC") 'company-yasnippet)
+  ;; (use-package yasnippet-snippets
+  ;;   :ensure t)
+  (yas-reload-all)
+  )
 
-;;   :config
-;;   ;; Redefine yas expand key from TAB because company-mode uses TAB.
-;;   (define-key yas-minor-mode-map (kbd "C-j") 'yas-expand)
-;;   (define-key yas-keymap "\C-j" 'yas-next-field-or-maybe-expand)
-;;   (dolist (keymap (list yas-minor-mode-map yas-keymap))
-;;     (define-key keymap (kbd "TAB") nil)
-;;     (define-key keymap [(tab)] nil))
-;;   )
 
 ;;----------------------------------------------------------------------
 ;; HIDESHOW is built in
@@ -939,7 +951,7 @@
 ;;----------------------------------------------------------------------
 (use-package company
   :ensure t
-  :defer 1
+  :defer 2
   :config
   ;; (add-to-list 'company-backends 'company-files)
   ;; (add-to-list 'company-backends 'company-dabbrev)
@@ -947,9 +959,9 @@
   ;; (add-to-list 'company-backends 'company-dict)
 
   (global-company-mode)
-  (setq company-idle-delay 0.20
+  (setq company-idle-delay 0.0
         company-dabbrev-downcase 0
-        company-minimum-prefix-length 2
+        company-minimum-prefix-length 3
         company-selection-wrap-around t
         ;;company-tooltip-flip-when-above t
         company-tooltip-align-annotations t
@@ -957,13 +969,37 @@
         company-dabbrev-downcase nil
         company-dabbrev-code-other-buffers t
         company-dabbrev-ignore-case nil
-        company-transformers '(company-sort-by-occurrence)
-        company-global-modes
-        '(not erc-mode message-mode
-              help-mode gud-mode eshell-mode
-              package-menu-mode)
-        company-backends '(company-files company-capf company-dabbrev)
+        ;; company-transformers '(company-sort-by-occurrence)
+        company-transformers '(company-sort-by-statistics)
+        company-global-modes '(latex-mode
+                               matlab-mode
+                               emacs-lisp-mode
+                               lisp-interaction-mode
+                               python-mode
+                               sh-mode fish-mode
+                               conf-mode text-mode
+                               org-mode)
+        ;; '(not erc-mode message-mode
+        ;;       help-mode gud-mode
+        ;;       eshell-mode package-menu-mode
+        ;;       notmuch-hello-mode notmuch-show-mode
+        ;;       notmuch-search-mode
+        ;;       calc-mode calc-trail-mode
+        ;;       )
+        company-backends '((company-files company-capf company-keywords)
+                           ;; (company-dabbrev-code)
+                           ;my-try-expand-company
+                           company-dabbrev)
         )
+  
+  (add-hook 'matlab-mode-hook (lambda ()
+                                (unless (featurep 'company-matlab)
+                                  (require 'company-matlab))
+                                (make-local-variable 'company-backends)
+                                (add-to-list 'company-backends '(company-dabbrev-code company-matlab-shell))))
+  (add-hook 'matlab-shell-mode-hook (lambda ()
+                                (make-local-variable 'company-backends)
+                                (add-to-list 'company-backends 'company-matlab-shell)))
 
   (define-key company-active-map (kbd "M-n") nil)
   (define-key company-active-map (kbd "M-p") nil)
@@ -975,9 +1011,34 @@
   ;; (define-key company-active-map (kbd "<backtab>") 'company-select-previous)
   ;; (define-key company-active-map (kbd "S-TAB") 'company-select-previous)
 
+  (global-unset-key (kbd "C-;"))
+  (define-key company-active-map (kbd "C-;") 'company-other-backend)
   (define-key company-active-map (kbd "C-w") nil)
   (define-key company-active-map (kbd "C-]") 'company-show-location)
 
+  (defun my-try-expand-company (old)
+    (unless company-candidates
+      (company-auto-begin))
+    (if (not old)
+        (progn
+          (he-init-string (he-lisp-symbol-beg) (point))
+          (if (not (he-string-member he-search-string he-tried-table))
+              (setq he-tried-table (cons he-search-string he-tried-table)))
+          (setq he-expand-list
+                (and (not (equal he-search-string ""))
+                     company-candidates))))
+    (while (and he-expand-list
+                (he-string-member (car he-expand-list) he-tried-table))
+      (setq he-expand-list (cdr he-expand-list)))
+    (if (null he-expand-list)
+        (progn
+          (if old (he-reset-string))
+          ())
+      (progn
+        (he-substitute-string (car he-expand-list))
+        (setq he-expand-list (cdr he-expand-list))
+        t)))
+  
   ;; AC-mode style settings
   (defun company-ac-setup ()
     "Sets up `company-mode' to behave similarly to `auto-complete-mode'."
@@ -999,14 +1060,14 @@
       'company-select-next-if-tooltip-visible-or-complete-selection))
 
   ;; Tab'n'Go style settings
-  (defun company-tng-setup ()
-    (define-key company-active-map (kbd "TAB") 'company-select-next)
-    (define-key company-active-map (kbd "<tab>") 'company-select-next)
-    (define-key company-active-map (kbd "<ret>") nil)
-    (setq company-frontends
-          '(company-pseudo-tooltip-unless-just-one-frontend
-            company-tng-frontend
-            company-echo-metadata-frontend)))
+  ;; (defun company-tng-setup ()
+  ;;   (define-key company-active-map (kbd "TAB") 'company-select-next)
+  ;;   (define-key company-active-map (kbd "<tab>") 'company-select-next)
+  ;;   (define-key company-active-map (kbd "<ret>") nil)
+  ;;   (setq company-frontends
+  ;;         '(company-pseudo-tooltip-unless-just-one-frontend
+  ;;           company-tng-frontend
+  ;;           company-echo-metadata-frontend)))
 
 
   ;; Not needed. cdlatex mode handles completion just fine
@@ -1016,9 +1077,9 @@
   ;;   (add-to-list 'company-backends 'company-auctex)
   ;;   (company-auctex-init))
 
-  (company-tng-setup)
+  ;; (company-ac-setup)
   ;; (company-tng-setup)
-
+  (company-tng-configure-default)
   (use-package company-statistics
     :ensure t
     :init
@@ -1123,7 +1184,9 @@
 (require 'setup-dired nil t)
 (use-package dired-sidebar
   :ensure t
-  :commands (dired-sidebar-toggle-sidebar)
+  ;; :commands (dired-sidebar-toggle-sidebar)
+  :bind (("C-x C-d" . dired-sidebar-toggle-sidebar)
+         ("C-x D"   . list-directory))
   :init
   (add-hook 'dired-sidebar-mode-hook
             (lambda ()
@@ -1180,11 +1243,9 @@
           (lambda ()
             (if (or (< (nth 2 (decode-time (current-time))) 7)
                     (> (nth 2 (decode-time (current-time))) 18))
-                (progn (load-theme 'gruvbox-dark-hard t)
+                (progn (load-theme 'gruvbox t)
                        (load-theme 'smart-mode-line-dark))
-              (progn (load-theme 'tsdh-light t)
-                     (load-theme 'smart-mode-line-light)))
-            ;; (load-theme 'smart-mode-line-dark t)
+              (progn (load-theme 'gruvbox t)))
             ))
 
 ;; Other themes
@@ -1203,10 +1264,13 @@
 ;;       hl-paren-background-colors (list color-4 color-4 color-4 color-4 color-4))))
 
 ;; before loading new theme
-;; (defun load-theme--disable-old-theme(theme &rest args)
-;;   "Disable current theme before loading new one."
-;;   (mapcar #'disable-theme custom-enabled-themes))
-;; (advice-add 'load-theme :before #'load-theme--disable-old-theme)
+(defun load-theme--disable-old-theme-a(theme &rest args)
+  "Disable current theme before loading new one."
+  (unless (member theme '(smart-mode-line-dark smart-mode-line-light))
+    (mapcar #'disable-theme
+            (remove 'smart-mode-line-light
+                    (remove 'smart-mode-line-dark custom-enabled-themes)))))
+(advice-add 'load-theme :before #'load-theme--disable-old-theme-a)
 
 ;;######################################################################
 ;; MODELINE:

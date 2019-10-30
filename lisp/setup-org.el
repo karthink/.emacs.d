@@ -56,7 +56,7 @@
 
 (use-package ox-hugo
   :ensure t
-  :after (ox org-capture)
+  :after ox
   :config
   (setq org-hugo-section "blog")
   (with-eval-after-load 'org-capture

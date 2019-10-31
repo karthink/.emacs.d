@@ -530,7 +530,8 @@
               ("M-SPC" . TeX-matrix-spacer)
               ("C-M-9" . TeX-insert-smallmatrix)
               ("C-M-]" . TeX-insert-bmatrix)
-              ("C-;" . TeX-complete-symbol))
+              ;; ("C-;" . TeX-complete-symbol)
+              )
   :config
   (progn  (defun TeX-matrix-spacer () (interactive) (insert " & "))
           (defun TeX-insert-smallmatrix () (interactive)
@@ -1000,7 +1001,10 @@
                                 (unless (featurep 'company-matlab)
                                   (require 'company-matlab))
                                 (make-local-variable 'company-backends)
-                                (add-to-list 'company-backends '(company-dabbrev-code company-matlab-shell))))
+                                (add-to-list 'company-backends
+                                             'company-matlab
+                                             ;; '(company-dabbrev-code company-semantic)
+                                             )))
   (add-hook 'matlab-shell-mode-hook (lambda ()
                                 (make-local-variable 'company-backends)
                                 (add-to-list 'company-backends 'company-matlab-shell)))
@@ -1249,7 +1253,7 @@
                     (> (nth 2 (decode-time (current-time))) 18))
                 (progn (load-theme 'gruvbox t)
                        (load-theme 'smart-mode-line-dark))
-              (progn (load-theme 'gruvbox t)))
+              (progn (load-theme 'dichromacy t)))
             ))
 
 ;; Other themes

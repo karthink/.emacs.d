@@ -155,7 +155,7 @@
 ;;######################################################################
 ;; AUTOLOADS
 ;;######################################################################
-(require 'loaddefs nil t)
+(require 'setup-autoloads nil t)
 
 ;;######################################################################
 ;; MISCELLANEOUS PREFERENCES
@@ -585,7 +585,8 @@
 (use-package cdlatex
   :ensure t
   ;; :defer 2
-  :commands turn-on-cdlatex
+  ;; :commands turn-on-cdlatex
+  :hook (LaTeX-mode . turn-on-cdlatex)
   :config
   (progn
     (setq cdlatex-command-alist
@@ -615,15 +616,15 @@
     (setq cdlatex-math-symbol-alist '((?F ("\\Phi"))
                                       (?o ("\\omega" "\\mho" "\\mathcal{O}"))
                                       (?6 ("\\partial"))))
-    (setq cdlatex-math-modify-alist '(66 "\\mathbb" "\\textbf" t nil nil))
+    ;; (setq cdlatex-math-modify-alist '(?1 "\\mathbb" "\\textbf" t nil nil))
     (setq cdlatex-paired-parens "$[{("))
-  :hook (LaTeX-mode . turn-on-cdlatex))
+  )
 
 ;;----------------------------------------------------------------------
 ;; MATLAB
 ;;----------------------------------------------------------------------
-(use-package matlab-mode
-  :ensure t
+(use-package matlab
+  :ensure matlab-mode
 
   ;; :after 'evil
   ;; :commands (matlab-mode matlab-shell matlab-shell-run-block)

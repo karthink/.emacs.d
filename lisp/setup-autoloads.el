@@ -258,7 +258,7 @@ Function to find the definition of the defun at point and insert it there.
 
 ;;;***
 
-(provide 'loaddefs)
+(provide 'setup-autoloads)
 ;; Local Variables:
 ;; version-control: never
 ;; no-byte-compile: t

@@ -395,9 +395,9 @@
   (setq evil-embrace-show-help-p t)
 
   (defun +evil-embrace-latex-mode-hook-h ()
-    (embrace-add-pair-regexp ?m "\\\\[a-z]+{" "}" #'+evil--embrace-latex
+    (embrace-add-pair-regexp ?m "\\\\[a-z*]+{" "}" #'+evil--embrace-latex
                              (embrace-build-help "\\macro{" "}"))
-    (embrace-add-pair-regexp ?e "\\\\begin{[a-z]+}" "\\\\end{[a-z]+}"
+    (embrace-add-pair-regexp ?e "\\\\begin{[a-z*]+}" "\\\\end{[a-z*]+}"
                              (lambda ()
                                (let ((env (read-string "Env: ")))
                                  (cons (format "\\begin{%s}" env)
@@ -525,13 +525,23 @@
   ;;             ("-" . evil-numbers/dec-at-pt))
   
   :init
-  (dolist (mode-map (list 'conf-mode-map
-                          'prog-mode-map
-                          'text-mode-map
-                          'message-mode-map))
-    (evil-define-key 'normal mode-map (kbd "+") #'evil-numbers/inc-at-pt)
-    (evil-define-key 'normal mode-map (kbd "-") #'evil-numbers/dec-at-pt))
-  
+  (defun +evil-numbers-add-keybinds (mode-map)
+    "Make + and - increment and decrement numbers in evil-normal-state"
+    (evil-define-key* 'normal (symbol-value mode-map)
+                      (kbd "+") #'evil-numbers/inc-at-pt
+                      (kbd "-") #'evil-numbers/dec-at-pt))
+
+  (dolist (mode '((prog-mode-hook         . prog-mode-map)
+                  (text-mode-hook         . text-mode-map)
+                  (message-mode-hook      . message-mode-map)
+                  (conf-unix-mode-hook    . conf-mode-map)
+                  (conf-windows-mode-hook . conf-mode-map)
+                  (TeX-mode-hook          . TeX-mode-map)
+                  ))
+      (let ((mode-hook (car mode))
+            (mode-map (cdr mode)))
+        (add-hook mode-hook
+                  (lambda () (+evil-numbers-add-keybinds mode-map)))))
   )
 
 ;; EVIL-RSI
@@ -645,6 +655,7 @@
       helpful
       eshell
       ivy
+      epa
       custom
       dired
       wdired
@@ -678,23 +689,24 @@
 
   (with-eval-after-load 'notmuch
 
-    ;; (defun +disable-evil-C-Tab (mode-map)
-    ;;   "Disable Control-Tab in evil-mode normal/visual/insert mode-map"
-    ;;   (evil-define-key '(normal visual insert) mode-map (kbd "C-TAB") nil)
-    ;;   (evil-define-key '(normal visual insert) mode-map (kbd "C-<tab>") nil))
+    (defun +disable-evil-C-Tab (mode-map)
+      "Disable Control-Tab in evil-mode normal/visual/insert mode-map"
+      (evil-define-key* '(normal visual insert) (symbol-value mode-map) (kbd "C-TAB") nil)
+      (evil-define-key* '(normal visual insert) (symbol-value mode-map) (kbd "C-<tab>") nil)
+      (define-key mode-map (kbd "C-<tab>") nil))
 
-    ;; ;; Disable Control-Tab in all notmuch modes to make it easier to
-    ;; ;; switch buffers
-    ;; (dolist (mode '((notmuch-hello-mode-hook . notmuch-hello-mode-map)
-    ;;                 (notmuch-show-mode-hook . notmuch-show-mode-map)
-    ;;                 (notmuch-message-mode-hook . notmuch-message-mode-map)
-    ;;                 (notmuch-tree-mode-hook . notmuch-tree-mode-map)
-    ;;                 (notmuch-search-mode-hook . notmuch-search-mode-map)))
-    ;;   (let ((mode-hook (car mode))
-    ;;         (mode-map (cdr mode)))
-    ;;     (add-hook mode-hook  
-    ;;               (lambda ()
-    ;;                 (+disable-evil-C-Tab mode-map)))))
+    ;; Disable Control-Tab in all notmuch modes to make it easier to
+    ;; switch buffers
+    (dolist (mode '((notmuch-hello-mode-hook . notmuch-hello-mode-map)
+                    (notmuch-show-mode-hook . notmuch-show-mode-map)
+                    (notmuch-tree-mode-hook . notmuch-tree-mode-map)
+                    (notmuch-search-mode-hook . notmuch-search-mode-map)
+                    (custom-mode-hook . custom-mode-map)))
+      (let ((mode-hook (car mode))
+            (mode-map (cdr mode)))
+        (add-hook mode-hook  
+                  (lambda ()
+                    (+disable-evil-C-Tab mode-map)))))
 
     ;; (dolist (mode-map (list notmuch-hello-mode-map
     ;;                         notmuch-show-mode-map
@@ -708,6 +720,12 @@
     ;;                   (kbd "C-TAB") nil
     ;;                   (kbd "C-<tab>") nil)
     
+    (evil-collection-define-key 'normal 'notmuch-tree-mode-map
+      "j" 'notmuch-tree-next-matching-message
+      "k" 'notmuch-tree-prev-matching-message
+      "gj" 'evil-next-line
+      "gk" 'evil-previous-line)
+
     (fset 'evil-collection-notmuch-search-toggle-delete
           (lambda ()
             "Toggle trash tag for message"
@@ -739,116 +757,114 @@
             (evil-collection-notmuch-toggle-tag "trash" "tree")))
 
     
-    (evil-collection-define-key 'normal 'notmuch-common-keymap
-      "g?" 'notmuch-help
-      "q" 'notmuch-bury-or-kill-this-buffer
-      "s" 'notmuch-search
-      "S" 'notmuch-tree
-      "C" 'notmuch-mua-new-mail           ; like mu4e
-      "cc" 'notmuch-mua-new-mail          ; like mu4e
-      "gr" 'notmuch-refresh-this-buffer
-      "gA" 'notmuch-refresh-all-buffers
-      "gR" 'notmuch-poll-and-refresh-this-buffer
-      "J" 'notmuch-jump-search)
+    ;; (evil-collection-define-key 'normal 'notmuch-common-keymap
+    ;;   "g?" 'notmuch-help
+    ;;   "q" 'notmuch-bury-or-kill-this-buffer
+    ;;   "s" 'notmuch-search
+    ;;   "S" 'notmuch-tree
+    ;;   "C" 'notmuch-mua-new-mail           ; like mu4e
+    ;;   "cc" 'notmuch-mua-new-mail          ; like mu4e
+    ;;   "gr" 'notmuch-refresh-this-buffer
+    ;;   "gA" 'notmuch-refresh-all-buffers
+    ;;   "gR" 'notmuch-poll-and-refresh-this-buffer
+    ;;   "J" 'notmuch-jump-search)
 
-    (evil-collection-define-key 'normal 'notmuch-hello-mode-map
-      "g?" 'notmuch-hello-versions
-      (kbd "TAB") 'widget-forward
-      (kbd "RET") 'evil-collection-notmuch-hello-ret
-      (kbd "S-TAB") 'widget-backward
-      (kbd "<C-tab>") 'widget-backward)
+    ;; (evil-collection-define-key 'normal 'notmuch-hello-mode-map
+    ;;   "g?" 'notmuch-hello-versions
+    ;;   (kbd "TAB") 'widget-forward
+    ;;   (kbd "RET") 'evil-collection-notmuch-hello-ret
+    ;;   (kbd "S-TAB") 'widget-backward
+    ;;   (kbd "<C-tab>") 'widget-backward)
 
-    (evil-collection-define-key 'normal 'notmuch-show-mode-map
-      "gd" 'goto-address-at-point
-      "p" 'notmuch-show-save-attachments  ; like mu4e
-      "A" 'notmuch-show-archive-thread-then-next
-      "S" 'notmuch-show-filter-thread
-      "K" 'notmuch-tag-jump
-      "C" 'notmuch-mua-new-mail           ; like mu4e
-      "cc" 'notmuch-mua-new-mail          ; like mu4e
-      "cR" 'notmuch-show-reply
-      "cf" 'notmuch-show-forward-message
-      "X" 'notmuch-show-archive-thread-then-exit
-      "zv" 'notmuch-tree-from-show-current-query ; like mu4e-conversation
-      "<" 'notmuch-show-toggle-thread-indentation
-      "a" 'notmuch-show-archive-message-then-next-or-next-thread
-      "d" 'evil-collection-notmuch-show-toggle-delete
-      "=" 'evil-collection-notmuch-show-toggle-flagged
-      "H" 'notmuch-show-toggle-visibility-headers
-      "gj" 'notmuch-show-next-open-message
-      "gk" 'notmuch-show-previous-open-message
-      "]]" 'notmuch-show-next-message
-      "[[" 'notmuch-show-previous-message
-      (kbd "C-j") 'notmuch-show-next-message
-      (kbd "C-k") 'notmuch-show-previous-message
-      (kbd "M-j") 'notmuch-show-next-thread-show
-      (kbd "M-k") 'notmuch-show-previous-thread-show
-      "cr" 'notmuch-show-reply-sender
-      (kbd "x") 'notmuch-show-archive-message-then-next-or-exit
-      "|" 'notmuch-show-pipe-message
-      "*" 'notmuch-show-tag-all
-      "-" 'notmuch-show-remove-tag
-      "+" 'notmuch-show-add-tag
-      (kbd "TAB") 'notmuch-show-next-button
-      (kbd "<backtab>") 'notmuch-show-previous-button
-      (kbd "RET") 'notmuch-show-toggle-message
-      "." 'notmuch-show-part-map)
+    ;; (evil-collection-define-key 'normal 'notmuch-show-mode-map
+    ;;   "gd" 'goto-address-at-point
+    ;;   "p" 'notmuch-show-save-attachments  ; like mu4e
+    ;;   "A" 'notmuch-show-archive-thread-then-next
+    ;;   "S" 'notmuch-show-filter-thread
+    ;;   "K" 'notmuch-tag-jump
+    ;;   "C" 'notmuch-mua-new-mail           ; like mu4e
+    ;;   "cc" 'notmuch-mua-new-mail          ; like mu4e
+    ;;   "cR" 'notmuch-show-reply
+    ;;   "cf" 'notmuch-show-forward-message
+    ;;   "X" 'notmuch-show-archive-thread-then-exit
+    ;;   "zv" 'notmuch-tree-from-show-current-query ; like mu4e-conversation
+    ;;   "<" 'notmuch-show-toggle-thread-indentation
+    ;;   "a" 'notmuch-show-archive-message-then-next-or-next-thread
+    ;;   "d" 'evil-collection-notmuch-show-toggle-delete
+    ;;   "=" 'evil-collection-notmuch-show-toggle-flagged
+    ;;   "H" 'notmuch-show-toggle-visibility-headers
+    ;;   "gj" 'notmuch-show-next-open-message
+    ;;   "gk" 'notmuch-show-previous-open-message
+    ;;   "]]" 'notmuch-show-next-message
+    ;;   "[[" 'notmuch-show-previous-message
+    ;;   (kbd "C-j") 'notmuch-show-next-message
+    ;;   (kbd "C-k") 'notmuch-show-previous-message
+    ;;   (kbd "M-j") 'notmuch-show-next-thread-show
+    ;;   (kbd "M-k") 'notmuch-show-previous-thread-show
+    ;;   "cr" 'notmuch-show-reply-sender
+    ;;   (kbd "x") 'notmuch-show-archive-message-then-next-or-exit
+    ;;   "|" 'notmuch-show-pipe-message
+    ;;   "*" 'notmuch-show-tag-all
+    ;;   "-" 'notmuch-show-remove-tag
+    ;;   "+" 'notmuch-show-add-tag
+    ;;   (kbd "TAB") 'notmuch-show-next-button
+    ;;   (kbd "<backtab>") 'notmuch-show-previous-button
+    ;;   (kbd "RET") 'notmuch-show-toggle-message
+    ;;   "." 'notmuch-show-part-map)
 
-    (evil-collection-define-key 'normal 'notmuch-tree-mode-map
-      "g?" (notmuch-tree-close-message-pane-and 'notmuch-help)
-      "q" 'notmuch-tree-quit
-      "S" 'notmuch-tree-to-search
-      "C" (notmuch-tree-close-message-pane-and 'notmuch-mua-new-mail) ; like mu4e
-      "cc" (notmuch-tree-close-message-pane-and 'notmuch-mua-new-mail) ; like mu4e
-      "J" (notmuch-tree-close-message-pane-and 'notmuch-jump-search)
-      "zv" 'notmuch-search-from-tree-current-query ; like mu4e-conversation
-      "cr" (notmuch-tree-close-message-pane-and 'notmuch-show-reply-sender) ; like mu4e
-      "cR" (notmuch-tree-close-message-pane-and 'notmuch-show-reply)
-      "d" 'evil-collection-notmuch-tree-toggle-delete
-      "!" 'evil-collection-notmuch-tree-toggle-unread
-      "=" 'evil-collection-notmuch-tree-toggle-flagged
-      "K" 'notmuch-tag-jump
-      (kbd "RET") 'notmuch-tree-show-message
-      [mouse-1] 'notmuch-tree-show-message
-      "A" 'notmuch-tree-archive-thread
-      "a" 'notmuch-tree-archive-message-then-next
-      "s" 'notmuch-tree-to-tree
-      "gj" 'notmuch-tree-next-matching-message
-      "gk" 'notmuch-tree-prev-matching-message
-      "]]" 'notmuch-tree-next-message
-      "[[" 'notmuch-tree-prev-message
-      (kbd "C-k") 'notmuch-tree-prev-thread
-      (kbd "C-j") 'notmuch-tree-next-thread
-      "|" 'notmuch-show-pipe-message
-      "-" 'notmuch-tree-remove-tag
-      "+" 'notmuch-tree-add-tag
-      "*" 'notmuch-tree-tag-thread
-      "e" 'notmuch-tree-resume-message)
+    ;; (evil-collection-define-key 'normal 'notmuch-tree-mode-map
+    ;;   "g?" (notmuch-tree-close-message-pane-and 'notmuch-help)
+    ;;   "q" 'notmuch-tree-quit
+    ;;   "S" 'notmuch-tree-to-search
+    ;;   "C" (notmuch-tree-close-message-pane-and 'notmuch-mua-new-mail) ; like mu4e
+    ;;   "cc" (notmuch-tree-close-message-pane-and 'notmuch-mua-new-mail) ; like mu4e
+    ;;   "J" (notmuch-tree-close-message-pane-and 'notmuch-jump-search)
+    ;;   "zv" 'notmuch-search-from-tree-current-query ; like mu4e-conversation
+    ;;   "cr" (notmuch-tree-close-message-pane-and 'notmuch-show-reply-sender) ; like mu4e
+    ;;   "cR" (notmuch-tree-close-message-pane-and 'notmuch-show-reply)
+    ;;   "d" 'evil-collection-notmuch-tree-toggle-delete
+    ;;   "!" 'evil-collection-notmuch-tree-toggle-unread
+    ;;   "=" 'evil-collection-notmuch-tree-toggle-flagged
+    ;;   "K" 'notmuch-tag-jump
+    ;;   (kbd "RET") 'notmuch-tree-show-message
+    ;;   [mouse-1] 'notmuch-tree-show-message
+    ;;   "A" 'notmuch-tree-archive-thread
+    ;;   "a" 'notmuch-tree-archive-message-then-next
+    ;;   "s" 'notmuch-tree-to-tree
+    ;;   "gj" 'notmuch-tree-next-matching-message
+    ;;   "gk" 'notmuch-tree-prev-matching-message
+    ;;   "]]" 'notmuch-tree-next-message
+    ;;   "[[" 'notmuch-tree-prev-message
+    ;;   (kbd "C-k") 'notmuch-tree-prev-thread
+    ;;   (kbd "C-j") 'notmuch-tree-next-thread
+    ;;   "|" 'notmuch-show-pipe-message
+    ;;   "-" 'notmuch-tree-remove-tag
+    ;;   "+" 'notmuch-tree-add-tag
+    ;;   "*" 'notmuch-tree-tag-thread
+    ;;   "e" 'notmuch-tree-resume-message)
 
-    (dolist (state '(normal visual))
-      (evil-collection-define-key state 'notmuch-search-mode-map
-        "cC" 'compose-mail-other-frame
-        "J" 'notmuch-jump-search
-        "S" 'notmuch-search-filter
-        "K" 'notmuch-tag-jump
-        "o" 'notmuch-search-toggle-order
-        "zv" 'notmuch-tree-from-search-current-query
-        "*" 'notmuch-search-tag-all
-        "a" 'notmuch-search-archive-thread
-        "cc" 'compose-mail                ; like mu4e
-        "d" 'evil-collection-notmuch-search-toggle-delete
-        "!" 'evil-collection-notmuch-search-toggle-unread
-        "=" 'evil-collection-notmuch-search-toggle-flagged
-        "q" 'notmuch-bury-or-kill-this-buffer
-        "cr" 'notmuch-search-reply-to-thread-sender
-        "cR" 'notmuch-search-reply-to-thread
-        "t" 'notmuch-search-filter-by-tag
-        [mouse-1] 'notmuch-search-show-thread
-        "-" 'notmuch-search-remove-tag
-        "+" 'notmuch-search-add-tag
-        (kbd "RET") 'notmuch-search-show-thread))
-
-
+    ;; (dolist (state '(normal visual))
+    ;;   (evil-collection-define-key state 'notmuch-search-mode-map
+    ;;     "cC" 'compose-mail-other-frame
+    ;;     "J" 'notmuch-jump-search
+    ;;     "S" 'notmuch-search-filter
+    ;;     "K" 'notmuch-tag-jump
+    ;;     "o" 'notmuch-search-toggle-order
+    ;;     "zv" 'notmuch-tree-from-search-current-query
+    ;;     "*" 'notmuch-search-tag-all
+    ;;     "a" 'notmuch-search-archive-thread
+    ;;     "cc" 'compose-mail                ; like mu4e
+    ;;     "d" 'evil-collection-notmuch-search-toggle-delete
+    ;;     "!" 'evil-collection-notmuch-search-toggle-unread
+    ;;     "=" 'evil-collection-notmuch-search-toggle-flagged
+    ;;     "q" 'notmuch-bury-or-kill-this-buffer
+    ;;     "cr" 'notmuch-search-reply-to-thread-sender
+    ;;     "cR" 'notmuch-search-reply-to-thread
+    ;;     "t" 'notmuch-search-filter-by-tag
+    ;;     [mouse-1] 'notmuch-search-show-thread
+    ;;     "-" 'notmuch-search-remove-tag
+    ;;     "+" 'notmuch-search-add-tag
+    ;;     (kbd "RET") 'notmuch-search-show-thread))
 
     )
   

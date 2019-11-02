@@ -211,9 +211,11 @@
                               (counsel-org-capture . "^")
                               (Man-completion-table . "^")
                               (woman . "^"))
-   ivy-prescient-sort-commands (list 'counsel-file-jump
-                                     'counsel-fzf
-                                     'counsel-git)
+   ;; ivy-prescient-sort-commands (list 'counsel-file-jump
+   ;;                                   'counsel-fzf
+   ;;                                   'counsel-git
+   ;;                                   'counsel-M-x
+   ;;                                   'load-theme)
    ;; ivy-re-builders-alist
    ;; '((counsel-ag . +ivy-prescient-non-fuzzy)
    ;;   (counsel-rg . +ivy-prescient-non-fuzzy)

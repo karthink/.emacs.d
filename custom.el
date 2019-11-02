@@ -41,6 +41,7 @@
  '(pdf-view-midnight-colors (quote ("#DCDCCC" . "#383838")))
  '(pulse-delay 0.015)
  '(reftex-insert-label-flags (quote ("sf" "sfte")))
+ '(safe-local-variable-values (quote ((eval outline-hide-sublevels 5))))
  '(send-mail-function (quote smtpmail-send-it))
  '(shackle-default-size 0.25)
  '(shackle-rules

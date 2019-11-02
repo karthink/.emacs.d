@@ -5,7 +5,7 @@
 (setq gc-cons-threshold most-positive-fixnum)
 
 ;;######################################################################
-;; PATHS
+;;;; PATHS
 ;;######################################################################
 
 ;; Get custom-set-variables out of init.el
@@ -31,12 +31,12 @@
 ;;                                       "do.org")))
 
 ;;########################################################################
-;; CORE
+;;;; CORE
 ;;########################################################################
 (require 'setup-core)
 
 ;;########################################################################
-;; Personal info
+;;;; PERSONAL INFO
 ;;########################################################################
 (require 'personal)
 (setq user-full-name my-full-name)
@@ -47,7 +47,7 @@
      (epa-encrypt-file (buffer-file-name) my-full-name)))
 
 ;;########################################################################
-;; UI FIXES
+;;;; UI FIXES
 ;;########################################################################
 
 ;; Get rid of the splash screen
@@ -139,7 +139,7 @@
 ;;            #'hide-mode-line-mode)
 
 ;;########################################################################
-;; SAVE AND BACKUP
+;;;; SAVE AND BACKUP
 ;;########################################################################
 ;; Put backups elsewhere:
 (setq auto-save-interval 2400)
@@ -153,12 +153,12 @@
       )
 
 ;;######################################################################
-;; AUTOLOADS
+;;;; AUTOLOADS
 ;;######################################################################
 (require 'setup-autoloads nil t)
 
 ;;######################################################################
-;; MISCELLANEOUS PREFERENCES
+;;;; MISCELLANEOUS PREFERENCES
 ;;######################################################################
 
 ;; Prevent Emacs from bugging me about C-x n n not being
@@ -253,7 +253,7 @@
 (global-prettify-symbols-mode 1)
 
 ;;######################################################################
-;; PACKAGE MANAGEMENT
+;;;; PACKAGE MANAGEMENT
 ;;######################################################################
   ;;; Set load paths for ELPA packages
 (package-initialize)
@@ -273,7 +273,7 @@
 (add-hook 'package-menu-mode-hook 'hl-line-mode)
 
 ;;######################################################################
-;; INTERFACING WITH THE OS
+;;;; INTERFACING WITH THE OS
 ;;######################################################################
 
 (if (equal (system-name) 'windows-nt)
@@ -341,7 +341,7 @@
                                             (t " -v")))))
 
 ;;----------------------------------------------------------------------
-;; ESHELL PREFERENCES
+;;;; ESHELL PREFERENCES
 ;;----------------------------------------------------------------------
 (setq eshell-buffer-shorthand t)
 (defun delete-window-if-not-single ()
@@ -351,7 +351,7 @@
 (advice-add 'eshell-life-is-too-much :after 'delete-window-if-not-single)
 
 ;;######################################################################
-;; FONTS
+;;;; FONTS
 ;;######################################################################
 (cond ((equal system-type 'gnu/linux)
        (custom-set-faces
@@ -367,14 +367,14 @@
 (set-fontset-font t 'unicode "Symbola" nil 'prepend)
 
 ;;######################################################################
-;; LINE NUMBERS
+;;;; LINE NUMBERS
 ;;######################################################################
 (line-number-mode 1)
 (global-display-line-numbers-mode)
 (setq display-line-numbers-type 'relative)
 
 ;;######################################################################
-;; EDITING
+;;;; EDITING
 ;;######################################################################
 (require 'better-editing nil t)
 ;; (use-package visual-fill-column-mode
@@ -387,7 +387,7 @@
 ;;   )
 
 ;;######################################################################
-;; BUFFER AND WINDOW MANAGEMENT
+;;;; BUFFER AND WINDOW MANAGEMENT
 ;;######################################################################
 (require 'better-buffers nil t)
 ;; (require 'popup-buffers nil t)
@@ -435,7 +435,7 @@
           (?? aw-show-dispatch-help))))
 
 ;;######################################################################
-;; UTILITY
+;;;; UTILITY
 ;;######################################################################
 ;; Count words, print ASCII table, etc
 (require 'utilities nil t)
@@ -466,7 +466,7 @@
 (global-set-key (kbd "C-x C-S-f") 'sudo-find-file)
 
 ;;######################################################################
-;; COMPILATION
+;;;; COMPILATION
 ;;######################################################################
 
 ;; compile!
@@ -506,11 +506,11 @@
 ;;                          (lambda () (delete-windows-on (get-buffer "*Compile-Log*"))))))
 
 ;;######################################################################
-;; LANGUAGE MODES
+;;;; LANGUAGE MODES
 ;;######################################################################
 
 ;;----------------------------------------------------------------------
-;; AUCTEX-MODE & ADDITIONS
+;;;; AUCTEX-MODE & ADDITIONS
 ;;----------------------------------------------------------------------
 (use-package tex
   :defer t
@@ -621,7 +621,7 @@
   )
 
 ;;----------------------------------------------------------------------
-;; MATLAB
+;;;; MATLAB
 ;;----------------------------------------------------------------------
 (use-package matlab
   :ensure matlab-mode
@@ -633,9 +633,17 @@
   :init
   (matlab-cedet-setup)
   (add-hook 'matlab-mode-hook #'company-mode-on)
-  (add-hook 'matlab-mode-hook #'hs-minor-mode)
+  ;; (add-hook 'matlab-mode-hook #'hs-minor-mode)
+  (add-hook 'matlab-mode-hook (lambda ()  (interactive) (outline-minor-mode)
+                                (setq-local page-delimiter "%%")
+                                (setq-local outline-regexp "\\(%%\\)+")
+                                (outline-hide-sublevels 4)
+                                ))
+
   ;; (add-hook 'matlab-mode-hook #'turn-on-evil-matlab-textobjects-mode)
-  (add-hook 'matlab-shell-mode-hook #'company-mode-on)
+  (add-hook 'matlab-shell-mode-hook (lambda ()
+                                      (setq-local company-idle-delay nil)
+                                      (company-mode-on) ))
 
   ;; (define-key matlab-mode-map (kbd "C-c C-b") #'matlab-shell-run-block)
 
@@ -678,7 +686,7 @@
   )
 
 ;;----------------------------------------------------------------------
-;; PYTHON-MODE
+;;;; PYTHON-MODE
 ;;----------------------------------------------------------------------
 
 ;; (add-hook
@@ -709,19 +717,19 @@
 ;;            ("Union" .    #x22c3)))))
 
 ;;######################################################################
-;; PLUGINS
+;;;; PLUGINS
 ;;######################################################################
 
 ;;----------------------------------------------------------------------
-;; NOTMUCH
-;; ----------------------------------------------------------------------
+;;;; NOTMUCH
+;;----------------------------------------------------------------------
 ;; Left unchecked, every program grows to the point where it can be
 ;; used to manage your email
 (require 'setup-email)
 
 
 ;;----------------------------------------------------------------------
-;; EYEBROWSE - tab emulation for emacs
+;;;; EYEBROWSE - tab emulation for emacs
 ;;----------------------------------------------------------------------
 (use-package eyebrowse
   :ensure t
@@ -761,12 +769,12 @@
   )
 ;; (define-key ivy-minibuffer-map (kbd "C-M-w") 'ivy-yank-word)
 ;;----------------------------------------------------------------------
-;; NAV-FLASH
+;;;; NAV-FLASH
 ;;----------------------------------------------------------------------
 ;; (use-package nav-flash)
 
 ;;----------------------------------------------------------------------
-;; YASNIPPET
+;;;; YASNIPPET
 ;;----------------------------------------------------------------------
 
 (use-package yasnippet
@@ -791,72 +799,72 @@
 
 
 ;;----------------------------------------------------------------------
-;; HIDESHOW is built in
+;;;; HIDESHOW is built in (DISABLED)
 ;;----------------------------------------------------------------------
-(use-package hideshow ; built-in
-  :commands (hs-toggle-hiding
-             hs-hide-block
-             hs-hide-level
-             hs-show-all
-             hs-hide-all)
-  :config
-  (setq hs-hide-comments-when-hiding-all nil)
-  ;; (setq hs-hide-comments-when-hiding-all nil
-  ;;       ;; Nicer code-folding overlays (with fringe indicators)
-  ;;       hs-set-up-overlay #'+fold-hideshow-set-up-overlay-fn)
+;; (use-package hideshow ; built-in
+;;   :commands (hs-toggle-hiding
+;;              hs-hide-block
+;;              hs-hide-level
+;;              hs-show-all
+;;              hs-hide-all)
+;;   :config
+;;   (setq hs-hide-comments-when-hiding-all nil)
+;;   ;; (setq hs-hide-comments-when-hiding-all nil
+;;   ;;       ;; Nicer code-folding overlays (with fringe indicators)
+;;   ;;       hs-set-up-overlay #'+fold-hideshow-set-up-overlay-fn)
 
-  (dolist (hs-command (list #'hs-toggle-hiding
-                            #'hs-hide-block
-                            #'hs-hide-level
-                            #'hs-show-all
-                            #'hs-hide-all))
-    (advice-add hs-command :before
-                (lambda () "Advice to ensure `hs-minor-mode' is enabled"
-                  (unless (bound-and-true-p hs-minor-mode)
-                    (hs-minor-mode +1)))))
+;;   (dolist (hs-command (list #'hs-toggle-hiding
+;;                             #'hs-hide-block
+;;                             #'hs-hide-level
+;;                             #'hs-show-all
+;;                             #'hs-hide-all))
+;;     (advice-add hs-command :before
+;;                 (lambda (&optional end) "Advice to ensure `hs-minor-mode' is enabled"
+;;                   (unless (bound-and-true-p hs-minor-mode)
+;;                     (hs-minor-mode +1)))))
 
-  ;; (defadvice! +fold--hideshow-ensure-mode-a (&rest _)
-  ;;   "Ensure `hs-minor-mode' is enabled."
-  ;;   :before '(hs-toggle-hiding hs-hide-block hs-hide-level hs-show-all hs-hide-all)
-  ;;   (unless (bound-and-true-p hs-minor-mode)
-  ;;     (hs-minor-mode +1)))
+;;   ;; (defadvice! +fold--hideshow-ensure-mode-a (&rest _)
+;;   ;;   "Ensure `hs-minor-mode' is enabled."
+;;   ;;   :before '(hs-toggle-hiding hs-hide-block hs-hide-level hs-show-all hs-hide-all)
+;;   ;;   (unless (bound-and-true-p hs-minor-mode)
+;;   ;;     (hs-minor-mode +1)))
 
-  ;; extra folding support for more languages
-  (unless (assq 't hs-special-modes-alist)
-    (setq hs-special-modes-alist
-          (append
-           '((vimrc-mode "{{{" "}}}" "\"")
-             ;; (yaml-mode "\\s-*\\_<\\(?:[^:]+\\)\\_>"
-             ;;            ""
-             ;;            "#"
-             ;;            +fold-hideshow-forward-block-by-indent-fn nil)
-             ;; (haml-mode "[#.%]" "\n" "/" +fold-hideshow-haml-forward-sexp-fn nil)
-             ;; (ruby-mode "class\\|d\\(?:ef\\|o\\)\\|module\\|[[{]"
-             ;;            "end\\|[]}]"
-             ;;            "#\\|=begin"
-             ;;            ruby-forward-sexp)
-             ;; (enh-ruby-mode "class\\|d\\(?:ef\\|o\\)\\|module\\|[[{]"
-             ;;                "end\\|[]}]"
-             ;;                "#\\|=begin"
-             ;;                enh-ruby-forward-sexp nil)
-             (matlab-mode "if\\|switch\\|case\\|otherwise\\|while\\|for\\|try\\|catch\\|function\\|%{"
-                          "end\\|%}"
-                          "%%" (lambda (_arg) (matlab-forward-sexp)))
-             (nxml-mode "<!--\\|<[^/>]*[^/]>"
-                        "-->\\|</[^/>]*[^/]>"
-                        "<!--" sgml-skip-tag-forward nil))
-           hs-special-modes-alist
-           '((t))))))
+;;   ;; extra folding support for more languages
+;;   (unless (assq 't hs-special-modes-alist)
+;;     (setq hs-special-modes-alist
+;;           (append
+;;            '((vimrc-mode "{{{" "}}}" "\"")
+;;              ;; (yaml-mode "\\s-*\\_<\\(?:[^:]+\\)\\_>"
+;;              ;;            ""
+;;              ;;            "#"
+;;              ;;            +fold-hideshow-forward-block-by-indent-fn nil)
+;;              ;; (haml-mode "[#.%]" "\n" "/" +fold-hideshow-haml-forward-sexp-fn nil)
+;;              ;; (ruby-mode "class\\|d\\(?:ef\\|o\\)\\|module\\|[[{]"
+;;              ;;            "end\\|[]}]"
+;;              ;;            "#\\|=begin"
+;;              ;;            ruby-forward-sexp)
+;;              ;; (enh-ruby-mode "class\\|d\\(?:ef\\|o\\)\\|module\\|[[{]"
+;;              ;;                "end\\|[]}]"
+;;              ;;                "#\\|=begin"
+;;              ;;                enh-ruby-forward-sexp nil)
+;;              (matlab-mode "^\s*if\\|switch\\|case\\|otherwise\\|while\\|^\s*for\\|try\\|catch\\|function"
+;;                           "end"
+;;                           "" (lambda (_arg) (matlab-forward-sexp)))
+;;              (nxml-mode "<!--\\|<[^/>]*[^/]>"
+;;                         "-->\\|</[^/>]*[^/]>"
+;;                         "<!--" sgml-skip-tag-forward nil))
+;;            hs-special-modes-alist
+;;            '((t))))))
 
-;;----------------------------------------------------------------------
-;; VIMISH-FOLD
+;; ;;----------------------------------------------------------------------
+;;;; VIMISH-FOLD
 ;;----------------------------------------------------------------------
 ;; (use-package vimish-fold
 ;;   :ensure t
 ;;   )
 
 ;;----------------------------------------------------------------------
-;; EDIFF (built-in)
+;;;; EDIFF (built-in)
 ;;----------------------------------------------------------------------
 (use-package ediff
   :defer t
@@ -879,7 +887,7 @@
   )
 
 ;;----------------------------------------------------------------------
-;; HELPFUl
+;;;; HELPFUl
 ;;----------------------------------------------------------------------
 (use-package helpful
   :ensure t
@@ -893,14 +901,14 @@
   (global-set-key (kbd "C-h C-.") #'helpful-at-point))
 
 ;;----------------------------------------------------------------------
-;; SHACKLE
+;;;; SHACKLE
 ;;----------------------------------------------------------------------
 (use-package shackle
   :ensure t
   :init (shackle-mode))
 
 ;;----------------------------------------------------------------------
-;; VERSION CONTROL
+;;;; VERSION CONTROL
 ;;----------------------------------------------------------------------
 (use-package magit
   ;; :defer 4
@@ -908,7 +916,7 @@
   :ensure t)
 
 ;;----------------------------------------------------------------------
-;; WHICH-KEY
+;;;; WHICH-KEY
 ;;----------------------------------------------------------------------
 (use-package which-key
   :ensure t
@@ -933,7 +941,7 @@
   :diminish "")
 
 ;;----------------------------------------------------------------------
-;; CALC
+;;;; CALC
 ;;----------------------------------------------------------------------
 (defun calc-on-line () (interactive)
        (cond ((region-active-p)
@@ -946,14 +954,14 @@
 (global-set-key (kbd "C-S-e") 'calc-on-line)
 
 ;;----------------------------------------------------------------------
-;; ABBREV MODE
+;;;; ABBREV MODE
 ;;----------------------------------------------------------------------
 (setq save-abbrevs t)
 (if (file-exists-p abbrev-file-name)
     (quietly-read-abbrev-file))
 
 ;;----------------------------------------------------------------------
-                                        ; COMPANY-MODE
+;;                                        ; COMPANY-MODE
 ;;----------------------------------------------------------------------
 (use-package company
   :ensure t
@@ -1008,6 +1016,7 @@
                                              )))
   (add-hook 'matlab-shell-mode-hook (lambda ()
                                 (make-local-variable 'company-backends)
+                                (setq-local company-idle-delay nil)
                                 (add-to-list 'company-backends 'company-matlab-shell)))
 
   (define-key company-active-map (kbd "M-n") nil)
@@ -1098,7 +1107,7 @@
     (add-hook 'after-init-hook #'company-statistics-mode)))
 
 ;;----------------------------------------------------------------------
-;; SMARTPARENS-MODE
+;;;; SMARTPARENS-MODE
 ;;----------------------------------------------------------------------
 (use-package smartparens
   ;; :defer 5
@@ -1114,7 +1123,7 @@
   )
 
 ;;----------------------------------------------------------------------
-;; EXPAND-REGION
+;;;; EXPAND-REGION
 ;;----------------------------------------------------------------------
 (use-package expand-region
   :ensure t
@@ -1122,7 +1131,7 @@
   :bind ("C-," . 'er/expand-region))
 
 ;;----------------------------------------------------------------------
-;; ACE-JUMP-MODE
+;;;; ACE-JUMP-MODE
 ;;----------------------------------------------------------------------
 (use-package ace-jump-mode
   :ensure t
@@ -1130,7 +1139,7 @@
   :bind ("C-'" . 'ace-jump-mode))
 
 ;;----------------------------------------------------------------------
-;; IY-GO-TO-CHAR
+;;;; IY-GO-TO-CHAR
 ;;----------------------------------------------------------------------
 (require 'iy-go-to-char nil t)
 (when (featurep 'iy-go-to-char)
@@ -1138,7 +1147,7 @@
   (define-key global-map (kbd "M-r") 'iy-go-to-char-backward))
 
 ;;----------------------------------------------------------------------
-;; WRAP-REGION MODE
+;;;; WRAP-REGION MODE
 ;;----------------------------------------------------------------------
 (use-package wrap-region
   :ensure t
@@ -1147,7 +1156,7 @@
 ;; (add-hook 'text-mode-hook 'wrap-region-mode)
 
 ;;----------------------------------------------------------------------
-;; IVY/COUNSEL/SWIPER
+;;;; IVY/COUNSEL/SWIPER
 ;;----------------------------------------------------------------------
 (require 'setup-ivy)
   ;;; Bibtex management from ivy. Call ivy-bibtex.
@@ -1181,13 +1190,13 @@
    '(("P" ivy-bibtex-open-pdf-external "Open PDF file in external viewer (if present)"))))
 
 ;;----------------------------------------------------------------------
-;; TRAMP
+;;;; TRAMP
 ;;----------------------------------------------------------------------
 ;; Tramp ssh'es into root@host to edit files. The emacs sudo, kindof.
 (autoload 'tramp "tramp")
 
 ;;----------------------------------------------------------------------
-;; DIRED
+;;;; DIRED
 ;;----------------------------------------------------------------------
 ;; Dired preferences
 (require 'setup-dired nil t)
@@ -1227,7 +1236,7 @@
 ;;   :ensure t
 ;;   :init (projectile-mode +1))
 ;;----------------------------------------------------------------------
-;; ORG-MODE
+;;;; ORG-MODE
 ;;----------------------------------------------------------------------
   ;;;; Org mode
 ;; org-init.el is loaded from the "lisp" directory.
@@ -1237,14 +1246,14 @@
   :hook (org-mode . org-bullets-mode))
 
 ;;----------------------------------------------------------------------
-;; MACROS
+;;;; MACROS
 ;;----------------------------------------------------------------------
 ;; Bind call last macro to F4
 (global-set-key (kbd "<f3>") 'kmacro-start-macro)
 (global-set-key (kbd "<f4>") 'kmacro-end-or-call-macro)
 
 ;;######################################################################
-;; COLORS & COLOR THEMES
+;;;; COLORS & COLOR THEMES
 ;;######################################################################
 
 ;; Load theme after the frame is created.
@@ -1282,7 +1291,7 @@
 (advice-add 'load-theme :before #'load-theme--disable-old-theme-a)
 
 ;;######################################################################
-;; MODELINE:
+;;;; MODELINE:
 ;;######################################################################
 
 ;; (use-package telephone-line
@@ -1392,13 +1401,20 @@
 
 
 ;;######################################################################
-;; MINIBUFFER
+;;;; MINIBUFFER
 ;;######################################################################
 
 ;; Enable recursive minibuffer edits
 (setq enable-recursive-minibuffers 1)
 
 ;;######################################################################
-;; EVIL-MODE
+;;;; EVIL-MODE
 ;;######################################################################
 (require 'setup-evil)
+
+;; Local Variables:
+;; outline-regexp: ";;;; "
+;; page-delimiter: ";;;; "
+;; eval:(outline-minor-mode 1)
+;; eval:(outline-hide-sublevels 5)
+;; End:

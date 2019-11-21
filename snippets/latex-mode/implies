@@ -1,0 +1,5 @@
+# key: =>
+# name: implies
+# condition: (and (texmathp) (quote auto))
+# --
+\implies $0

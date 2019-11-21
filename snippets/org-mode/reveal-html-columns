@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# name: reveal-html-columns
+# key: <rco
+# --
+#+REVEAL_HTML: <div class="column" style="width:${1:50}%;">
+$0
+#+REVEAL_HTML: </div>
+#+REVEAL_HTML: <div class="column" style="width:${1:$(- 100 (string-to-number yas-text))}%;">
+
+#+REVEAL_HTML: </div>

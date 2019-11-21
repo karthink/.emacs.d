@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: greater greater
+# key: >>
+# condition: (and (texmathp) 'auto)
+# --
+\\gg$0

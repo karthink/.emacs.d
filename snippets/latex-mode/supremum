@@ -1,0 +1,5 @@
+# name: supremum
+# key: sup
+# condition: (and (texmathp) 'auto)
+# --
+\\sup_{$1 \\in $2} $0

@@ -1,0 +1,28 @@
+# key: template
+# name: Basic template
+# --
+\input{`my-preamble-file`}
+% \usepackage{hyperref}
+% \hypersetup{
+%     colorlinks,
+%     citecolor=cyan,
+%     filecolor=black,
+%     linkcolor=blue,
+%     urlcolor=black}
+
+\author{`user-full-name`\vspace{-2ex}}
+\title{\vspace{-3.0cm}${1:Title$(capitalize yas-text)}\vspace{-2ex}}
+${2:\date{${3:\today}}}
+
+\begin{document}
+
+\begingroup
+\let\center\flushleft
+\let\endcenter\endflushleft
+\maketitle
+\endgroup
+
+% \tableofcontents
+
+$0
+\end{document}

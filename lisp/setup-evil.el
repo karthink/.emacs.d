@@ -1,4 +1,5 @@
 ;; -*- lexical-binding: t -*-
+(require 'use-package nil t)
 (use-package evil-leader
   :ensure
   :commands global-evil-leader-mode

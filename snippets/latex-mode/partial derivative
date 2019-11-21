@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: partial derivative
+# key: part
+# condition: (texmathp)
+# --
+\\frac{\\partial $1}{\\partial ${2:x}} $0

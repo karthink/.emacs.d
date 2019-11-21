@@ -4,8 +4,7 @@
 
 (setq gc-cons-threshold most-positive-fixnum)
 
-;;######################################################################
-;;;; PATHS
+;;;* PATHS
 ;;######################################################################
 
 ;; Get custom-set-variables out of init.el
@@ -18,8 +17,7 @@
              "/cygdrive/c/Users/karth/OneDrive/Documents/")
             ((equal (system-name) "cube")
              "/cygdrive/c/Users/karth/OneDrive/Documents/")
-            ((equal (system-name) "thinkpad")
-             "~/")
+            ((equal (system-name) "thinkpad") "~/")
             (t "~/")))
 
 ;; Adds ~/.emacs.d to the load-path
@@ -31,23 +29,24 @@
 ;;                                       "do.org")))
 
 ;;########################################################################
-;;;; CORE
+;;;* CORE
 ;;########################################################################
 (require 'setup-core)
 
 ;;########################################################################
-;;;; PERSONAL INFO
+;;;* PERSONAL INFO
 ;;########################################################################
 (require 'personal)
 (setq user-full-name my-full-name)
 (setq user-mail-address my-email-address)
 (defun encrypt-personal-data ()
   "Automatically encrypt personal.el to personal.el.gpg when it is saved"
-  (if (equal (buffer-file-name) "personal.el")
-     (epa-encrypt-file (buffer-file-name) my-full-name)))
+  (interactive)
+  (if (equal buffer-file-name (concat (expand-file-name user-emacs-directory) "lisp/personal.el"))
+      (epa-encrypt-file buffer-file-name my-email-address)))
 
 ;;########################################################################
-;;;; UI FIXES
+;;;* UI FIXES
 ;;########################################################################
 
 ;; Get rid of the splash screen
@@ -139,7 +138,7 @@
 ;;            #'hide-mode-line-mode)
 
 ;;########################################################################
-;;;; SAVE AND BACKUP
+;;;* SAVE AND BACKUP
 ;;########################################################################
 ;; Put backups elsewhere:
 (setq auto-save-interval 2400)
@@ -153,12 +152,12 @@
       )
 
 ;;######################################################################
-;;;; AUTOLOADS
+;;;* AUTOLOADS
 ;;######################################################################
 (require 'setup-autoloads nil t)
 
 ;;######################################################################
-;;;; MISCELLANEOUS PREFERENCES
+;;;* MISCELLANEOUS PREFERENCES
 ;;######################################################################
 
 ;; Prevent Emacs from bugging me about C-x n n not being
@@ -253,13 +252,13 @@
 (global-prettify-symbols-mode 1)
 
 ;;######################################################################
-;;;; PACKAGE MANAGEMENT
+;;;* PACKAGE MANAGEMENT
 ;;######################################################################
   ;;; Set load paths for ELPA packages
 (package-initialize)
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
-                                        ;(add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/"))
-;; (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
+;(add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/"))
+;(add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
 (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
 
 (unless (package-installed-p 'use-package)
@@ -267,13 +266,19 @@
   (package-install 'use-package))
 
 (eval-when-compile
-  (require 'use-package))
+  ;; (defvar use-package-verbose t)
+  (eval-after-load 'advice
+    `(setq ad-redefinition-action 'accept))
+  (require 'cl)
+  (require 'use-package)
+  (setq use-package-verbose t))
+
 (require 'bind-key)
 
 (add-hook 'package-menu-mode-hook 'hl-line-mode)
 
 ;;######################################################################
-;;;; INTERFACING WITH THE OS
+;;;* INTERFACING WITH THE OS
 ;;######################################################################
 
 (if (equal (system-name) 'windows-nt)
@@ -282,7 +287,7 @@
 ;; Set default www browser
 (if (equal system-type 'gnu/linux)
     (setq
-                                        ;browse-url-browser-function 'browse-url-generic
+    ;browse-url-browser-function 'browse-url-generic
      browse-url-generic-program "/usr/bin/qutebrowser"
      ))
 
@@ -341,7 +346,7 @@
                                             (t " -v")))))
 
 ;;----------------------------------------------------------------------
-;;;; ESHELL PREFERENCES
+;;;** ESHELL PREFERENCES
 ;;----------------------------------------------------------------------
 (setq eshell-buffer-shorthand t)
 (defun delete-window-if-not-single ()
@@ -351,7 +356,7 @@
 (advice-add 'eshell-life-is-too-much :after 'delete-window-if-not-single)
 
 ;;######################################################################
-;;;; FONTS
+;;;* FONTS
 ;;######################################################################
 (cond ((equal system-type 'gnu/linux)
        (custom-set-faces
@@ -367,16 +372,19 @@
 (set-fontset-font t 'unicode "Symbola" nil 'prepend)
 
 ;;######################################################################
-;;;; LINE NUMBERS
+;;;* LINE NUMBERS
 ;;######################################################################
 (line-number-mode 1)
 (global-display-line-numbers-mode)
 (setq display-line-numbers-type 'relative)
 
 ;;######################################################################
-;;;; EDITING
+;;;* EDITING
 ;;######################################################################
 (require 'better-editing nil t)
+(save-place-mode 1)
+(set-fill-column 80)
+(setq vc-follow-symlinks t)
 ;; (use-package visual-fill-column-mode
 ;;   ;; :ensure t
 ;;   ;; :hook (visual-line-mode . visual-fill-column-mode)
@@ -387,7 +395,7 @@
 ;;   )
 
 ;;######################################################################
-;;;; BUFFER AND WINDOW MANAGEMENT
+;;;* BUFFER AND WINDOW MANAGEMENT
 ;;######################################################################
 (require 'better-buffers nil t)
 ;; (require 'popup-buffers nil t)
@@ -435,7 +443,7 @@
           (?? aw-show-dispatch-help))))
 
 ;;######################################################################
-;;;; UTILITY
+;;;* UTILITY
 ;;######################################################################
 ;; Count words, print ASCII table, etc
 (require 'utilities nil t)
@@ -466,7 +474,7 @@
 (global-set-key (kbd "C-x C-S-f") 'sudo-find-file)
 
 ;;######################################################################
-;;;; COMPILATION
+;;;* COMPILATION
 ;;######################################################################
 
 ;; compile!
@@ -506,17 +514,23 @@
 ;;                          (lambda () (delete-windows-on (get-buffer "*Compile-Log*"))))))
 
 ;;######################################################################
-;;;; LANGUAGE MODES
+;;;* LANGUAGE MODES
 ;;######################################################################
 
 ;;----------------------------------------------------------------------
-;;;; AUCTEX-MODE & ADDITIONS
+;;;** AUCTEX-MODE & ADDITIONS
 ;;----------------------------------------------------------------------
 (use-package tex
   :defer t
   :ensure auctex
   :mode
   ("\\.tex\\'" . latex-mode)
+  :init (add-hook 'latex-mode-hook
+                  (lambda ()  (interactive) (outline-minor-mode)
+                    (setq-local page-delimiter "\\\\section\\**{")
+                    (setq-local outline-regexp "\\\\\\(sub\\)*section\\**{")
+                    (outline-hide-sublevels 3)
+                    ))
   :defines (TeX-auto-save
             TeX-parse-self
             TeX-electric-escape
@@ -533,46 +547,51 @@
               ;; ("C-;" . TeX-complete-symbol)
               )
   :config
-  (progn  (defun TeX-matrix-spacer () (interactive) (insert " & "))
-          (defun TeX-insert-smallmatrix () (interactive)
-                 (insert "[\\begin{smallmatrix}  \\end{smallmatrix}]")
-                 (backward-char 19))
-          (defun TeX-insert-bmatrix () (interactive)
-                 (insert "\\begin{bmatrix}  \\end{bmatrix}")
-                 (backward-char 14))
-          (setq
-           TeX-auto-save t
-           TeX-parse-self t
-           TeX-electric-escape nil
-           ;; Setting this to t messes up previews
-           ;; If previews still don't show disable the hyperref package
-           TeX-PDF-mode nil)
-          (setq-default TeX-source-correlate-mode t)
-          (setq TeX-source-correlate-method 'synctex)
-          (setq-default TeX-source-correlate-start-server t)
-          (setq TeX-newline-function 'reindent-then-newline-and-indent)
-          (setq TeX-PDF-from-DVI "Dvips")
-          (cond ((equal system-type 'cygwin)
-                 (setq TeX-view-program-list
-                       '(("Sumatra PDF" ("\"/cygdrive/c/Program Files/SumatraPDF/SumatraPDF.exe\" -reuse-instance"
-                                         (mode-io-correlate " -forward-search %b %n ") " %o"))))
+  (progn  
+    (defvar my-preamble-file (concat (expand-file-name
+                                           (file-name-as-directory "~/Documents/"))
+                                     "hwstyle.tex")
+      "File containing my stock preamble for LaTeX documents")
+    (defun TeX-matrix-spacer () (interactive) (insert " & "))
+    (defun TeX-insert-smallmatrix () (interactive)
+           (insert "[\\begin{smallmatrix}  \\end{smallmatrix}]")
+           (backward-char 19))
+    (defun TeX-insert-bmatrix () (interactive)
+           (insert "\\begin{bmatrix}  \\end{bmatrix}")
+           (backward-char 14))
+    (setq
+     TeX-auto-save t
+     TeX-parse-self t
+     TeX-electric-escape nil
+     ;; Setting this to t messes up previews
+     ;; If previews still don't show disable the hyperref package
+     TeX-PDF-mode nil)
+    (setq-default TeX-source-correlate-mode t)
+    (setq TeX-source-correlate-method 'synctex)
+    (setq-default TeX-source-correlate-start-server t)
+    (setq TeX-newline-function 'reindent-then-newline-and-indent)
+    (setq TeX-PDF-from-DVI "Dvips")
+    (cond ((equal system-type 'cygwin)
+           (setq TeX-view-program-list
+                 '(("Sumatra PDF" ("\"/cygdrive/c/Program Files/SumatraPDF/SumatraPDF.exe\" -reuse-instance"
+                                   (mode-io-correlate " -forward-search %b %n ") " %o"))))
 
-                 (setq TeX-view-program-selection
-                       '(((output-dvi has-no-display-manager) "dvi2tty")
-                         ((output-dvi style-pstricks) "dvips and gv")
-                         (output-dvi "xdvi")
-                         (output-pdf "pdf-tools")
-                         (output-html "xdg-open"))))
-                ((equal system-type 'gnu/linux)
-                 (setq TeX-view-program-selection
-                       '(((output-dvi has-no-display-manager) "dvi2tty")
-                         ((output-dvi style-pstricks) "dvips and gv")
-                         (output-dvi "xdvi")
-                         (output-pdf "Zathura")
-                         (output-html "xdg-open"))))
-                )
-          (TeX-fold-mode 1)
-          ))
+           (setq TeX-view-program-selection
+                 '(((output-dvi has-no-display-manager) "dvi2tty")
+                   ((output-dvi style-pstricks) "dvips and gv")
+                   (output-dvi "xdvi")
+                   (output-pdf "pdf-tools")
+                   (output-html "xdg-open"))))
+          ((equal system-type 'gnu/linux)
+           (setq TeX-view-program-selection
+                 '(((output-dvi has-no-display-manager) "dvi2tty")
+                   ((output-dvi style-pstricks) "dvips and gv")
+                   (output-dvi "xdvi")
+                   (output-pdf "Zathura")
+                   (output-html "xdg-open"))))
+          )
+    (TeX-fold-mode 1)
+    ))
 
 (use-package reftex
   ;; :defer 3
@@ -596,48 +615,55 @@
              "\\left( \\begin{smallmatrix} ? \\end{smallmatrix} \\right)"
              cdlatex-position-cursor nil nil t)
             ("bmat" "Insert bmatrix env"
-             "\\begin{bmatrix}\n?\n\\end{bmatrix}"
+             "\\begin{bmatrix} ? \\end{bmatrix}"
              cdlatex-position-cursor nil nil t)
             ("pmat" "Insert pmatrix env"
-             "\\begin{pmatrix}\n?\n\\end{pmatrix}"
+             "\\begin{pmatrix} ? \\end{pmatrix}"
              cdlatex-position-cursor nil nil t)
             ("equ*" "Insert equation* env"
              "\\begin{equation*}\n?\n\\end{equation*}"
              cdlatex-position-cursor nil t nil)
-            ("sn*" "Insert subsection env"
+            ("sn*" "Insert section* env"
              "\\section*{?}"
              cdlatex-position-cursor nil t nil)
-            ("ssn" "Insert subsection env"
-             "\\subsection{?}"
-             cdlatex-position-cursor nil t nil)
-            ("ssn*" "Insert subsection* env"
+            ("ss*" "Insert subsection* env"
              "\\subsection*{?}"
+             cdlatex-position-cursor nil t nil)
+            ("sss*" "Insert subsubsection* env"
+             "\\subsubsection*{?}"
              cdlatex-position-cursor nil t nil)))
+
     (setq cdlatex-math-symbol-alist '((?F ("\\Phi"))
                                       (?o ("\\omega" "\\mho" "\\mathcal{O}"))
-                                      (?6 ("\\partial"))))
+                                      (?6 ("\\partial"))
+                                      (?v ("\\vee" "\\forall"))))
     ;; (setq cdlatex-math-modify-alist '(?1 "\\mathbb" "\\textbf" t nil nil))
     (setq cdlatex-paired-parens "$[{("))
   )
 
 ;;----------------------------------------------------------------------
-;;;; MATLAB
+;;;** MATLAB
 ;;----------------------------------------------------------------------
 (use-package matlab
-  :ensure matlab-mode
+  :load-path (lambda () (file-name-as-directory (expand-file-name "~/.local/share/git/matlab-emacs-src")))
+  ;; :ensure matlab-mode
 
   ;; :after 'evil
   ;; :commands (matlab-mode matlab-shell matlab-shell-run-block)
   :bind (:map matlab-mode-map
               ("C-c C-b" . 'matlab-shell-run-block))
   :init
+  (load-library "matlab-load")
   (matlab-cedet-setup)
+  (semantic-mode 1)
+  (global-semantic-stickyfunc-mode 1)
+  (global-semantic-decoration-mode 1) 
   (add-hook 'matlab-mode-hook #'company-mode-on)
   ;; (add-hook 'matlab-mode-hook #'hs-minor-mode)
   (add-hook 'matlab-mode-hook (lambda ()  (interactive) (outline-minor-mode)
                                 (setq-local page-delimiter "%%")
-                                (setq-local outline-regexp "\\(%%\\)+")
-                                (outline-hide-sublevels 4)
+                                (setq-local outline-regexp "%%+")
+                                (outline-hide-sublevels 3)
                                 ))
 
   ;; (add-hook 'matlab-mode-hook #'turn-on-evil-matlab-textobjects-mode)
@@ -686,7 +712,7 @@
   )
 
 ;;----------------------------------------------------------------------
-;;;; PYTHON-MODE
+;;;** PYTHON-MODE
 ;;----------------------------------------------------------------------
 
 ;; (add-hook
@@ -717,11 +743,11 @@
 ;;            ("Union" .    #x22c3)))))
 
 ;;######################################################################
-;;;; PLUGINS
+;;;* PLUGINS
 ;;######################################################################
 
 ;;----------------------------------------------------------------------
-;;;; NOTMUCH
+;;;** NOTMUCH
 ;;----------------------------------------------------------------------
 ;; Left unchecked, every program grows to the point where it can be
 ;; used to manage your email
@@ -729,7 +755,7 @@
 
 
 ;;----------------------------------------------------------------------
-;;;; EYEBROWSE - tab emulation for emacs
+;;;** EYEBROWSE - tab emulation for emacs
 ;;----------------------------------------------------------------------
 (use-package eyebrowse
   :ensure t
@@ -769,12 +795,12 @@
   )
 ;; (define-key ivy-minibuffer-map (kbd "C-M-w") 'ivy-yank-word)
 ;;----------------------------------------------------------------------
-;;;; NAV-FLASH
+;;;** NAV-FLASH
 ;;----------------------------------------------------------------------
 ;; (use-package nav-flash)
 
 ;;----------------------------------------------------------------------
-;;;; YASNIPPET
+;;;** YASNIPPET
 ;;----------------------------------------------------------------------
 
 (use-package yasnippet
@@ -782,24 +808,31 @@
   :init (add-hook 'prog-mode-hook #'yas-minor-mode)
   :config
   ;; Redefine yas expand key from TAB because company-mode uses TAB.
-  (define-key yas-minor-mode-map (kbd "S-SPC") (lambda (&optional num) (interactive "P")
-                                                 (or (yas-expand)
-                                                     (insert (kbd "SPC")))))
-  (define-key yas-keymap (kbd "S-SPC") (lambda (&optional num) (interactive "P")
-                                         (or (yas-next-field-or-maybe-expand)
-                                             (insert (kbd "SPC")))))
-  (dolist (keymap (list yas-minor-mode-map yas-keymap))
-    (define-key keymap (kbd "TAB") nil)
-    (define-key keymap [(tab)] nil))
-  (global-set-key (kbd "M-S-SPC") 'company-yasnippet)
+  (defun my-yas-try-expanding-auto-snippets ()
+    (when (and (boundp 'yas-minor-mode) yas-minor-mode)
+      (let ((yas-buffer-local-condition ''(require-snippet-condition . auto)))
+        (yas-expand))))
+  (add-hook 'post-self-insert-hook #'my-yas-try-expanding-auto-snippets)
+
+  (with-eval-after-load 'cdlatex
+    (add-hook 'cdlatex-tab-hook #'yas-expand))
+  ;; (define-key yas-minor-mode-map (kbd "S-SPC") (lambda (&optional num) (interactive "P")
+  ;;                                                (or (yas-expand)
+  ;;                                                    (insert (kbd "SPC")))))
+  ;; (define-key yas-keymap (kbd "S-SPC") (lambda (&optional num) (interactive "P")
+  ;;                                        (or (yas-next-field-or-maybe-expand)
+  ;;                                            (insert (kbd "SPC")))))
+  ;; (dolist (keymap (list yas-minor-mode-map yas-keymap))
+  ;;   (define-key keymap (kbd "TAB") nil)
+  ;;   (define-key keymap [(tab)] nil))
+  ;; (global-set-key (kbd "M-S-SPC") 'company-yasnippet)
+  (setq yas-wrap-around-region t)
   ;; (use-package yasnippet-snippets
   ;;   :ensure t)
-  (yas-reload-all)
-  )
-
+  (yas-reload-all))
 
 ;;----------------------------------------------------------------------
-;;;; HIDESHOW is built in (DISABLED)
+;;;** HIDESHOW is built in (DISABLED)
 ;;----------------------------------------------------------------------
 ;; (use-package hideshow ; built-in
 ;;   :commands (hs-toggle-hiding
@@ -856,15 +889,15 @@
 ;;            hs-special-modes-alist
 ;;            '((t))))))
 
-;; ;;----------------------------------------------------------------------
-;;;; VIMISH-FOLD
 ;;----------------------------------------------------------------------
-;; (use-package vimish-fold
+;;;** VIMISH-FOLD
+;;----------------------------------------------------------------------
+;;(use-package vimish-fold
 ;;   :ensure t
 ;;   )
 
 ;;----------------------------------------------------------------------
-;;;; EDIFF (built-in)
+;;;** EDIFF (built-in)
 ;;----------------------------------------------------------------------
 (use-package ediff
   :defer t
@@ -887,7 +920,7 @@
   )
 
 ;;----------------------------------------------------------------------
-;;;; HELPFUl
+;;;** HELPFUl
 ;;----------------------------------------------------------------------
 (use-package helpful
   :ensure t
@@ -901,14 +934,14 @@
   (global-set-key (kbd "C-h C-.") #'helpful-at-point))
 
 ;;----------------------------------------------------------------------
-;;;; SHACKLE
+;;;** SHACKLE
 ;;----------------------------------------------------------------------
 (use-package shackle
   :ensure t
   :init (shackle-mode))
 
 ;;----------------------------------------------------------------------
-;;;; VERSION CONTROL
+;;;** VERSION CONTROL
 ;;----------------------------------------------------------------------
 (use-package magit
   ;; :defer 4
@@ -916,7 +949,7 @@
   :ensure t)
 
 ;;----------------------------------------------------------------------
-;;;; WHICH-KEY
+;;;** WHICH-KEY
 ;;----------------------------------------------------------------------
 (use-package which-key
   :ensure t
@@ -941,7 +974,7 @@
   :diminish "")
 
 ;;----------------------------------------------------------------------
-;;;; CALC
+;;;** CALC
 ;;----------------------------------------------------------------------
 (defun calc-on-line () (interactive)
        (cond ((region-active-p)
@@ -954,14 +987,14 @@
 (global-set-key (kbd "C-S-e") 'calc-on-line)
 
 ;;----------------------------------------------------------------------
-;;;; ABBREV MODE
+;;;** ABBREV MODE
 ;;----------------------------------------------------------------------
 (setq save-abbrevs t)
 (if (file-exists-p abbrev-file-name)
     (quietly-read-abbrev-file))
 
 ;;----------------------------------------------------------------------
-;;                                        ; COMPANY-MODE
+;;;** COMPANY-MODE
 ;;----------------------------------------------------------------------
 (use-package company
   :ensure t
@@ -1019,6 +1052,10 @@
                                 (setq-local company-idle-delay nil)
                                 (add-to-list 'company-backends 'company-matlab-shell)))
 
+  (add-hook 'LaTeX-mode-hook (lambda ()
+                               (make-local-variable 'company-idle-delay)
+                               (setq-local company-idle-delay 0.5)
+                               ))
   (define-key company-active-map (kbd "M-n") nil)
   (define-key company-active-map (kbd "M-p") nil)
   (define-key company-active-map (kbd "C-n") 'company-select-next)
@@ -1029,7 +1066,7 @@
   ;; (define-key company-active-map (kbd "<backtab>") 'company-select-previous)
   ;; (define-key company-active-map (kbd "S-TAB") 'company-select-previous)
 
-  (global-unset-key (kbd "C-;"))
+  (global-set-key (kbd "C-;") 'company-complete)
   (define-key company-active-map (kbd "C-;") 'company-other-backend)
   (define-key company-active-map (kbd "C-w") nil)
   (define-key company-active-map (kbd "C-]") 'company-show-location)
@@ -1097,7 +1134,7 @@
 
   ;; (company-ac-setup)
   ;; (company-tng-setup)
-  (company-tng-configure-default)
+  ;; (company-tng-configure-default)
   (use-package company-statistics
     :ensure t
     :init
@@ -1107,7 +1144,7 @@
     (add-hook 'after-init-hook #'company-statistics-mode)))
 
 ;;----------------------------------------------------------------------
-;;;; SMARTPARENS-MODE
+;;;** SMARTPARENS-MODE
 ;;----------------------------------------------------------------------
 (use-package smartparens
   ;; :defer 5
@@ -1123,7 +1160,7 @@
   )
 
 ;;----------------------------------------------------------------------
-;;;; EXPAND-REGION
+;;;** EXPAND-REGION
 ;;----------------------------------------------------------------------
 (use-package expand-region
   :ensure t
@@ -1131,7 +1168,7 @@
   :bind ("C-," . 'er/expand-region))
 
 ;;----------------------------------------------------------------------
-;;;; ACE-JUMP-MODE
+;;;** ACE-JUMP-MODE
 ;;----------------------------------------------------------------------
 (use-package ace-jump-mode
   :ensure t
@@ -1139,7 +1176,7 @@
   :bind ("C-'" . 'ace-jump-mode))
 
 ;;----------------------------------------------------------------------
-;;;; IY-GO-TO-CHAR
+;;;** IY-GO-TO-CHAR
 ;;----------------------------------------------------------------------
 (require 'iy-go-to-char nil t)
 (when (featurep 'iy-go-to-char)
@@ -1147,7 +1184,7 @@
   (define-key global-map (kbd "M-r") 'iy-go-to-char-backward))
 
 ;;----------------------------------------------------------------------
-;;;; WRAP-REGION MODE
+;;;** WRAP-REGION MODE
 ;;----------------------------------------------------------------------
 (use-package wrap-region
   :ensure t
@@ -1156,7 +1193,7 @@
 ;; (add-hook 'text-mode-hook 'wrap-region-mode)
 
 ;;----------------------------------------------------------------------
-;;;; IVY/COUNSEL/SWIPER
+;;;** IVY/COUNSEL/SWIPER
 ;;----------------------------------------------------------------------
 (require 'setup-ivy)
   ;;; Bibtex management from ivy. Call ivy-bibtex.
@@ -1190,13 +1227,13 @@
    '(("P" ivy-bibtex-open-pdf-external "Open PDF file in external viewer (if present)"))))
 
 ;;----------------------------------------------------------------------
-;;;; TRAMP
+;;;** TRAMP
 ;;----------------------------------------------------------------------
 ;; Tramp ssh'es into root@host to edit files. The emacs sudo, kindof.
 (autoload 'tramp "tramp")
 
 ;;----------------------------------------------------------------------
-;;;; DIRED
+;;;** DIRED
 ;;----------------------------------------------------------------------
 ;; Dired preferences
 (require 'setup-dired nil t)
@@ -1236,7 +1273,7 @@
 ;;   :ensure t
 ;;   :init (projectile-mode +1))
 ;;----------------------------------------------------------------------
-;;;; ORG-MODE
+;;;** ORG-MODE
 ;;----------------------------------------------------------------------
   ;;;; Org mode
 ;; org-init.el is loaded from the "lisp" directory.
@@ -1246,25 +1283,33 @@
   :hook (org-mode . org-bullets-mode))
 
 ;;----------------------------------------------------------------------
-;;;; MACROS
+;;;** MACROS
 ;;----------------------------------------------------------------------
 ;; Bind call last macro to F4
 (global-set-key (kbd "<f3>") 'kmacro-start-macro)
 (global-set-key (kbd "<f4>") 'kmacro-end-or-call-macro)
 
 ;;######################################################################
-;;;; COLORS & COLOR THEMES
+;;;* COLORS & COLOR THEMES
 ;;######################################################################
 
 ;; Load theme after the frame is created.
-(add-hook 'after-init-hook ;'after-make-frame-functions
-          (lambda ()
-            (if (or (< (nth 2 (decode-time (current-time))) 7)
-                    (> (nth 2 (decode-time (current-time))) 18))
-                (progn (load-theme 'gruvbox t)
-                       (load-theme 'smart-mode-line-dark))
-              (progn (load-theme 'dichromacy t)))
-            ))
+;; (add-hook 'after-make-frame-functions ;'after-init-hook
+;;           (lambda (frame)
+;;             (mapc #'disable-theme custom-enabled-themes)
+;;             (and (display-graphic-p)
+;;                  (progn
+;;                    (if (or (< (nth 2 (decode-time (current-time))) 7)
+;;                                 (> (nth 2 (decode-time (current-time))) 18))
+;;                             (progn (load-theme 'dracula t)
+;;                                    ;; (load-theme 'smart-mode-line-dark)
+;;                                    )
+;;                           (progn (load-theme 'dracula t)
+;;                                  ;; (load-theme 'smart-mode-line-dark)
+;;                                  ))))
+;;             ))
+
+(load-theme 'dracula t)
 
 ;; Other themes
 ;; (list 'tsdh-light
@@ -1282,16 +1327,16 @@
 ;;       hl-paren-background-colors (list color-4 color-4 color-4 color-4 color-4))))
 
 ;; before loading new theme
-(defun load-theme--disable-old-theme-a(theme &rest args)
-  "Disable current theme before loading new one."
-  (unless (member theme '(smart-mode-line-dark smart-mode-line-light))
-    (mapcar #'disable-theme
-            (remove 'smart-mode-line-light
-                    (remove 'smart-mode-line-dark custom-enabled-themes)))))
-(advice-add 'load-theme :before #'load-theme--disable-old-theme-a)
+;; (defun load-theme--disable-old-theme-a(theme &rest args)
+;;   "Disable current theme before loading new one."
+;;   (unless (member theme '(smart-mode-line-dark smart-mode-line-light))
+;;     (mapcar #'disable-theme
+;;             (remove 'smart-mode-line-light
+;;                     (remove 'smart-mode-line-dark custom-enabled-themes)))))
+;; (advice-add 'load-theme :before #'load-theme--disable-old-theme-a)
 
 ;;######################################################################
-;;;; MODELINE:
+;;;* MODELINE:
 ;;######################################################################
 
 ;; (use-package telephone-line
@@ -1401,20 +1446,20 @@
 
 
 ;;######################################################################
-;;;; MINIBUFFER
+;;;* MINIBUFFER
 ;;######################################################################
 
 ;; Enable recursive minibuffer edits
 (setq enable-recursive-minibuffers 1)
 
 ;;######################################################################
-;;;; EVIL-MODE
+;;;* EVIL-MODE
 ;;######################################################################
 (require 'setup-evil)
 
 ;; Local Variables:
-;; outline-regexp: ";;;; "
-;; page-delimiter: ";;;; "
+;; outline-regexp: ";;;\\*+"
+;; page-delimiter: ";;;\\**"
 ;; eval:(outline-minor-mode 1)
 ;; eval:(outline-hide-sublevels 5)
 ;; End:

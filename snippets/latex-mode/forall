@@ -1,0 +1,5 @@
+# key: VV
+# name: forall
+# condition: (and (texmathp) (quote auto))
+# --
+\\forall$0

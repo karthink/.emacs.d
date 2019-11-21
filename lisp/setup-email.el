@@ -1,4 +1,5 @@
 ;; -*- lexical-binding: t -*-
+(require 'use-package nil t)
 ;; Outgoing email
 (setq mail-host-address "gmail.com"
       send-mail-function 'sendmail-send-it

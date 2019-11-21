@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: dots
+# key: ...
+# condition: (and (texmathp) 'auto)
+# --
+\\dots$0

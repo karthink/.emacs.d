@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: column vector
+# key: cvec
+# condition: (and (texmathp) 'auto)
+# --
+\\begin{pmatrix} ${1:x}_{${2:1}}\\\\ \\vdots\\\\ $1_{${3:n}} \\end{pmatrix}

@@ -1,5 +1,6 @@
 ;;;; Org mode
 
+(require 'use-package nil t)
 ;; The following lines are always needed.
 ;; (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
 ;; (global-set-key "\C-cl" 'org-store-link)
@@ -86,6 +87,12 @@ See `org-capture-templates' for more information."
                  (function org-hugo-new-subtree-post-capture-template)))))
 
 ;;----------------------------------------------------------------------
+;; OL-NOTMUCH
+;;----------------------------------------------------------------------
+(with-eval-after-load 'notmuch
+  (require 'ol-notmuch nil t))
+
+;;----------------------------------------------------------------------
 ;; ORG-GCAL
 ;;----------------------------------------------------------------------
 (use-package org-gcal
@@ -103,11 +110,24 @@ See `org-capture-templates' for more information."
 ;;----------------------------------------------------------------------
 ;; ORG-REVEAL
 ;;----------------------------------------------------------------------
-(use-package ox-reveal
+(use-package org-re-reveal
   :ensure t
+  :commands (org-re-reveal-export-to-html
+             org-re-reveal-export-to-html-and-browse)
   :init
-  (setq org-reveal-root "file:///home/karthik/.local/share/git/reveal.js")
-  (setq org-reveal-hlevel 2))
+  (setq org-re-reveal-root "file:///home/karthik/.local/share/git/reveal.js"
+        org-re-reveal-subtree-with-title-slide t)
+  (add-to-list 'org-structure-template-alist '("R" "#+REVEAL_HTML: ?\n"))
+  (use-package org-re-reveal-ref
+    :ensure t
+    :init (setq org-ref-default-bibliography '("~/Documents/research/control_systems.bib")))
+  )
+
+;; (use-package ox-reveal
+;;   ;; :ensure t
+;;   :init
+;;   (setq org-reveal-root "file:///home/karthik/.local/share/git/reveal.js")
+;;   (setq org-reveal-hlevel 2))
 
 ;; Some formatting
 ;; (setq org-blank-before-new-entry

@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: floor function
+# key: floor
+# condition: (and (texmathp) 'auto)
+# --
+\\left\\lfloor $1 \\right\\rfloor $0

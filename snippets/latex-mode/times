@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: times
+# key: xx
+# condition: (and (texmathp) 'auto)
+# --
+\\times$0

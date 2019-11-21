@@ -1,0 +1,8 @@
+# -*- mode: snippet -*-
+# name: cases
+# key: case
+# condition: (and (texmathp) 'auto)
+# --
+\\begin{cases}
+  $1
+\\end{cases}$0

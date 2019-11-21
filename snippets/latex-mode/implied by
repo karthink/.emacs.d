@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: implied by
+# key: <=
+# condition: (and (texmathp) 'auto)
+# --
+\\impliedby $0

@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: ^2
+# key: sr
+# condition: (and (texmathp) 'auto)
+# --
+`(delete-backward-char 1)`^2$0

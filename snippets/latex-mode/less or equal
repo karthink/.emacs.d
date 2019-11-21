@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: less or equal
+# key: leq
+# condition: (and (texmathp) 'auto)
+# --
+\\le$0

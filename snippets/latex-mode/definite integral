@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: definite integral
+# key: dint
+# condition: (and (texmathp) 'auto)
+# --
+\\int_{${1:-\\infty}}^{${2:\\infty}} $0

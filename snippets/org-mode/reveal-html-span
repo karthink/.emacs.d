@@ -1,0 +1,6 @@
+# key: <spa
+# name: reveal-html-span
+# --
+#+REVEAL_HTML: <span class="${1:fragment}" style="${2:font-size:50%}">
+$0
+#+REVEAL_HTML: </span>

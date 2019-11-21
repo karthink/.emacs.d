@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: inverse
+# key: inv
+# condition: (and (texmathp) 'auto)
+# --
+`(delete-backward-char 1)`^{-1}$0

@@ -1,0 +1,7 @@
+# key: dm
+# name: Display Math
+# condition: (and (not (texmathp)) (quote auto))
+# --
+\[
+$1
+.\] $0

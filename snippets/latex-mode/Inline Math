@@ -1,0 +1,5 @@
+# key: mk
+# name: Inline Math
+# condition: (and (not (texmathp)) (quote auto))
+# --
+`(progn "$")`$1`(progn "$")`$0

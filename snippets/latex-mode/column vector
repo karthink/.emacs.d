@@ -2,5 +2,6 @@
 # name: column vector
 # key: cvec
 # condition: (and (texmathp) 'auto)
+# group: math
 # --
 \\begin{pmatrix} ${1:x}_{${2:1}}\\\\ \\vdots\\\\ $1_{${3:n}} \\end{pmatrix}

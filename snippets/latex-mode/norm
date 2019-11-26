@@ -2,5 +2,6 @@
 # name: norm
 # key: norm
 # condition: (and (texmathp) 'auto)
+# group: math
 # --
 \|$1\|$0

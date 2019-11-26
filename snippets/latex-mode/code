@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: code
+# key: code
+# --
+\begin{lstlisting}${1:[language=${2:Matlab}]}
+$0
+\end{lstlisting}

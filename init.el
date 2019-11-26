@@ -36,106 +36,19 @@
 ;;########################################################################
 ;;;* PERSONAL INFO
 ;;########################################################################
-(require 'personal)
-(setq user-full-name my-full-name)
-(setq user-mail-address my-email-address)
-(defun encrypt-personal-data ()
-  "Automatically encrypt personal.el to personal.el.gpg when it is saved"
-  (interactive)
-  (if (equal buffer-file-name (concat (expand-file-name user-emacs-directory) "lisp/personal.el"))
-      (epa-encrypt-file buffer-file-name my-email-address)))
+(and (require 'personal nil t)
+     (setq user-full-name my-full-name)
+     (setq user-mail-address my-email-address)
+     (defun encrypt-personal-data ()
+       "Automatically encrypt personal.el to personal.el.gpg when it is saved"
+       (interactive)
+       (if (equal buffer-file-name (concat (expand-file-name user-emacs-directory) "lisp/personal.el"))
+           (epa-encrypt-file buffer-file-name my-email-address))))
 
 ;;########################################################################
 ;;;* UI FIXES
 ;;########################################################################
-
-;; Get rid of the splash screen
-;; Make *scratch* buffer suitable for writing
-(setq inhibit-startup-message t
-      inhibit-splash-screen t
-      inhibit-startup-echo-area-message user-login-name
-      inhibit-default-init t
-      initial-major-mode 'fundamental-mode
-      initial-scratch-message nil)
-(fset #'display-startup-echo-area-message #'ignore)
-
-;; Stop cursor from blinking
-(blink-cursor-mode 0)
-;; No fat cursors
-(setq x-stretch-cursor nil)
-
-;; Turn off the menu, tool bars, tooltips and the scroll bar
-(menu-bar-mode 0)
-(tool-bar-mode 0)
-(tooltip-mode 0)
-(scroll-bar-mode 0)
-;; Turn on image viewing
-(auto-image-file-mode t)
-
-;; Show me what I type, immediately
-(setq echo-keystrokes 0.01)
-
-;; Middle-click paste at point, not at cursor
-(setq mouse-yank-at-point t)
-;; Mouse available in terminal
-(add-hook 'tty-setup-hook #'xterm-mouse-mode)
-
-;; Scrolling
-(setq scroll-margin 0
-      scroll-preserve-screen-position t)
-;; mouse
-;; (setq mouse-wheel-scroll-amount '(t ((shift) . 2))
-;;       mouse-wheel-progressive-speed t)
-
-;; (setq-hook! '(eshell-mode-hook term-mode-hook) hscroll-margin 0)
-
-  ;;; Fringes
-;; Reduce the clutter in the fringes; we'd like to reserve that space for more
-;; useful information, like git-gutter and flycheck.
-(setq indicate-buffer-boundaries nil
-      indicate-empty-lines nil)
-
-;; remove continuation arrow on right fringe
-;; (delq! 'continuation fringe-indicator-alist 'assq)
-
-;; Don't resize emacs in steps.
-(setq window-resize-pixelwise t
-      frame-resize-pixelwise t)
-
-;; The native border "consumes" a pixel of the fringe on righter-most splits,
-;; `window-divider' does not. Available since Emacs 25.1.
-(setq window-divider-default-places t
-      window-divider-default-bottom-width 1
-      window-divider-default-right-width 1)
-(add-hook 'after-init-hook #'window-divider-mode)
-
-;; No popup dialogs
-(setq use-dialog-box nil)
-(if (bound-and-true-p tooltip-mode) (tooltip-mode -1))
-;; native linux tooltips are ugly
-(when IS-LINUX
-  (setq x-gtk-use-system-tooltips nil))
-
-;; WINDOW SPLITTING
-;; Set horizontal splits as the default
-;; (setq split-width-threshold 120
-;;       split-height-threshold 80)
-;; Favor vertical splits over horizontal ones
-(setq split-width-threshold 170
-      split-height-threshold 80)
-
-;; ;;;###package pos-tip
-;; (setq pos-tip-internal-border-width 6
-;;       pos-tip-border-width 1)
-;; ;; Better fontification of number literals in code
-
-;; (use-package! highlight-numbers
-;;   :hook ((prog-mode conf-mode) . highlight-numbers-mode)
-;;   :config (setq highlight-numbers-generic-regexp "\\_<[[:digit:]]+\\(?:\\.[0-9]*\\)?\\_>"))
-
-;; ;;;###package hide-mode-line-mode
-;; (add-hook! '(completion-list-mode-hook Man-mode-hook)
-;;            #'hide-mode-line-mode)
+(require 'setup-ui)
 
 ;;########################################################################
 ;;;* SAVE AND BACKUP
@@ -160,10 +73,6 @@
 ;;;* MISCELLANEOUS PREFERENCES
 ;;######################################################################
 
-;; Prevent Emacs from bugging me about C-x n n not being
-;; user-friendly.
-(put 'narrow-to-region 'disabled nil)
-
 ;; For lazy typists
 (fset 'yes-or-no-p 'y-or-n-p)
 ;; Move the mouse away if the cursor gets close
@@ -172,66 +81,15 @@
 ;; highlight the current line, as in Matlab
 ;; (global-hl-line-mode)
 
-;; (use-package! hl-line
-;;   ;; Highlights the current line
-;;   :hook ((prog-mode text-mode conf-mode) . hl-line-mode)
-;;   :config
-;;   ;; Not having to render the hl-line overlay in multiple buffers offers a tiny
-;;   ;; performance boost. I also don't need to see it in other buffers.
-;;   (setq hl-line-sticky-flag nil
-;;         global-hl-line-sticky-flag nil)
-
-;;   ;; Disable `hl-line' in evil-visual mode (temporarily). `hl-line' can make the
-;;   ;; selection region harder to see while in evil visual mode.
-;;   (after! evil
-;;     (defvar doom-buffer-hl-line-mode nil)
-;;     (add-hook! 'evil-visual-state-entry-hook
-;;       (defun doom-disable-hl-line-h ()
-;;         (when hl-line-mode
-;;           (setq-local doom-buffer-hl-line-mode t)
-;;           (hl-line-mode -1))))
-;;     (add-hook! 'evil-visual-state-exit-hook
-;;       (defun doom-enable-hl-line-maybe-h ()
-;;         (when doom-buffer-hl-line-mode
-;;           (hl-line-mode +1))))))
-
-
-;; ;;;###package whitespace
-;; (setq whitespace-line-column nil
-;;       whitespace-style
-;;       '(face indentation tabs tab-mark spaces space-mark newline newline-mark
-;;         trailing lines-tail)
-;;       whitespace-display-mappings
-;;       '((tab-mark ?\t [?› ?\t])
-;;         (newline-mark ?\n [?¬ ?\n])
-;;         (space-mark ?\  [?·] [?.])))
-;; (after! whitespace
-;;   (defun doom-disable-whitespace-mode-in-childframes-a (orig-fn)
-;;     "`whitespace-mode' inundates child frames with whitspace markers, so disable
-;; it to fix all that visual noise."
-;;     (unless (frame-parameter nil 'parent-frame)
-;;       (funcall orig-fn)))
-;;   (add-function :around whitespace-enable-predicate #'doom-disable-whitespace-mode-in-childframes-a))
-
 ;; when you mark a region, you can delete it or replace it as in other
-;; Windows programs. simply hit delete or type whatever you want or
-;; yank
+;; programs. simply hit delete or type whatever you want or yank
 (delete-selection-mode)
 
-                                        ; show the matching parentheses immediately
-(setq show-paren-delay 0.1
+; show the matching parentheses immediately
+(setq show-paren-delay 0.1 
       show-paren-highlight-openparen t
       show-paren-when-point-inside-paren t)
 (show-paren-mode 1)
-
-;; (use-package! paren
-;;   ;; highlight matching delimiters
-;;   :after-call after-find-file doom-switch-buffer-hook
-;;   :config
-;;   (setq show-paren-delay 0.1
-;;         show-paren-highlight-openparen t
-;;         show-paren-when-point-inside-paren t)
-;;   (show-paren-mode +1))
 
 ;; Underline looks a bit better when drawn lower
 (setq x-underline-at-descent-line t)
@@ -250,6 +108,19 @@
 (add-hook 'after-save-hook 'auto-byte-recompile)
 (add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p)
 (global-prettify-symbols-mode 1)
+
+;;--------------------------
+;;;** MINIBUFFER PREFERENCES
+;;--------------------------
+;; Enable recursive minibuffer edits
+(setq enable-recursive-minibuffers 1)
+
+;;--------------------------
+;;;** MACROS
+;;--------------------------
+;; Bind call last macro to F4
+(global-set-key (kbd "<f3>") 'kmacro-start-macro)
+(global-set-key (kbd "<f4>") 'kmacro-end-or-call-macro)
 
 ;;######################################################################
 ;;;* PACKAGE MANAGEMENT
@@ -305,17 +176,6 @@
   ;;;###package ansi-color
 (setq ansi-color-for-comint-mode t)
 
-;; Get rid of the annoying system beep
-;; (setq visible-bell t)
-(setq ring-bell-function 'ignore)
-;; (setq ring-bell-function
-;;       (lambda ()
-;;         (let ((orig-fg (face-foreground 'mode-line)))
-;;           (set-face-foreground 'mode-line "#F2804F")
-;;           (run-with-idle-timer 0.1 nil
-;;                                (lambda (fg) (set-face-foreground 'mode-line fg))
-;;                                orig-fg))))
-
 ;; Key to run current line as bash command
 (global-set-key (kbd "C-!") 'shell-command-at-line)
 
@@ -329,21 +189,6 @@
           (t (newline-and-indent)))
     (shell-command command t nil)
     (exchange-point-and-mark)))
-
-(defun describe-word-at-point (&optional prefix)
-  "Briefly describe word at point. With PREFIX argument, show
-  verbose descriptions with hyperlinks."
-  (interactive "P")
-  (let ( (word (thing-at-point 'word)) )
-    (shell-command (concat "dict " word (cond ((null prefix) nil)
-                                              (t " -v"))))))
-
-(defun describe-word (word &optional prefix)
-  "Briefly describe WORD entered by user. With PREFIX argument,
-  show verbose descriptions with hyperlinks."
-  (interactive "sDescribe word: \nP")
-  (shell-command (concat "dict " word (cond ((null prefix) nil)
-                                            (t " -v")))))
 
 ;;----------------------------------------------------------------------
 ;;;** ESHELL PREFERENCES
@@ -382,17 +227,6 @@
 ;;;* EDITING
 ;;######################################################################
 (require 'better-editing nil t)
-(save-place-mode 1)
-(set-fill-column 80)
-(setq vc-follow-symlinks t)
-;; (use-package visual-fill-column-mode
-;;   ;; :ensure t
-;;   ;; :hook (visual-line-mode . visual-fill-column-mode)
-;;   :config
-;;   (setq split-window-preferred-function #'visual-fill-column-mode-split-window-sensibly)
-;;   (advice-add 'text-scale-adjust :after #'visual-fill-column-adjust)
-;;   ;; :init (setq visual-line-fringe-indicators '(left-curly-arrow right-curly-arrow))
-;;   )
 
 ;;######################################################################
 ;;;* BUFFER AND WINDOW MANAGEMENT
@@ -412,11 +246,6 @@
   ;; :bind ("C-c <left>" . winner-undo)
   :config
   (winner-mode +1))
-;; (use-package! winner
-;;   ;; undo/redo changes to Emacs' window layout
-;;   :after-call after-find-file doom-switch-window-hook
-;;   :preface (defvar winner-dont-bind-my-keys t)
-;;   :config (winner-mode +1)) ; I'll bind keys myself
 
 (use-package ace-window
   :ensure t
@@ -473,6 +302,20 @@
 
 (global-set-key (kbd "C-x C-S-f") 'sudo-find-file)
 
+(defun describe-word (word &optional prefix)
+  "Briefly describe WORD entered by user. With PREFIX argument,
+  show verbose descriptions with hyperlinks."
+  (interactive "sDescribe word: \nP")
+  (shell-command (concat "dict " word (cond ((null prefix) nil)
+                                            (t " -v")))))
+
+(defun describe-word-at-point (&optional prefix)
+  "Briefly describe word at point. With PREFIX argument, show
+  verbose descriptions with hyperlinks."
+  (interactive "P")
+  (let ( (word (thing-at-point 'word)) )
+    (shell-command (concat "dict " word (cond ((null prefix) nil)
+                                              (t " -v"))))))
 ;;######################################################################
 ;;;* COMPILATION
 ;;######################################################################
@@ -715,32 +558,32 @@
 ;;;** PYTHON-MODE
 ;;----------------------------------------------------------------------
 
-;; (add-hook
-;;  'python-mode-hook
-;;  (lambda ()
-;;    (mapc (lambda (pair) (push pair prettify-symbols-alist))
-;;          '(;; Syntax
-;;            ("def" .      #x2131)
-;;            ("not" .      #x2757)
-;;            ("in" .       #x2208)
-;;            ("not in" .   #x2209)
-;;            ("return" .   #x27fc)
-;;            ("yield" .    #x27fb)
-;;            ("for" .      #x2200)
-;;            ;; Base Types
-;;            ("int" .      #x2124)
-;;            ("float" .    #x211d)
-;;            ("str" .      #x1d54a)
-;;            ("True" .     #x1d54b)
-;;            ("False" .    #x1d53d)
-;;            ;; Mypy
-;;            ("Dict" .     #x1d507)
-;;            ("List" .     #x2112)
-;;            ("Tuple" .    #x2a02)
-;;            ("Set" .      #x2126)
-;;            ("Iterable" . #x1d50a)
-;;            ("Any" .      #x2754)
-;;            ("Union" .    #x22c3)))))
+(add-hook
+ 'python-mode-hook
+ (lambda ()
+   (mapc (lambda (pair) (push pair prettify-symbols-alist))
+         '(;; Syntax
+           ("def" .      #x2131)
+           ("not" .      #x2757)
+           ("in" .       #x2208)
+           ("not in" .   #x2209)
+           ("return" .   #x27fc)
+           ("yield" .    #x27fb)
+           ("for" .      #x2200)
+           ;; Base Types
+           ("int" .      #x2124)
+           ("float" .    #x211d)
+           ("str" .      #x1d54a)
+           ("True" .     #x1d54b)
+           ("False" .    #x1d53d)
+           ;; Mypy
+           ("Dict" .     #x1d507)
+           ("List" .     #x2112)
+           ("Tuple" .    #x2a02)
+           ("Set" .      #x2126)
+           ("Iterable" . #x1d50a)
+           ("Any" .      #x2754)
+           ("Union" .    #x22c3)))))
 
 ;;######################################################################
 ;;;* PLUGINS
@@ -791,7 +634,6 @@
         (setq frame-title-format
               '(:eval (my-title-bar-format)))))
 
-
   )
 ;; (define-key ivy-minibuffer-map (kbd "C-M-w") 'ivy-yank-word)
 ;;----------------------------------------------------------------------
@@ -805,7 +647,7 @@
 
 (use-package yasnippet
   :ensure t
-  :init (add-hook 'prog-mode-hook #'yas-minor-mode)
+  :hook ((prog-mode LaTeX-mode) . yas-minor-mode)
   :config
   ;; Redefine yas expand key from TAB because company-mode uses TAB.
   (defun my-yas-try-expanding-auto-snippets ()
@@ -829,10 +671,11 @@
   (setq yas-wrap-around-region t)
   ;; (use-package yasnippet-snippets
   ;;   :ensure t)
-  (yas-reload-all))
+  ;; (yas-reload-all)
+  )
 
 ;;----------------------------------------------------------------------
-;;;** HIDESHOW is built in (DISABLED)
+;;;** HIDESHOW (built in (DISABLED))
 ;;----------------------------------------------------------------------
 ;; (use-package hideshow ; built-in
 ;;   :commands (hs-toggle-hiding
@@ -944,9 +787,17 @@
 ;;;** VERSION CONTROL
 ;;----------------------------------------------------------------------
 (use-package magit
-  ;; :defer 4
-  :commands magit-status
-  :ensure t)
+  :defer t
+  ;; :commands magit-status
+  :ensure t
+  :bind ("C-x g" . magit-status)
+  :config
+  (define-key magit-mode-map (kbd "C-TAB") nil)
+  (define-key magit-mode-map (kbd "C-<tab>") nil)
+  ;; (dolist (keymap (list magit-diff-mode-map magit-log-mode-map))
+  ;;   (define-key keymap (kbd "C-TAB") nil)
+  ;;   (define-key keymap (kbd "C-<tab>") nil))
+  )
 
 ;;----------------------------------------------------------------------
 ;;;** WHICH-KEY
@@ -989,9 +840,9 @@
 ;;----------------------------------------------------------------------
 ;;;** ABBREV MODE
 ;;----------------------------------------------------------------------
-(setq save-abbrevs t)
-(if (file-exists-p abbrev-file-name)
-    (quietly-read-abbrev-file))
+;; (setq save-abbrevs t)
+;; (if (file-exists-p abbrev-file-name)
+;;     (quietly-read-abbrev-file))
 
 ;;----------------------------------------------------------------------
 ;;;** COMPANY-MODE
@@ -1016,8 +867,9 @@
         company-dabbrev-downcase nil
         company-dabbrev-code-other-buffers t
         company-dabbrev-ignore-case nil
-        ;; company-transformers '(company-sort-by-occurrence)
-        company-transformers '(company-sort-by-statistics)
+        company-transformers '(company-sort-by-occurrence)
+        ;; company-transformers '(company-sort-by-backend-importance)
+        ;; company-transformers '(company-sort-by-statistics)
         company-global-modes '(latex-mode
                                matlab-mode
                                emacs-lisp-mode
@@ -1040,16 +892,17 @@
         )
   
   (add-hook 'matlab-mode-hook (lambda ()
-                                (unless (featurep 'company-matlab)
-                                  (require 'company-matlab))
+                                ;; (unless (featurep 'company-matlab)
+                                ;;   (require 'company-matlab))
                                 (make-local-variable 'company-backends)
-                                (add-to-list 'company-backends
-                                             'company-matlab
-                                             ;; '(company-dabbrev-code company-semantic)
-                                             )))
+                                ;; (add-to-list 'company-backends
+                                ;;              ;; 'company-matlab
+                                ;;              'company-semantic
+                                ;;              )
+                                ))
   (add-hook 'matlab-shell-mode-hook (lambda ()
                                 (make-local-variable 'company-backends)
-                                (setq-local company-idle-delay nil)
+                                (setq-local company-idle-delay 0.3)
                                 (add-to-list 'company-backends 'company-matlab-shell)))
 
   (add-hook 'LaTeX-mode-hook (lambda ()
@@ -1071,28 +924,28 @@
   (define-key company-active-map (kbd "C-w") nil)
   (define-key company-active-map (kbd "C-]") 'company-show-location)
 
-  (defun my-try-expand-company (old)
-    (unless company-candidates
-      (company-auto-begin))
-    (if (not old)
-        (progn
-          (he-init-string (he-lisp-symbol-beg) (point))
-          (if (not (he-string-member he-search-string he-tried-table))
-              (setq he-tried-table (cons he-search-string he-tried-table)))
-          (setq he-expand-list
-                (and (not (equal he-search-string ""))
-                     company-candidates))))
-    (while (and he-expand-list
-                (he-string-member (car he-expand-list) he-tried-table))
-      (setq he-expand-list (cdr he-expand-list)))
-    (if (null he-expand-list)
-        (progn
-          (if old (he-reset-string))
-          ())
-      (progn
-        (he-substitute-string (car he-expand-list))
-        (setq he-expand-list (cdr he-expand-list))
-        t)))
+  ;; (defun my-try-expand-company (old)
+  ;;   (unless company-candidates
+  ;;     (company-auto-begin))
+  ;;   (if (not old)
+  ;;       (progn
+  ;;         (he-init-string (he-lisp-symbol-beg) (point))
+  ;;         (if (not (he-string-member he-search-string he-tried-table))
+  ;;             (setq he-tried-table (cons he-search-string he-tried-table)))
+  ;;         (setq he-expand-list
+  ;;               (and (not (equal he-search-string ""))
+  ;;                    company-candidates))))
+  ;;   (while (and he-expand-list
+  ;;               (he-string-member (car he-expand-list) he-tried-table))
+  ;;     (setq he-expand-list (cdr he-expand-list)))
+  ;;   (if (null he-expand-list)
+  ;;       (progn
+  ;;         (if old (he-reset-string))
+  ;;         ())
+  ;;     (progn
+  ;;       (he-substitute-string (car he-expand-list))
+  ;;       (setq he-expand-list (cdr he-expand-list))
+  ;;       t)))
   
   ;; AC-mode style settings
   (defun company-ac-setup ()
@@ -1135,13 +988,16 @@
   ;; (company-ac-setup)
   ;; (company-tng-setup)
   ;; (company-tng-configure-default)
+  )
+
   (use-package company-statistics
+    ;; :disabled t
     :ensure t
     :init
     (setq company-statistics-file (concat (expand-file-name
                                            (file-name-as-directory "~/.cache"))
                                           "company-statistics-cache.el"))
-    (add-hook 'after-init-hook #'company-statistics-mode)))
+    (add-hook 'after-init-hook 'company-statistics-mode))
 
 ;;----------------------------------------------------------------------
 ;;;** SMARTPARENS-MODE
@@ -1168,12 +1024,14 @@
   :bind ("C-," . 'er/expand-region))
 
 ;;----------------------------------------------------------------------
-;;;** ACE-JUMP-MODE
+;;;** AVY-MODE
 ;;----------------------------------------------------------------------
-(use-package ace-jump-mode
+(use-package avy
   :ensure t
-  :commands ace-jump-mode
-  :bind ("C-'" . 'ace-jump-mode))
+  :commands (avy-goto-word-1 avy-goto-char-2 avy-goto-char-timer)
+  :bind (("C-'" . 'avy-goto-word-1)
+         ("M-'" . 'avy-goto-char-2))
+  )
 
 ;;----------------------------------------------------------------------
 ;;;** IY-GO-TO-CHAR
@@ -1189,7 +1047,6 @@
 (use-package wrap-region
   :ensure t
   :init (wrap-region-mode 1))
-;; (require 'wrap-region nil t)
 ;; (add-hook 'text-mode-hook 'wrap-region-mode)
 
 ;;----------------------------------------------------------------------
@@ -1235,117 +1092,28 @@
 ;;----------------------------------------------------------------------
 ;;;** DIRED
 ;;----------------------------------------------------------------------
-;; Dired preferences
 (require 'setup-dired nil t)
-(use-package dired-sidebar
+
+(use-package projectile
+  :disabled t
   :ensure t
-  ;; :commands (dired-sidebar-toggle-sidebar)
-  :bind (("C-x C-d" . dired-sidebar-toggle-sidebar)
-         ("C-x D"   . list-directory))
-  :init
-  (add-hook 'dired-sidebar-mode-hook
-            (lambda ()
-              (unless (file-remote-p default-directory)
-                (auto-revert-mode))))
-  :config
-  (push 'toggle-window-split dired-sidebar-toggle-hidden-commands)
-  (push 'rotate-windows dired-sidebar-toggle-hidden-commands)
-
-  (setq dired-sidebar-subtree-line-prefix "__")
-  (setq dired-sidebar-theme 'ascii)
-  (setq dired-sidebar-use-term-integration t)
-  (setq dired-sidebar-use-custom-font t))
-
-(use-package ibuffer-sidebar
-  ;; :load-path "~/.emacs.d/fork/ibuffer-sidebar"
-  :ensure t
-  :commands (ibuffer-sidebar-toggle-sidebar)
-  :config
-  ;; (setq ibuffer-sidebar-use-custom-font t)
-  ;; (setq ibuffer-sidebar-face `(:family "Helvetica" :height 140))
-  (defun +sidebar-toggle ()
-    "Toggle both `dired-sidebar' and `ibuffer-sidebar'."
-    (interactive)
-    (dired-sidebar-toggle-sidebar)
-    (ibuffer-sidebar-toggle-sidebar)))
-
-;; (use-package projectile
-;;   :ensure t
-;;   :init (projectile-mode +1))
+  :init (projectile-mode +1))
 ;;----------------------------------------------------------------------
 ;;;** ORG-MODE
 ;;----------------------------------------------------------------------
-  ;;;; Org mode
-;; org-init.el is loaded from the "lisp" directory.
 (require 'setup-org nil t)
-(use-package org-bullets
-  :ensure t
-  :hook (org-mode . org-bullets-mode))
-
-;;----------------------------------------------------------------------
-;;;** MACROS
-;;----------------------------------------------------------------------
-;; Bind call last macro to F4
-(global-set-key (kbd "<f3>") 'kmacro-start-macro)
-(global-set-key (kbd "<f4>") 'kmacro-end-or-call-macro)
 
 ;;######################################################################
 ;;;* COLORS & COLOR THEMES
 ;;######################################################################
 
-;; Load theme after the frame is created.
-;; (add-hook 'after-make-frame-functions ;'after-init-hook
-;;           (lambda (frame)
-;;             (mapc #'disable-theme custom-enabled-themes)
-;;             (and (display-graphic-p)
-;;                  (progn
-;;                    (if (or (< (nth 2 (decode-time (current-time))) 7)
-;;                                 (> (nth 2 (decode-time (current-time))) 18))
-;;                             (progn (load-theme 'dracula t)
-;;                                    ;; (load-theme 'smart-mode-line-dark)
-;;                                    )
-;;                           (progn (load-theme 'dracula t)
-;;                                  ;; (load-theme 'smart-mode-line-dark)
-;;                                  ))))
-;;             ))
-
 (load-theme 'dracula t)
-
-;; Other themes
-;; (list 'tsdh-light
-;;       'ample-flat-theme 'ample-light-theme 'ample-theme
-;;       'tao 'tao-yin 'tao-yang
-;;       'gruvbox-dark-hard 'gruvbox-light-hard
-;;       'spacemacs-light-theme 'spacemacs-dark-theme)
-
-;; Tao:
-;; (defun tao-palette () (tao-theme-golden-grayscale-yin-palette))
-;; (tao-with-color-variables tao-palette
-;;   (progn
-;;     (setq
-;;       hl-paren-colors (list color-14 color-11 color-9 color-7 color-6)
-;;       hl-paren-background-colors (list color-4 color-4 color-4 color-4 color-4))))
-
-;; before loading new theme
-;; (defun load-theme--disable-old-theme-a(theme &rest args)
-;;   "Disable current theme before loading new one."
-;;   (unless (member theme '(smart-mode-line-dark smart-mode-line-light))
-;;     (mapcar #'disable-theme
-;;             (remove 'smart-mode-line-light
-;;                     (remove 'smart-mode-line-dark custom-enabled-themes)))))
-;; (advice-add 'load-theme :before #'load-theme--disable-old-theme-a)
 
 ;;######################################################################
 ;;;* MODELINE:
 ;;######################################################################
 
-;; (use-package telephone-line
-;;   :ensure t
-;;   :init
-;;   (telephone-line-mode 1))
-
 (use-package smart-mode-line
-  ;; :after evil
   :ensure t
   :init (sml/setup)
   :defines sml/fix-mode-line-a
@@ -1359,6 +1127,7 @@
 
   (advice-add 'disable-theme :after #'sml/fix-mode-line-a)
   (advice-add 'load-theme :after #'sml/fix-mode-line-a)
+
   ;; (custom-set-faces
   ;;  '(mode-line ((t (:box (:line-width 4 :color ))))))
 
@@ -1375,10 +1144,6 @@
   ;;                         (set-face-foreground 'mode-line (cdr color)))))))
   ;;   )
   )
-
-;; (use-package doom-modeline
-;;   :ensure t
-;;   :hook (after-init . doom-modeline-mode))
 
 ;; Disable help mouse-overs for mode-line segments (i.e. :help-echo text).
 ;; They're generally unhelpful and only add confusing visual clutter.
@@ -1425,7 +1190,6 @@
   ; ;; must pass the correct minor/major mode symbol and a string you
   ; ;; want to use in the modeline *in lieu of* the original.")
 
-
 (defun clean-mode-line ()
   (interactive)
   (cl-loop for cleaner in mode-line-cleaner-alist
@@ -1442,15 +1206,6 @@
 (add-hook 'after-change-major-mode-hook 'clean-mode-line)
 
 ;; (display-time-mode 0)
-
-
-
-;;######################################################################
-;;;* MINIBUFFER
-;;######################################################################
-
-;; Enable recursive minibuffer edits
-(setq enable-recursive-minibuffers 1)
 
 ;;######################################################################
 ;;;* EVIL-MODE

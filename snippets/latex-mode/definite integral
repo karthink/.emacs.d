@@ -2,5 +2,6 @@
 # name: definite integral
 # key: dint
 # condition: (and (texmathp) 'auto)
+# group: math
 # --
 \\int_{${1:-\\infty}}^{${2:\\infty}} $0

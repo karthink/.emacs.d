@@ -2,5 +2,6 @@
 # name: To the power
 # key: td
 # condition: (and (texmathp) 'auto)
+# group: math
 # --
 `(backward-delete-char 1)`^{$1}$0

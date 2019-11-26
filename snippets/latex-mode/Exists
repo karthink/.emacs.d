@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: Exists
+# key: EE
+# condition: (and (texmathp) 'auto)
+# group: math
+# --
+\\exists

@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: cos
+# key: cos
+# group: math
+# condition: (and (texmathp) 'auto)
+# --
+\\cos

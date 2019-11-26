@@ -2,5 +2,6 @@
 # name: floor function
 # key: floor
 # condition: (and (texmathp) 'auto)
+# group: math
 # --
 \\left\\lfloor $1 \\right\\rfloor $0

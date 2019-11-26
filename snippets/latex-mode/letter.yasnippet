@@ -1,0 +1,27 @@
+# -*- mode: snippet -*-
+# contributor: Mads D. Kristensen <madsdk@gmail.com>
+# contributor : Song Qiang <tsiangsung@gmail.com>
+# key: letter
+# group: skeleton
+# name: \documentclass{letter} ...
+# --
+\documentclass{letter}
+\signature{${1:Foo Bar}}
+\address{${2:Address line 1 \\\\ 
+Address line 2 \\\\
+Address line 3}}
+\begin{document}
+ 
+\begin{letter}
+{${3:Recipient's address}}
+
+\opening{Dear ${4:Sir}:}
+
+$0
+ 
+\closing{Yours Sincerely,}
+ 
+\end{letter}
+ 
+\end{document}
+

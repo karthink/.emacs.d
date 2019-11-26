@@ -4,13 +4,31 @@
 
 ;; (flyspell-mode)
 
+(save-place-mode 1)
+(set-fill-column 80)
+(setq vc-follow-symlinks t)
+
+;; (and (require 'use-package nil t)
+;;      (use-package visual-fill-column-mode
+;;        ;; :ensure t
+;;        ;; :hook (visual-line-mode . visual-fill-column-mode)
+;;        :config
+;;        (setq split-window-preferred-function #'visual-fill-column-mode-split-window-sensibly)
+;;        (advice-add 'text-scale-adjust :after #'visual-fill-column-adjust)
+;;        ;; :init (setq visual-line-fringe-indicators '(left-curly-arrow right-curly-arrow))
+;;        ))
+
 ;; Collection of bindings and functions to make editing less painful on Emacs
 
 ;; /Enable/DISABLE cua-selection mode, for awesome rectangle selects
 ;; (Set cua-selection-mode for rectangle editing)
 ;; (cua-selection-mode 1)
 (transient-mark-mode t)
-(delete-selection-mode 0)
+;; (delete-selection-mode 0)
+
+;; Prevent Emacs from bugging me about C-x n n not being
+;; user-friendly.
+(put 'narrow-to-region 'disabled nil)
 
 ;; Change case with impunity 
 (put 'downcase-region 'disabled nil)
@@ -29,7 +47,7 @@
 (setq sentence-end-double-space nil)
 
 ;; Turn on show-paren-mode. Highlights matching parentheses
-(show-paren-mode 1)
+;; (show-paren-mode 1)
 
 ;;; Prevent Extraneous Tabs
 (setq-default indent-tabs-mode nil)

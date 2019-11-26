@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: arccsc
+# key: arccsc
+# group: math
+# condition: (and (texmathp) 'auto)
+# --
+\\arccsc

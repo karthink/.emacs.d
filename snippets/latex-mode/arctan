@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: arctan
+# key: arctan
+# group: math
+# condition: (and (texmathp) 'auto)
+# --
+\\arctan

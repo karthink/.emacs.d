@@ -1,0 +1,28 @@
+# -*- mode: snippet -*-
+# contributor: Mads D. Kristensen <madsdk@gmail.com>
+# contributor : Song Qiang <tsiangsung@gmail.com>
+# key: article
+# group: skeleton
+# name: \documentclass{article} ...
+# --
+\documentclass[11pt]{article}
+
+\usepackage{graphicx,amsmath,amssymb,subfigure,url,xspace}
+\newcommand{\eg}{e.g.,\xspace}
+\newcommand{\bigeg}{E.g.,\xspace}
+\newcommand{\etal}{\textit{et~al.\xspace}}
+\newcommand{\etc}{etc.\@\xspace}
+\newcommand{\ie}{i.e.,\xspace}
+\newcommand{\bigie}{I.e.,\xspace}
+
+\title{${1:title}}
+\author{${2:Author Name}}
+
+\begin{document}
+\maketitle
+
+
+\bibliographystyle{${3:plain}}
+\bibliography{${4:literature.bib}}
+
+\end{document}

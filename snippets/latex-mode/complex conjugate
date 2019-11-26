@@ -2,5 +2,6 @@
 # name: complex conjugate
 # key: conj
 # condition: (and (texmathp) 'auto)
+# group: math
 # --
 `(delete-backward-char 1)`^{\\star}$0

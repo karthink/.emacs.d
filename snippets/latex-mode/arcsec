@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: arcsec
+# key: arcsec
+# group: math
+# condition: (and (texmathp) 'auto)
+# --
+\\arcsec

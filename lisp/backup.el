@@ -370,3 +370,190 @@
 ;;                (remember)
 ;;                (setq remember-data-file "~/doodles/notes.txt"))
 
+
+;;######################################################################
+;;;* MISCELLANEOUS PREFERENCES
+;;######################################################################
+
+;; (use-package! hl-line
+;;   ;; Highlights the current line
+;;   :hook ((prog-mode text-mode conf-mode) . hl-line-mode)
+;;   :config
+;;   ;; Not having to render the hl-line overlay in multiple buffers offers a tiny
+;;   ;; performance boost. I also don't need to see it in other buffers.
+;;   (setq hl-line-sticky-flag nil
+;;         global-hl-line-sticky-flag nil)
+
+;;   ;; Disable `hl-line' in evil-visual mode (temporarily). `hl-line' can make the
+;;   ;; selection region harder to see while in evil visual mode.
+;;   (after! evil
+;;     (defvar doom-buffer-hl-line-mode nil)
+;;     (add-hook! 'evil-visual-state-entry-hook
+;;       (defun doom-disable-hl-line-h ()
+;;         (when hl-line-mode
+;;           (setq-local doom-buffer-hl-line-mode t)
+;;           (hl-line-mode -1))))
+;;     (add-hook! 'evil-visual-state-exit-hook
+;;       (defun doom-enable-hl-line-maybe-h ()
+;;         (when doom-buffer-hl-line-mode
+;;           (hl-line-mode +1))))))
+
+
+;; ;;;###package whitespace
+;; (setq whitespace-line-column nil
+;;       whitespace-style
+;;       '(face indentation tabs tab-mark spaces space-mark newline newline-mark
+;;         trailing lines-tail)
+;;       whitespace-display-mappings
+;;       '((tab-mark ?\t [?› ?\t])
+;;         (newline-mark ?\n [?¬ ?\n])
+;;         (space-mark ?\  [?·] [?.])))
+;; (after! whitespace
+;;   (defun doom-disable-whitespace-mode-in-childframes-a (orig-fn)
+;;     "`whitespace-mode' inundates child frames with whitspace markers, so disable
+;; it to fix all that visual noise."
+;;     (unless (frame-parameter nil 'parent-frame)
+;;       (funcall orig-fn)))
+;;   (add-function :around whitespace-enable-predicate #'doom-disable-whitespace-mode-in-childframes-a))
+
+;; (use-package! paren
+;;   ;; highlight matching delimiters
+;;   :after-call after-find-file doom-switch-buffer-hook
+;;   :config
+;;   (setq show-paren-delay 0.1
+;;         show-paren-highlight-openparen t
+;;         show-paren-when-point-inside-paren t)
+;;   (show-paren-mode +1))
+
+;; (setq visible-bell t)
+;; (setq ring-bell-function
+;;       (lambda ()
+;;         (let ((orig-fg (face-foreground 'mode-line)))
+;;           (set-face-foreground 'mode-line "#F2804F")
+;;           (run-with-idle-timer 0.1 nil
+;;                                (lambda (fg) (set-face-foreground 'mode-line fg))
+;;                                orig-fg))))
+
+
+;; (use-package! winner
+;;   ;; undo/redo changes to Emacs' window layout
+;;   :after-call after-find-file doom-switch-window-hook
+;;   :preface (defvar winner-dont-bind-my-keys t)
+;;   :config (winner-mode +1)) ; I'll bind keys myself
+
+;;######################################################################
+;;;* COLORS & COLOR THEMES
+;;######################################################################
+
+;; Load theme after the frame is created.
+;; (add-hook 'after-make-frame-functions ;'after-init-hook
+;;           (lambda (frame)
+;;             (mapc #'disable-theme custom-enabled-themes)
+;;             (and (display-graphic-p)
+;;                  (progn
+;;                    (if (or (< (nth 2 (decode-time (current-time))) 7)
+;;                                 (> (nth 2 (decode-time (current-time))) 18))
+;;                             (progn (load-theme 'dracula t)
+;;                                    ;; (load-theme 'smart-mode-line-dark)
+;;                                    )
+;;                           (progn (load-theme 'dracula t)
+;;                                  ;; (load-theme 'smart-mode-line-dark)
+;;                                  ))))
+;;             ))
+
+;; before loading new theme
+;; (defun load-theme--disable-old-theme-a(theme &rest args)
+;;   "Disable current theme before loading new one."
+;;   (unless (member theme '(smart-mode-line-dark smart-mode-line-light))
+;;     (mapcar #'disable-theme
+;;             (remove 'smart-mode-line-light
+;;                     (remove 'smart-mode-line-dark custom-enabled-themes)))))
+;; (advice-add 'load-theme :before #'load-theme--disable-old-theme-a)
+
+;; Tao:
+;; (defun tao-palette () (tao-theme-golden-grayscale-yin-palette))
+;; (tao-with-color-variables tao-palette
+;;   (progn
+;;     (setq
+;;       hl-paren-colors (list color-14 color-11 color-9 color-7 color-6)
+;;       hl-paren-background-colors (list color-4 color-4 color-4 color-4 color-4))))
+
+;; Other themes
+;; (list 'tsdh-light
+;;       'ample-flat-theme 'ample-light-theme 'ample-theme
+;;       'tao 'tao-yin 'tao-yang
+;;       'gruvbox-dark-hard 'gruvbox-light-hard
+;;       'spacemacs-light-theme 'spacemacs-dark-theme)
+
+;;######################################################################
+;;;* MODELINE:
+;;######################################################################
+
+;; (use-package telephone-line
+;;   :ensure t
+;;   :init
+;;   (telephone-line-mode 1))
+
+;; (use-package doom-modeline
+;;   :ensure t
+;;   :hook (after-init . doom-modeline-mode))
+
+
+;;----------------------------------------------------------------------
+;; ORG-MODE
+;;----------------------------------------------------------------------
+;;; Org-Remember: Org-mode with Remember-mode
+
+;; (org-remember-insinuate)
+;; (setq org-directory "~/doodles")
+;; (setq org-default-notes-file
+;;       (expand-file-name (concat org-directory "tasks.org")))
+;; ;; (setq org-remember-default-headline "stuff")
+
+;; ;;Templates for org-remember:
+;; (setq org-remember-templates
+;;       (quote (("Journal" ?j
+;;                "* %^{Title}\n  %U\n  %?\n  %i\n"
+;;                "journal.org" top
+;;                )
+;;               ("Notes" ?n
+;;                "* %?\n  "
+;;                "tasks.org" bottom
+;;                ))))
+
+;; (defun make-remember-frame ()
+;;   "Turn the current frame into a small popup frame for remember mode;
+;; this is meant to be called with
+;;      emacsclient -c -e '(make-remember-frame)'"
+;;   (modify-frame-parameters nil
+;;     '( (name . "*Remember*") ;; must be same as in mode-hook below
+;;        (width .  80)
+;;        (height . 14)
+;;        (vertical-scroll-bars . nil)
+;;        (menu-bar-lines . nil)
+;;        (tool-bar-lines . nil)))
+;;   (org-remember)
+;;   (when (fboundp 'x-focus-frame) (x-focus-frame nil)) ;; X only....
+;;   (delete-other-windows))
+
+;; when we're in such a remember-frame, close it when done.
+;; (add-hook 'org-remember-mode-hook
+;;   (lambda()
+;;     (define-key org-remember-mode-map (kbd "C-c C-c")
+;;       '(lambda()(interactive)
+;;          (let ((remember-frame-p
+;;                  (string= (frame-parameter nil 'name) "*Remember*")))
+;;            (when remember-frame-p (make-frame-invisible))  ;; hide quickly
+;;            (org-remember-finalize)
+;;            (when remember-frame-p (delete-frame)))))
+;;     (define-key org-remember-mode-map (kbd "C-c C-k")
+;;       '(lambda() (interactive)
+;;          (let ((remember-frame-p
+;;                  (string= (frame-parameter nil 'name) "*Remember*")))
+;;            (when remember-frame-p (make-frame-invisible))  ;; hide quickly
+;;            (org-kill-note-or-show-branches)
+;;            (when remember-frame-p (delete-frame)))))
+;;       ))
+
+;; (define-key org-mode-map (kbd "C-c r") nil)
+

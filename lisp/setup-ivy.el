@@ -240,9 +240,7 @@
 ;; ivy-rich shows descriptions along with selection candidates in ivy
 (use-package ivy-rich
   :ensure t
-  :init
-  (ivy-rich-mode +1)
-
+  :after ivy
   :config
   (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line)
 
@@ -283,9 +281,7 @@
                       (+ivy-rich-describe-variable-transformer (:width 36))
                       (ivy-rich-counsel-variable-docstring (:face font-lock-doc-face))))))
 
-  (run-at-time 5 nil (lambda ()
-                       (ivy-rich-mode nil)
-                       (ivy-rich-mode +1)))
+  (ivy-rich-mode +1)
 
   )
 

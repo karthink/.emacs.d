@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# contributor : Marcio M. Ribeiro <marcio.mr@gmail.com>
+# key: cite
+# group: references
+# name : \cite
+# --
+\cite{${1:label$(unless yas/modified-p (car (reftex-citation 't)))}}$0

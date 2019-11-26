@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: leftrightarrow
+# key: <->
+# condition: (and (texmathp) 'auto)
+# group: math
+# --
+\\leftrightarrow

@@ -1,5 +1,6 @@
 # key: template
 # name: Basic template
+# group: skeleton
 # --
 \input{`my-preamble-file`}
 % \usepackage{hyperref}

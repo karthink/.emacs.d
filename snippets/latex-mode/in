@@ -2,5 +2,6 @@
 # name: in
 # key: inn
 # condition: (and (texmathp) 'auto)
+# group: math
 # --
-\\in$0
+\\in

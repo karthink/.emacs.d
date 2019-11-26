@@ -2,5 +2,6 @@
 # name: ^2
 # key: sr
 # condition: (and (texmathp) 'auto)
+# group: math
 # --
 `(delete-backward-char 1)`^2$0

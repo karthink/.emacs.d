@@ -1,0 +1,37 @@
+# -*- mode: snippet -*-
+# contributor: Claudio Marforio <marforio@gmail.com>
+# key: beamer
+# group: skeleton
+# name: \documentclass{beamer} ...
+# --
+\documentclass[xcolor=dvipsnames]{beamer}
+
+\usepackage{graphicx,subfigure,url}
+
+% example themes
+\usetheme{Frankfurt}
+\usecolortheme{seahorse}
+\usecolortheme{rose}
+
+% put page numbers
+% \setbeamertemplate{footline}[frame number]{}
+% remove navigation symbols
+% \setbeamertemplate{navigation symbols}{}
+
+\title{${1:Presentation Title}}
+\author{${2:Author Name}}
+
+\begin{document}
+	
+\frame[plain]{\titlepage}
+	
+\begin{frame}[plain]{Outline}
+	\tableofcontents
+\end{frame}
+	
+\section{${3:Example Section}}
+\begin{frame}{${4:Frame Title}}
+
+\end{frame}
+
+\end{document}

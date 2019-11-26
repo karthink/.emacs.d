@@ -2,5 +2,6 @@
 # name: d-by-dt
 # key: ddt
 # condition: (and (texmathp) 'auto)
+# group: math
 # --
 \\frac{\\mathrm{d} $1}{\\mathrm{d} ${2:t}}$0

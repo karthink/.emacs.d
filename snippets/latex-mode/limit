@@ -2,5 +2,6 @@
 # name: limit
 # key: lim
 # conditon: (texmathp)
+# group: math
 # --
 \\lim_{${1:n} \\to ${2:\\infty}} $0

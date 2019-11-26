@@ -115,7 +115,7 @@
     "q" 'evil-quit
     "`" 'evil-switch-to-windows-last-buffer
     ;; Navigation commands
-    "j" 'ace-jump-mode
+    "j" 'avy-goto-char-timer
 
     "k" 'kill-this-buffer
     "K" 'kill-buffer-and-window
@@ -613,7 +613,8 @@
 
 ;; ORG-EVIL
 (use-package org-evil
-  :ensure t)
+  :ensure t
+  :after org)
 
 ;;-----------------
 ;; EVIL-SMARTPARENS

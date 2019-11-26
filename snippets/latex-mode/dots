@@ -2,5 +2,6 @@
 # name: dots
 # key: ...
 # condition: (and (texmathp) 'auto)
+# group: math
 # --
 \\dots$0

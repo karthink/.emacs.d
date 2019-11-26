@@ -2,6 +2,7 @@
 # name: cases
 # key: case
 # condition: (and (texmathp) 'auto)
+# group: math
 # --
 \\begin{cases}
   $1

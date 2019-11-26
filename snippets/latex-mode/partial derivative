@@ -2,5 +2,6 @@
 # name: partial derivative
 # key: part
 # condition: (texmathp)
+# group: math
 # --
 \\frac{\\partial $1}{\\partial ${2:x}} $0

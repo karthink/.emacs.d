@@ -2,5 +2,6 @@
 # name: implied by
 # key: <=
 # condition: (and (texmathp) 'auto)
+# group: math
 # --
 \\impliedby $0

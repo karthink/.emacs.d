@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: sec
+# key: sec
+# group: math
+# condition: (and (texmathp) 'auto)
+# --
+\\sec

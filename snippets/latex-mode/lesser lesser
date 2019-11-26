@@ -2,5 +2,6 @@
 # name: lesser lesser
 # key: <<
 # condition: (and (texmathp) 'auto)
+# group: math
 # --
-\\ll$0
+\\ll

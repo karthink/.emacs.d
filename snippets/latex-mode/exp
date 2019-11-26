@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: exp
+# key: exp
+# group: math
+# condition: (and (texmathp) 'auto)
+# --
+\\exp

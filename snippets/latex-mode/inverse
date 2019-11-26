@@ -2,5 +2,6 @@
 # name: inverse
 # key: inv
 # condition: (and (texmathp) 'auto)
+# group: math
 # --
-`(delete-backward-char 1)`^{-1}$0
+`(delete-backward-char 1)`^{-1}

@@ -3,8 +3,8 @@
 (require 'use-package nil t)
 ;; The following lines are always needed.
 ;; (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
-;; (global-set-key "\C-cl" 'org-store-link)
-;; (global-set-key "\C-ca" 'org-agenda)
+(global-set-key "\C-cl" 'org-store-link)
+(global-set-key "\C-ca" 'org-agenda)
 ;; (global-set-key "\C-cb" 'org-iswitchb)
 (add-hook 'org-load-hook
           '(lambda nil
@@ -54,7 +54,17 @@
                  ("\\paragraph{%s}" . "\\paragraph*{%s}")
                  ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
 
+;;----------------------------------------------------------------------
+;; ORG-BULLETS
+;;----------------------------------------------------------------------
+(use-package org-bullets
+  :ensure t
+  :hook (org-mode . org-bullets-mode))
 
+
+;;----------------------------------------------------------------------
+;; OX-HUGO
+;;----------------------------------------------------------------------
 (use-package ox-hugo
   :ensure t
   :after ox
@@ -111,15 +121,16 @@ See `org-capture-templates' for more information."
 ;; ORG-REVEAL
 ;;----------------------------------------------------------------------
 (use-package org-re-reveal
+  :disabled t
   :ensure t
   :commands (org-re-reveal-export-to-html
              org-re-reveal-export-to-html-and-browse)
-  :init
+  :config
   (setq org-re-reveal-root "file:///home/karthik/.local/share/git/reveal.js"
         org-re-reveal-subtree-with-title-slide t)
   (add-to-list 'org-structure-template-alist '("R" "#+REVEAL_HTML: ?\n"))
   (use-package org-re-reveal-ref
-    :ensure t
+    :disabled t
     :init (setq org-ref-default-bibliography '("~/Documents/research/control_systems.bib")))
   )
 
@@ -135,61 +146,6 @@ See `org-capture-templates' for more information."
 
 ;;; Org LaTeX options
 ;(add-hook 'org-mode-hook 'turn-on-org-cdlatex)
-
-;;; Org-Remember: Org-mode with Remember-mode
-
-;; (org-remember-insinuate)
-;; (setq org-directory "~/doodles")
-;; (setq org-default-notes-file
-;;       (expand-file-name (concat org-directory "tasks.org")))
-;; ;; (setq org-remember-default-headline "stuff")
-
-;; ;;Templates for org-remember:
-;; (setq org-remember-templates
-;;       (quote (("Journal" ?j
-;;                "* %^{Title}\n  %U\n  %?\n  %i\n"
-;;                "journal.org" top
-;;                )
-;;               ("Notes" ?n
-;;                "* %?\n  "
-;;                "tasks.org" bottom
-;;                ))))
-
-;; (defun make-remember-frame ()
-;;   "Turn the current frame into a small popup frame for remember mode;
-;; this is meant to be called with
-;;      emacsclient -c -e '(make-remember-frame)'"
-;;   (modify-frame-parameters nil
-;;     '( (name . "*Remember*") ;; must be same as in mode-hook below
-;;        (width .  80)
-;;        (height . 14)
-;;        (vertical-scroll-bars . nil)
-;;        (menu-bar-lines . nil)
-;;        (tool-bar-lines . nil)))
-;;   (org-remember)
-;;   (when (fboundp 'x-focus-frame) (x-focus-frame nil)) ;; X only....
-;;   (delete-other-windows))
-
-;; when we're in such a remember-frame, close it when done.
-;; (add-hook 'org-remember-mode-hook
-;;   (lambda()
-;;     (define-key org-remember-mode-map (kbd "C-c C-c")
-;;       '(lambda()(interactive)
-;;          (let ((remember-frame-p
-;;                  (string= (frame-parameter nil 'name) "*Remember*")))
-;;            (when remember-frame-p (make-frame-invisible))  ;; hide quickly
-;;            (org-remember-finalize)
-;;            (when remember-frame-p (delete-frame)))))
-;;     (define-key org-remember-mode-map (kbd "C-c C-k")
-;;       '(lambda() (interactive)
-;;          (let ((remember-frame-p
-;;                  (string= (frame-parameter nil 'name) "*Remember*")))
-;;            (when remember-frame-p (make-frame-invisible))  ;; hide quickly
-;;            (org-kill-note-or-show-branches)
-;;            (when remember-frame-p (delete-frame)))))
-;;       ))
-
-;; (define-key org-mode-map (kbd "C-c r") nil)
 
 (add-hook 'org-mode-hook #'+org-prettify-symbols)
 

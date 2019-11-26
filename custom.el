@@ -35,10 +35,19 @@
      ("\\?\\?\\?+" . "#dc752f"))))
  '(ivy-prescient-mode t)
  '(line-number-display-limit 16777216)
+ '(org-babel-load-languages
+   (quote
+    ((emacs-lisp . t)
+     (matlab . t)
+     (python . t)
+     (R . t)
+     (shell . t))))
  '(package-selected-packages
    (quote
-    (org-re-reveal org-re-reveal-ref matlab auctex cdlatex yasnippet-snippets fish-completion fish-mode visual-fill-column-mode org-gcal tao-theme ox-hugo ace-window ibuffer-sidebar dired-sidebar visual-fill-column counsel-notmuch notmuch spacemacs-theme eyebrowse telephone-line nav-flash ivy-prescient embrace evil-owl counsel-etags evil-vimish-fold vimish-fold company-statistics evil-smartparens company-dict company-jedi company company-bibtex evil-collection evil-embrace helpful shackle wrap-region magit ivy-bibtex ivy-hydra ivy-rich which-key counsel swiper ivy evil-exchange evil-lion evil-matchit evil-numbers evil-rsi evil-snipe evil-space evil-visualstar org-bullets smart-mode-line rainbow-mode dracula-theme evil-magit undo-tree evil-tabs evil-leader org-evil god-mode use-package evil-surround gruvbox-theme ido-completing-read+ evil-commentary evil-goggles evil-paredit evil-replace-with-register iy-go-to-char smex ido-grid-mode composable evil ace-jump-mode wolfram-mode auto-complete julia-repl julia-shell julia-mode dash deferred request-deferred s dash-functional ein ein-mumamo color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme yasnippet expand-region multiple-cursors)))
+    (ivy-hydra ox-hugo org-gcal dracula-theme dired-sidebar evil-matchit ivy-rich ivy-prescient ivy-bibtex helpful eyebrowse darktooth-theme ample-theme shackle org-re-reveal matlab auctex cdlatex yasnippet-snippets fish-completion fish-mode visual-fill-column-mode tao-theme ace-window ibuffer-sidebar visual-fill-column counsel-notmuch notmuch spacemacs-theme telephone-line embrace evil-owl counsel-etags evil-vimish-fold vimish-fold company-statistics evil-smartparens company-dict company-jedi company company-bibtex evil-collection evil-embrace wrap-region magit which-key counsel swiper ivy evil-exchange evil-lion evil-numbers evil-rsi evil-snipe evil-space evil-visualstar org-bullets smart-mode-line rainbow-mode evil-magit undo-tree evil-tabs evil-leader org-evil god-mode use-package gruvbox-theme ido-completing-read+ evil-commentary evil-goggles evil-paredit evil-replace-with-register iy-go-to-char smex ido-grid-mode composable evil wolfram-mode julia-repl julia-shell julia-mode dash deferred request-deferred s dash-functional ein ein-mumamo color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme expand-region multiple-cursors)))
  '(pdf-view-midnight-colors (quote ("#DCDCCC" . "#383838")))
+ '(pos-tip-background-color "#36473A")
+ '(pos-tip-foreground-color "#FFFFC8")
  '(pulse-delay 0.015)
  '(reftex-default-bibliography (quote ("~/Documents/research/control_systems.bib")))
  '(reftex-insert-label-flags (quote ("sf" "sfte")))

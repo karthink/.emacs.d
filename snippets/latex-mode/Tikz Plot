@@ -1,0 +1,19 @@
+# -*- mode: snippet -*-
+# name: Tikz Plot
+# key: tikzplot
+# group: environments
+# --
+\begin{figure}[$1]
+	\centering
+	\begin{tikzpicture}
+		\begin{axis}[
+			xmin= ${2:-10}, xmax= ${3:10},
+			ymin= ${4:-10}, ymax = ${5:10},
+			axis lines = middle,
+		]
+			\addplot[domain=$2:$3, samples=${6:100}]{$7};
+		\end{axis}
+	\end{tikzpicture}
+	\caption{$8}
+	\label{${9:"waiting for reftex-label call..."$(unless yas/modified-p (reftex-label nil 'dont-insert))}}
+\end{figure}

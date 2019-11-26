@@ -2,5 +2,6 @@
 # name: set
 # key: set
 # condition: (and (texmathp) 'auto)
+# group: math
 # --
 \\left\\{ $1 \\right\\} $0

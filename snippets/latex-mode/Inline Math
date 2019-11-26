@@ -1,5 +1,6 @@
 # key: mk
 # name: Inline Math
 # condition: (and (not (texmathp)) (quote auto))
+# group: math
 # --
-`(progn "$")`$1`(progn "$")`$0
+`(progn "$")`$0`(progn "$")`

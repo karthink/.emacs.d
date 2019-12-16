@@ -557,3 +557,4 @@
 
 ;; (define-key org-mode-map (kbd "C-c r") nil)
 
+ '(counsel-projectile-mode t nil (counsel-projectile))

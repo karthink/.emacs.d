@@ -16,3 +16,9 @@ tramp
 eshell
 elpa/*
 url/*
+elpy/*
+semanticdb/*
+transient/*
+request/*
+srecode-map.el
+.org-id-locations

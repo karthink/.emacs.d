@@ -125,6 +125,12 @@
   :ensure t
   :commands counsel-describe-face
   :init
+  (dolist (switch-version
+           '((org-goto . counsel-org-goto)
+             (imenu . counsel-imenu)) t)
+    (let ((old-cmd (car switch-version))
+          (new-cmd (symbol-function (cdr switch-version))))
+      (defalias old-cmd new-cmd)))
 
   ;; (dolist (switch-version
   ;;          '((apropos                  . counsel-apropos)
@@ -143,13 +149,18 @@
   ;;            (org-capture              . counsel-org-capture)
   ;;            (swiper                   . counsel-grep-or-swiper)
   ;;            (evil-ex-registers        . counsel-evil-registers)
-  ;;            (yank-pop                 . counsel-yank-pop))
+  ;;            (yank-pop                 . counsel-yank-pop)
+  ;;            (imenu                    . counsel-imenu))
   ;;          t)
   ;;   (let ((old-cmd (car switch-version))
   ;;         (new-cmd (symbol-function (cdr switch-version))))
   ;;     (defalias old-cmd new-cmd)))
 
   :config
+  (with-eval-after-load 'helpful
+    (setq counsel-describe-function-function #'helpful-callable)
+    (setq counsel-describe-variable-function #'helpful-variable))
+
   ;; Configure `counsel-ag'
   (setq counsel-ag-base-command "ag --nocolor --nogroup --hidden -f %s"
         counsel-find-file-ignore-regexp  "\\(?:^[#.]\\)\\|\\(?:[#~]$\\)"
@@ -189,6 +200,17 @@
        ;; ("L" (lambda (path) "Insert org-link with absolute path"
        ;;        (with-ivy-window (insert (format "[[%s]]" path)))) "insert org-link (abs. path)")
        ))))
+
+
+(use-package counsel-projectile
+  :ensure t
+  :after evil-leader
+  :init (counsel-projectile-mode)
+  :config
+  (define-key projectile-mode-map (kbd "C-x p") 'projectile-command-map)
+  (define-key projectile-command-map (kbd "/ g") 'projectile-grep)
+  (define-key projectile-command-map (kbd "/ a") 'projectile-ag)
+  (define-key projectile-command-map (kbd "/ G") 'counsel-projectile-git-grep))
 
 (use-package ivy-prescient
   :ensure t

@@ -276,6 +276,22 @@
 ;;######################################################################
 ;; Count words, print ASCII table, etc
 (require 'utilities nil t)
+
+(use-package dashboard
+  :ensure t
+  :init (setq initial-buffer-choice (lambda () (get-buffer "*dashboard*")))
+  :config
+  (dashboard-setup-startup-hook)
+  (setq dashboard-startup-banner 'logo
+        dashboard-show-shortcuts nil
+        dashboard-center-content t
+        dashboard-items '((recents  . 6)
+                          (projects . 6)
+                          ;; (bookmarks . 5)
+                          ;; (agenda . 5)
+                          ;; (registers . 5)
+                          )))
+
 ;; Colorize color names in buffers
 (use-package rainbow-mode
   :ensure t
@@ -360,6 +376,64 @@
 ;;;* LANGUAGE MODES
 ;;######################################################################
 
+;;----------------------------------------------------------------------
+;;;** LSP SUPPORT
+;;----------------------------------------------------------------------
+(use-package lsp-mode
+  :disabled t
+  :ensure t
+  ;; :hook (python-mode . lsp-deferred)
+  :bind (("C-c C-d" . lsp-describe-thing-at-point))
+  :commands (lsp lsp-deferred)
+  :config
+  (setq lsp-auto-configure t
+        lsp-enable-symbol-highlighting nil
+        lsp-pyls-plugins-rope-completion-enabled t)
+  (use-package company-lsp :ensure t :commands company-lsp)
+  (add-to-list 'lsp-language-id-configuration '(matlab-mode . "matlab"))
+  (lsp-register-client
+   (make-lsp-client :new-connection (lsp-stdio-connection "~/.local/share/git/matlab-langserver/matlab-langserver.sh")
+                    :major-modes '(matlab-mode)
+                    :server-id 'matlab-langserver)
+   ;; (make-lsp-client :new-connection (lsp-stdio-connection
+   ;;                                   `("java",(let ((MATLABROOT "/opt/MATLAB/R2018b")
+   ;;                                                 (SERVERROOT "~/.local/share/git/matlab-langserver"))
+   ;;                                             (concat " -Djava.library.path="
+   ;;                                                     MATLABROOT
+   ;;                                                     "/bin/glnxa64 -cp "
+   ;;                                                     MATLABROOT
+   ;;                                                     "/extern/engines/java/jar/engine.jar:"
+   ;;                                                     MATLABROOT
+   ;;                                                     "/java/jar/jmi.jar:"
+   ;;                                                     SERVERROOT
+   ;;                                                     "/build/libs/lsp-matlab-0.1.jar org.tokor.lspmatlab.Application"))))
+   ;;                  :major-modes '(matlab-mode)
+   ;;                  :server-id 'matlab-langserver)
+   )
+  (use-package lsp-ui
+    ;; :disabled t
+    :ensure t
+    :commands lsp-ui-mode
+    :config
+    (define-key lsp-ui-mode-map [remap xref-find-definitions] #'lsp-ui-peek-find-definitions)
+    (define-key lsp-ui-mode-map [remap xref-find-references] #'lsp-ui-peek-find-references)
+    (setq lsp-ui-sideline-enable nil
+          lsp-ui-doc-enable nil
+          lsp-ui-flycheck-enable nil
+          lsp-ui-imenu-enable t
+          lsp-ui-sideline-ignore-duplicate t))
+  )
+
+
+;;----------------------------------------------------------------------
+;;;** EGLOT - LSP
+;;----------------------------------------------------------------------
+(use-package eglot
+  ;; :disabled t
+  :commands eglot
+  :config
+  (add-to-list 'eglot-server-programs '(matlab-mode . ("~/.local/share/git/matlab-langserver/matlab-langserver.sh" "")))
+  )
 ;;----------------------------------------------------------------------
 ;;;** AUCTEX-MODE & ADDITIONS
 ;;----------------------------------------------------------------------
@@ -503,7 +577,9 @@
   (global-semantic-decoration-mode 1) 
   (add-hook 'matlab-mode-hook #'company-mode-on)
   ;; (add-hook 'matlab-mode-hook #'hs-minor-mode)
-  (add-hook 'matlab-mode-hook (lambda ()  (interactive) (outline-minor-mode)
+  (add-hook 'matlab-mode-hook (lambda ()  (interactive)
+                                (setq-local buffer-file-coding-system 'us-ascii)
+                                (outline-minor-mode)
                                 (setq-local page-delimiter "%%")
                                 (setq-local outline-regexp "%%+")
                                 (outline-hide-sublevels 3)
@@ -557,6 +633,25 @@
 ;;----------------------------------------------------------------------
 ;;;** PYTHON-MODE
 ;;----------------------------------------------------------------------
+
+(use-package pyvenv
+  :disabled t
+  :ensure t
+  :config
+  (add-hook 'pyvenv-post-activate-hooks 'pyvenv-restart-python))
+
+(use-package elpy
+  ;; :disabled t
+  :ensure t
+  :defer t
+  ;; :init
+  ;; (setq python-shell-interpreter "jupyter"
+  ;;       python-shell-interpreter-args "console --simple-prompt"
+  ;;       python-shell-prompt-detect-failure-warning nil)
+  ;; (add-to-list 'python-shell-completion-native-disabled-interpreters
+  ;;              "jupyter")
+  ;; (advice-add 'python-mode :before 'elpy-enable)
+  )
 
 (add-hook
  'python-mode-hook
@@ -769,8 +864,6 @@
   :ensure t
   :commands (helpful-callable helpful-variable)
   :init
-  (setq counsel-describe-function-function #'helpful-callable)
-  (setq counsel-describe-variable-function #'helpful-variable)
   (global-set-key (kbd "C-h k") #'helpful-key)
   (global-set-key (kbd "C-h C") #'helpful-command)
   (global-set-key (kbd "C-h .") #'helpful-at-point)
@@ -1050,6 +1143,11 @@
 ;; (add-hook 'text-mode-hook 'wrap-region-mode)
 
 ;;----------------------------------------------------------------------
+;;;** ORG-MODE
+;;----------------------------------------------------------------------
+(require 'setup-org nil t)
+
+;;######################################################################
 ;;;** IVY/COUNSEL/SWIPER
 ;;----------------------------------------------------------------------
 (require 'setup-ivy)
@@ -1099,19 +1197,35 @@
   :ensure t
   :init (projectile-mode +1))
 ;;----------------------------------------------------------------------
-;;;** ORG-MODE
-;;----------------------------------------------------------------------
-(require 'setup-org nil t)
-
-;;######################################################################
 ;;;* COLORS & COLOR THEMES
 ;;######################################################################
 
-(load-theme 'dracula t)
+;; (load-theme 'dracula t)
 
 ;;######################################################################
 ;;;* MODELINE:
 ;;######################################################################
+
+;; (use-package telephone-line
+;;   :ensure t
+;;   :init
+;;   (setq telephone-line-primary-left-separator 'telephone-line-cubed-left
+;;         telephone-line-secondary-left-separator 'telephone-line-cubed-hollow-left
+;;         telephone-line-primary-right-separator 'telephone-line-cubed-right
+;;         telephone-line-secondary-right-separator 'telephone-line-cubed-hollow-right)
+;;   (setq telephone-line-height 24
+;;         telephone-line-evil-use-short-tag t)
+;;   (telephone-line-mode 1))
+
+;; (use-package spaceline
+;;   :ensure t
+;;   :init
+;;   (require 'spaceline-config)
+;;   (setq powerline-default-separator 'contour
+;;         spaceline-buffer-encoding-abbrev-p nil
+;;         spaceline-buffer-size-p nil
+;;         spaceline-line-column-p t)
+;;   (spaceline-emacs-theme))
 
 (use-package smart-mode-line
   :ensure t
@@ -1156,9 +1270,9 @@
 (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
 
 (defvar mode-line-cleaner-alist
-  `((company-mode . " Ĉ")
+  `((company-mode . " ⇝")
     (yas-minor-mode . " Υ")
-    (smartparens-mode . " )(")
+    (smartparens-mode . " ﴾﴿")
     (evil-smartparens-mode . "")
     (eldoc-mode . "")
     (abbrev-mode . "")
@@ -1183,7 +1297,9 @@
     (scheme-mode . " SCM")
     (matlab-mode . "M")
     (org-mode . "⦿")
-    (latex-mode . "TeX"))
+    (latex-mode . "TeX")
+    ;; (projectile-mode . " ϸ")
+    (outline-minor-mode . " ֍"))
   "Alist for `clean-mode-line'.
 
   ; ;; When you add a new element to the alist, keep in mind that you

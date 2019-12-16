@@ -119,14 +119,14 @@
 
     "k" 'kill-this-buffer
     "K" 'kill-buffer-and-window
-    "n" (lambda (&optional arg)
-          "Next Buffer"
-                  (interactive "P")
-                  (if arg (previous-user-buffer) (next-user-buffer)))
-    "p" (lambda (&optional arg)
-          "Previous Buffer"
-                  (interactive "P")
-                  (if arg (next-user-buffer) (previous-user-buffer)))
+    ;; "n" (lambda (&optional arg)
+    ;;       "Next Buffer"
+    ;;               (interactive "P")
+    ;;               (if arg (previous-user-buffer) (next-user-buffer)))
+    ;; "p" (lambda (&optional arg)
+    ;;       "Previous Buffer"
+    ;;               (interactive "P")
+    ;;               (if arg (next-user-buffer) (previous-user-buffer)))
     "N" 'next-buffer
     "P" 'previous-buffer
     "B" (lambda ()
@@ -140,6 +140,16 @@
     "vb" 'ido-switch-buffer-other-window
 
     )
+
+  (defun +evil-leader-projectile-map ()
+    "Add evil-leader keybinds for projectile mode"
+    (interactive)
+    (evil-leader/set-key
+      "SPC" 'projectile-command-map
+      "n" 'projectile-next-project-buffer
+      "p" 'projectile-previous-project-buffer))
+  (add-hook 'counsel-projectile-mode-hook #'+evil-leader-projectile-map)
+
   :config
   ;; Helper functions
   
@@ -703,7 +713,8 @@
                     (notmuch-show-mode-hook . notmuch-show-mode-map)
                     (notmuch-tree-mode-hook . notmuch-tree-mode-map)
                     (notmuch-search-mode-hook . notmuch-search-mode-map)
-                    (custom-mode-hook . custom-mode-map)))
+                    ;; (custom-mode-hook . custom-mode-map)
+                    ))
       (let ((mode-hook (car mode))
             (mode-map (cdr mode)))
         (add-hook mode-hook  

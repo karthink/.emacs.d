@@ -3,4 +3,4 @@
 # condition: (and (not (texmathp)) (quote auto))
 # group: math
 # --
-`(progn "$")`$0`(progn "$")`
+\$$0\$

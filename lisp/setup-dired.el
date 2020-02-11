@@ -1,20 +1,21 @@
 (require 'use-package nil t)
-;; (add-hook 'dired-mode-hook
-;;           (function (lambda ()
-;;                       ;; Set dired-x buffer-local variables here.
-;;                       ;; dired-details and dired-details+ add the
-;;                       ;; option to display only filenames in dired.
-;;                       ;; ")" to toggle
-;;                       (require 'dired-details+ nil t)
-;;                       ;; dired-x lets you jump to the directory the
-;;                       ;; current file is in with C-x C-j
-;;                       (require 'dired-x nil t)
-;;                       (setq dired-omit-mode 1)
-;;                       (setq ls-lisp-use-insert-directory-program nil)
-;;                       (require 'ls-lisp)
-;;                       (setq directory-free-space-program nil)
-;;                       (define-key dired-mode-map "e" 'ora-ediff-files)
-;;                       )))
+(add-hook 'dired-mode-hook
+          (function (lambda ()
+                      ;; Set dired-x buffer-local variables here.
+                      ;; dired-details and dired-details+ add the
+                      ;; option to display only filenames in dired.
+                      ;; ")" to toggle
+                      ;; (require 'dired-details+ nil t)
+                      ;; dired-x lets you jump to the directory the
+                      ;; current file is in with C-x C-j
+                      (require 'dired-x nil t)
+                      (setq dired-omit-mode 1)
+                      (setq ls-lisp-use-insert-directory-program nil)
+                      (require 'ls-lisp)
+                      (setq directory-free-space-program nil)
+                      (define-key dired-mode-map "e" 'ora-ediff-files)
+                      )))
+
 ;; -*- lexical-binding: t -*-
 ;;;###autoload
 (defun ora-ediff-files ()

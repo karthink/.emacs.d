@@ -285,8 +285,8 @@
   (setq dashboard-startup-banner 'logo
         dashboard-show-shortcuts nil
         dashboard-center-content t
-        dashboard-items '((recents  . 6)
-                          (projects . 6)
+        dashboard-items '((recents  . 15)
+                          ;; (projects . 6)
                           ;; (bookmarks . 5)
                           ;; (agenda . 5)
                           ;; (registers . 5)
@@ -380,7 +380,7 @@
 ;;;** LSP SUPPORT
 ;;----------------------------------------------------------------------
 (use-package lsp-mode
-  :disabled t
+  ;; :disabled t
   :ensure t
   ;; :hook (python-mode . lsp-deferred)
   :bind (("C-c C-d" . lsp-describe-thing-at-point))
@@ -429,7 +429,7 @@
 ;;;** EGLOT - LSP
 ;;----------------------------------------------------------------------
 (use-package eglot
-  ;; :disabled t
+  :disabled t
   :commands eglot
   :config
   (add-to-list 'eglot-server-programs '(matlab-mode . ("~/.local/share/git/matlab-langserver/matlab-langserver.sh" "")))
@@ -562,7 +562,7 @@
 ;;;** MATLAB
 ;;----------------------------------------------------------------------
 (use-package matlab
-  :load-path (lambda () (file-name-as-directory (expand-file-name "~/.local/share/git/matlab-emacs-src")))
+  ;; :load-path (lambda () (file-name-as-directory (expand-file-name "~/.local/share/git/matlab-emacs-src")))
   ;; :ensure matlab-mode
 
   ;; :after 'evil
@@ -767,6 +767,14 @@
   ;; (use-package yasnippet-snippets
   ;;   :ensure t)
   ;; (yas-reload-all)
+  (with-eval-after-load 'smartparens
+    (defvar yas--smartparen-flag nil)
+    (add-hook 'yas-before-expand-snippet-hook (lambda () (when smartparens-mode
+                                                        (smartparens-mode -1)
+                                                        (setq-local yas--smartparen-flag t))))
+    (add-hook 'yas-after-exit-snippet-hook (lambda () (when yas--smartparen-flag)
+                                             (smartparens-mode +1)
+                                             (setq-local yas--smartparen-flag nil))))
   )
 
 ;;----------------------------------------------------------------------

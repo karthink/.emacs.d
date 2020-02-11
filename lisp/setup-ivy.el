@@ -203,6 +203,7 @@
 
 
 (use-package counsel-projectile
+  :disabled t
   :ensure t
   :after evil-leader
   :init (counsel-projectile-mode)

@@ -44,6 +44,7 @@
     "\\*Completions\\*"
     "Output\\*"
     "\\*shell\\*"
+    "\\*MATLAB\\*"
     ;; "^\\*"
 )
   "List of buffer names whose windows are treated as popups.")

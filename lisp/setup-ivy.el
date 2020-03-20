@@ -61,14 +61,15 @@
             (read (current-buffer))))
     (message "load ivy-views"))
 
-;;;###autoload
-  (defun +ivy-switch-file-search ()
-    "Switch to counsel-file-jump, preserving current input."
-    (interactive)
-    (let ((input (ivy--input)))
-      (ivy-quit-and-run (counsel-file-jump "" ivy--directory))))
+;; ;;;###autoload
+;;   (defun +ivy-switch-file-search ()
+;;     "Switch to counsel-file-jump, preserving current input."
+;;     (interactive)
+;;     (let ((input (ivy--input)))
+;;       (ivy-quit-and-run (counsel-file-jump "" ivy--directory))))
 
-  (define-key ivy-minibuffer-map (kbd "M-j") '+ivy-switch-file-search)
+;;   (define-key ivy-minibuffer-map (kbd "M-j") '+ivy-switch-file-search)
+
   (define-key ivy-minibuffer-map (kbd "C-SPC") 'ivy-mark)
 
   ;; Define a function to replace `counsel--find-return-list' that uses `fd' or `ripgrep' (if available) in place of `find' to find files, and...
@@ -179,6 +180,18 @@
              (target (read-file-name (format "%s %s to:" prompt source))))
         (funcall cmd source target 1))))
 
+  (defun +ivy-open-ace-window (arg)
+    "Use `ace-window' on file candidates in ivy."
+    (ace-window t)
+    (let (;; (default-directory (if (eq (vc-root-dir) nil)
+          ;;                        counsel--fzf-dir
+          ;;                      (vc-root-dir)))
+          )
+      (if (> (length (aw-window-list)) 1)
+          (find-file arg)
+        (find-file-other-window arg))
+      (balance-windows (current-buffer))))
+
   ;; Configure `counsel-find-file'
   (dolist (ivy-command '(counsel-find-file counsel-file-jump counsel-fzf counsel-git))
     (ivy-add-actions
@@ -190,7 +203,7 @@
        ("k" ,(+ivy-action-reloading (lambda (x) (dired-delete-file x 'confirm-each-subdirectory))) "delete")
        ("r" (lambda (path) (rename-file path (read-string "New name: "))) "rename")
        ("R" ,(+ivy-action-reloading (+ivy-action-given-file #'rename-file "Move")) "move")
-       ("f" find-file-other-window "other window")
+       ("f" +ivy-open-ace-window "ace window")
        ("F" find-file-other-frame "other frame")
        ("p" (lambda (path) (with-ivy-window (insert (file-relative-name path default-directory)))) "insert relative path")
        ("x" counsel-find-file-extern "xdg-open")

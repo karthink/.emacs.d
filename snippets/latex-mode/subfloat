@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# name: subfloat
+# key: subfloat
+# --
+\begin{figure}[ht]
+  \centering
+  \subfloat[${6:caption}]{\includegraphics[$3]{figures/${1:path.png}}}${5:~}
+  \subfloat[${7:caption}]{\includegraphics[$4]{figures/${2:path.png}}}
+  \caption{\label{fig:${8:label}} $0}
+\end{figure}

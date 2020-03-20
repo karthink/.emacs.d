@@ -199,7 +199,7 @@ prompt for string pairs and return as an association list
 ;;;### (autoloads nil "setup-evil" "setup-evil.el" (0 0 0 0))
 ;;; Generated autoloads from setup-evil.el
 
-(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "setup-evil" '(#("+evil-addons-enabled-modes" 0 26 (fontified nil)))))
+(if (fboundp 'register-definition-prefixes) (register-definition-prefixes "setup-evil" '("+evil-addons-enabled-modes")))
 
 ;;;***
 
@@ -208,16 +208,6 @@ prompt for string pairs and return as an association list
 ;;; Generated autoloads from setup-keybinds.el
 
 (if (fboundp 'register-definition-prefixes) (register-definition-prefixes "setup-keybinds" '("incremental-escape" "doom-l")))
-
-;;;***
-
-;;;### (autoloads nil "setup-org" "setup-org.el" (0 0 0 0))
-;;; Generated autoloads from setup-org.el
-
-(autoload '+org-prettify-symbols "setup-org" "\
-Set `prettify-symbols-alist' to display LaTeX code as pretty symbols in org-mode.
-
-\(fn)" t nil)
 
 ;;;***
 
@@ -253,8 +243,9 @@ Function to find the definition of the defun at point and insert it there.
 
 ;;;***
 
-;;;### (autoloads nil nil ("backup.el" "setup-helm.el" "setup-ivy.el"
-;;;;;;  "setup-scheme.el") (0 0 0 0))
+;;;### (autoloads nil nil ("backup.el" "setup-anki.el" "setup-helm.el"
+;;;;;;  "setup-ivy.el" "setup-org.el" "setup-scheme.el" "setup-ui.el")
+;;;;;;  (0 0 0 0))
 
 ;;;***
 

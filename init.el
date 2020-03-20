@@ -570,7 +570,7 @@
   :bind (:map matlab-mode-map
               ("C-c C-b" . 'matlab-shell-run-block))
   :init
-  (load-library "matlab-load")
+  ;; (load-library "matlab-load")
   (matlab-cedet-setup)
   (semantic-mode 1)
   (global-semantic-stickyfunc-mode 1)
@@ -679,6 +679,46 @@
            ("Iterable" . #x1d50a)
            ("Any" .      #x2754)
            ("Union" .    #x22c3)))))
+
+;;----------------------------------------------------------------------
+;;;** GEISER
+;;----------------------------------------------------------------------
+(use-package geiser
+  ;; :ensure t
+  :init
+  (add-hook 'geiser-repl-mode-hook (lambda ()
+                                      (setq-local company-idle-delay nil)
+                                      ;; (company-mode-on)
+                                      ))
+  :config
+  (setq geiser-default-implementation 'mit)
+  (setq geiser-mit-binary "mechanics"))
+
+;;----------------------------------------------------------------------
+;;;** EVAL-IN-REPL
+;;----------------------------------------------------------------------
+(use-package eval-in-repl
+  :ensure t
+  :init
+  ;; (require 'eval-in-repl-geiser)
+  (add-hook 'geiser-mode-hook
+            '(lambda ()
+               (local-set-key (kbd "<C-return>") 'eir-eval-in-geiser))))
+
+;;----------------------------------------------------------------------
+;;;** SCHEME - SICM
+;;----------------------------------------------------------------------
+
+;; Make sure mit-scheme (from repos) and scmutils (from internet + sudo ./install.sh)are installed
+;;;###autoload 
+(defun mechanics ()
+  "Run mit-scheme with SCMUTILS loaded, to work with (Structure and Interpretation of Classical Mechanics) - The book"
+  (interactive)
+  (setenv "MITSCHEME_BAND" "mechanics.com")
+  (setenv "MITSCHEME_HEAP_SIZE" "100000")
+  (run-scheme
+   "/usr/bin/mit-scheme --library /opt/mit-scheme/lib/mit-scheme-x86-64/")
+)
 
 ;;######################################################################
 ;;;* PLUGINS
@@ -996,6 +1036,7 @@
                                 ;; (unless (featurep 'company-matlab)
                                 ;;   (require 'company-matlab))
                                 (make-local-variable 'company-backends)
+                                (setq-local company-backends '((company-files company-dabbrev)))
                                 ;; (add-to-list 'company-backends
                                 ;;              ;; 'company-matlab
                                 ;;              'company-semantic
@@ -1154,7 +1195,10 @@
 ;;;** ORG-MODE
 ;;----------------------------------------------------------------------
 (require 'setup-org nil t)
-
+;;----------------------------------------------------------------------
+;;;** ORG-ADDONS (ANKI)
+;;----------------------------------------------------------------------
+(require 'setup-anki nil t)
 ;;######################################################################
 ;;;** IVY/COUNSEL/SWIPER
 ;;----------------------------------------------------------------------

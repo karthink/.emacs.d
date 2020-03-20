@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t -*-
 (require 'use-package nil t)
 (add-hook 'dired-mode-hook
           (function (lambda ()
@@ -8,15 +9,19 @@
                       ;; (require 'dired-details+ nil t)
                       ;; dired-x lets you jump to the directory the
                       ;; current file is in with C-x C-j
-                      (require 'dired-x nil t)
-                      (setq dired-omit-mode 1)
-                      (setq ls-lisp-use-insert-directory-program nil)
-                      (require 'ls-lisp)
-                      (setq directory-free-space-program nil)
                       (define-key dired-mode-map "e" 'ora-ediff-files)
                       )))
 
-;; -*- lexical-binding: t -*-
+(use-package dired-x
+  :after dired
+  :config
+  (setq dired-omit-mode 1)
+  (setq ls-lisp-use-insert-directory-program nil)
+  (require 'ls-lisp)
+  (setq directory-free-space-program nil)
+  (setq dired-x-hands-off-my-keys t)
+  )
+
 ;;;###autoload
 (defun ora-ediff-files ()
   (interactive)
@@ -37,6 +42,16 @@
                       (setq ediff-after-quit-hook-internal nil)
                       (set-window-configuration wnd))))
       (error "no more than 2 files should be marked"))))
+
+(use-package dired-subtree
+  :ensure t
+  :after dired
+  :config
+  (setq dired-subtree-use-backgrounds nil)
+  :bind (:map dired-mode-map
+              ("<tab>" . dired-subtree-toggle)
+              ;; ("<C-tab>" . dired-subtree-cycle)
+              ("<S-iso-lefttab>" . dired-subtree-remove)))
 
 (use-package dired-sidebar
   :ensure t

@@ -519,6 +519,7 @@
 ;; EVIL-MATCHIT
 ;; % to match delimiters, % as text-object to manipulate
 (use-package evil-matchit
+  :disabled t
   :ensure t
   :init
   (dolist (mode-hook +evil-addons-enabled-modes)

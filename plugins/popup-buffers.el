@@ -26,51 +26,21 @@
 ;;;
 ;;; by Karthik Chikmagalur
 
-(defcustom popup-buffers-reference-buffer-list
-  '("^\\*Help\\*"
-    "^\\*helpful"
-    "^\\*Warnings\\*"
-    "^\\*Compile-Log\\*"
-    "^\\*Messages\\*"
-    "^\\*Backtrace\\*"
-    "^\\*evil-registers\\*"
-    "^\\*Apropos"
-    "^Calc:"
-    "^\\*ielm\\*"
-    "^\\*TeX Help\\*"
-    "^\\*eshell\\*"
-    "\\*Shell Command Output\\*"
-    "\\*Matlab Help\\*"
-    "\\*Completions\\*"
-    "Output\\*"
-    "\\*shell\\*"
-    "\\*MATLAB\\*"
-    ;; "^\\*"
-)
-  "List of buffer names whose windows are treated as popups.")
+(defgroup popup nil
+  "Provide functions for easy access to popup windows"
+  :group 'convenience)
 
-;; (setq popup-buffers-reference-buffer-list
-;;  '("^\\*Help\\*"
-;;     "^\\*helpful"
-;;     "^\\*Warnings\\*"
-;;     "^\\*Compile-Log\\*"
-;;     "^\\*Messages\\*"
-;;     "^\\*Backtrace\\*"
-;;     "^\\*evil-registers\\*"
-;;     "^\\*Apropos"
-;;     "^Calc:"
-;;     "^\\*ielm\\*"
-;;     "^\\*TeX Help\\*"
-;;     "^\\*eshell\\*"
-;;     "\\*Shell Command Output\\*"
-;;     "\\*Matlab Help\\*"
-;;     "\\*Completions\\*"
-;;     "Output\\*"
-;;     "\\*shell\\*"
-;;     ;; "^\\*"
-;; ))
+(defcustom popup-buffers-reference-buffer-list nil
+  "List of buffer names whose windows are treated as popups."
+:type 'editable-list
+:group 'popup) 
 
-(defvar popup-buffers-open-buffer-window-alist '()
+(defcustom popup-buffers-reference-modes-list nil
+ "List of buffer major-modes whose buffers are treated as popups"
+  :type 'editable-list
+  :group 'popup)
+
+(defvar popup-buffers-open-buffer-window-alist nil
   "Alist of currently live (window . buffer)s that are treated as popups")
 
 (defvar popup-buffers-buried-buffer-window-alist nil
@@ -123,9 +93,10 @@
          (open-buffers (mapcar #'window-buffer open-windows))
          (open-popups nil))
     (dolist (b open-buffers open-popups)
-      (if (seq-some (lambda (buf-regexp)
-                      (string-match-p buf-regexp (buffer-name b)))
-                    popup-buffers-reference-buffer-list)
+      (if (or (seq-some (lambda (buf-regexp)
+                          (string-match-p buf-regexp (buffer-name b)))
+                        popup-buffers-reference-buffer-list)
+              (member (buffer-local-value 'major-mode b) popup-buffers-reference-modes-list))
           (push (cons (get-buffer-window b) b)
                 open-popups)))))
 
@@ -150,11 +121,18 @@
   "Close the last opened popup"
   (interactive)
   (unless (null popup-buffers-open-buffer-window-alist)
-    (let ((latest-popup (car popup-buffers-open-buffer-window-alist)))
-      (push latest-popup popup-buffers-buried-buffer-window-alist)
-      (with-selected-window (car latest-popup)
-        (bury-buffer)
-        (delete-window)))))
+    (let* ((latest-popup (car popup-buffers-open-buffer-window-alist))
+           (win (car latest-popup))
+           (buf (cdr latest-popup)))
+      (when (window-parent win)
+        ;;only close window when window has a parent:
+        (if (not (seq-some (lambda (item) (eq buf (cdr item)))
+                           popup-buffers-buried-buffer-window-alist))
+            ;; buffer doesn't already exist in the buried popup list
+            (push latest-popup popup-buffers-buried-buffer-window-alist))
+        (with-selected-window win
+          (bury-buffer buf)
+          (delete-window win))))))
 
 (defun popup-buffers-open-latest ()
   "Open the last closed popup"
@@ -190,6 +168,8 @@
 (defun popup-buffers-cycle (&optional arg)
   "Cycle visibility of popup windows one at a time. With a prefix argument, cycle in the opposite direction."
   (interactive "p")
+  (setq popup-buffers--toggle-state
+        (not popup-buffers--toggle-state))
   (if (equal last-command 'popup-buffers-cycle)
       ;; cycle through buffers: rest of logic
       (progn (popup-buffers-close-latest)
@@ -200,8 +180,7 @@
     ;; starting new cycle, so bury everything first.
     (if (null popup-buffers-open-buffer-window-alist)
         (popup-buffers-open-latest)
-      (popup-buffers-bury-all))
-      )
-  )
+      (progn (popup-buffers-bury-all))
+      )))
 
 (provide 'popup-buffers)

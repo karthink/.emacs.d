@@ -67,11 +67,12 @@
 ;; Supercharge the way hippie-expand behaves, expand as little as
 ;; possible
 (setq hippie-expand-try-functions-list 
-      '(try-complete-file-name-partially
-        try-complete-file-name
-        try-expand-all-abbrevs
+      '(try-expand-dabbrev-visible
         try-expand-dabbrev
         try-expand-dabbrev-all-buffers
+        try-complete-file-name-partially
+        try-complete-file-name
+        try-expand-all-abbrevs
         try-expand-list
         try-expand-line
         try-expand-dabbrev-from-kill
@@ -391,7 +392,7 @@
     (occur (if isearch-regexp isearch-string (regexp-quote isearch-string)))))
 
 ;;;###autoload
-(defun isearch-backward-other-buffer (prefix)
+(defun isearch-forward-other-buffer (prefix)
   "Function to isearch-forward in other-window."
   (interactive "P")
   (save-excursion
@@ -402,7 +403,7 @@
     )))
   
 ;;;###autoload
-(defun isearch-forward-other-buffer (prefix)
+(defun isearch-backward-other-buffer (prefix)
   "Function to isearch-backward in other-window."
   (interactive "P")
   (save-excursion
@@ -445,13 +446,14 @@
         (forward-line)
         (when (or (< arg 0) (not (eobp)))
           (transpose-lines arg)
-          ;; Account for changes to transpose-lines in Emacs 24.3
-          (when (and (eval-when-compile
-                       (not (version-list-<
-                             (version-to-list emacs-version)
-                             '(24 3 50 0))))
-                     (< arg 0))
-            (forward-line -1)))
+          ;; ;; Account for changes to transpose-lines in Emacs 24.3
+          ;; (when (and (eval-when-compile
+          ;;              (not (version-list-<
+          ;;                    (version-to-list emacs-version)
+          ;;                    '(24 3 50 0))))
+          ;;            (< arg 0))
+          ;;   (forward-line -1))
+          )
         (forward-line -1))
       (move-to-column column t)))))
 

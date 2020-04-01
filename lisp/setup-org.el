@@ -67,7 +67,7 @@
   :after org
   :config
   (setq org-capture-templates
-        (append  org-capture-templates 
+        (append org-capture-templates 
                  `(("t" "TODO items")
                    
                    ("tr" "TODO research"
@@ -82,7 +82,15 @@
                     "* TODO %?\n  %a\n"
                     :kill-buffer t
                     :prepend t
-                    ))))
+                    )
+
+                   ("tp" "Other Projects"
+                    entry
+                    (file+olp "~/do.org" "Other Projects")
+                    "* %? :projects:\n %a\n %x\n"
+                    :prepend t
+                    :kill-buffer t)
+                   )))
 ;;;###autoload
   (defun make-orgcapture-frame ()
     "Create a new frame and run org-capture."

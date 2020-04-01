@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 (require 'use-package nil t)
 (use-package ivy
   :ensure t
@@ -27,11 +28,11 @@
   (global-set-key "\C-s" 'swiper)
   ;; (global-set-key (kbd "C-c C-r") 'ivy-resume)
   ;; (global-set-key (kbd "<f6>") 'ivy-resume)
-  (global-set-key (kbd "M-x") 'counsel-M-x)
-  (global-set-key (kbd "C-x C-f") 'counsel-find-file)
-  (global-set-key (kbd "<f1> f") 'counsel-describe-function)
-  (global-set-key (kbd "<f1> v") 'counsel-describe-variable)
-  (global-set-key (kbd "<f1> l") 'counsel-find-library)
+  ;; (global-set-key (kbd "M-x") 'counsel-M-x)
+  ;; (global-set-key (kbd "C-x C-f") 'counsel-find-file)
+  ;; (global-set-key (kbd "<f1> f") 'counsel-describe-function)
+  ;; (global-set-key (kbd "<f1> v") 'counsel-describe-variable)
+  ;; (global-set-key (kbd "<f1> l") 'counsel-find-library)
   ;; (global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
   ;; (global-set-key (kbd "<f2> u") 'counsel-unicode-char)
   ;; (global-set-key (kbd "C-c g") 'counsel-git)
@@ -127,35 +128,29 @@
   :commands counsel-describe-face
   :init
   (dolist (switch-version
-           '((org-goto . counsel-org-goto)
-             (imenu . counsel-imenu)) t)
+           '((apropos                  . counsel-apropos)
+             (bookmark-jump            . counsel-bookmark)
+             (describe-face            . counsel-faces)
+             (describe-function        . counsel-describe-function)
+             (describe-variable        . counsel-describe-variable)
+             (describe-bindings        . counsel-descbinds)
+             (set-variable             . counsel-set-variable)
+             (execute-extended-command . counsel-M-x)
+             ;; (find-file                . counsel-find-file)
+             (find-library             . counsel-find-library)
+             (info-lookup-symbol       . counsel-info-lookup-symbol)
+             (imenu                    . counsel-imenu)
+             (recentf-open-files       . counsel-recentf)
+             (swiper                   . counsel-grep-or-swiper)
+             (evil-ex-registers        . counsel-evil-registers)
+             (yank-pop                 . counsel-yank-pop)
+             (imenu                    . counsel-imenu)) t)
     (let ((old-cmd (car switch-version))
-          (new-cmd (symbol-function (cdr switch-version))))
+          (new-cmd (cdr switch-version)))
       (defalias old-cmd new-cmd)))
 
-  ;; (dolist (switch-version
-  ;;          '((apropos                  . counsel-apropos)
-  ;;            (bookmark-jump            . counsel-bookmark)
-  ;;            (describe-face            . counsel-faces)
-  ;;            (describe-function        . counsel-describe-function)
-  ;;            (describe-variable        . counsel-describe-variable)
-  ;;            (describe-bindings        . counsel-descbinds)
-  ;;            (set-variable             . counsel-set-variable)
-  ;;            (execute-extended-command . counsel-M-x)
-  ;;            (find-file                . counsel-find-file)
-  ;;            (find-library             . counsel-find-library)
-  ;;            (info-lookup-symbol       . counsel-info-lookup-symbol)
-  ;;            (imenu                    . counsel-imenu)
-  ;;            (recentf-open-files       . counsel-recentf)
-  ;;            (org-capture              . counsel-org-capture)
-  ;;            (swiper                   . counsel-grep-or-swiper)
-  ;;            (evil-ex-registers        . counsel-evil-registers)
-  ;;            (yank-pop                 . counsel-yank-pop)
-  ;;            (imenu                    . counsel-imenu))
-  ;;          t)
-  ;;   (let ((old-cmd (car switch-version))
-  ;;         (new-cmd (symbol-function (cdr switch-version))))
-  ;;     (defalias old-cmd new-cmd)))
+  (with-eval-after-load 'org
+    (defalias 'org-goto 'counsel-org-goto))
 
   :config
   (with-eval-after-load 'helpful
@@ -180,17 +175,26 @@
              (target (read-file-name (format "%s %s to:" prompt source))))
         (funcall cmd source target 1))))
 
-  (defun +ivy-open-ace-window (arg)
-    "Use `ace-window' on file candidates in ivy."
-    (ace-window t)
-    (let (;; (default-directory (if (eq (vc-root-dir) nil)
-          ;;                        counsel--fzf-dir
-          ;;                      (vc-root-dir)))
-          )
-      (if (> (length (aw-window-list)) 1)
-          (find-file arg)
-        (find-file-other-window arg))
-      (balance-windows (current-buffer))))
+  ;; (defun +ivy-open-ace-window (arg)
+  ;;   "Use `ace-window' on file candidates in ivy."
+  ;;   (ace-window t)
+  ;;   (let (;; (default-directory (if (eq (vc-root-dir) nil)
+  ;;         ;;                        counsel--fzf-dir
+  ;;         ;;                      (vc-root-dir)))
+  ;;         )
+  ;;     (if (> (length (aw-window-list)) 1)
+  ;;         (find-file arg)
+  ;;       (find-file-other-window arg))
+  ;;     (balance-windows (current-buffer))))
+
+  (defun +ivy-ace-window (cmd)
+    "Returns a function that runs `ace-window' and then calls
+cmd, a function of one argument."
+    (lambda (x)
+      (ace-window t)
+      (funcall cmd x)))
+
+;; ((+ivy-ace-window #'switch-to-buffer) "do.org")
 
   ;; Configure `counsel-find-file'
   (dolist (ivy-command '(counsel-find-file counsel-file-jump counsel-fzf counsel-git))
@@ -203,7 +207,7 @@
        ("k" ,(+ivy-action-reloading (lambda (x) (dired-delete-file x 'confirm-each-subdirectory))) "delete")
        ("r" (lambda (path) (rename-file path (read-string "New name: "))) "rename")
        ("R" ,(+ivy-action-reloading (+ivy-action-given-file #'rename-file "Move")) "move")
-       ("f" +ivy-open-ace-window "ace window")
+       ("f" ,(+ivy-ace-window #'find-file) "ace window")
        ("F" find-file-other-frame "other frame")
        ("p" (lambda (path) (with-ivy-window (insert (file-relative-name path default-directory)))) "insert relative path")
        ("x" counsel-find-file-extern "xdg-open")
@@ -212,7 +216,83 @@
        ;;        (with-ivy-window (insert (format "[[./%s]]" (file-relative-name path default-directory))))) "insert org-link (rel. path)")
        ;; ("L" (lambda (path) "Insert org-link with absolute path"
        ;;        (with-ivy-window (insert (format "[[%s]]" path)))) "insert org-link (abs. path)")
-       ))))
+       )))
+
+  (ivy-add-actions 'ivy-switch-buffer
+                   `(("f" ,(+ivy-ace-window #'switch-to-buffer) "ace window")))
+
+;;;###autoload
+  (defun find-file-Documents ()
+    "Find file in user documents"
+    (interactive)
+    (counsel-file-jump "" (concat
+                           (file-name-as-directory (getenv "HOME"))
+                           "Documents")))
+
+;;;###autoload
+  (defun find-file-Research ()
+    "Find file in user research documents"
+    (interactive)
+    (counsel-file-jump "" (concat
+                           (file-name-as-directory (getenv "HOME"))
+                           (file-name-as-directory"Documents")
+                           "research")))
+  
+;;;###autoload
+  (defun find-file-config-dirs ()
+    "Find files in all system config locations"
+    (interactive)
+    (counsel-file-jump-multi-dir "" (mapcar (lambda (dir) (concat
+                                                      (abbreviate-file-name (file-name-as-directory (getenv "HOME")))
+                                                      dir))
+                                            '(".local/bin" ".emacs.d" ".config"))))
+  
+;;;;###autoload
+  (defun counsel-file-jump-multi-dir (initial-input initial-directories)
+    (counsel-require-program find-program)
+    (let ((all-files-list nil))
+      (ivy-read "Find config file: "
+                (dolist (default-directory
+                          (if (listp initial-directories)
+                              initial-directories
+                            (list initial-directories))
+                          all-files-list)
+                  (setq all-files-list (append
+                                        (mapcar (lambda (file)
+                                                  (concat
+                                                   (file-name-as-directory default-directory)
+                                                   file))
+                                                (counsel--find-return-list counsel-file-jump-args))
+                                        all-files-list)))
+                
+                :matcher #'counsel--find-file-matcher
+                :initial-input initial-input
+                :action #'find-file
+                :preselect (counsel--preselect-file)
+                :require-match 'confirm-after-completion
+                :history 'file-name-history
+                :keymap counsel-find-file-map
+                :caller 'counsel-file-jump))
+    )
+
+  ;; ;;;###autoload
+  ;;   (defun find-file-system-config ()
+  ;;     "Find file in system config"
+  ;;     (interactive)
+  ;;     (let ((configdir (getenv "CONFIGDIR")))
+  ;;       (if configdir
+  ;;           (counsel-file-jump "" (getenv "CONFIGDIR"))
+  ;;         (message "ENV variable CONFIGDIR not set"))))
+
+  ;; ;;;###autoload
+  ;;   (defun find-file-emacs-config ()
+  ;;     "Find file in emacs config"
+  ;;     (interactive)
+  ;;     (counsel-file-jump "" (concat
+  ;;                            (file-name-as-directory (getenv "HOME"))
+  ;;                            ".emacs.d")))
+
+  )
 
 
 (use-package counsel-projectile

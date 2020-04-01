@@ -1,7 +1,7 @@
 ;; -*- lexical-binding: t -*-
 (require 'use-package nil t)
 (use-package evil-leader
-  :ensure
+  :ensure t
   :commands global-evil-leader-mode
   :init
   (setq evil-want-keybinding nil)
@@ -27,8 +27,7 @@
     "("  'reftex-label
     ")" 'reftex-reference
     "[" 'reftex-citation
-    "{" 'cdlatex-environment
-    "." 'ivy-bibtex)
+    "{" 'cdlatex-environment)
 
   (evil-leader/set-key-for-mode 'reftex-toc-mode
     (kbd "SPC") 'reftex-toc-view-line)
@@ -55,20 +54,23 @@
     "{"  'org-cdlatex-environment-indent
     "op" 'org-set-property
     )
-  (let ((counselp (featurep 'counsel)))
 
-    (evil-leader/set-key
-      ;; Help
-      "hf" (if counselp 'counsel-describe-function 'describe-function)
-      "hb" (if counselp 'counsel-descbinds 'describe-bindings)
-      "hv" (if counselp 'counsel-describe-variable 'describe-variable)
-      "hk" 'describe-key
-      "hm" 'describe-mode
-      "ha" (if counselp 'counsel-apropos 'apropos-command)
-      "hd" 'apropos-documentation
-      "hc" 'describe-key-briefly
+  (evil-leader/set-key
+    ;; Help
+    ;; "hf" (if counselp 'counsel-describe-function 'describe-function)
+    ;; "hb" (if counselp 'counsel-descbinds 'describe-bindings)
+    ;; "hv" (if counselp 'counsel-describe-variable 'describe-variable)
+    "hf" 'describe-function
+    "hb" 'describe-binddings
+    "hv" 'describe-variable
+    "ha" 'apropos
+    "hk" 'describe-key
+    "hm" 'describe-mode
+    ;; "ha" (if counselp 'counsel-apropos 'apropos-command)
+    "hd" 'apropos-documentation
+    "hc" 'describe-key-briefly
 
-      ))
+    )
 
   (evil-leader/set-key
     
@@ -78,36 +80,14 @@
     "u"  'universal-argument
 
     ;; File commands
-    "fz" 'counsel-fzf
-    "ff" 'counsel-find-file
-    "f." 'counsel-find-file
     "fS" 'sudo-find-file
     "fd" 'dired
-    ;; "f~" (lambda () "Find file from ~/" (find-fil))
-    "fr" 'counsel-recentf
-    "fj" 'counsel-file-jump
-    "fg" 'counsel-git
-    "fl" 'counsel-locate
-    "f'" 'counsel-bookmark
-    "fm" 'counsel-bookmark
-    ;; "fE" 'find-file-emacs-config
-    "fD" 'find-file-Documents
-    "fR" 'find-file-Research
-    "fc" 'find-file-config-dirs
-    "fC" 'find-file-config-dirs
 
-    ;; Ivy general
-    "I" 'ivy-resume
-    
     ;; Searching
-    "//" 'counsel-grep-or-swiper
     "/q" 'query-replace-regexp
     "/s" 'replace-regexp
     "/r" 'query-replace
     "/S" 'batch-replace-strings
-    "/a" 'counsel-ag
-    "/g" 'counsel-grep
-    "/G" 'counsel-git-grep
 
     ;; Buffer commands
     "b" 'switch-to-buffer
@@ -139,91 +119,55 @@
     "vf" 'ido-find-file-other-window
     "vb" 'ido-switch-buffer-other-window
 
-    )
+    (with-eval-after-load 'ivy
+      (evil-leader/set-key
+        ;; Ivy general
+        "I" 'ivy-resume)
+      (evil-leader/set-key-for-mode 'latex-mode
+        "." 'ivy-bibtex))
+    
+    (with-eval-after-load 'counsel
+      (evil-leader/set-key
+        ;; Searching
+        "//" 'counsel-grep-or-swiper
+        "/a" 'counsel-ag
+        "/g" 'counsel-grep
+        "/G" 'counsel-git-grep
 
-  (defun +evil-leader-projectile-map ()
-    "Add evil-leader keybinds for projectile mode"
-    (interactive)
-    (evil-leader/set-key
-      "SPC" 'projectile-command-map
-      "n" 'projectile-next-project-buffer
-      "p" 'projectile-previous-project-buffer))
-  (add-hook 'counsel-projectile-mode-hook #'+evil-leader-projectile-map)
+        ;; File commands
+        ;; "f~" (lambda () "Find file from ~/" (find-fil))
+        ;; "fE" 'find-file-emacs-config
+        "fD" 'find-file-Documents
+        "fR" 'find-file-Research
+        "fc" 'find-file-config-dirs
+        "fC" 'find-file-config-dirs
+        "fr" 'counsel-recentf
+        "fj" 'counsel-file-jump
+        "fg" 'counsel-git
+        "fl" 'counsel-locate
+        "f'" 'counsel-bookmark
+        "fm" 'counsel-bookmark
+        "ff" 'counsel-find-file
+        "f." 'counsel-find-file
+        "fz" 'counsel-fzf
 
-  :config
-  ;; Helper functions
-  
-;; ;;;###autoload
-;;   (defun find-file-system-config ()
-;;     "Find file in system config"
-;;     (interactive)
-;;     (let ((configdir (getenv "CONFIGDIR")))
-;;       (if configdir
-;;           (counsel-file-jump "" (getenv "CONFIGDIR"))
-;;         (message "ENV variable CONFIGDIR not set"))))
+        ;; Help commands
+        "hf" 'counsel-describe-function
+        "hb" 'counsel-descbinds
+        "hv" 'counsel-describe-variable
+        "ha" 'counsel-apropos
+        )))
 
-;; ;;;###autoload
-;;   (defun find-file-emacs-config ()
-;;     "Find file in emacs config"
-;;     (interactive)
-;;     (counsel-file-jump "" (concat
-;;                            (file-name-as-directory (getenv "HOME"))
-;;                            ".emacs.d")))
+  (with-eval-after-load 'projectile
+    (defun +evil-leader-projectile-map ()
+      "Add evil-leader keybinds for projectile mode"
+      (interactive)
+      (evil-leader/set-key
+        "SPC" 'projectile-command-map
+        "n" 'projectile-next-project-buffer
+        "p" 'projectile-previous-project-buffer))
+    (add-hook 'counsel-projectile-mode-hook #'+evil-leader-projectile-map))
 
-;;;###autoload
-  (defun find-file-Documents ()
-    "Find file in user documents"
-    (interactive)
-    (counsel-file-jump "" (concat
-                           (file-name-as-directory (getenv "HOME"))
-                           "Documents")))
-
-;;;###autoload
-  (defun find-file-Research ()
-    "Find file in user research documents"
-    (interactive)
-    (counsel-file-jump "" (concat
-                           (file-name-as-directory (getenv "HOME"))
-                           (file-name-as-directory"Documents")
-                           "research")))
-  
-;;;###autoload
-  (defun find-file-config-dirs ()
-    "Find files in all system config locations"
-    (interactive)
-    (counsel-file-jump-multi-dir "" (mapcar (lambda (dir) (concat
-                                                      (abbreviate-file-name (file-name-as-directory (getenv "HOME")))
-                                                      dir))
-                                            '(".local/bin" ".emacs.d" ".config"))))
-  
-;;;;###autoload
-  (defun counsel-file-jump-multi-dir (initial-input initial-directories)
-    (counsel-require-program find-program)
-    (let ((all-files-list nil))
-      (ivy-read "Find config file: "
-                (dolist (default-directory
-                         (if (listp initial-directories)
-                             initial-directories
-                           (list initial-directories))
-                         all-files-list)
-                  (setq all-files-list (append
-                                        (mapcar (lambda (file)
-                                                  (concat
-                                                   (file-name-as-directory default-directory)
-                                                   file))
-                                                (counsel--find-return-list counsel-file-jump-args))
-                                        all-files-list)))
-                
-                :matcher #'counsel--find-file-matcher
-                :initial-input initial-input
-                :action #'find-file
-                :preselect (counsel--preselect-file)
-                :require-match 'confirm-after-completion
-                :history 'file-name-history
-                :keymap counsel-find-file-map
-                :caller 'counsel-file-jump))
-    )
-  
   )
 
 (use-package evil
@@ -295,6 +239,8 @@
     (define-key evil-motion-state-map (kbd "C-u") 'evil-scroll-up))
   (evil-define-key '(normal visual insert) helpful-mode-map "q" 'quit-window)
   (evil-define-key '(normal visual insert) special-mode-map "q" 'quit-window)
+
+  (evil-define-key '(normal) 'global (kbd "zd") 'describe-word-at-point)
 
   (evil-define-key 'visual 'global (kbd "g-") 'narrow-to-region)
   (evil-define-key '(normal visual) 'global (kbd "g=") 'widen)

@@ -179,6 +179,7 @@
 ;; Key to run current line as bash command
 (global-set-key (kbd "C-!") 'shell-command-at-line)
 
+;;;###autoload
 (defun shell-command-at-line (&optional prefix)
   "Run contents of line around point as a shell command and replace the line with output. With a prefix argument, append the output instead"
   (interactive "P")
@@ -220,26 +221,261 @@
 ;;;* LINE NUMBERS
 ;;######################################################################
 (line-number-mode 1)
-(global-display-line-numbers-mode)
+;; (global-display-line-numbers-mode)
+(defvar +addons-enabled-modes (list 'prog-mode-hook
+                                    'conf-unix-mode-hook
+                                    'conf-windows-mode-hook
+                                    'conf-javaprop-mode-hook
+                                    'tex-mode-hook
+                                    'text-mode-hook
+                                    'message-mode-hook)
+  "List of modes where special features (like line numbers) should be enabled")
+
+(dolist (mode-hook +addons-enabled-modes)
+  (add-hook mode-hook (lambda () "Turn on line numbers for major-mode"
+                        (interactive)
+                        (display-line-numbers-mode))))
+
 (setq display-line-numbers-type 'relative)
 
 ;;######################################################################
 ;;;* EDITING
 ;;######################################################################
+(use-package dabbrev
+  :commands (dabbrev-expand dabbrev-completion)
+  :config
+  (setq dabbrev-abbrev-char-regexp "\\sw\\|\\s_")
+  (setq dabbrev-abbrev-skip-leading-regexp "\\$\\|\\*\\|/\\|=")
+  (setq dabbrev-backward-only nil)
+  (setq dabbrev-case-distinction nil)
+  (setq dabbrev-case-fold-search t)
+  (setq dabbrev-case-replace nil)
+  (setq dabbrev-check-other-buffers t)
+  (setq dabbrev-eliminate-newlines nil)
+  (setq dabbrev-upcase-means-case-search t))
+
 (require 'better-editing nil t)
 
 ;;######################################################################
 ;;;* BUFFER AND WINDOW MANAGEMENT
 ;;######################################################################
-(require 'better-buffers nil t)
-;; (require 'popup-buffers nil t)
+(use-package window
+  :init
 
-(autoload 'popup-buffers-update-open-popups "popup-buffers")
-(add-hook 'window-configuration-change-hook 'popup-buffers-update-open-popups)
-(global-set-key (kbd "C-`") 'popup-buffers-toggle-latest)
-(global-set-key (kbd "M-`") 'popup-buffers-cycle)
-;; (global-set-key (kbd "<f7>") 'popup-buffers-close-latest)
-;; (global-set-key (kbd "<f8>") 'popup-buffers-open-latest)
+  (defun buffer-mode (&optional buffer-or-name)
+    "Returns the major mode associated with a buffer.
+If buffer-or-name is nil return current buffer's mode."
+    (buffer-local-value 'major-mode
+                        (if buffer-or-name (get-buffer buffer-or-name) (current-buffer))))
+
+  (defun select-buffer-in-side-window (buffer alist)
+    "Display buffer in a side window and select it"
+    (let ((window (display-buffer-in-side-window buffer alist)))
+      (select-window window)))
+
+  (defvar +occur-grep-modes-list '(occur-mode
+                                   grep-mode
+                                   ivy-occur-grep-mode
+                                   locate-mode)
+    "List of major-modes used in occur-type buffers")
+
+  ;; This does not work at buffer creation since the major-mode for
+  ;; REPLs is not yet set when `display-buffer' is called, but is
+  ;; useful afterwards
+  (defvar +repl-modes-list '(matlab-shell-mode
+                             eshell-mode
+                             geiser-repl-mode
+                             shell-mode
+                             inferior-python-mode)
+    "List of major-modes used in REPL buffers")
+
+  (defvar +repl-names-list '("\\*e*shell\\*"
+                             "\\*.*REPL.*\\*"
+                             "\\*MATLAB\\*"
+                             "\\*Python\\*")
+    "List of buffer names used in REPL buffers")
+
+  (defvar +help-modes-list '(helpful-mode
+                             help-mode
+                             man-mode
+                             woman-mode
+                             Info-mode
+                             pydoc-mode
+                             eww-mode
+                             matlab-shell-help-mode)
+    "List of major-modes used in documentation buffers")
+
+  (setq display-buffer-alist
+        '(
+          ;; Windows on top
+          ("\\*Buffer List\\*" (display-buffer-in-side-window)
+           (side . top)
+           (slot . 0)
+           (window-height . fit-window-to-buffer)
+           (preserve-size . (nil . t)))
+
+          ((lambda (buf act) (member (buffer-mode buf) +occur-grep-modes-list))
+           (display-buffer-in-side-window)
+           (window-height .20)
+           (side . top)
+           (slot . -1)
+           (preserve-size . (nil . t))
+           (window-parameters . ((mode-line-format . (" " mode-line-buffer-identification)))))
+
+          ("\\*\\(Flycheck\\|Package-Lint\\).*" (display-buffer-in-side-window)
+           (window-height . 0.16)
+           (side . top)
+           (slot . 0)
+           (window-parameters . ((no-other-window . t))))
+
+          ;; Windows on the side
+
+          ("\\*Scratch\\*" (display-buffer-in-side-window)
+           (window-width 35)
+           (side . left)
+           (slot . 0)
+           )
+
+          ((lambda (buf act) (member (buffer-mode buf) +help-modes-list))
+           (display-buffer-in-side-window)
+           (window-width . 81)       ; See the :hook
+           (side . right)
+           (slot . 0)
+           (window-parameters . (;; (no-other-window . t)
+                                 (mode-line-format . (" "
+                                                      mode-line-buffer-identification)))))
+
+          ("\\*Faces\\*" (display-buffer-in-side-window)
+           (window-width . 0.25)
+           (side . right)
+           (slot . -2)
+           (window-parameters . ((no-other-window . t)
+                                 (mode-line-format . (" "
+                                                      mode-line-buffer-identification)))))
+
+          ("\\*Custom.*" (display-buffer-in-side-window)
+           (window-width . 0.25)
+           (side . right)
+           (slot . 1))
+
+          ;; Windows at the bottom
+          ("\\*\\(Warnings\\|Compile-Log\\|Messages\\)\\*" display-buffer-in-side-window
+           (window-height . 0.20)
+           (side . bottom)
+           (slot . 0)
+           (preserve-size . (nil . t))
+           (window-parameters . ((no-other-window . t))))
+
+          ("\\*Backtrace\\*" (display-buffer-in-side-window)
+           (window-height . 0.20)
+           (side . bottom)
+           (slot . -2)
+           (preserve-size . (nil . t)))
+
+          ("\\*\\(Output\\|Register Preview\\).*" (display-buffer-in-side-window)
+           (window-height . 0.16)       ; See the :hook
+           (side . bottom)
+           (slot . -2)
+           (window-parameters . ((no-other-window . t))))
+
+          ("\\*\\(?:Completions\\|Apropos\\)\\*" (display-buffer-in-side-window)
+           (window-height . 0.20)
+           (side . bottom)
+           (slot . -1)
+           (window-parameters . ((no-other-window . t))))
+
+          ((lambda (buf act) (seq-some (lambda (regex) (string-match-p regex buf))
+                                  +repl-names-list))
+           select-buffer-in-side-window
+           (window-height . .25)
+           (side . bottom)
+           (slot . 1)
+           (preserve-size . (nil . t)))
+
+          ;; ("\\*[Ss]hell\\*"
+          ;;  select-buffer-in-side-window
+          ;;  (window-width . 40)
+          ;;  (side . left)
+          ;;  (slot . -1)
+          ;;  (preserve-size . (nil . t))
+          ;;  )
+
+          ))
+
+  (setq window-combination-resize t
+        even-window-sizes 'height-only
+        window-sides-vertical nil
+        fit-window-to-buffer-horizontally t
+        window-resize-pixelwise t)
+
+  :hook ((help-mode . visual-line-mode)
+         (custom-mode . visual-line-mode)
+         (helpful-mode . visual-line-mode))
+  :bind (;; ("C-x +" . balance-windows-area)
+         ("<f8>" . +make-frame-floating-with-current-buffer)
+         ("C-M-`" . window-toggle-side-windows))
+
+  :config
+  (defun +make-frame-floating-with-current-buffer ()
+    "Display the current buffer in a new floating frame.
+
+This passes certain parameters to the newly created frame:
+
+- use a different name than the default;
+- use a graphical frame;
+- do not display the minibuffer.
+
+The name is meant to be used by the external rules of my tiling
+window manager (BSPWM) to present the frame in a floating state."
+    (interactive)
+    (make-frame '((name . "dropdown_emacs-buffer")
+                  (window-system . x)
+                  (minibuffer . nil))))
+
+  (defun +display-buffer-at-bottom ()
+    "Move the current buffer to the bottom of the frame.  This is
+useful to take a buffer out of a side window.
+
+The window parameters of this function are provided mostly for
+didactic purposes."
+    (interactive)
+    (let ((buffer (current-buffer)))
+      (with-current-buffer buffer
+        (delete-window)
+        (display-buffer-at-bottom
+         buffer `((window-parameters . ((mode-line-format . (" "
+                                                             mode-line-buffer-identification))))))))))
+
+(use-package popup-buffers
+  :bind (("C-`" . popup-buffers-toggle-latest)
+         ("M-`" . popup-buffers-cycle))
+  :init
+  (autoload 'popup-buffers-update-open-popups "popup-buffers")
+  (add-hook 'window-configuration-change-hook 'popup-buffers-update-open-popups)
+  ;; (global-set-key (kbd "C-`") 'popup-buffers-toggle-latest)
+  ;; (global-set-key (kbd "M-`") 'popup-buffers-cycle)
+  ;; (global-set-key (kbd "<f7>") 'popup-buffers-close-latest)
+  ;; (global-set-key (kbd "<f8>") 'popup-buffers-open-latest)
+  (setq popup-buffers-reference-modes-list
+        (append +help-modes-list
+                +repl-modes-list
+                +occur-grep-modes-list))
+  (setq popup-buffers-reference-buffer-list
+        '("^\\*Warnings\\*"
+          "^\\*Compile-Log\\*"
+          "^\\*Messages\\*"
+          "^\\*Backtrace\\*"
+          "^\\*evil-registers\\*"
+          "^\\*Apropos"
+          "^Calc:"
+          "^\\*ielm\\*"
+          "^\\*TeX Help\\*"
+          "\\*Shell Command Output\\*"
+          "\\*Completions\\*"
+          "Output\\*"))
+  )
+
+(require 'better-buffers nil t)
 
 (use-package winner
   :commands winner-undo
@@ -278,6 +514,7 @@
 (require 'utilities nil t)
 
 (use-package dashboard
+  :disabled t
   :ensure t
   :init (setq initial-buffer-choice (lambda () (get-buffer "*dashboard*")))
   :config
@@ -332,6 +569,67 @@
   (let ( (word (thing-at-point 'word)) )
     (shell-command (concat "dict " word (cond ((null prefix) nil)
                                               (t " -v"))))))
+
+(use-package outline
+  :bind (:map outline-minor-mode-map
+              ("<tab>" . outline-cycle))
+  :config
+  (define-key outline-minor-mode-map (kbd "<backtab>") (lambda () (interactive)
+                                                         (outline-back-to-heading)
+                                                         (outline-cycle)))
+;;;###autoload
+  (defun outline-next-line ()
+    "Forward line, but mover over invisible line ends.
+Essentially a much simplified version of `next-line'."
+    (interactive)
+    (beginning-of-line 2)
+    (while (and (not (eobp))
+                (get-char-property (1- (point)) 'invisible))
+      (beginning-of-line 2)))
+
+  (defvar outline-cycle-emulate-tab t
+    "Use tab to indent (when not on a heading) in outline-minor-mode")
+
+  (defun outline-cycle () (interactive)
+         (cond
+          ((save-excursion (beginning-of-line 1) (looking-at outline-regexp))
+           ;; At a heading: rotate between three different views
+           (outline-back-to-heading)
+           (let ((goal-column 0) beg eoh eol eos)
+             ;; First, some boundaries
+             (save-excursion
+               (outline-back-to-heading)           (setq beg (point))
+               (save-excursion (outline-next-line) (setq eol (point)))
+               (outline-end-of-heading)            (setq eoh (point))
+               (outline-end-of-subtree)            (setq eos (point)))
+             ;; Find out what to do next and set `this-command'
+             (cond
+              ((= eos eoh)
+               ;; Nothing is hidden behind this heading
+               (message "EMPTY ENTRY"))
+              ((>= eol eos)
+               ;; Entire subtree is hidden in one line: open it
+               (outline-show-entry)
+               (outline-show-children)
+               (message "CHILDREN")
+               (setq this-command 'outline-cycle-children))
+              ((eq last-command 'outline-cycle-children)
+               ;; We just showed the children, now show everything.
+               (outline-show-subtree)
+               (message "SUBTREE"))
+              (t
+               ;; Default action: hide the subtree.
+               (outline-hide-subtree)
+               (message "FOLDED")))))
+
+          ;; TAB emulation
+          (outline-cycle-emulate-tab
+           (indent-according-to-mode))
+
+          (t
+           ;; Not at a headline: Do indent-relative
+           (outline-back-to-heading)))))
+
 ;;######################################################################
 ;;;* COMPILATION
 ;;######################################################################
@@ -380,7 +678,7 @@
 ;;;** LSP SUPPORT
 ;;----------------------------------------------------------------------
 (use-package lsp-mode
-  ;; :disabled t
+  :disabled t
   :ensure t
   ;; :hook (python-mode . lsp-deferred)
   :bind (("C-c C-d" . lsp-describe-thing-at-point))
@@ -429,7 +727,7 @@
 ;;;** EGLOT - LSP
 ;;----------------------------------------------------------------------
 (use-package eglot
-  :disabled t
+  ;; :disabled t
   :commands eglot
   :config
   (add-to-list 'eglot-server-programs '(matlab-mode . ("~/.local/share/git/matlab-langserver/matlab-langserver.sh" "")))
@@ -684,7 +982,10 @@
 ;;;** GEISER
 ;;----------------------------------------------------------------------
 (use-package geiser
-  ;; :ensure t
+  :if (not (version-list-<
+           (version-to-list emacs-version)
+           '(27 0 0 0)))
+  :ensure t
   :init
   (add-hook 'geiser-repl-mode-hook (lambda ()
                                       (setq-local company-idle-delay nil)
@@ -735,7 +1036,12 @@
 ;;----------------------------------------------------------------------
 ;;;** EYEBROWSE - tab emulation for emacs
 ;;----------------------------------------------------------------------
+;; This is superceded by native tabs (tab-bar-mode) in Emacs 27, only
+;; load if running a lower Emacs version
 (use-package eyebrowse
+  :if (version-list-<
+       (version-to-list emacs-version)
+       '(27 0 0 0))
   :ensure t
   ;; :bind ("C-c C-w c" . eyebrowse-create-window-config)
   ;; :commands eyebrowse-create-window-config
@@ -820,60 +1126,61 @@
 ;;----------------------------------------------------------------------
 ;;;** HIDESHOW (built in (DISABLED))
 ;;----------------------------------------------------------------------
-;; (use-package hideshow ; built-in
-;;   :commands (hs-toggle-hiding
-;;              hs-hide-block
-;;              hs-hide-level
-;;              hs-show-all
-;;              hs-hide-all)
-;;   :config
-;;   (setq hs-hide-comments-when-hiding-all nil)
-;;   ;; (setq hs-hide-comments-when-hiding-all nil
-;;   ;;       ;; Nicer code-folding overlays (with fringe indicators)
-;;   ;;       hs-set-up-overlay #'+fold-hideshow-set-up-overlay-fn)
+(use-package hideshow ; built-in
+  :disabled t
+  :commands (hs-toggle-hiding
+             hs-hide-block
+             hs-hide-level
+             hs-show-all
+             hs-hide-all)
+  :config
+  (setq hs-hide-comments-when-hiding-all nil)
+  ;; (setq hs-hide-comments-when-hiding-all nil
+  ;;       ;; Nicer code-folding overlays (with fringe indicators)
+  ;;       hs-set-up-overlay #'+fold-hideshow-set-up-overlay-fn)
 
-;;   (dolist (hs-command (list #'hs-toggle-hiding
-;;                             #'hs-hide-block
-;;                             #'hs-hide-level
-;;                             #'hs-show-all
-;;                             #'hs-hide-all))
-;;     (advice-add hs-command :before
-;;                 (lambda (&optional end) "Advice to ensure `hs-minor-mode' is enabled"
-;;                   (unless (bound-and-true-p hs-minor-mode)
-;;                     (hs-minor-mode +1)))))
+  (dolist (hs-command (list #'hs-toggle-hiding
+                            #'hs-hide-block
+                            #'hs-hide-level
+                            #'hs-show-all
+                            #'hs-hide-all))
+    (advice-add hs-command :before
+                (lambda (&optional end) "Advice to ensure `hs-minor-mode' is enabled"
+                  (unless (bound-and-true-p hs-minor-mode)
+                    (hs-minor-mode +1)))))
 
-;;   ;; (defadvice! +fold--hideshow-ensure-mode-a (&rest _)
-;;   ;;   "Ensure `hs-minor-mode' is enabled."
-;;   ;;   :before '(hs-toggle-hiding hs-hide-block hs-hide-level hs-show-all hs-hide-all)
-;;   ;;   (unless (bound-and-true-p hs-minor-mode)
-;;   ;;     (hs-minor-mode +1)))
+  ;; (defadvice! +fold--hideshow-ensure-mode-a (&rest _)
+  ;;   "Ensure `hs-minor-mode' is enabled."
+  ;;   :before '(hs-toggle-hiding hs-hide-block hs-hide-level hs-show-all hs-hide-all)
+  ;;   (unless (bound-and-true-p hs-minor-mode)
+  ;;     (hs-minor-mode +1)))
 
-;;   ;; extra folding support for more languages
-;;   (unless (assq 't hs-special-modes-alist)
-;;     (setq hs-special-modes-alist
-;;           (append
-;;            '((vimrc-mode "{{{" "}}}" "\"")
-;;              ;; (yaml-mode "\\s-*\\_<\\(?:[^:]+\\)\\_>"
-;;              ;;            ""
-;;              ;;            "#"
-;;              ;;            +fold-hideshow-forward-block-by-indent-fn nil)
-;;              ;; (haml-mode "[#.%]" "\n" "/" +fold-hideshow-haml-forward-sexp-fn nil)
-;;              ;; (ruby-mode "class\\|d\\(?:ef\\|o\\)\\|module\\|[[{]"
-;;              ;;            "end\\|[]}]"
-;;              ;;            "#\\|=begin"
-;;              ;;            ruby-forward-sexp)
-;;              ;; (enh-ruby-mode "class\\|d\\(?:ef\\|o\\)\\|module\\|[[{]"
-;;              ;;                "end\\|[]}]"
-;;              ;;                "#\\|=begin"
-;;              ;;                enh-ruby-forward-sexp nil)
-;;              (matlab-mode "^\s*if\\|switch\\|case\\|otherwise\\|while\\|^\s*for\\|try\\|catch\\|function"
-;;                           "end"
-;;                           "" (lambda (_arg) (matlab-forward-sexp)))
-;;              (nxml-mode "<!--\\|<[^/>]*[^/]>"
-;;                         "-->\\|</[^/>]*[^/]>"
-;;                         "<!--" sgml-skip-tag-forward nil))
-;;            hs-special-modes-alist
-;;            '((t))))))
+  ;; extra folding support for more languages
+  (unless (assq 't hs-special-modes-alist)
+    (setq hs-special-modes-alist
+          (append
+           '((vimrc-mode "{{{" "}}}" "\"")
+             ;; (yaml-mode "\\s-*\\_<\\(?:[^:]+\\)\\_>"
+             ;;            ""
+             ;;            "#"
+             ;;            +fold-hideshow-forward-block-by-indent-fn nil)
+             ;; (haml-mode "[#.%]" "\n" "/" +fold-hideshow-haml-forward-sexp-fn nil)
+             ;; (ruby-mode "class\\|d\\(?:ef\\|o\\)\\|module\\|[[{]"
+             ;;            "end\\|[]}]"
+             ;;            "#\\|=begin"
+             ;;            ruby-forward-sexp)
+             ;; (enh-ruby-mode "class\\|d\\(?:ef\\|o\\)\\|module\\|[[{]"
+             ;;                "end\\|[]}]"
+             ;;                "#\\|=begin"
+             ;;                enh-ruby-forward-sexp nil)
+             (matlab-mode "^\s*if\\|switch\\|case\\|otherwise\\|while\\|^\s*for\\|try\\|catch\\|function"
+                          "end"
+                          "" (lambda (_arg) (matlab-forward-sexp)))
+             (nxml-mode "<!--\\|<[^/>]*[^/]>"
+                        "-->\\|</[^/>]*[^/]>"
+                        "<!--" sgml-skip-tag-forward nil))
+           hs-special-modes-alist
+           '((t))))))
 
 ;;----------------------------------------------------------------------
 ;;;** VIMISH-FOLD
@@ -911,16 +1218,18 @@
 (use-package helpful
   :ensure t
   :commands (helpful-callable helpful-variable)
+  ;; :hook (helpful-mode . (lambda () (line-number-mode 0)))
   :init
   (global-set-key (kbd "C-h k") #'helpful-key)
   (global-set-key (kbd "C-h C") #'helpful-command)
   (global-set-key (kbd "C-h .") #'helpful-at-point)
-  (global-set-key (kbd "C-h C-.") #'helpful-at-point))
+  (global-set-key (kbd "C-h C-.") #'helpful-at-point)) 
 
 ;;----------------------------------------------------------------------
 ;;;** SHACKLE
 ;;----------------------------------------------------------------------
 (use-package shackle
+  :disabled t
   :ensure t
   :init (shackle-mode))
 
@@ -998,7 +1307,7 @@
   ;; (add-to-list 'company-backends 'company-dict)
 
   (global-company-mode)
-  (setq company-idle-delay 0.0
+  (setq company-idle-delay 0.5
         company-dabbrev-downcase 0
         company-minimum-prefix-length 3
         company-selection-wrap-around t
@@ -1090,24 +1399,24 @@
   ;;       t)))
   
   ;; AC-mode style settings
-  (defun company-ac-setup ()
-    "Sets up `company-mode' to behave similarly to `auto-complete-mode'."
-    (defun my-company-visible-and-explicit-action-p ()
-      (and (company-tooltip-visible-p)
-           (company-explicit-action-p)))
-    (setq company-require-match nil)
-    (setq company-auto-complete #'my-company-visible-and-explicit-action-p)
-    ;; (setq company-frontends
-    ;;       '(company-pseudo-tooltip-unless-just-one-frontend
-    ;;         company-preview-frontend
-    ;;         company-echo-metadata-frontend))
-    (setq company-frontends '(company-echo-metadata-frontend
-                              company-pseudo-tooltip-unless-just-one-frontend-with-delay
-                              company-preview-frontend))
-    (define-key company-active-map [tab]
-      'company-select-next-if-tooltip-visible-or-complete-selection)
-    (define-key company-active-map (kbd "TAB")
-      'company-select-next-if-tooltip-visible-or-complete-selection))
+  ;; (defun company-ac-setup ()
+  ;;   "Sets up `company-mode' to behave similarly to `auto-complete-mode'."
+  ;;   (defun my-company-visible-and-explicit-action-p ()
+  ;;     (and (company-tooltip-visible-p)
+  ;;          (company-explicit-action-p)))
+  ;;   (setq company-require-match nil)
+  ;;   (setq company-auto-complete #'my-company-visible-and-explicit-action-p)
+  ;;   ;; (setq company-frontends
+  ;;   ;;       '(company-pseudo-tooltip-unless-just-one-frontend
+  ;;   ;;         company-preview-frontend
+  ;;   ;;         company-echo-metadata-frontend))
+  ;;   (setq company-frontends '(company-echo-metadata-frontend
+  ;;                             company-pseudo-tooltip-unless-just-one-frontend-with-delay
+  ;;                             company-preview-frontend))
+  ;;   (define-key company-active-map [tab]
+  ;;     'company-select-next-if-tooltip-visible-or-complete-selection)
+  ;;   (define-key company-active-map (kbd "TAB")
+  ;;     'company-select-next-if-tooltip-visible-or-complete-selection))
 
   ;; Tab'n'Go style settings
   ;; (defun company-tng-setup ()
@@ -1129,7 +1438,7 @@
 
   ;; (company-ac-setup)
   ;; (company-tng-setup)
-  ;; (company-tng-configure-default)
+  (company-tng-configure-default)
   )
 
   (use-package company-statistics
@@ -1178,10 +1487,9 @@
 ;;----------------------------------------------------------------------
 ;;;** IY-GO-TO-CHAR
 ;;----------------------------------------------------------------------
-(require 'iy-go-to-char nil t)
-(when (featurep 'iy-go-to-char)
-  (define-key global-map (kbd "M-s") 'iy-go-to-char)
-  (define-key global-map (kbd "M-r") 'iy-go-to-char-backward))
+(use-package iy-go-to-char
+  :bind (("M-s" . iy-go-to-char)
+         ("M-r" . iy-go-to-char-key-backward)))
 
 ;;----------------------------------------------------------------------
 ;;;** WRAP-REGION MODE
@@ -1206,6 +1514,7 @@
   ;;; Bibtex management from ivy. Call ivy-bibtex.
 (use-package ivy-bibtex
   :ensure t
+  :after ivy
   :functions bibtex-completion-open-pdf
   :commands ivy-bibtex
   :config
@@ -1253,6 +1562,23 @@
 ;;######################################################################
 
 ;; (load-theme 'dracula t)
+(with-eval-after-load 'dracula-theme
+  (custom-theme-set-faces 'dracula 
+                          '(aw-background-face
+                            ((t (:background "#282a36" :inverse-video nil :weight normal))))
+                          '(aw-leading-char-face
+                            ((t (:foreground "#bd93f9" :height 2.5 :weight normal))))))
+
+(with-eval-after-load 'dichromacy-theme
+  (custom-theme-set-faces 'dichromacy
+                          '(aw-background-face
+                            ((t (:background "#ffffff" :inverse-video nil :weight normal))))
+                          '(aw-leading-char-face
+                            ((t (:foreground "#009e73" :height 2.5 :weight normal))))
+                          '(org-level-1 ((t (:foreground "#0072b2" :inherit bold :height 1.3))))
+                          '(org-level-2 ((t (:foreground "#d55e00" :inherit bold :height 1.1))))
+                          '(org-document-title ((t (:inherit bold :height 1.5))))
+                          ))
 
 ;;######################################################################
 ;;;* MODELINE:
@@ -1278,6 +1604,11 @@
 ;;         spaceline-buffer-size-p nil
 ;;         spaceline-line-column-p t)
 ;;   (spaceline-emacs-theme))
+
+;; (use-package doom-modeline
+;;   :disabled t
+;;   :ensure t
+;;   :init (doom-modeline-mode 1))
 
 (use-package smart-mode-line
   :ensure t
@@ -1380,6 +1711,8 @@
 ;;######################################################################
 (require 'setup-evil)
 
+;;######################################################################
+;;;* LOCAL-VARIABLES
 ;; Local Variables:
 ;; outline-regexp: ";;;\\*+"
 ;; page-delimiter: ";;;\\**"

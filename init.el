@@ -292,7 +292,8 @@ If buffer-or-name is nil return current buffer's mode."
   (defvar +repl-names-list '("\\*e*shell\\*"
                              "\\*.*REPL.*\\*"
                              "\\*MATLAB\\*"
-                             "\\*Python\\*")
+                             "\\*Python\\*"
+                             "\\*Inferior .*\\*$")
     "List of buffer names used in REPL buffers")
 
   (defvar +help-modes-list '(helpful-mode
@@ -852,7 +853,8 @@ Essentially a much simplified version of `next-line'."
                                       (?o ("\\omega" "\\mho" "\\mathcal{O}"))
                                       (?6 ("\\partial"))
                                       (?v ("\\vee" "\\forall"))))
-    ;; (setq cdlatex-math-modify-alist '(?1 "\\mathbb" "\\textbf" t nil nil))
+    (setq cdlatex-math-modify-alist '((?b "\\mathbb" "\\textbf" t nil nil)
+                                      (?B "\\mathbf" "\\textbf" t nil nil)))
     (setq cdlatex-paired-parens "$[{("))
   )
 
@@ -877,9 +879,9 @@ Essentially a much simplified version of `next-line'."
   ;; (add-hook 'matlab-mode-hook #'hs-minor-mode)
   (add-hook 'matlab-mode-hook (lambda ()  (interactive)
                                 (setq-local buffer-file-coding-system 'us-ascii)
-                                (outline-minor-mode)
-                                (setq-local page-delimiter "%%")
-                                (setq-local outline-regexp "%%+")
+                               (outline-minor-mode)
+                                (setq-local page-delimiter "%%+")
+                                (setq-local outline-regexp "^\\s-*%%+")
                                 (outline-hide-sublevels 3)
                                 ))
 
@@ -891,6 +893,8 @@ Essentially a much simplified version of `next-line'."
   ;; (define-key matlab-mode-map (kbd "C-c C-b") #'matlab-shell-run-block)
 
   ;; :config
+  (setq matlab-shell-echoes nil)
+  (setq matlab-shell-run-region-function 'matlab-shell-region->script)
   (add-hook 'matlab-shell-mode-hook (lambda () (interactive)
                                       (define-key matlab-shell-mode-map (kbd "C-<tab>") nil)))
 
@@ -917,13 +921,13 @@ Essentially a much simplified version of `next-line'."
     "Move forward section in matlab mode"
     (interactive)
     (beginning-of-line 2)
-    (re-search-forward "^%%" nil t)
+    (re-search-forward "^\\s-*%%" nil t)
     (match-end 0))
 
   (defun matlab-backward-section ()
     "Move forward section in matlab mode"
     (interactive)
-    (re-search-backward "^%%" nil t)
+    (re-search-backward "^\\s-*%%" nil t)
     (match-beginning 0))
 
   )
@@ -1041,7 +1045,7 @@ Essentially a much simplified version of `next-line'."
 (use-package eyebrowse
   :if (version-list-<
        (version-to-list emacs-version)
-       '(27 0 0 0))
+       '(27 0 1 0))
   :ensure t
   ;; :bind ("C-c C-w c" . eyebrowse-create-window-config)
   ;; :commands eyebrowse-create-window-config

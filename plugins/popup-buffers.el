@@ -157,11 +157,11 @@
 (defun popup-buffers-toggle-latest ()
   "Toggle visibility of the last opened popup window"
   (interactive)
-  (setq popup-buffers--toggle-state (not popup-buffers--toggle-state))
   (if popup-buffers-open-buffer-window-alist
       (popup-buffers-close-latest)
     (if popup-buffers--toggle-state
-        (popup-buffers-close-latest)
+        (progn (setq popup-buffers--toggle-state (not popup-buffers--toggle-state))
+               (popup-buffers-close-latest))
       (popup-buffers-open-latest))))
 
 ;;;###autoload

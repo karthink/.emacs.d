@@ -62,14 +62,14 @@
             (read (current-buffer))))
     (message "load ivy-views"))
 
-;; ;;;###autoload
-;;   (defun +ivy-switch-file-search ()
-;;     "Switch to counsel-file-jump, preserving current input."
-;;     (interactive)
-;;     (let ((input (ivy--input)))
-;;       (ivy-quit-and-run (counsel-file-jump "" ivy--directory))))
+;;;###autoload
+  (defun +ivy-switch-file-search ()
+    "Switch to counsel-fzf, preserving current input."
+    (interactive)
+    (let ((input (ivy--input)))
+      (ivy-quit-and-run (counsel-file-jump input ivy--directory))))
 
-;;   (define-key ivy-minibuffer-map (kbd "M-j") '+ivy-switch-file-search)
+  ;; (define-key ivy-minibuffer-map (kbd "M-s") '+ivy-switch-file-search)
 
   (define-key ivy-minibuffer-map (kbd "C-SPC") 'ivy-mark)
 
@@ -126,6 +126,9 @@
 (use-package counsel
   :ensure t
   :commands counsel-describe-face
+  :bind (:map counsel-find-file-map
+              ("M-s" . +ivy-switch-file-search)
+              ("C-s" . +ivy-switch-file-search))
   :init
   (dolist (switch-version
            '((apropos                  . counsel-apropos)
@@ -233,10 +236,14 @@ cmd, a function of one argument."
   (defun find-file-Research ()
     "Find file in user research documents"
     (interactive)
-    (counsel-file-jump "" (concat
-                           (file-name-as-directory (getenv "HOME"))
-                           (file-name-as-directory"Documents")
-                           "research")))
+    (counsel-file-jump-multi-dir "" (list (abbreviate-file-name (concat
+                                                                 (file-name-as-directory (getenv "HOME"))
+                                                                 (file-name-as-directory "Documents")
+                                                                 "research"))
+                                          (abbreviate-file-name (concat
+                                                                 (file-name-as-directory (getenv "HOME"))
+                                                                 (file-name-as-directory "Dropbox")
+                                                                 "KarthikBassam")))))
   
 ;;;###autoload
   (defun find-file-config-dirs ()

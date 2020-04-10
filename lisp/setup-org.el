@@ -121,7 +121,11 @@
 ;;----------------------------------------------------------------------
 ;; ORG-BABEL-EVAL-IN-REPL
 ;;----------------------------------------------------------------------
+(use-package ob-octave-fix
+  :after ob-octave)
+
 (use-package org-babel-eval-in-repl
+  :disabled
   :ensure t
   :after ob
   :init

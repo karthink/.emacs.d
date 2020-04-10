@@ -30,9 +30,17 @@
 ;; user-friendly.
 (put 'narrow-to-region 'disabled nil)
 
+;; Better default delete-char
+(global-set-key (kbd "C-d") 'delete-forward-char)
+
 ;; Change case with impunity 
 (put 'downcase-region 'disabled nil)
 (put 'upcase-region 'disabled nil)
+
+;; Better defaults for upcase/downcase
+(global-set-key (kbd "M-u") 'upcase-dwim)
+(global-set-key (kbd "M-l") 'downcase-dwim)
+(global-set-key (kbd "M-c") 'capitalize-dwim)
 
 (defvar newline-and-indent t
   "Modify the behavior of the open-*-line functions to cause them to autoindent.")

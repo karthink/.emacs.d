@@ -91,7 +91,7 @@
                                       (replace-regexp-in-string regex replacement
                                                                 string rest)))))
 
-(provide 'org-babel-octave-fix)
+(provide 'ob-octave-fix)
 
 ;; Testing code
 ;; (remove-car-upto-newline '("test;string\nno 1\nyesyes" "no 2\n\n whatever"))

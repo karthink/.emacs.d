@@ -1,7 +1,7 @@
 # -*- mode: snippet -*-
 # name: row vector
 # key: rvec
-# condition: (and (texmathp) 'auto)
+# condition: 'auto
 # group: math
 # --
-\\begin{pmatrix} ${1:x}_{${2:1}} & \\dots & $1_{${3:n}} \\end{pmatrix}
+\\begin{pmatrix} ${1:x}_{${2:1}} & ${3:\\dots} & $1_{${4:n}} \\end{pmatrix}

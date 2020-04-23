@@ -75,7 +75,7 @@
        (mapconcat #'identity (reverse results) "\n")))))
 
 (defun remove-car-upto-newline (raw)
-  "Truncate each string in a list of strings up to the first newline"
+  "Truncate the first string in a list of strings `RAW' up to the first newline"
   (cons (mapconcat #'identity
                    (cdr (split-string-and-unquote (car raw) "\n"))
                    "\n") (cdr raw)))

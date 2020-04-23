@@ -1,0 +1,10 @@
+# -*- mode: snippet -*-
+# name: Diagonal bmatrix
+# key: diag3
+# group: math
+# --
+\\begin{bmatrix}
+${1:\\ddots}  &  & \\\\
+ & ${2:\\ddots}  & \\\\
+ &  & ${3:\\ddots}
+ \\end{bmatrix}

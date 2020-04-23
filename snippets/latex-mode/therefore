@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: therefore 
+# key: thus
+# group: math
+# condition: (and (texmathp) 'auto)
+# --
+\\therefore 

@@ -1,16 +1,19 @@
 ;;;; Org mode
-
 (require 'use-package nil t)
 
 ;;----------------------------------------------------------------------
 ;; ORG
 ;;----------------------------------------------------------------------
 (use-package org
+  :defer 5
   :bind (("\C-cl" . org-store-link)
          ("\C-ca" . org-agenda)
          ("<f5>" . org-capture)
          ("<f6>" . org-agenda))
 
+  :hook ((org-mode . org-toggle-pretty-entities)
+         (org-mode . turn-on-org-cdlatex)
+         (org-mode . visual-line-mode))
   :init
   (add-hook 'org-load-hook
             '(lambda nil
@@ -18,55 +21,139 @@
                (define-key org-mode-map (kbd "<C-tab>") 'other-window)
                (define-key org-mode-map (kbd "<C-S-tab>") (lambda () (other-window -1)))
                ;; Org-cdlatex options
-               (define-key org-cdlatex-mode-map (kbd "$") 'cdlatex-dollar)))
-
-  (setq org-directory "~/.local/share/org")
-
+               (define-key org-cdlatex-mode-map (kbd "$") 'cdlatex-dollar)
+               ))
   ;; Pretty symbols
-  (add-hook 'org-mode-hook 'org-toggle-pretty-entities)
-
+  ;; (add-hook 'org-mode-hook 'org-toggle-pretty-entities)
   ;; Org LaTeX options
-  (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
-
+  ;; (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
   ;; Enable longline-truncation in org-mode buffers
-  (add-hook 'org-mode-hook 'toggle-truncate-lines)
-
+  ;; (add-hook 'org-mode-hook 'toggle-truncate-lines)
 
   :config
-  (setq org-agenda-files '("~/do.org" "~/.local/share/org/schedule.org"))
-  (setq org-log-done 'time)
-  (setq org-file-apps '((auto-mode . emacs)
+  ;; General preferences
+  (setq-default org-adapt-indentation nil 
+                org-cycle-include-plain-lists t 
+                org-fontify-done-headline t 
+                org-fontify-quote-and-verse-blocks t 
+                org-fontify-whole-heading-line t 
+                org-footnote-auto-label 'plain 
+                org-hidden-keywords nil 
+                org-hide-emphasis-markers nil 
+                org-hide-leading-stars t 
+                org-image-actual-width nil 
+                org-pretty-entities-include-sub-superscripts t 
+                org-refile-targets '((nil :maxlevel . 3) (org-agenda-files :maxlevel . 3)) 
+                org-startup-folded t 
+                org-startup-indented t 
+                org-startup-with-inline-images nil 
+                org-tags-column 0
+                org-use-sub-superscripts t
+                org-pretty-entities-include-sub-superscripts t
+                org-latex-listings t
+                org-special-ctrl-a/e t
+                org-special-ctrl-k t
+                org-log-done 'time
+                org-catch-invisible-edits 'smart
+                org-use-speed-commands t
+                ;; org-eldoc-breadcrumb-separator " → " 
+                ;; org-hide-leading-stars-before-indent-mode t 
+                ;; org-indent-indentation-per-level 2 
+                ;; org-indent-mode-turns-on-hiding-stars t 
+                ;; org-list-description-max-indent 4 
+                ;; org-pretty-entities nil 
+                ;; org-priority-faces '((?a . error) (?b . warning) (?c . success)) 
+                ;; org-entities-user '(("flat" "\\flat" nil "" "" "266D" "♭") ("sharp" "\\sharp" nil "" "" "266F" "♯")) 
+                ;; org-todo-keywords '((sequence "TODO(t)" "|" "DONE(d)") (sequence "[ ](T)" "[-](p)" "[?](m)" "|" "[X](D)") (sequence "NEXT(n)" "WAITING(w)" "LATER(l)" "|" "CANCELLED(c)")) 
+                ;; org-todo-keyword-faces '(("[-]" :inherit (font-lock-constant-face bold)) ("[?]" :inherit (warning bold)) ("WAITING" :inherit bold) ("LATER" :inherit (warning bold))) 
+                ;; org-use-sub-superscripts '{}
+                )
+
+  ;; My defaults
+  (setq org-directory "~/.local/share/org" 
+        org-agenda-files '("~/do.org" "~/.local/share/org/schedule.org")
+        org-file-apps '((auto-mode . emacs)
                         ("\\.mm\\'" . default)
                         ("\\.x?html?\\'" . default)
-                        ("\\.pdf\\'" . "zathura %s")))
-
-;; (global-set-key "\C-cb" 'org-iswitchb)
-
-  ;; Hide all stars except the last one on each line:
-  (setq org-hide-leading-stars 1)
-
-  ;; Avoid invisible edits
-  (setq org-catch-invisible-edits 'show)
-  ;; (setq org-catch-invisible-edits 'smart)
+                        ("\\.pdf\\'" . "zathura %s"))
+        ;; Larger equations
+        org-format-latex-options (plist-put org-format-latex-options :scale 1.5))
 
 
-;;; Org-agenda mode
-  ;; (defvar org-agenda-files nil)
-  ;; (setq org-agenda-files (cons "~/notes/" org-agenda-files))
-  ;; (setq org-agenda-restore-windows-after-quit 1)
+;;;###autoload
+  (defun org-cdlatex-pbb (&rest _arg)
+    "Execute `cdlatex-pbb' in LaTeX fragments.
+  Revert to the normal definition outside of these fragments."
+    (interactive "P")
+    (if (org-inside-LaTeX-fragment-p)
+        (call-interactively 'cdlatex-pbb)
+      (let (org-cdlatex-mode)
+        (call-interactively (key-binding (vector last-input-event))))))
 
-;;(add-hook 'org-mode-hook '(lambda ()
+  (define-key org-cdlatex-mode-map (kbd "(") #'org-cdlatex-pbb)
+  (define-key org-cdlatex-mode-map (kbd "[") #'org-cdlatex-pbb)
+  (define-key org-cdlatex-mode-map (kbd "{") #'org-cdlatex-pbb)
+
+  ;; `org-pretty-entities-mode' does not work with `org-cdlatex' when
+  ;; entering sub/superscripts. The following modification to the
+  ;; function `org-raise-scripts' fixes the problem.
+;;;###autoload
+  (defun org-raise-scripts (limit)
+    "Add raise properties to sub/superscripts."
+    (when (and org-pretty-entities org-pretty-entities-include-sub-superscripts
+               (re-search-forward
+                (if (eq org-use-sub-superscripts t)
+                    org-match-substring-regexp
+                  org-match-substring-with-braces-regexp)
+                limit t))
+      (let* ((pos (point)) table-p comment-p
+             (mpos (match-beginning 3))
+             (emph-p (get-text-property mpos 'org-emphasis))
+             (link-p (get-text-property mpos 'mouse-face))
+             (keyw-p (eq 'org-special-keyword (get-text-property mpos 'face))))
+        (goto-char (point-at-bol))
+        (setq table-p (looking-at-p org-table-dataline-regexp)
+              comment-p (looking-at-p "^[ \t]*#[ +]"))
+        (goto-char pos)
+        ;; Handle a_b^c
+        (when (member (char-after) '(?_ ?^)) (goto-char (1- pos)))
+        (unless (or comment-p emph-p link-p keyw-p)
+          (put-text-property (match-beginning 3) (match-end 0)
+                             'display
+                             (if (equal (char-after (match-beginning 2)) ?^)
+                                 (nth (if table-p 3 1) org-script-display)
+                               (nth (if table-p 2 0) org-script-display)))
+          (add-text-properties (match-beginning 2) (match-end 2)
+                               (list 'invisible t))
+          ;; Do NOT hide the {}'s. This is what causes org-cdlatex-tab to fail.
+          ;; (when (and (eq (char-after (match-beginning 3)) ?{)
+          ;; 	   (eq (char-before (match-end 3)) ?}))
+          ;;   (add-text-properties (match-beginning 3) (1+ (match-beginning 3))
+          ;; 		       (list 'invisible t))
+          ;;   (add-text-properties (1- (match-end 3)) (match-end 3)
+          ;; 		       (list 'invisible t)))
+          )
+        t)))
+
+;; (add-hook 'org-mode-hook '(lambda ()
 ;;			   (define-key org-mode-map (kbd "C-;") 'org-complete))
-;; (add-to-list 'auto-mode-alist '("\\.org\\'" . org-mode))
-;; (add-to-list 'org-file-apps '("\\.pdf\\'" . "zathura %s"))
-;; Completion
 
+  
   )
 
 (use-package org-capture
   :after org
+  :commands org-capture
   :config
-  (setq org-capture-templates
+ (add-to-list 'org-capture-after-finalize-hook
+             (defun org-capture-after-delete-frame ()
+               "If this is a dedicated org-capture frame, delete it after"
+               (if (and (equal (frame-parameter nil 'name)
+                               "dropdown_org-capture")
+                        (not (eq this-command 'org-capture-refile)))
+                   (delete-frame))))
+
+ (setq org-capture-templates
         (append org-capture-templates 
                  `(("t" "TODO items")
                    
@@ -122,7 +209,8 @@
 ;; ORG-BABEL-EVAL-IN-REPL
 ;;----------------------------------------------------------------------
 (use-package ob-octave-fix
-  :after ob-octave)
+   :after ob-octave)
+
 
 (use-package org-babel-eval-in-repl
   :disabled
@@ -163,6 +251,8 @@
 ;;----------------------------------------------------------------------
 (use-package org-bullets
   :ensure t
+  :after org
+  :defer 5
   :hook (org-mode . org-bullets-mode))
 
 ;;----------------------------------------------------------------------
@@ -170,7 +260,7 @@
 ;;----------------------------------------------------------------------
 (use-package ox-hugo
   :ensure t
-  :after ox
+  :after (ox org-capture)
   :config
   (setq org-hugo-section "blog")
   (with-eval-after-load 'org-capture
@@ -202,13 +292,14 @@ See `org-capture-templates' for more information."
 ;;----------------------------------------------------------------------
 ;; OL-NOTMUCH
 ;;----------------------------------------------------------------------
-(with-eval-after-load 'notmuch
-  (require 'ol-notmuch nil t))
+(use-package ol-notmuch
+  :after (notmuch org))
 
 ;;----------------------------------------------------------------------
 ;; ORG-GCAL
 ;;----------------------------------------------------------------------
 (use-package org-gcal
+  :after org
   :ensure t
   :commands (org-gcal-sync org-gcal-fetch)
   :init
@@ -223,7 +314,7 @@ See `org-capture-templates' for more information."
 ;; ORG-REVEAL
 ;;----------------------------------------------------------------------
 (use-package org-re-reveal
-  :disabled t
+  :disabled
   :ensure t
   :commands (org-re-reveal-export-to-html
              org-re-reveal-export-to-html-and-browse)
@@ -236,14 +327,20 @@ See `org-capture-templates' for more information."
     :init (setq org-ref-default-bibliography '("~/Documents/research/control_systems.bib")))
   )
 
-;; (use-package ox-reveal
-;;   ;; :ensure t
-;;   :init
-;;   (setq org-reveal-root "file:///home/karthik/.local/share/git/reveal.js")
-;;   (setq org-reveal-hlevel 2))
+(use-package ox-reveal
+  :disabled 
+  :ensure t
+  :init
+  (setq org-reveal-root "file:///home/karthik/.local/share/git/reveal.js")
+  (setq org-reveal-hlevel 2))
 
-;; Some formatting
-;; (setq org-blank-before-new-entry
-;;       '((heading . t) (plain-list-item . nil)))
+;;----------------------------------------------------------------------
+;; DRAWING INTEGRATION
+;;----------------------------------------------------------------------
+(use-package inkscape-figures
+  :after org
+  :bind (:map org-mode-map
+              ("C-c i" . #'+inkscape-figures-create-at-point-org)
+              ("C-c e" . #'+inkscape-figures-edit)))
 
 (provide 'setup-org)

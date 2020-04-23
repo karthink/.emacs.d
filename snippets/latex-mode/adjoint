@@ -1,0 +1,7 @@
+# -*- mode: snippet -*-
+# name: adjoint
+# key: adj
+# group: math
+# condition: (and (texmathp) 'auto)
+# --
+`(delete-backward-char 1)`^{\\dagger}$0

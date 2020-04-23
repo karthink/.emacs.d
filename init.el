@@ -21,8 +21,8 @@
             (t "~/")))
 
 ;; Adds ~/.emacs.d to the load-path
-(add-to-list 'load-path "~/.emacs.d/plugins/")
-(add-to-list 'load-path "~/.emacs.d/lisp/")
+(push "~/.emacs.d/plugins/" load-path)
+(push "~/.emacs.d/lisp/" load-path)
 
 ;; (eval-after-load "setup-org"
 ;;   (setq initial-buffer-choice (concat (file-name-as-directory (getenv "HOME"))
@@ -51,6 +51,38 @@
 (require 'setup-ui)
 
 ;;########################################################################
+;;;* AUTOLOADS
+;;######################################################################
+(require 'setup-autoloads nil t)
+
+;;######################################################################
+;;;* PACKAGE MANAGEMENT
+;;######################################################################
+  ;;; Set load paths for ELPA packages
+(package-initialize)
+(add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
+;(add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/"))
+;(add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
+;; (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
+
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package))
+
+(eval-when-compile
+  ;; (defvar use-package-verbose t)
+  (eval-after-load 'advice
+    `(setq ad-redefinition-action 'accept))
+  (require 'cl-lib)
+  (require 'use-package)
+  (setq use-package-verbose t)
+  )
+
+(require 'bind-key)
+
+(add-hook 'package-menu-mode-hook 'hl-line-mode)
+
+;;######################################################################
 ;;;* SAVE AND BACKUP
 ;;########################################################################
 ;; Put backups elsewhere:
@@ -65,11 +97,6 @@
       )
 
 ;;######################################################################
-;;;* AUTOLOADS
-;;######################################################################
-(require 'setup-autoloads nil t)
-
-;;######################################################################
 ;;;* MISCELLANEOUS PREFERENCES
 ;;######################################################################
 
@@ -81,15 +108,20 @@
 ;; highlight the current line, as in Matlab
 ;; (global-hl-line-mode)
 
+(use-package uniquify
+  :init  (setq uniquify-buffer-name-style 'forward))
+
 ;; when you mark a region, you can delete it or replace it as in other
 ;; programs. simply hit delete or type whatever you want or yank
 (delete-selection-mode)
 
 ; show the matching parentheses immediately
+(use-package paren
+:config
+(show-paren-mode 1)  
 (setq show-paren-delay 0.1 
       show-paren-highlight-openparen t
-      show-paren-when-point-inside-paren t)
-(show-paren-mode 1)
+      show-paren-when-point-inside-paren t))
 
 ;; Underline looks a bit better when drawn lower
 (setq x-underline-at-descent-line t)
@@ -109,6 +141,11 @@
 (add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p)
 (global-prettify-symbols-mode 1)
 
+;; Save and resume session
+(use-package desktop
+  ;; :init (desktop-save-mode 1)
+  )
+
 ;;--------------------------
 ;;;** MINIBUFFER PREFERENCES
 ;;--------------------------
@@ -123,40 +160,14 @@
 (global-set-key (kbd "<f4>") 'kmacro-end-or-call-macro)
 
 ;;######################################################################
-;;;* PACKAGE MANAGEMENT
-;;######################################################################
-  ;;; Set load paths for ELPA packages
-(package-initialize)
-(add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
-;(add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/"))
-;(add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
-(setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
-
-(unless (package-installed-p 'use-package)
-  (package-refresh-contents)
-  (package-install 'use-package))
-
-(eval-when-compile
-  ;; (defvar use-package-verbose t)
-  (eval-after-load 'advice
-    `(setq ad-redefinition-action 'accept))
-  (require 'cl)
-  (require 'use-package)
-  (setq use-package-verbose t))
-
-(require 'bind-key)
-
-(add-hook 'package-menu-mode-hook 'hl-line-mode)
-
-;;######################################################################
 ;;;* INTERFACING WITH THE OS
 ;;######################################################################
 
-(if (equal (system-name) 'windows-nt)
+(if IS-WINDOWS
     (setq shell-file-name "C:/cygwin/cygwin.bat"))
 
 ;; Set default www browser
-(if (equal system-type 'gnu/linux)
+(if IS-LINUX
     (setq
     ;browse-url-browser-function 'browse-url-generic
      browse-url-generic-program "/usr/bin/qutebrowser"
@@ -167,11 +178,18 @@
 ;; Consult clipboard before primary selection
 ;; http://www.gnu.org/software/emacs/manual/
 ;; html_node/emacs/Clipboard.html
-(setq select-enable-clipboard t)
 
+(use-package select
+  :config
+  (setq select-enable-clipboard t)
+  )
+
+
+(use-package comint
+  :config 
 ;; Arrange for Emacs to notice password prompts and turn off echoing for them, as follows:
-(add-hook 'comint-output-filter-functions
-          'comint-watch-for-password-prompt)
+  (add-hook 'comint-output-filter-functions
+            'comint-watch-for-password-prompt))
 
   ;;;###package ansi-color
 (setq ansi-color-for-comint-mode t)
@@ -191,6 +209,16 @@
     (shell-command command t nil)
     (exchange-point-and-mark)))
 
+(use-package piper
+  :load-path "~/.local/share/git/emacs-piper/"
+  :bind ("C-x |" . piper)
+  :config
+  (defun +piper-start (&optional arg)
+    "Start piper. With prefix ARG, start piper on current buffer"
+    (interactive "P")
+    (if arg (piper) (piper-user-interface))
+    ))
+
 ;;----------------------------------------------------------------------
 ;;;** ESHELL PREFERENCES
 ;;----------------------------------------------------------------------
@@ -200,22 +228,6 @@
   (when (not (one-window-p))
     (delete-window)))
 (advice-add 'eshell-life-is-too-much :after 'delete-window-if-not-single)
-
-;;######################################################################
-;;;* FONTS
-;;######################################################################
-(cond ((equal system-type 'gnu/linux)
-       (custom-set-faces
-        '(default ((t (:family "Fantasque Sans Mono" :foundry "PfEd" :slant normal :weight normal :height 125 :width normal))))))
-      ((equal system-type 'windows-nt)
-       (custom-set-faces
-        '(default ((t (:inherit nil :stipple nil :background "white" :foreground "black" :inverse-video nil :box nil :strike-through nil :overline nil :underline nil :slant normal :weight normal :height 98 :width normal :foundry "outline" :family "Consolas"))))))
-      ((equal system-type 'cygwin)
-       (custom-set-faces
-        '(default ((t (:family "Consolas" :foundry "outline" :slant normal :weight normal :height 120 :width normal)))))))
-
-;; Unicode symbols
-(set-fontset-font t 'unicode "Symbola" nil 'prepend)
 
 ;;######################################################################
 ;;;* LINE NUMBERS
@@ -254,213 +266,56 @@
   (setq dabbrev-eliminate-newlines nil)
   (setq dabbrev-upcase-means-case-search t))
 
+(use-package iedit
+  :commands iedit-dwim
+  :ensure t
+  :config
+  (defun iedit-dwim (arg)
+    "Starts iedit but uses \\[narrow-to-defun] to limit its scope."
+    (interactive "P")
+    (if arg
+        (iedit-mode)
+      (save-excursion
+        (save-restriction
+          (widen)
+          ;; this function determines the scope of `iedit-start'.
+          (if iedit-mode
+              (iedit-done)
+            ;; `current-word' can of course be replaced by other
+            ;; functions.
+            (narrow-to-defun)
+            (iedit-start (current-word) (point-min) (point-max)))))))
+
+
+
+  (global-set-key (kbd "C-M-;") 'iedit-mode))
+
 (require 'better-editing nil t)
 
 ;;######################################################################
 ;;;* BUFFER AND WINDOW MANAGEMENT
 ;;######################################################################
-(use-package window
-  :init
+(use-package recentf :defer 2)
 
-  (defun buffer-mode (&optional buffer-or-name)
-    "Returns the major mode associated with a buffer.
-If buffer-or-name is nil return current buffer's mode."
-    (buffer-local-value 'major-mode
-                        (if buffer-or-name (get-buffer buffer-or-name) (current-buffer))))
-
-  (defun select-buffer-in-side-window (buffer alist)
-    "Display buffer in a side window and select it"
-    (let ((window (display-buffer-in-side-window buffer alist)))
-      (select-window window)))
-
-  (defvar +occur-grep-modes-list '(occur-mode
-                                   grep-mode
-                                   ivy-occur-grep-mode
-                                   locate-mode)
-    "List of major-modes used in occur-type buffers")
-
-  ;; This does not work at buffer creation since the major-mode for
-  ;; REPLs is not yet set when `display-buffer' is called, but is
-  ;; useful afterwards
-  (defvar +repl-modes-list '(matlab-shell-mode
-                             eshell-mode
-                             geiser-repl-mode
-                             shell-mode
-                             inferior-python-mode)
-    "List of major-modes used in REPL buffers")
-
-  (defvar +repl-names-list '("\\*e*shell\\*"
-                             "\\*.*REPL.*\\*"
-                             "\\*MATLAB\\*"
-                             "\\*Python\\*"
-                             "\\*Inferior .*\\*$")
-    "List of buffer names used in REPL buffers")
-
-  (defvar +help-modes-list '(helpful-mode
-                             help-mode
-                             man-mode
-                             woman-mode
-                             Info-mode
-                             pydoc-mode
-                             eww-mode
-                             matlab-shell-help-mode)
-    "List of major-modes used in documentation buffers")
-
-  (setq display-buffer-alist
-        '(
-          ;; Windows on top
-          ("\\*Buffer List\\*" (display-buffer-in-side-window)
-           (side . top)
-           (slot . 0)
-           (window-height . fit-window-to-buffer)
-           (preserve-size . (nil . t)))
-
-          ((lambda (buf act) (member (buffer-mode buf) +occur-grep-modes-list))
-           (display-buffer-in-side-window)
-           (window-height .20)
-           (side . top)
-           (slot . -1)
-           (preserve-size . (nil . t))
-           (window-parameters . ((mode-line-format . (" " mode-line-buffer-identification)))))
-
-          ("\\*\\(Flycheck\\|Package-Lint\\).*" (display-buffer-in-side-window)
-           (window-height . 0.16)
-           (side . top)
-           (slot . 0)
-           (window-parameters . ((no-other-window . t))))
-
-          ;; Windows on the side
-
-          ("\\*Scratch\\*" (display-buffer-in-side-window)
-           (window-width 35)
-           (side . left)
-           (slot . 0)
-           )
-
-          ((lambda (buf act) (member (buffer-mode buf) +help-modes-list))
-           (display-buffer-in-side-window)
-           (window-width . 81)       ; See the :hook
-           (side . right)
-           (slot . 0)
-           (window-parameters . (;; (no-other-window . t)
-                                 (mode-line-format . (" "
-                                                      mode-line-buffer-identification)))))
-
-          ("\\*Faces\\*" (display-buffer-in-side-window)
-           (window-width . 0.25)
-           (side . right)
-           (slot . -2)
-           (window-parameters . ((no-other-window . t)
-                                 (mode-line-format . (" "
-                                                      mode-line-buffer-identification)))))
-
-          ("\\*Custom.*" (display-buffer-in-side-window)
-           (window-width . 0.25)
-           (side . right)
-           (slot . 1))
-
-          ;; Windows at the bottom
-          ("\\*\\(Warnings\\|Compile-Log\\|Messages\\)\\*" display-buffer-in-side-window
-           (window-height . 0.20)
-           (side . bottom)
-           (slot . 0)
-           (preserve-size . (nil . t))
-           (window-parameters . ((no-other-window . t))))
-
-          ("\\*Backtrace\\*" (display-buffer-in-side-window)
-           (window-height . 0.20)
-           (side . bottom)
-           (slot . -2)
-           (preserve-size . (nil . t)))
-
-          ("\\*\\(Output\\|Register Preview\\).*" (display-buffer-in-side-window)
-           (window-height . 0.16)       ; See the :hook
-           (side . bottom)
-           (slot . -2)
-           (window-parameters . ((no-other-window . t))))
-
-          ("\\*\\(?:Completions\\|Apropos\\)\\*" (display-buffer-in-side-window)
-           (window-height . 0.20)
-           (side . bottom)
-           (slot . -1)
-           (window-parameters . ((no-other-window . t))))
-
-          ((lambda (buf act) (seq-some (lambda (regex) (string-match-p regex buf))
-                                  +repl-names-list))
-           select-buffer-in-side-window
-           (window-height . .25)
-           (side . bottom)
-           (slot . 1)
-           (preserve-size . (nil . t)))
-
-          ;; ("\\*[Ss]hell\\*"
-          ;;  select-buffer-in-side-window
-          ;;  (window-width . 40)
-          ;;  (side . left)
-          ;;  (slot . -1)
-          ;;  (preserve-size . (nil . t))
-          ;;  )
-
-          ))
-
-  (setq window-combination-resize t
-        even-window-sizes 'height-only
-        window-sides-vertical nil
-        fit-window-to-buffer-horizontally t
-        window-resize-pixelwise t)
-
+(use-package setup-windows
+  :demand t
   :hook ((help-mode . visual-line-mode)
-         (custom-mode . visual-line-mode)
+         (Custom-mode . visual-line-mode)
          (helpful-mode . visual-line-mode))
   :bind (;; ("C-x +" . balance-windows-area)
          ("<f8>" . +make-frame-floating-with-current-buffer)
-         ("C-M-`" . window-toggle-side-windows))
+         ("C-M-`" . window-toggle-side-windows)))
 
-  :config
-  (defun +make-frame-floating-with-current-buffer ()
-    "Display the current buffer in a new floating frame.
-
-This passes certain parameters to the newly created frame:
-
-- use a different name than the default;
-- use a graphical frame;
-- do not display the minibuffer.
-
-The name is meant to be used by the external rules of my tiling
-window manager (BSPWM) to present the frame in a floating state."
-    (interactive)
-    (make-frame '((name . "dropdown_emacs-buffer")
-                  (window-system . x)
-                  (minibuffer . nil))))
-
-  (defun +display-buffer-at-bottom ()
-    "Move the current buffer to the bottom of the frame.  This is
-useful to take a buffer out of a side window.
-
-The window parameters of this function are provided mostly for
-didactic purposes."
-    (interactive)
-    (let ((buffer (current-buffer)))
-      (with-current-buffer buffer
-        (delete-window)
-        (display-buffer-at-bottom
-         buffer `((window-parameters . ((mode-line-format . (" "
-                                                             mode-line-buffer-identification))))))))))
+(require 'better-buffers nil t)
 
 (use-package popup-buffers
-  :bind (("C-`" . popup-buffers-toggle-latest)
-         ("M-`" . popup-buffers-cycle))
-  :init
-  (autoload 'popup-buffers-update-open-popups "popup-buffers")
-  (add-hook 'window-configuration-change-hook 'popup-buffers-update-open-popups)
-  ;; (global-set-key (kbd "C-`") 'popup-buffers-toggle-latest)
-  ;; (global-set-key (kbd "M-`") 'popup-buffers-cycle)
-  ;; (global-set-key (kbd "<f7>") 'popup-buffers-close-latest)
-  ;; (global-set-key (kbd "<f8>") 'popup-buffers-open-latest)
+  :after setup-windows
+  :config 
   (setq popup-buffers-reference-modes-list
         (append +help-modes-list
                 +repl-modes-list
-                +occur-grep-modes-list))
+                +occur-grep-modes-list
+                '(Custom-mode)))
   (setq popup-buffers-reference-buffer-list
         '("^\\*Warnings\\*"
           "^\\*Compile-Log\\*"
@@ -472,11 +327,11 @@ didactic purposes."
           "^\\*ielm\\*"
           "^\\*TeX Help\\*"
           "\\*Shell Command Output\\*"
+          "\\*Async Shell Command\\*"
           "\\*Completions\\*"
-          "Output\\*"))
-  )
-
-(require 'better-buffers nil t)
+          "Output\\*"
+          "\\*scratch\\*"))
+  (popup-buffers-mode +1))
 
 (use-package winner
   :commands winner-undo
@@ -486,7 +341,6 @@ didactic purposes."
 
 (use-package ace-window
   :ensure t
-  :defer t
   :bind ("C-x o" . ace-window)
   :commands ace-window
   :config
@@ -515,7 +369,7 @@ didactic purposes."
 (require 'utilities nil t)
 
 (use-package dashboard
-  :disabled t
+  :disabled
   :ensure t
   :init (setq initial-buffer-choice (lambda () (get-buffer "*dashboard*")))
   :config
@@ -549,6 +403,7 @@ didactic purposes."
                          (file-remote-p file 'host) ":" (file-remote-p file 'localname))
                (concat "/sudo:root@localhost:" file))))
 
+;;;###autoload
 (defun sudo-this-file ()
   "Open the current file as root."
   (interactive)
@@ -556,6 +411,7 @@ didactic purposes."
 
 (global-set-key (kbd "C-x C-S-f") 'sudo-find-file)
 
+;;;###autoload
 (defun describe-word (word &optional prefix)
   "Briefly describe WORD entered by user. With PREFIX argument,
   show verbose descriptions with hyperlinks."
@@ -563,13 +419,19 @@ didactic purposes."
   (shell-command (concat "dict " word (cond ((null prefix) nil)
                                             (t " -v")))))
 
+;;;###autoload
 (defun describe-word-at-point (&optional prefix)
   "Briefly describe word at point. With PREFIX argument, show
   verbose descriptions with hyperlinks."
   (interactive "P")
-  (let ( (word (thing-at-point 'word)) )
-    (shell-command (concat "dict " word (cond ((null prefix) nil)
-                                              (t " -v"))))))
+  (let ( (word
+          (if (region-active-p)
+              (buffer-substring (region-beginning)
+                                (region-end))
+            (thing-at-point 'word))) )
+    (shell-command (concat "dict " (cond ((null prefix) nil)
+                                              (t "-f "))
+                           word))))
 
 (use-package outline
   :bind (:map outline-minor-mode-map
@@ -625,11 +487,14 @@ Essentially a much simplified version of `next-line'."
 
           ;; TAB emulation
           (outline-cycle-emulate-tab
-           (indent-according-to-mode))
+           (call-interactively (key-binding (vector last-input-event)))
+           ;; (indent-according-to-mode)
+           )
 
           (t
            ;; Not at a headline: Do indent-relative
-           (outline-back-to-heading)))))
+           (outline-back-to-heading))))
+)
 
 ;;######################################################################
 ;;;* COMPILATION
@@ -679,7 +544,7 @@ Essentially a much simplified version of `next-line'."
 ;;;** LSP SUPPORT
 ;;----------------------------------------------------------------------
 (use-package lsp-mode
-  :disabled t
+  :disabled
   :ensure t
   ;; :hook (python-mode . lsp-deferred)
   :bind (("C-c C-d" . lsp-describe-thing-at-point))
@@ -710,7 +575,7 @@ Essentially a much simplified version of `next-line'."
    ;;                  :server-id 'matlab-langserver)
    )
   (use-package lsp-ui
-    ;; :disabled t
+    :disabled t
     :ensure t
     :commands lsp-ui-mode
     :config
@@ -729,15 +594,18 @@ Essentially a much simplified version of `next-line'."
 ;;----------------------------------------------------------------------
 (use-package eglot
   ;; :disabled t
+  :ensure t
   :commands eglot
+  :bind (:map eglot-mode-map
+              ("C-h ." . eglot-help-at-point))
   :config
   (add-to-list 'eglot-server-programs '(matlab-mode . ("~/.local/share/git/matlab-langserver/matlab-langserver.sh" "")))
   )
 ;;----------------------------------------------------------------------
 ;;;** AUCTEX-MODE & ADDITIONS
 ;;----------------------------------------------------------------------
-(use-package tex
-  :defer t
+(use-package latex
+  :defer 5
   :ensure auctex
   :mode
   ("\\.tex\\'" . latex-mode)
@@ -757,7 +625,7 @@ Essentially a much simplified version of `next-line'."
             TeX-view-program-selection
             TeX-mode-map)
   :bind (:map TeX-mode-map
-              ("M-SPC" . TeX-matrix-spacer)
+              ;; ("M-SPC" . TeX-matrix-spacer)
               ("C-M-9" . TeX-insert-smallmatrix)
               ("C-M-]" . TeX-insert-bmatrix)
               ;; ("C-;" . TeX-complete-symbol)
@@ -768,13 +636,14 @@ Essentially a much simplified version of `next-line'."
                                            (file-name-as-directory "~/Documents/"))
                                      "hwstyle.tex")
       "File containing my stock preamble for LaTeX documents")
-    (defun TeX-matrix-spacer () (interactive) (insert " & "))
+    ;; (defun TeX-matrix-spacer () (interactive) (insert " & "))
     (defun TeX-insert-smallmatrix () (interactive)
            (insert "[\\begin{smallmatrix}  \\end{smallmatrix}]")
            (backward-char 19))
     (defun TeX-insert-bmatrix () (interactive)
            (insert "\\begin{bmatrix}  \\end{bmatrix}")
            (backward-char 14))
+
     (setq
      TeX-auto-save t
      TeX-parse-self t
@@ -809,8 +678,39 @@ Essentially a much simplified version of `next-line'."
     (TeX-fold-mode 1)
     ))
 
+(use-package latex-extra
+  :after latex
+  :hook (LaTeX-mode . latex-extra-mode))
+ ;; :config
+ ;; (defface latex/unimportant-latex-face
+ ;;  '((t :height 0.7
+ ;;       :inherit font-lock-comment-face))
+ ;;  "Face used on less relevant math commands.")
+
+;; (font-lock-add-keywords
+;;  'latex-mode
+;;  `((,(rx (or (and "\\" (or (any ",.!;")
+;;                            (and (or "left" "right"
+;;                                     "big" "Big")
+;;                                 symbol-end)))
+;;              (any "_^")))
+;;     0 'latex/unimportant-latex-face prepend))
+;;  'end)
+
+
+(use-package preview
+  :after latex
+  :defer 3
+  :init
+  (setq preview-scale-function '+preview-scale-larger)
+  :config
+  (defun +preview-scale-larger ()
+    "Increase the size of `preview-latex' images"
+    (lambda nil (* 1.25 (funcall (preview-scale-from-face))))))
+
 (use-package reftex
-  ;; :defer 3
+  :after latex
+  :defer 3
   :commands turn-on-reftex
   :hook ((latex-mode LaTeX-mode) . turn-on-reftex)
   :config
@@ -818,8 +718,9 @@ Essentially a much simplified version of `next-line'."
 
 ;; (setq-default TeX-master nil)
 (use-package cdlatex
+  :after latex
   :ensure t
-  ;; :defer 2
+  :defer 2
   ;; :commands turn-on-cdlatex
   :hook (LaTeX-mode . turn-on-cdlatex)
   :config
@@ -857,6 +758,14 @@ Essentially a much simplified version of `next-line'."
                                       (?B "\\mathbf" "\\textbf" t nil nil)))
     (setq cdlatex-paired-parens "$[{("))
   )
+
+(use-package inkscape-figures
+  :disabled
+  :defer 
+  :after latex
+  :bind (:map LaTex-mode-map
+              ("C-c i" . #'+inkscape-figures-create-at-point-latex)
+              ("C-c e" . #'+inkscape-figures-edit)))
 
 ;;----------------------------------------------------------------------
 ;;;** MATLAB
@@ -986,6 +895,7 @@ Essentially a much simplified version of `next-line'."
 ;;;** GEISER
 ;;----------------------------------------------------------------------
 (use-package geiser
+  :defer
   :if (not (version-list-<
            (version-to-list emacs-version)
            '(27 0 0 0)))
@@ -1003,6 +913,7 @@ Essentially a much simplified version of `next-line'."
 ;;;** EVAL-IN-REPL
 ;;----------------------------------------------------------------------
 (use-package eval-in-repl
+  :disabled 
   :ensure t
   :init
   ;; (require 'eval-in-repl-geiser)
@@ -1029,6 +940,23 @@ Essentially a much simplified version of `next-line'."
 ;;;* PLUGINS
 ;;######################################################################
 
+;;----------------------------------------------------------------------
+;;;** MIXED-PITCH-MODE
+;;----------------------------------------------------------------------
+(use-package mixed-pitch
+  :defer 2
+  :ensure t
+  :hook (text-mode . mixed-pitch-mode)
+  :config (add-to-list 'mixed-pitch-fixed-pitch-faces 'line-number))
+
+;;----------------------------------------------------------------------
+;;;** PULSE
+;;----------------------------------------------------------------------
+;; Flash lines
+(use-package pulse
+  :disabled t
+  :init
+  (add-hook 'evil-jumps-post-jump-hook #'pulse-line-hook-function))
 ;;----------------------------------------------------------------------
 ;;;** NOTMUCH
 ;;----------------------------------------------------------------------
@@ -1092,9 +1020,17 @@ Essentially a much simplified version of `next-line'."
 
 (use-package yasnippet
   :ensure t
-  :hook ((prog-mode LaTeX-mode) . yas-minor-mode)
+  :defer 5
+  :hook ((prog-mode LaTeX-mode org-mode) . yas-minor-mode)
   :config
+  ;; (use-package yasnippet-snippets
+  ;;   :ensure t)
+  ;; (yas-reload-all)
   ;; Redefine yas expand key from TAB because company-mode uses TAB.
+
+  (setq yas-wrap-around-region t
+        yas-triggers-in-field t)
+
   (defun my-yas-try-expanding-auto-snippets ()
     (when (and (boundp 'yas-minor-mode) yas-minor-mode)
       (let ((yas-buffer-local-condition ''(require-snippet-condition . auto)))
@@ -1103,6 +1039,39 @@ Essentially a much simplified version of `next-line'."
 
   (with-eval-after-load 'cdlatex
     (add-hook 'cdlatex-tab-hook #'yas-expand))
+
+  (with-eval-after-load 'company 
+;;;###autoload
+    (defun my-yas-company-next-field ()
+      "company-complete-common or yas-next-field-or-maybe-expand."
+      (interactive)
+      (if company-candidates (company-complete-common)
+        (yas-next-field-or-maybe-expand)))
+
+    (define-key yas-keymap [tab] #'my-yas-company-next-field)
+    (define-key yas-keymap (kbd "TAB") #'my-yas-company-next-field)
+
+;;;###autoload
+    (defun my-yas-company-cancel ()
+      "company-abort or yas-abort-snippet."
+      (interactive)
+      (if company-candidates
+          (company-abort)
+        (yas-abort-snippet)))
+
+    (define-key yas-keymap (kbd "C-g") #'my-yas-company-cancel))
+
+  
+  ;; (when (fboundp 'smartparens)
+  ;;   (with-eval-after-load 'smartparens
+  ;;     (defvar yas--smartparen-flag nil)
+  ;;     (add-hook 'yas-before-expand-snippet-hook (lambda () (when smartparens-mode
+  ;;                                                       (smartparens-mode -1)
+  ;;                                                       (setq-local yas--smartparen-flag t))))
+  ;;     (add-hook 'yas-after-exit-snippet-hook (lambda () (when yas--smartparen-flag)
+  ;;                                              (smartparens-mode +1)
+  ;;                                              (setq-local yas--smartparen-flag nil)))))
+
   ;; (define-key yas-minor-mode-map (kbd "S-SPC") (lambda (&optional num) (interactive "P")
   ;;                                                (or (yas-expand)
   ;;                                                    (insert (kbd "SPC")))))
@@ -1113,18 +1082,6 @@ Essentially a much simplified version of `next-line'."
   ;;   (define-key keymap (kbd "TAB") nil)
   ;;   (define-key keymap [(tab)] nil))
   ;; (global-set-key (kbd "M-S-SPC") 'company-yasnippet)
-  (setq yas-wrap-around-region t)
-  ;; (use-package yasnippet-snippets
-  ;;   :ensure t)
-  ;; (yas-reload-all)
-  (with-eval-after-load 'smartparens
-    (defvar yas--smartparen-flag nil)
-    (add-hook 'yas-before-expand-snippet-hook (lambda () (when smartparens-mode
-                                                        (smartparens-mode -1)
-                                                        (setq-local yas--smartparen-flag t))))
-    (add-hook 'yas-after-exit-snippet-hook (lambda () (when yas--smartparen-flag)
-                                             (smartparens-mode +1)
-                                             (setq-local yas--smartparen-flag nil))))
   )
 
 ;;----------------------------------------------------------------------
@@ -1264,7 +1221,7 @@ Essentially a much simplified version of `next-line'."
         which-key-sort-uppercase-first nil
         which-key-add-column-padding 1
         which-key-max-display-columns nil
-        which-key-min-display-lines 6
+        which-key-min-display-lines 8
         which-key-side-window-slot -10)
   :config
   (set-face-attribute 'which-key-local-map-description-face nil :weight 'bold)
@@ -1457,18 +1414,21 @@ Essentially a much simplified version of `next-line'."
 ;;----------------------------------------------------------------------
 ;;;** SMARTPARENS-MODE
 ;;----------------------------------------------------------------------
-(use-package smartparens
-  ;; :defer 5
-  :ensure t
-  :hook ((emacs-lisp-mode lisp-interaction-mode) . smartparens-strict-mode)
-  :config
-  (require 'smartparens-config)
-  (define-key smartparens-mode-map (kbd "M-<up>") 'sp-raise-sexp)
-  (define-key smartparens-mode-map (kbd "C-<right>") 'sp-forward-slurp-sexp)
-  (define-key smartparens-mode-map (kbd "C-<left>") 'sp-backward-slurp-sexp)
-  (define-key smartparens-mode-map (kbd "M-<right>") 'sp-forward-barf-sexp)
-  (define-key smartparens-mode-map (kbd "M-<left>") 'sp-backward-barf-sexp)
-  )
+(or (use-package elec-pair
+      :defer 3
+      :config (electric-pair-mode +1))
+    (use-package smartparens
+      :disabled
+      ;; :defer 5
+      :hook ((emacs-lisp-mode lisp-interaction-mode) . smartparens-strict-mode)
+      :config
+      ;; (require 'smartparens-config)
+      ;; (define-key smartparens-mode-map (kbd "M-<up>") 'sp-raise-sexp)
+      ;; (define-key smartparens-mode-map (kbd "C-<right>") 'sp-forward-slurp-sexp)
+      ;; (define-key smartparens-mode-map (kbd "C-<left>") 'sp-backward-slurp-sexp)
+      ;; (define-key smartparens-mode-map (kbd "M-<right>") 'sp-forward-barf-sexp)
+      ;; (define-key smartparens-mode-map (kbd "M-<left>") 'sp-backward-barf-sexp)
+      ))
 
 ;;----------------------------------------------------------------------
 ;;;** EXPAND-REGION
@@ -1492,7 +1452,7 @@ Essentially a much simplified version of `next-line'."
 ;;;** IY-GO-TO-CHAR
 ;;----------------------------------------------------------------------
 (use-package iy-go-to-char
-  :bind (("M-s" . iy-go-to-char)
+  :bind (("M-j" . iy-go-to-char)
          ("M-r" . iy-go-to-char-key-backward)))
 
 ;;----------------------------------------------------------------------
@@ -1512,11 +1472,22 @@ Essentially a much simplified version of `next-line'."
 ;;----------------------------------------------------------------------
 (require 'setup-anki nil t)
 ;;######################################################################
-;;;** IVY/COUNSEL/SWIPER
+;;;** COMPLETION FRAMEWORKS: 
+;;----------------------------------------------------------------------
+;;;*** ICOMPLETE
+;;----------------------------------------------------------------------
+(use-package icomplete
+  :disabled
+  :config
+  (require 'setup-icomplete nil t))
+
+;;----------------------------------------------------------------------
+;;;*** IVY/COUNSEL/SWIPER
 ;;----------------------------------------------------------------------
 (require 'setup-ivy)
   ;;; Bibtex management from ivy. Call ivy-bibtex.
 (use-package ivy-bibtex
+  :disabled
   :ensure t
   :after ivy
   :functions bibtex-completion-open-pdf
@@ -1546,6 +1517,29 @@ Essentially a much simplified version of `next-line'."
    'ivy-bibtex
    '(("P" ivy-bibtex-open-pdf-external "Open PDF file in external viewer (if present)"))))
 
+(use-package ivy-youtube
+  :disabled
+  :after ivy
+  :init
+  (with-eval-after-load 'evil-leader
+    (evil-leader/set-key (kbd "Y") 'ivy-youtube))
+  :config
+  (setq ivy-youtube-key my-ivy-youtube-key
+        ivy-youtube-play-at (expand-file-name 
+                             "~/.local/bin/i3cmds/umpv")))
+
+(use-package counsel-spotify
+  :disabled
+  :after counsel
+  :init
+  (with-eval-after-load 'evil-leader
+    (evil-leader/set-key (kbd "U") (lambda () (interactive)
+                                     (counsel-M-x "counsel-spotify-search-"))))
+  :config
+  (setq counsel-spotify-client-id my-counsel-spotify-client-id
+        counsel-spotify-client-secret my-counsel-spotify-client-secret
+        counsel-spotify-use-notifications nil))
+
 ;;----------------------------------------------------------------------
 ;;;** TRAMP
 ;;----------------------------------------------------------------------
@@ -1562,29 +1556,6 @@ Essentially a much simplified version of `next-line'."
   :ensure t
   :init (projectile-mode +1))
 ;;----------------------------------------------------------------------
-;;;* COLORS & COLOR THEMES
-;;######################################################################
-
-;; (load-theme 'dracula t)
-(with-eval-after-load 'dracula-theme
-  (custom-theme-set-faces 'dracula 
-                          '(aw-background-face
-                            ((t (:background "#282a36" :inverse-video nil :weight normal))))
-                          '(aw-leading-char-face
-                            ((t (:foreground "#bd93f9" :height 2.5 :weight normal))))))
-
-(with-eval-after-load 'dichromacy-theme
-  (custom-theme-set-faces 'dichromacy
-                          '(aw-background-face
-                            ((t (:background "#ffffff" :inverse-video nil :weight normal))))
-                          '(aw-leading-char-face
-                            ((t (:foreground "#009e73" :height 2.5 :weight normal))))
-                          '(org-level-1 ((t (:foreground "#0072b2" :inherit bold :height 1.3))))
-                          '(org-level-2 ((t (:foreground "#d55e00" :inherit bold :height 1.1))))
-                          '(org-document-title ((t (:inherit bold :height 1.5))))
-                          ))
-
-;;######################################################################
 ;;;* MODELINE:
 ;;######################################################################
 
@@ -1609,14 +1580,16 @@ Essentially a much simplified version of `next-line'."
 ;;         spaceline-line-column-p t)
 ;;   (spaceline-emacs-theme))
 
-;; (use-package doom-modeline
-;;   :disabled t
-;;   :ensure t
-;;   :init (doom-modeline-mode 1))
+(use-package doom-modeline
+  :disabled
+  :ensure t
+  :init (doom-modeline-mode 1))
 
 (use-package smart-mode-line
   :ensure t
-  :init (sml/setup)
+  :init
+  (setq sml/theme nil)
+  (sml/setup)
   :defines sml/fix-mode-line-a
   :config
   (defun sml/fix-mode-line-a (theme &rest args)
@@ -1658,8 +1631,10 @@ Essentially a much simplified version of `next-line'."
 
 (defvar mode-line-cleaner-alist
   `((company-mode . " ⇝")
-    (yas-minor-mode . " Υ")
-    (smartparens-mode . " ﴾﴿")
+    (yas-minor-mode .  " Y";; " Υ"
+                    )
+    (smartparens-mode . " ()";; " ﴾﴿"
+                      )
     (evil-smartparens-mode . "")
     (eldoc-mode . "")
     (abbrev-mode . "")
@@ -1683,10 +1658,15 @@ Essentially a much simplified version of `next-line'."
     (dot-mode . " .")
     (scheme-mode . " SCM")
     (matlab-mode . "M")
-    (org-mode . "⦿")
+    (org-mode . " ORG";; "⦿"
+              )
+    (org-cdlatex-mode . "")
+    (org-indent-mode . "")
+    (visual-line-mode . "")
     (latex-mode . "TeX")
     ;; (projectile-mode . " ϸ")
-    (outline-minor-mode . " ֍"))
+    (outline-minor-mode . " [o]";; " ֍"
+                        ))
   "Alist for `clean-mode-line'.
 
   ; ;; When you add a new element to the alist, keep in mind that you
@@ -1709,6 +1689,85 @@ Essentially a much simplified version of `next-line'."
 (add-hook 'after-change-major-mode-hook 'clean-mode-line)
 
 ;; (display-time-mode 0)
+
+(use-package custom 
+:init
+(load-theme 'atom-one-dark t)
+(load-theme 'smart-mode-line-atom-one-dark)
+)
+
+;;######################################################################
+;;######################################################################
+;;;* MINIBUFFER
+;;######################################################################
+(use-package minibuffer
+  :config
+ (require 'setup-minibuffer nil t))
+
+;;;* FONTS AND COLORS
+;;######################################################################
+(use-package cus-face
+  :config
+  (use-package dracula-theme
+    :defer
+    :config
+    (custom-theme-set-faces 'dracula 
+                            '(aw-background-face
+                              ((t (:background "#282a36" :inverse-video nil :weight normal))))
+                            '(aw-leading-char-face
+                              ((t (:foreground "#bd93f9" :height 2.5 :weight normal))))))
+  (use-package dichromacy-theme
+    :defer
+    :config
+    (custom-theme-set-faces 'dichromacy
+                            '(aw-background-face
+                              ((t (:background "#ffffff" :inverse-video nil :weight normal))))
+                            '(aw-leading-char-face
+                              ((t (:foreground "#009e73" :height 2.5 :weight normal))))
+                            '(org-level-1 ((t (:foreground "#0072b2" :inherit bold :height 1.3))))
+                            '(org-level-2 ((t (:foreground "#d55e00" :inherit bold :height 1.1))))
+                            '(org-document-title ((t (:inherit bold :height 1.5))))
+                            ))
+  (use-package gruvbox-dark-hard-theme
+    :defer
+    :config
+    (custom-theme-set-faces 'gruvbox-dark-hard
+                            '(aw-leading-char-face
+                              ((t (:height 2.5 :weight normal))))
+                            '(org-level-1 ((t (:height 1.3 :foreground "#83a598" :inherit (bold) ))))
+                            '(org-level-2 ((t (:height 1.1 :foreground "#fabd2f" :inherit (bold) ))))
+                            '(org-document-title ((t (:inherit (bold) :height 1.5))))
+                          ))
+  (cond (IS-LINUX
+         (custom-set-faces
+          '(default ((t (:family "Iosevka Nerd Font" :foundry "PfEd" :slant normal :weight normal :height 125 :width normal))))))
+        (IS-WINDOWS
+         (custom-set-faces
+          '(default ((t (:family "Consolas" :foundry "outline" :slant normal :weight normal :height 120 :width normal)))))))
+
+(custom-set-faces '(variable-pitch ((t (:family "Bitstream Vera Serif"))))))
+
+;; '(org-document-title ((t (:weight bold :height 1.4))))
+;; '(org-level-1 ((t (:inherit outline-1 :weight bold :height 1.3))))
+;; '(org-level-2 ((t (:inherit outline-2 :weight bold :height 1.1))))
+
+;; Unicode symbols
+(set-fontset-font t 'unicode "Symbola" nil 'prepend)
+
+(add-to-list 'default-frame-alist '(alpha 100 100))
+
+;; (custom-theme-set-faces 'dichromancy
+;;                         ;; tab-bar & tab-line (since Emacs 27.1)
+;;                         '(tab-bar ((t ( :foreground ,dracula-pink :background ,bg2
+;;                                                     :inherit variable-pitch))))
+;;                         '(tab-bar-tab ((t (:background ,dracula-current :inherit tab-bar))))
+;;                         '(tab-bar-tab-inactive ((t (:foreground ,dracula-purple :background ,bg3
+;;                                                                 :inherit tab-bar-tab))))
+;;                         '(tab-line ((t (:height 0.9 :foreground ,dracula-pink
+;;                                                 :background ,bg2 :inherit variable-pitch))))
+;;                         '(tab-line-tab ((t (:background ,dracula-current :inherit tab-line))))
+;;                         '(tab-line-tab-inactive ((t (:foreground ,dracula-purple :background ,bg3
+;;                                                                  :inherit tab-line-tab)))))
 
 ;;######################################################################
 ;;;* EVIL-MODE

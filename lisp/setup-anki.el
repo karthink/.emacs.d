@@ -7,6 +7,8 @@
               ("<f9>"  . anki-editor-push-tree))
   :hook (org-capture-after-finalize . anki-editor-reset-cloze-number) ; Reset cloze-number after each capture.
   :config
+  (setq org-my-anki-file (concat (file-name-as-directory org-directory)
+                               "anki-notes.org"))
   (setq anki-editor-create-decks t ;; Allow anki-editor to create a new deck if it doesn't exist
         anki-editor-org-tags-as-anki-tags t)
 
@@ -34,8 +36,7 @@
   (anki-editor-reset-cloze-number)
   )
 
-(setq org-my-anki-file (concat (file-name-as-directory org-directory)
-                               "anki-notes.org"))
+
 (with-eval-after-load 'org-capture
   ;; Org-capture templates
   (add-to-list 'org-capture-templates

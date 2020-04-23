@@ -1,0 +1,8 @@
+# key: mat2
+# name: bmatrix (2 x 2)
+# group: math
+# --
+\\begin{bmatrix}
+${1:A} & ${2:$1} \\\\
+${3:$1} & ${4:$1}
+ \\end{bmatrix}

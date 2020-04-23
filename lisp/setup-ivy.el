@@ -2,6 +2,10 @@
 (require 'use-package nil t)
 (use-package ivy
   :ensure t
+  :bind (("C-S-s" . swiper)
+         ("M-s O" . swiper)
+         :map ivy-minibuffer-map
+         ("C-m"   . ivy-alt-done))
   :init
   (ivy-mode 1)
 
@@ -12,6 +16,8 @@
                                 (swiper . ivy--regex-plus)
                                 (swiper-isearch . ivy--regex-plus)
                                 (counsel-ag . ivy--regex-plus)
+                                (counsel-M-x . ivy--regex-fuzzy)
+                                (ivy-completion-in-region . ivy--regex-fuzzy)
                                 (t . ivy--regex-ignore-order)))
   (setq enable-recursive-minibuffers t)
   ;; (setq ivy-initial-inputs-alist nil)
@@ -25,7 +31,8 @@
 
   ;; enable this if you want `swiper' to use it
   ;; (setq search-default-mode #'char-fold-to-regexp)
-  (global-set-key "\C-s" 'swiper)
+  ;; (global-set-key (kbd "C-S-s") 'swiper)
+  ;; (global-set-key (kbd "M-s O") 'swiper)
   ;; (global-set-key (kbd "C-c C-r") 'ivy-resume)
   ;; (global-set-key (kbd "<f6>") 'ivy-resume)
   ;; (global-set-key (kbd "M-x") 'counsel-M-x)
@@ -40,8 +47,6 @@
   ;; (global-set-key (kbd "C-c k") 'counsel-ag)
   ;; (global-set-key (kbd "C-x l") 'counsel-locate)
   ;; (global-set-key (kbd "C-S-o") 'counsel-rhythmbox)
-  (define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
-  (define-key ivy-minibuffer-map (kbd "C-m") 'ivy-alt-done)
   ;; (define-key ivy-minibuffer-map (kbd "C-j") 'ivy-alt-done)
 
 ;;;###autoload
@@ -126,10 +131,11 @@
 (use-package counsel
   :ensure t
   :commands counsel-describe-face
-  :bind (:map counsel-find-file-map
+  :bind (("C-r" . counsel-minibuffer-history)
+         :map counsel-find-file-map
               ("M-s" . +ivy-switch-file-search)
               ("C-s" . +ivy-switch-file-search))
-  :init
+  :config
   (dolist (switch-version
            '((apropos                  . counsel-apropos)
              (bookmark-jump            . counsel-bookmark)
@@ -139,12 +145,13 @@
              (describe-bindings        . counsel-descbinds)
              (set-variable             . counsel-set-variable)
              (execute-extended-command . counsel-M-x)
-             ;; (find-file                . counsel-find-file)
+             (locate                   . counsel-locate)
+             ;(find-file                . counsel-find-file)
              (find-library             . counsel-find-library)
              (info-lookup-symbol       . counsel-info-lookup-symbol)
              (imenu                    . counsel-imenu)
              (recentf-open-files       . counsel-recentf)
-             (swiper                   . counsel-grep-or-swiper)
+             ;; (swiper                . counsel-grep-or-swiper)
              (evil-ex-registers        . counsel-evil-registers)
              (yank-pop                 . counsel-yank-pop)
              (imenu                    . counsel-imenu)) t)
@@ -155,7 +162,6 @@
   (with-eval-after-load 'org
     (defalias 'org-goto 'counsel-org-goto))
 
-  :config
   (with-eval-after-load 'helpful
     (setq counsel-describe-function-function #'helpful-callable)
     (setq counsel-describe-variable-function #'helpful-variable))
@@ -210,15 +216,15 @@ cmd, a function of one argument."
        ("k" ,(+ivy-action-reloading (lambda (x) (dired-delete-file x 'confirm-each-subdirectory))) "delete")
        ("r" (lambda (path) (rename-file path (read-string "New name: "))) "rename")
        ("R" ,(+ivy-action-reloading (+ivy-action-given-file #'rename-file "Move")) "move")
-       ("f" ,(+ivy-ace-window #'find-file) "ace window")
+       ("j" ,(+ivy-ace-window #'find-file) "ace window")
        ("F" find-file-other-frame "other frame")
        ("p" (lambda (path) (with-ivy-window (insert (file-relative-name path default-directory)))) "insert relative path")
        ("x" counsel-find-file-extern "xdg-open")
        ("P" (lambda (path) (with-ivy-window (insert path))) "insert absolute path")
-       ;; ("l" (lambda (path) "Insert org-link with relative path"
-       ;;        (with-ivy-window (insert (format "[[./%s]]" (file-relative-name path default-directory))))) "insert org-link (rel. path)")
-       ;; ("L" (lambda (path) "Insert org-link with absolute path"
-       ;;        (with-ivy-window (insert (format "[[%s]]" path)))) "insert org-link (abs. path)")
+       ("l" (lambda (path) "Insert org-link with relative path"
+              (with-ivy-window (insert (format "[[./%s]]" (file-relative-name path default-directory))))) "insert org-link (rel. path)")
+       ("L" (lambda (path) "Insert org-link with absolute path"
+              (with-ivy-window (insert (format "[[%s]]" path)))) "insert org-link (abs. path)")
        )))
 
   (ivy-add-actions 'ivy-switch-buffer

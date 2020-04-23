@@ -8,17 +8,24 @@
   (global-evil-leader-mode 1)
   (evil-leader/set-leader "<SPC>")
   (evil-leader/set-key-for-mode 'emacs-lisp-mode "cB"
-    (lambda () "Byte-compile file"
+    (defun byte-compile-this-file () "Byte-compile file"
       (interactive)
       (if buffer-file-name
           (byte-compile-file buffer-file-name)
         (message "Not visiting a file!"))))
   (evil-leader/set-key-for-mode 'emacs-lisp-mode "cL"
-    (lambda () "Load current file"
+    (defun load-this-file () "Load current file"
       (interactive)
       (if buffer-file-name
           (load-file buffer-file-name)
         (message "Not visiting a file!"))))
+
+  (evil-leader/set-key
+    "f'" 'bookmark-jump ;counsel-bookmark
+    "fm" 'bookmark-jump ;counsel-bookmark
+    "ff" 'find-file ;counsel-find-file
+    "f." 'find-file ;counsel-find-file
+    )
 
   (evil-leader/set-key-for-mode 'latex-mode
     "cc" 'TeX-command-master
@@ -30,12 +37,13 @@
     "{" 'cdlatex-environment)
 
   (evil-leader/set-key-for-mode 'reftex-toc-mode
-    (kbd "SPC") 'reftex-toc-view-line)
+    "SPC" 'reftex-toc-view-line)
 
-  (evil-leader/set-key
-    ;; Ace window mode
-    "<tab>" 'ace-window
-    )
+  (with-eval-after-load 'ace-window 
+    (evil-leader/set-key
+      ;; Ace window mode
+      "<tab>" 'ace-window
+      ))
 
   (evil-leader/set-key-for-mode 'org-mode
     "ce" 'org-export-dispatch
@@ -60,6 +68,7 @@
     ;; "hf" (if counselp 'counsel-describe-function 'describe-function)
     ;; "hb" (if counselp 'counsel-descbinds 'describe-bindings)
     ;; "hv" (if counselp 'counsel-describe-variable 'describe-variable)
+    "h." 'helpful-at-point
     "hf" 'describe-function
     "hb" 'describe-binddings
     "hv" 'describe-variable
@@ -109,10 +118,11 @@
     ;;               (if arg (next-user-buffer) (previous-user-buffer)))
     "N" 'next-buffer
     "P" 'previous-buffer
-    "B" (lambda ()
-          "Open Bibtex file"
-          (interactive)
-          (find-file-other-window (getenv "BIB")))
+    "B" 'ibuffer
+        ;; (lambda ()
+        ;;   "Open Bibtex file"
+        ;;   (interactive)
+        ;;   (find-file-other-window (getenv "BIB")))
     "," 'er/expand-region
     "cn" 'next-error
     "cp" 'previous-error
@@ -122,9 +132,9 @@
     (with-eval-after-load 'ivy
       (evil-leader/set-key
         ;; Ivy general
-        "I" 'ivy-resume)
+        "." 'ivy-resume)
       (evil-leader/set-key-for-mode 'latex-mode
-        "." 'ivy-bibtex))
+        "]" 'ivy-bibtex))
     
     (with-eval-after-load 'counsel
       (evil-leader/set-key
@@ -144,11 +154,11 @@
         "fr" 'counsel-recentf
         "fj" 'counsel-file-jump
         "fg" 'counsel-git
-        "fl" 'counsel-locate
-        "f'" 'counsel-bookmark
-        "fm" 'counsel-bookmark
-        "ff" 'counsel-find-file
-        "f." 'counsel-find-file
+        "fl" 'locate ;counsel-locate
+        ;; "f'" 'bookmark-jump ;counsel-bookmark
+        ;; "fm" 'bookmark-jump ;counsel-bookmark
+        ;; "ff" 'find-file ;counsel-find-file
+        ;; "f." 'find-file ;counsel-find-file
         "fz" 'counsel-fzf
 
         ;; Help commands
@@ -158,15 +168,15 @@
         "ha" 'counsel-apropos
         )))
 
-  (with-eval-after-load 'projectile
-    (defun +evil-leader-projectile-map ()
-      "Add evil-leader keybinds for projectile mode"
-      (interactive)
-      (evil-leader/set-key
-        "SPC" 'projectile-command-map
-        "n" 'projectile-next-project-buffer
-        "p" 'projectile-previous-project-buffer))
-    (add-hook 'counsel-projectile-mode-hook #'+evil-leader-projectile-map))
+  ;; (with-eval-after-load 'projectile
+  ;;   (defun +evil-leader-projectile-map ()
+  ;;     "Add evil-leader keybinds for projectile mode"
+  ;;     (interactive)
+  ;;     (evil-leader/set-key
+  ;;       "SPC" 'projectile-command-map
+  ;;       "n" 'projectile-next-project-buffer
+  ;;       "p" 'projectile-previous-project-buffer))
+  ;;   (add-hook 'counsel-projectile-mode-hook #'+evil-leader-projectile-map))
 
   )
 
@@ -189,6 +199,10 @@
               ("C-w C-l" . evil-window-right)
               ("C-w C-k" . evil-window-up)
               ("C-w C-j" . evil-window-down)
+              ("C-h" . evil-window-left)
+              ("C-l" . evil-window-right)
+              ("C-k" . evil-window-up)
+              ("C-j" . evil-window-down)
               ;; ("C-w C-f" . winner-redo)
               ;; ("C-w C-b" . winner-undo)
               ("C-w C-w" . winner-undo)
@@ -213,13 +227,14 @@
                                                    (save-excursion
                                                      (end-of-line)
                                                      (open-line arg))))
-  (setq evil-normal-state-tag   (propertize " <N> " 'face '((bold :background "DarkGoldenrod2" :foreground "black")))
-        evil-emacs-state-tag    (propertize " <E> " 'face '((bold :background "SkyBlue2"       :foreground "black")))
-        evil-insert-state-tag   (propertize " <I> " 'face '((bold :background "chartreuse3"    :foreground "black")))
-        evil-replace-state-tag  (propertize " <R> " 'face '((bold :background "chocolate"      :foreground "black")))
-        evil-motion-state-tag   (propertize " <M> " 'face '((bold :background "plum3"          :foreground "black")))
-        evil-visual-state-tag   (propertize " <V> " 'face '((bold :background "gray"           :foreground "black")))
-        evil-operator-state-tag (propertize " <O> " 'face '((bold :background "sandy brown"    :foreground "black"))))
+  (setq ;; evil-normal-state-tag   (propertize " N " 'face '((bold :background "DarkGoldenrod2" :foreground "black")))
+   evil-normal-state-tag   (propertize " N " 'face '((bold :inherit mode-line )))
+   evil-emacs-state-tag    (propertize " E " 'face '((bold :background "SkyBlue2"       :foreground "black")))
+   evil-insert-state-tag   (propertize " I " 'face '((bold :background "chartreuse3"    :foreground "black")))
+   evil-replace-state-tag  (propertize " R " 'face '((bold :background "chocolate"      :foreground "black")))
+   evil-motion-state-tag   (propertize " M " 'face '((bold :background "plum3"          :foreground "black")))
+   evil-visual-state-tag   (propertize " V " 'face '((bold :background "gray"           :foreground "black")))
+   evil-operator-state-tag (propertize " O " 'face '((bold :background "sandy brown"    :foreground "black"))))
 
   (setq evil-search-module 'evil-search)
   (add-to-list 'evil-emacs-state-modes 'undo-tree-visualizer-mode)
@@ -247,8 +262,23 @@
 
   (with-eval-after-load 'dired-sidebar
     (progn
-      (evil-define-key* 'normal 'global (kbd "C-w d") #'dired-sidebar-toggle-sidebar)
-      (evil-define-key* '(normal visual) 'global (kbd "C-w C-d") 'dired-sidebar-toggle-sidebar)))
+      (evil-define-key* '(normal visual) 'global (kbd "C-w d") #'dired-sidebar-toggle-sidebar)
+      (evil-define-key 'normal 'dired-sidebar-mode-map (kbd "TAB") 'dired-sidebar-subtree-toggle)
+      (evil-define-key 'normal 'dired-sidebar-mode-map "-" 'dired-sidebar-up-directory)
+      (evil-define-key 'normal 'dired-sidebar-mode-map "^" 'dired-sidebar-up-directory)
+      (evil-define-key 'normal 'dired-sidebar-mode-map (kbd "<mouse-2>") 'dired-sidebar-mouse-subtree-cycle-or-find-file)))
+
+  (with-eval-after-load 'ibuffer-sidebar
+    (evil-define-key* '(normal visual) 'global (kbd "C-w C-d") #'+sidebar-toggle))
+
+  (evil-define-key 'normal 'emacs-lisp-mode-map (kbd "(")
+    (defun evil-backward-sexp (&optional arg) (interactive)
+           (if (not (evil-in-comment-p))
+               (backward-sexp arg))))
+  (evil-define-key 'normal 'emacs-lisp-mode-map (kbd ")")
+    (defun evil-forward-sexp (&optional arg) (interactive)
+           (if (not (evil-in-comment-p))
+               (forward-sexp arg))))
 
   (with-eval-after-load 'ivy
     (progn
@@ -277,8 +307,8 @@
 
   (with-eval-after-load 'matlab
     (progn
-      (evil-define-key '(visual normal) matlab-mode-map (kbd "zb") 'matlab-shell-run-block)
-      (evil-define-key '(visual normal) matlab-mode-map (kbd "zr") 'matlab-shell-run-region-or-line)
+      (evil-define-key '(visual normal) matlab-mode-map (kbd "zb") #'matlab-shell-run-block)
+      (evil-define-key '(visual normal) matlab-mode-map (kbd "zr") #'matlab-shell-run-region-or-line)
       (evil-define-key '(normal visual) matlab-mode-map (kbd "[[") #'matlab-backward-section)
       (evil-define-key '(normal visual) matlab-mode-map (kbd "]]") #'matlab-forward-section)))
 
@@ -295,6 +325,10 @@
 
   ;; Setup text-objects for use in LaTeX. Putting this here because it doesn't make sense to put this in the AucTeX section without enabling evil-mode first.
   (add-hook 'LaTeX-mode-hook (lambda () (unless (featurep 'evil-latex-textobjects)
+                                     (require 'evil-latex-textobjects nil t))
+                               (turn-on-evil-latex-textobjects-mode)))
+  
+  (add-hook 'org-mode-hook (lambda () (unless (featurep 'evil-latex-textobjects)
                                      (require 'evil-latex-textobjects nil t))
                                (turn-on-evil-latex-textobjects-mode)))
 
@@ -316,10 +350,19 @@
                                          'message-mode-hook)
   "List of modes where evil-mode addons (like commentary and snipe) should be enabled")
 
+;; EVIL-GOGGLES
+(use-package evil-goggles
+  :disabled
+  :ensure t
+  :init (evil-goggles-mode)
+  :config (setq evil-goggles-duration 0.1
+                evil-goggles-lighter ""))
+
 ;; EVIL-SURROUND
 ;; c/d/y s {motion}{delimiter} to change/delete/add delimiter around motion.
 (use-package evil-surround
-  :ensure
+  :defer
+  :ensure t
   :commands (turn-on-evil-surround-mode
              global-evil-surround-mode
              evil-surround-edit
@@ -336,6 +379,7 @@
 
 ;; EVIL-EMBRACE
 (use-package evil-embrace
+  :defer
   :ensure t
   ;; :after evil-surround
   :hook (LaTeX-mode . embrace-LaTeX-mode-hook)
@@ -430,6 +474,7 @@
 ;; EVIL-COMMENTARY
 ;; gc{motion} to comment/uncomment
 (use-package evil-commentary
+  :defer
   :ensure
   :diminish ""
   :commands evil-commentary-mode
@@ -443,6 +488,7 @@
 ;; EVIL-EXCHANGE
 ;; gx{motion} to select, gx{motion} on second object to exchange
 (use-package evil-exchange
+  :defer
   :ensure t
   :init
   (dolist (mode-hook +evil-addons-enabled-modes)
@@ -454,6 +500,7 @@
 ;; EVIL-LION
 ;; gl{motion}{char} to align on char
 (use-package evil-lion
+  :defer
   :ensure t
   :init
   (dolist (mode-hook +evil-addons-enabled-modes)
@@ -477,12 +524,13 @@
 ;; EVIL-NUMBERS
 ;; + and - to increment/decrement number at point
 (use-package evil-numbers
+  :defer
   :ensure t
   ;; :bind (:map evil-normal-state-map
   ;;             ("+" . evil-numbers/inc-at-pt)
   ;;             ("-" . evil-numbers/dec-at-pt))
   
-  :init
+  :config
   (defun +evil-numbers-add-keybinds (mode-map)
     "Make + and - increment and decrement numbers in evil-normal-state"
     (evil-define-key* 'normal (symbol-value mode-map)
@@ -515,6 +563,7 @@
 ;; in operator mode, z or x to operate including/excluding next ocurrence of chars
 (use-package evil-snipe
   ;; :after evil-collection
+  :defer
   :ensure t
   :commands (evil-snipe-mode
              evil-snipe-override-mode
@@ -556,6 +605,7 @@
 ;; EVIL-VISUALSTAR
 ;; Select with visual-mode and hit * or # to find next occurrence
 (use-package evil-visualstar
+  :defer
   :ensure t
   :config
   (global-evil-visualstar-mode)
@@ -570,6 +620,7 @@
 
 ;; ORG-EVIL
 (use-package org-evil
+  :defer 3
   :ensure t
   :after org)
 
@@ -577,6 +628,7 @@
 ;; EVIL-SMARTPARENS
 ;;-----------------
 (use-package evil-smartparens
+  :disabled
   :ensure t
   :init
   (add-hook 'lisp-interaction-mode-hook #'evil-smartparens-mode)
@@ -627,6 +679,7 @@
       reftex
       notmuch
       ibuffer
+      xref
       )
     "The list of `evil-collection' modules to load. evil-mode bindings will be enabled for these modes. See `evil-collection-mode-list' for the full set of supported modes.")
   :config
@@ -637,6 +690,11 @@
                     "q" #'kill-current-buffer
                     "d" #'process-menu-delete-process)
   
+  (with-eval-after-load 'ibuffer
+    (evil-collection-define-key '(normal motion) 'ibuffer-mode-map
+      (kbd "C-k") nil
+      (kbd "C-j") nil))
+
   (with-eval-after-load 'reftex
     (evil-collection-define-key 'normal 'reftex-toc-mode-map
       "<" 'reftex-toc-promote
@@ -681,10 +739,10 @@
     ;;                   (kbd "C-<tab>") nil)
     
     (evil-collection-define-key 'normal 'notmuch-tree-mode-map
-      "j" 'notmuch-tree-next-matching-message
-      "k" 'notmuch-tree-prev-matching-message
-      "gj" 'evil-next-line
-      "gk" 'evil-previous-line)
+      "j" 'notmuch-tree-next-message
+      "k" 'notmuch-tree-prev-message
+      "gj" 'notmuch-tree-next-matching-message
+      "gk" 'notmuch-tree-prev-matching-message)
 
     (fset 'evil-collection-notmuch-search-toggle-delete
           (lambda ()

@@ -27,8 +27,33 @@
                                (delete-window))))))
 
 
-;; C-x C-b to ibuffer instead of buffer-menu
-(global-set-key (kbd "C-x C-b") 'ibuffer)
+(use-package ibuffer
+  :config
+  (setq ibuffer-expert t)
+  (setq ibuffer-show-empty-filter-groups nil)
+  (setq ibuffer-default-sorting-mode 'filename/process)
+  ;; (setq ibuffer-use-header-line t)
+  ;; (setq ibuffer-display-summary nil)
+  ;; (setq ibuffer-use-other-window nil)
+  ;; (setq ibuffer-movement-cycle nil)
+  ;; (setq ibuffer-default-shrink-to-minimum-size nil)
+  ;; (setq ibuffer-saved-filter-groups nil)
+  :hook (ibuffer-mode . hl-line-mode)
+  :bind (("C-x C-b" . ibuffer))
+         ;; :map ibuffer-mode-map
+         ;; ("* f" . ibuffer-mark-by-file-name-regexp)
+         ;; ("* g" . ibuffer-mark-by-content-regexp) ; "g" is for "grep"
+         ;; ("* n" . ibuffer-mark-by-name-regexp)
+         ;; ("s n" . ibuffer-do-sort-by-alphabetic)  ; "sort name" mnemonic
+         ;; ("/ g" . ibuffer-filter-by-content)
+         )
+
+(use-package ibuffer-vc
+  :ensure t
+  :after (ibuffer vc)
+  :bind (:map ibuffer-mode-map
+              ("/ V" . ibuffer-vc-set-filter-groups-by-vc-root)
+              ("/ <deletechar>" . ibuffer-clear-filter-groups)))
 
 ;; Keys to traverse buffers
 ;; (global-set-key (kbd "<C-M-return>") 'ido-display-buffer)

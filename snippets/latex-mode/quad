@@ -1,0 +1,5 @@
+# key: qq
+# name: quad
+# condition: (and (texmathp) 'auto)
+# --
+\\quad 

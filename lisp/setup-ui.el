@@ -4,7 +4,7 @@
       inhibit-splash-screen t
       inhibit-startup-echo-area-message user-login-name
       inhibit-default-init t
-      initial-major-mode 'text-mode
+      initial-major-mode 'fundamental-mode
       initial-scratch-message nil)
 (fset #'display-startup-echo-area-message #'ignore)
 
@@ -72,7 +72,7 @@
 ;; (setq split-width-threshold 120
 ;;       split-height-threshold 80)
 ;; Favor vertical splits over horizontal ones
-(setq split-width-threshold 170
+(setq split-width-threshold 180
       split-height-threshold 80)
 
 ;; ;;;###package pos-tip

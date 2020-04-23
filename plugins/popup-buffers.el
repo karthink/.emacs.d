@@ -48,8 +48,6 @@
 
 (defvar popup-buffers--toggle-state nil
   "Current state of latest popup. Aternates between nil and t")
-(defvar popup-buffers--cycle-state nil
-  "Current state of popup cycling. Aternates between nil and t")
 
 ;; (defvar popup-buffers-old-window-list nil
 ;;   "List of displayed windows that is updated when the window configuration changes")
@@ -100,9 +98,20 @@
           (push (cons (get-buffer-window b) b)
                 open-popups)))))
 
+;;;###autoload
 (defun popup-buffers-update-open-popups ()
   (setq popup-buffers-open-buffer-window-alist
         (popup-buffers-find-open-popups)))
+
+;;;###autoload
+(defun popup-buffers-update-closed-popups ()
+  (mapcar (lambda (buf)
+	    (let ((win (get-buffer-window buf)))
+	    (if (and (buffer-live-p buf)
+		     (not (window-live-p win))
+		     (not (window-minibuffer-p win)))
+		buf)))
+	  (buffer-list)))
 
 ;;; HOOKS
 ;; Add popup list maintenance to `window-configuration-change-hook',
@@ -168,19 +177,41 @@
 (defun popup-buffers-cycle (&optional arg)
   "Cycle visibility of popup windows one at a time. With a prefix argument, cycle in the opposite direction."
   (interactive "p")
-  (setq popup-buffers--toggle-state
-        (not popup-buffers--toggle-state))
-  (if (equal last-command 'popup-buffers-cycle)
+  ;; (setq popup-buffers--toggle-state
+  ;;       (not popup-buffers--toggle-state))
+  (if (and (not (null (cdr popup-buffers-buried-buffer-window-alist)))
+           (equal last-command 'popup-buffers-cycle))
       ;; cycle through buffers: rest of logic
       (progn (popup-buffers-close-latest)
              (let ((bufs popup-buffers-buried-buffer-window-alist)) 
                (setq popup-buffers-buried-buffer-window-alist
-                     (append (cdr bufs) (cons (car bufs) ())))
+                     (nconc (last bufs) (butlast bufs)))
                (popup-buffers-open-latest)))
     ;; starting new cycle, so bury everything first.
     (if (null popup-buffers-open-buffer-window-alist)
         (popup-buffers-open-latest)
       (progn (popup-buffers-bury-all))
       )))
+
+;;;###autoload
+(define-minor-mode popup-buffers-mode
+  "To be added"
+  :global t
+  :version "0.1"
+  :lighter " POP "
+  :group 'popup
+  :keymap (let ((map (make-sparse-keymap)))
+	    (define-key map (kbd "C-`") 'popup-buffers-toggle-latest)
+	    (define-key map (kbd "M-`") 'popup-buffers-cycle)
+	    map)
+  (if popup-buffers-mode
+   ;; Turning the mode ON
+    (progn
+      (popup-buffers-update-open-popups)
+      (add-hook 'window-configuration-change-hook 'popup-buffers-update-open-popups))
+   ;; Turning the mode OFF
+    (remove-hook 'window-configuration-change-hook 'popup-buffers-update-open-popups)
+   )
+  )
 
 (provide 'popup-buffers)

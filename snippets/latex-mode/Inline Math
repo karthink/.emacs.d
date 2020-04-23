@@ -3,4 +3,4 @@
 # condition: (and (not (texmathp)) (quote auto))
 # group: math
 # --
-\$$0\$
+`(if (eq major-mode 'org-mode) "\\(" "$")`$0`(if (eq major-mode 'org-mode) "\\)" "$")`

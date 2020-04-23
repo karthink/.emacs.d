@@ -50,6 +50,8 @@
 
 ;; Dynamic abbreviations does not search for case
 (setq dabbrev-case-fold-search t)
+(setq dabbrev-abbrev-char-regexp "\\sw\\|\\s_"
+      dabbrev-abbrev-skip-leading-regexp "\\$\\|\\*\\|/\\|=")
 
 ;; Sentence end need not be "  " (double space)
 (setq sentence-end-double-space nil)
@@ -87,6 +89,9 @@
         try-complete-lisp-symbol-partially
         try-complete-lisp-symbol))
 
+;; Save clipboard before changing it
+(setq save-interprogram-paste-before-kill t)
+
 ;;----------------------------------------------------------------------
 ;; KEYBINDINGS
 ;;----------------------------------------------------------------------
@@ -98,8 +103,11 @@
 (global-set-key "\C-x\M-t" 'transpose-sentences)
 
 ;;; Autocompletion is power.
-(global-set-key (kbd "C-;") 'complete-symbol) 
+;; (global-set-key (kbd "C-;") 'complete-symbol) 
 
+;; Cycle spacing: just-one-space to no-space to original-spacing
+(global-set-key (kbd "M-SPC") 'cycle-spacing)
+ 
 ;;; Alternative to M-x
 (global-set-key "\C-x\C-m" 'execute-extended-command)
 ;;(global-set-key "\C-c\C-m" 'execute-extended-command)
@@ -404,7 +412,7 @@
   "Function to isearch-forward in other-window."
   (interactive "P")
   (save-excursion
-    (let ((next (if prefix 1 -1)))
+    (let ((next (if prefix -1 1)))
     (other-window next)
     (isearch-backward)
     (other-window (- next))

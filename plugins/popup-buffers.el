@@ -221,9 +221,7 @@
     (setq popup-buffers--user-buffers-alist
           (delete buf popup-buffers--user-buffers-alist))
     (popup-buffers-update-open-popups)
-    (display-buffer-at-bottom
-     buf '((window-height . 0.50)
-           (window-parameters . ((mode-line-format . mode-line-format)))))))
+    (display-buffer-at-bottom buf '((window-height . 0.50)))))
 
 ;;;###autoload
 (defun popup-buffers-lower-to-popup (&optional buffer)
@@ -247,21 +245,22 @@
 	    (define-key map (kbd "M-`") 'popup-buffers-cycle)
 	    map)
   (if popup-buffers-mode
-      ;; Turning the mode ON
-      (progn
-        (popup-buffers-update-open-popups)
-        (add-hook 'window-configuration-change-hook 'popup-buffers-update-open-popups)
-        (add-to-list 'display-buffer-alist
-                     '((lambda (buf act) (let ((buffer (if (bufferp buf) buf (get-buffer buf))))
-                                      (member buffer popup-buffers--user-buffers-alist)))
-                       (+display-popup-in-side-window))))
-    ;; Turning the mode OFF
+   ;; Turning the mode ON
+    (progn
+      (popup-buffers-update-open-popups)
+      (add-hook 'window-configuration-change-hook 'popup-buffers-update-open-popups)
+      (add-to-list 'display-buffer-alist
+                   '((lambda (buf act) (let ((buffer (if (bufferp buf) buf (get-buffer buf))))
+                                    (member buffer popup-buffers--user-buffers-alist)))
+                     (+display-popup-in-side-window)))
+   ;; Turning the mode OFF
     (remove-hook 'window-configuration-change-hook 'popup-buffers-update-open-popups)
     (delete
      '((lambda (buf act) (let ((buffer (if (bufferp buf) buf (get-buffer buf))))
                       (member buffer popup-buffers--user-buffers-alist)))
        (+display-popup-in-side-window))
      display-buffer-alist)
-    ))
+   )
+  )
 
 (provide 'popup-buffers)

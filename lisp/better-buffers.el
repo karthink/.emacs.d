@@ -28,7 +28,6 @@
 
 
 (use-package ibuffer
-  :defer t
   :config
   (setq ibuffer-expert t)
   (setq ibuffer-show-empty-filter-groups nil)
@@ -40,12 +39,7 @@
   ;; (setq ibuffer-default-shrink-to-minimum-size nil)
   ;; (setq ibuffer-saved-filter-groups nil)
   :hook (ibuffer-mode . hl-line-mode)
-  :general
-  (:keymaps 'space-menu-map
-   :wk-full-keys nil
-   "i" '(ibuffer :wk "ibuffer"))
-  ("C-x C-b" 'ibuffer)
-  ;; :bind (("C-x C-b" . ibuffer))
+  :bind (("C-x C-b" . ibuffer))
          ;; :map ibuffer-mode-map
          ;; ("* f" . ibuffer-mark-by-file-name-regexp)
          ;; ("* g" . ibuffer-mark-by-content-regexp) ; "g" is for "grep"
@@ -66,10 +60,9 @@
 (global-set-key (kbd "C-<prior>") 'previous-buffer) ; Ctrl+PageDown
 (global-set-key (kbd "C-<next>") 'next-buffer) ; Ctrl+PageUp
 
-;; (global-set-key (kbd "<C-tab>") 'other-window)  ; Ctrl+Tab
-;; (global-set-key (kbd "<C-S-iso-lefttab>") 
-;;                 (lambda () (interactive) (other-window -1)))
-                                        ;Ctrl+Shift+Tab
+(global-set-key (kbd "<C-tab>") 'other-window)  ; Ctrl+Tab
+(global-set-key (kbd "<C-S-iso-lefttab>") 
+                (lambda () (interactive) (other-window -1))) ;Ctrl+Shift+Tab
 
 ;;; Cycle buffers forward. (Backward with prefix arg) 
 ;; (global-set-key (kbd "M-`")

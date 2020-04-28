@@ -1,7 +1,7 @@
 ;; -*- lexical-binding: t -*-
-;; (require 'use-package nil t)
+(require 'use-package nil t)
 (use-package evil-leader
-  :disabled
+  :ensure t
   :commands global-evil-leader-mode
   :init
   (setq evil-want-keybinding nil)
@@ -182,10 +182,9 @@
 
 (use-package evil
   :ensure t
-  ;; :after evil-leader
+  :after evil-leader
   :defines (turn-on-evil-matlab-textobjects-mode turn-on-evil-latex-textobjects-mode)
   :init
-  (setq evil-want-keybinding nil)
   (setq evil-want-C-u-scroll t)
   (setq evil-want-integration t)
   (setq evil-want-keybinding nil)
@@ -195,10 +194,6 @@
   (setq evil-split-window-below t)
   (setq evil-mode-line-format '(before . mode-line-front-space))
   ;; (add-hook 'evil-jumps-post-jump-hook #'recenter)
-  :general
-  (:keymaps 'space-menu-map
-   :wk-full-keys nil
-   "`" '(evil-switch-to-windows-last-buffer :wk "prev buffer"))
   :bind (:map evil-motion-state-map
               ("C-w C-h" . evil-window-left)
               ("C-w C-l" . evil-window-right)
@@ -218,24 +213,11 @@
               ("C-w S-<down>" . evil-window-decrease-height)
               ("C-w S-<left>" . evil-window-decrease-width)
               ("C-w S-<right>" . evil-window-increase-height)
-              ("[q" . previous-error)
-              ("]q" . next-error)
               ;; :map evil-normal-state-map
               ;; ("[o" . open-next-line)
               ;; ("]o" . open-previous-line)
-           :map evil-insert-state-map
-           ("C-w" . backward-kill-word-or-region))
+              )
   :config
-  (dolist (mode '(occur-mode
-                  ivy-occur-mode
-                  ivy-occur-grep-mode
-                  diff-mode
-                  ;; reftex-toc-mode
-                  ) nil)
-    (cl-pushnew mode evil-motion-state-modes))
-
-;  (nconc evil-motion-state-modes '(occur-mode ivy-occur-mode ivy-occur-grep-mode))
-
   (evil-define-key 'normal 'global (kbd "[ SPC") (lambda (&optional arg) (interactive)
                                                    (save-excursion
                                                      (previous-line)
@@ -245,43 +227,14 @@
                                                    (save-excursion
                                                      (end-of-line)
                                                      (open-line arg))))
-
-;;;###autoload
-(defun +evil-mode-line-faces ()
-  (if (not (fboundp 'evil-mode))
-      ''winum-face
-    (cond
-     ((evil-emacs-state-p)    ''((bold :background "SkyBlue2" :foreground "black")))
-     ((evil-insert-state-p)   ''((bold :background "chartreuse3" :foreground "black")))
-     ((evil-replace-state-p)  ''((bold :background "chocolate" :foreground "black")))
-     ((evil-motion-state-p)   ''((bold :background "plum3" :foreground "black")))
-     ((evil-visual-state-p)   ''((bold :background "gray" :foreground "black")))
-     ((evil-operator-state-p) ''((bold :background "sandy brown" :foreground "black")))
-     (t ''((bold :inherit mode-line)))
-    )))
-
-
-  ;; (dolist (state-tag '((" N " . 'evil-normal-state-tag)
-  ;;                      (" E " . 'evil-emacs-state-tag)
-  ;;                      (" I " . 'evil-insert-state-tag)
-  ;;                      (" R " . 'evil-replace-state-tag)
-  ;;                      (" M " . 'evil-motion-state-tag)
-  ;;                      (" V " . 'evil-visual-state-tag)
-  ;;                      (" O " . 'evil-operator-state-tag))) 
-  ;;   (if (bound-and-true-p winum-mode)
-  ;;       (set (cdr state-tag) nil)
-  ;;     (setf (cdr state-tag) (propertize (car state-tag) (+evil-mode-line-faces)))))
-  
-;; Loading colors in the winum indicator.
   (setq ;; evil-normal-state-tag   (propertize " N " 'face '((bold :background "DarkGoldenrod2" :foreground "black")))
-   evil-normal-state-tag   "" ;(propertize " N " 'face '((bold :inherit mode-line )))
-   evil-emacs-state-tag    "" ;(propertize " E " 'face '((bold :background "SkyBlue2"       :foreground "black")))
-   evil-insert-state-tag   "" ;(propertize " I " 'face '((bold :background "chartreuse3"    :foreground "black")))
-   evil-replace-state-tag  "" ;(propertize " R " 'face '((bold :background "chocolate"      :foreground "black")))
-   evil-motion-state-tag   "" ;(propertize " M " 'face '((bold :background "plum3"          :foreground "black")))
-   evil-visual-state-tag   "" ;(propertize " V " 'face '((bold :background "gray"           :foreground "black")))
-   evil-operator-state-tag "" ;(propertize " O " 'face '((bold :background "sandy brown"    :foreground "black")))
-   )
+   evil-normal-state-tag   (propertize " N " 'face '((bold :inherit mode-line )))
+   evil-emacs-state-tag    (propertize " E " 'face '((bold :background "SkyBlue2"       :foreground "black")))
+   evil-insert-state-tag   (propertize " I " 'face '((bold :background "chartreuse3"    :foreground "black")))
+   evil-replace-state-tag  (propertize " R " 'face '((bold :background "chocolate"      :foreground "black")))
+   evil-motion-state-tag   (propertize " M " 'face '((bold :background "plum3"          :foreground "black")))
+   evil-visual-state-tag   (propertize " V " 'face '((bold :background "gray"           :foreground "black")))
+   evil-operator-state-tag (propertize " O " 'face '((bold :background "sandy brown"    :foreground "black"))))
 
   (setq evil-search-module 'evil-search)
   (add-to-list 'evil-emacs-state-modes 'undo-tree-visualizer-mode)
@@ -318,14 +271,14 @@
   (with-eval-after-load 'ibuffer-sidebar
     (evil-define-key* '(normal visual) 'global (kbd "C-w C-d") #'+sidebar-toggle))
 
-  ;; (evil-define-key 'normal 'emacs-lisp-mode-map (kbd "(")
-  ;;   (defun evil-backward-sexp (&optional arg) (interactive)
-  ;;          (if (not (evil-in-comment-p))
-  ;;              (backward-sexp arg))))
-  ;; (evil-define-key 'normal 'emacs-lisp-mode-map (kbd ")")
-  ;;   (defun evil-forward-sexp (&optional arg) (interactive)
-  ;;          (if (not (evil-in-comment-p))
-  ;;              (forward-sexp arg))))
+  (evil-define-key 'normal 'emacs-lisp-mode-map (kbd "(")
+    (defun evil-backward-sexp (&optional arg) (interactive)
+           (if (not (evil-in-comment-p))
+               (backward-sexp arg))))
+  (evil-define-key 'normal 'emacs-lisp-mode-map (kbd ")")
+    (defun evil-forward-sexp (&optional arg) (interactive)
+           (if (not (evil-in-comment-p))
+               (forward-sexp arg))))
 
   (with-eval-after-load 'ivy
     (progn
@@ -400,6 +353,7 @@
 ;; EVIL-GOGGLES
 (use-package evil-goggles
   :disabled
+  :ensure t
   :init (evil-goggles-mode)
   :config (setq evil-goggles-duration 0.1
                 evil-goggles-lighter ""))
@@ -528,7 +482,7 @@
   (dolist (mode-hook +evil-addons-enabled-modes)
     (add-hook mode-hook (lambda () "Turn on evil commentary for mode"
                           (interactive)
-                          (evil-commentary-mode))))
+                          (evil-commentary-mode 1))))
   )
 
 ;; EVIL-EXCHANGE
@@ -546,7 +500,7 @@
 ;; EVIL-LION
 ;; gl{motion}{char} to align on char
 (use-package evil-lion
-  :after evil
+  :defer
   :ensure t
   :init
   (dolist (mode-hook +evil-addons-enabled-modes)
@@ -639,15 +593,14 @@
   ;; (add-hook 'magit-mode-hook 'turn-off-evil-snipe-override-mode)
   :diminish "")
 
-;;EVIL-SPACE
-;;Hit ; or , (originally <SPC>) to repeat last movement.
-(use-package evil-space
-  ;; :ensure t
-  :disabled
-  :init
-  (evil-space-mode)
-  (setq evil-space-next-key ";")
-  (setq evil-space-prev-key ","))
+;; EVIL-SPACE
+;; Hit ; or , (originally <SPC>) to repeat last movement.
+;; (use-package evil-space
+;;   :ensure t
+;;   :init
+;;   (evil-space-mode)
+;;   (setq evil-space-next-key ";")
+;;   (setq evil-space-prev-key ","))
 
 ;; EVIL-VISUALSTAR
 ;; Select with visual-mode and hit * or # to find next occurrence
@@ -660,11 +613,10 @@
   :diminish "")
 
 ;; EVIL-PAREDIT
-(use-package evil-paredit
-  ;; :ensure t
-  :disabled
-  :config
-  (add-hook 'emacs-lisp-mode-hook 'evil-paredit-mode))
+;; (use-package evil-paredit
+;;   :ensure t
+;;   :config
+;;   (add-hook 'emacs-lisp-mode-hook 'evil-paredit-mode))
 
 ;; ORG-EVIL
 (use-package org-evil
@@ -677,7 +629,7 @@
 ;;-----------------
 (use-package evil-smartparens
   :disabled
-  ;; :ensure t
+  :ensure t
   :init
   (add-hook 'lisp-interaction-mode-hook #'evil-smartparens-mode)
   (add-hook 'emacs-lisp-mode-hook #'evil-smartparens-mode)
@@ -727,13 +679,10 @@
       reftex
       notmuch
       ibuffer
-      (occur replace)
       xref
-      doc-view
       )
     "The list of `evil-collection' modules to load. evil-mode bindings will be enabled for these modes. See `evil-collection-mode-list' for the full set of supported modes.")
   :config
-  (setq evil-collection-key-blacklist '("C-j" "C-k"))
   (evil-collection-init evil-collection-enabled-mode-list)
   ;; (evil-collection-setup-minibuffer nil)
   ;; Additional bindings

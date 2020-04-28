@@ -204,7 +204,7 @@
 (global-set-key (kbd "M-/") 'hippie-expand)
 
 ;; Keybindings for occur inside isearch
-;; (define-key isearch-mode-map (kbd "C-o") 'isearch-occur)
+(define-key isearch-mode-map (kbd "C-o") 'isearch-occur)
 
 (global-set-key [M-up] 'move-text-up)    
 (global-set-key [M-down] 'move-text-down)
@@ -238,25 +238,25 @@
 ;;     (beginning-of-line)))
 
 
-;; ;;;###autoload
-;; (defun duplicate-line (&optional arg)
-;;   "Duplicate it. With prefix ARG, duplicate ARG lines following the current one."
-;;   (interactive "p")
-;;   (destructuring-bind (beg . end) (if (region-active-p)
-;;                                       (cons (region-beginning)
-;;                                             (region-end))
-;;                                     (cons (line-beginning-position)
-;;                                           (line-end-position)))
-;;     (copy-region-as-kill beg end)
-;;     (if (region-active-p)
-;;         (progn (dotimes (n arg arg)
-;;                  (goto-char (region-end))
-;;                  (yank))
-;;                (exchange-point-and-mark)) 
-;;       (save-excursion
-;;         (dotimes (n arg arg)
-;;           (open-previous-line 1)
-;;           (yank))))))
+;;;###autoload
+(defun duplicate-line (&optional arg)
+  "Duplicate it. With prefix ARG, duplicate ARG lines following the current one."
+  (interactive "p")
+  (destructuring-bind (beg . end) (if (region-active-p)
+                                      (cons (region-beginning)
+                                            (region-end))
+                                    (cons (line-beginning-position)
+                                          (line-end-position)))
+    (copy-region-as-kill beg end)
+    (if (region-active-p)
+        (progn (dotimes (n arg arg)
+                 (goto-char (region-end))
+                 (yank))
+               (exchange-point-and-mark)) 
+      (save-excursion
+        (dotimes (n arg arg)
+          (open-previous-line 1)
+          (yank))))))
 
 ;; (defun duplicate-line-many-once (&optional arg)
 ;;   "Duplicate it. With prefix ARG, duplicate ARG lines following the current one. This function is deprecated. Use duplicate-line with a selected region instead"

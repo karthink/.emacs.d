@@ -7,14 +7,8 @@
 ;;;* PATHS
 ;;######################################################################
 
-(setq user-emacs-directory "~/.emacs.d/")
-
-(defun dir-concat (dir file)
-  "join path DIR with filename FILE correctly"
-  (concat (file-name-as-directory dir) file))
-
 ;; Get custom-set-variables out of init.el
-(setq custom-file (dir-concat user-emacs-directory "custom.el"))
+(setq custom-file "~/.emacs.d/custom.el")
 (load custom-file)
 
 ;; Set directory
@@ -27,8 +21,8 @@
             (t "~/")))
 
 ;; Adds ~/.emacs.d to the load-path
-(push (dir-concat user-emacs-directory "plugins/") load-path)
-(push (dir-concat user-emacs-directory "lisp/") load-path)
+(push "~/.emacs.d/plugins/" load-path)
+(push "~/.emacs.d/lisp/" load-path)
 
 ;; (eval-after-load "setup-org"
 ;;   (setq initial-buffer-choice (concat (file-name-as-directory (getenv "HOME"))
@@ -81,215 +75,13 @@
     `(setq ad-redefinition-action 'accept))
   (require 'cl-lib)
   (require 'use-package)
-  ;; (setq use-package-verbose t
-  ;;       ;use-package-compute-statistics t
-  ;;       ;use-package-ignore-unknown-keywords t
-  ;;       use-package-minimum-reported-time 0.01)
+  (setq use-package-verbose t)
   )
 
 (require 'bind-key)
 
 (add-hook 'package-menu-mode-hook 'hl-line-mode)
 
-;;######################################################################
-;;;* KEYBIND SETUP
-;;######################################################################
-(use-package general
-  ;; :preface (setq use-package-ignore-unknown-keywords t)
-  :ensure t
-  :demand t
-  :commands (general-def general-define-key)
-  :init
-  (defvar general-leader "SPC"
-    "Leader key for Evil")
-  (defvar general-leader-alt "M-SPC"
-    "Leader key for Emacs and Evil Insert states")
-  (defvar general-localleader "SPC m"
-    "Local leader key for major-mode specific commands")
-  (defvar general-localleader-alt "M-SPC m"
-    "Local leader key for major-mode specific commands for Emacs and Evil Insert states.")
-
-  ;; With evil-mode
-    (general-define-key
-     :states '(normal motion visual emacs)
-     :prefix general-leader
-     :non-normal-prefix general-leader-alt
-     :prefix-command 'space-menu
-     :prefix-map 'space-menu-map
-     :wk "Leader key for emacs")
-
-    (general-create-definer leader-define-key
-      :states '(normal visual motion emacs)
-      :prefix general-leader
-      :non-normal-prefix general-leader-alt)
-    (general-create-definer localleader-define-key
-      :states '(normal visual motion emacs)
-      :prefix general-localleader
-      :non-normal-prefix general-localleader-alt)
-
-    ;; Pure emacs
-     ;; (general-define-key
-     ;;   ;; :states '(normal motion visual emacs)
-     ;;   ;; :prefix general-leader
-     ;;   ;; :non-normal-prefix general-leader-alt
-     ;;   :prefix general-leader-alt
-     ;;   :prefix-command 'space-menu
-     ;;   :prefix-map 'space-menu-map
-     ;;   :wk "Leader key for emacs")
-
-     ;;  (general-create-definer leader-define-key
-     ;;    ;; :states '(normal visual motion emacs)
-     ;;    ;; :non-normal-prefix general-leader-alt
-     ;;    :prefix general-leader-alt)
-
-     ;;  (general-create-definer localleader-define-key
-     ;;    ;; :states '(normal visual motion emacs)
-     ;;    ;; :non-normal-prefix general-localleader-alt
-     ;;    :prefix general-localleader-alt)
-
-  (general-def
-   :keymaps 'space-menu-map
-   :wk-full-keys nil
-   ;; unbind SPC and give it a title for which-key (see echo area)
-   ;;"x" '(Control-X-prefix :wk "C-x")
-   "z" '(repeat-complex-command :wk "M-x again")
-   "x" '(execute-extended-command :wk "M-x")
-   "f" '(:ignore t :wk "file")
-   "q" '(:ignore t :wk "quit")
-   "b" '(:ignore t :wk "buffer")
-   "g" '(vc-prefix-map :wk "git/VC")
-   "c" '(:ignore t :wk "code")
-   "k" '(kill-this-buffer :wk "Kill buffer")
-   "/" '(:prefix-command space-menu-search
-         :prefix-map space-menu-search-map
-         :wk "search")
-   "b" '(:prefix-command space-menu-buffer
-         :prefix-map space-menu-buffer-map
-         :wk "buffers")
-   "t" '(:prefix-command space-menu-toggle
-         :prefix-map space-menu-toggle-map
-         :wk "toggle")
-   "h" '(help-command :wk "help")
-   ;; "h" '(:prefix-command space-menu-help
-   ;;       :prefix-map space-menu-help-map
-   ;;       :wk "help")
-   "w" '(:prefix-command space-menu-window
-         :prefix-map space-menu-window-map
-         :wk "window")
-   )
-
-  (general-def
-    :keymaps 'space-menu-map
-    :wk-full-keys nil
-    "s" '(space-menu-search :wk "search"))
-
-  (general-def
-    :keymaps 'space-menu-toggle-map
-    :wk-full-keys nil
-    "v" '(visual-line-mode          :wk "visual lines")
-    "q" '(auto-fill-mode            :wk "auto fill")
-    "B" '(presentation-mode         :wk "presentation mode")
-    "n" '(display-line-numbers-mode :wk "line numbers")
-    "r" '(read-only-mode            :wk "read only")
-    )
-
-  (leader-define-key
-    :keymaps '(text-mode-map
-               tex-mode-map
-               message-mode-map)
-    :prefix "t"
-    "V" '(visual-fill-column-mode :wk "visual fill")
-    )
-
-  (general-def
-    :keymaps 'space-menu-buffer-map
-    :wk-full-keys nil
-    "r" '(revert-buffer         :wk "revert buffer")
-    "b" '(switch-to-buffer      :wk "switch to buffer")
-    "d" '(kill-buffer           :wk "delete buffers")
-    "k" '(kill-this-buffer      :wk "kill buffer")
-    "z" '(bury-buffer           :wk "bury buffer")
-    "[" '(previous-buffer       :wk "prev buffer")
-    "]" '(next-buffer           :wk "next buffer")
-    "=" '(diff-buffer-with-file :wk "diff against file")
-    )
-
-  (general-def
-    :keymaps 'space-menu-window-map
-    :wk-full-keys nil
-    "k" '(delete-window :wk "delete window")
-    "K" '(kill-buffer-and-window :wk "kill buf and win"))
-
-  (general-def
-    :keymaps 'space-menu-search-map
-    :wk-full-keys nil
-    "o" '(occur :wk "occur")
-    "." '(isearch-forward-symbol-at-point :wk "search thing-at-pt")
-    "h" '(highlight-regexp :wk "highlight regexp")
-    "_" '(isearch-forward-symbol :wk "search for symbol")
-    "f" '(grep-find :wk "grep through find")
-    "b" '(batch-replace-strings :wk "batch-replace")
-    "i" '(imenu :wk "imenu"))
-
-  (general-def
-    :keymaps 'space-menu-map
-    :wk-full-keys nil
-    "," '(switch-to-buffer   :wk "switch buffer")
-    ";" '(eval-expression    :wk "eval expr")
-    "u" '(universal-argument :wk "universal arg")
-    )
-
-  (general-def
-    :keymaps 'space-menu-map
-    :wk-full-keys nil
-    :prefix "q"
-    "q" '(save-buffers-kill-terminal :wk "quit emacs (eject!)")
-    "f" '(delete-frame               :wk "quit frame")
-    "d" '(server-edit                :wk "done with buffer"))
-
-  (general-def
-    :keymaps 'space-menu-map
-    :wk-full-keys nil
-    :prefix "f"
-    "s" '(save-buffer       :wk "Save file")
-    "w" '(write-file        :wk "Save as?")
-    "S" '(save-some-buffers :wk "Save bufferS")
-    "U" '(sudo-find-file    :wk "Sudo find file")
-    "^" '(sudo-this-file    :wk "Sudo THIS file")
-    "f" '(find-file         :wk "Find file")
-    "l" '(locate            :wk "Locate file on system")
-    "'" '(bookmark-jump     :wk "Jump to bookmark")
-    "m" '(bookmark-set      :wk "Set bookmark")
-    "." '(find-file         :wk "Find file (FIXME)")
-    )
-
-  (localleader-define-key
-    :keymaps '(emacs-lisp-mode-map lisp-interaction-mode-map)
-    "g" '(nil            :wk "goto")
-    "gl" '(find-library  :wk "Find Library")
-    "gv" '(find-variable :wk "Find Variable")
-    "gf" '(find-function :wk "Find Function")
-    "x" '(eval-defun     :wk "Eval defun")
-    "l" '(load-library   :wk "Load library")
-    "b" '(eval-buffer    :wk "Eval Buffer")
-    "r" '(eval-region    :wk "Eval Region")
-    "B" `(,(defun byte-compile-this-file () "Byte-compile file"
-                 (interactive)
-                 (if buffer-file-name
-                     (byte-compile-file
-                      buffer-file-name)
-                   (message "Not visiting a file!")))
-                         :wk "Byte-compile file")
-    "L" `(,(defun load-this-file () "Load current file"
-                 (interactive)
-                  (if buffer-file-name
-                      (load-file
-                       buffer-file-name)
-                    (message "Not visiting a file!")))
-                         :wk "Load this file"))
-  (general-def :keymaps 'space-menu-help-map
-    "m" '(describe-mode :wk "describe mode"))
-  )
 ;;######################################################################
 ;;;* SAVE AND BACKUP
 ;;########################################################################
@@ -316,10 +108,6 @@
 ;; highlight the current line, as in Matlab
 ;; (global-hl-line-mode)
 
-;; Confirm when killing Emacs
-(setq confirm-kill-emacs (lambda (prompt)
-                           (y-or-n-p-with-timeout prompt 2 nil)))
-
 (use-package uniquify
   :init  (setq uniquify-buffer-name-style 'forward))
 
@@ -327,13 +115,13 @@
 ;; programs. simply hit delete or type whatever you want or yank
 (delete-selection-mode)
 
-                                        ; show the matching parentheses immediately
+; show the matching parentheses immediately
 (use-package paren
-  :config
-  (show-paren-mode 1)
-  (setq show-paren-delay 0.1
-        show-paren-highlight-openparen t
-        show-paren-when-point-inside-paren t))
+:config
+(show-paren-mode 1)  
+(setq show-paren-delay 0.1 
+      show-paren-highlight-openparen t
+      show-paren-when-point-inside-paren t))
 
 ;; Underline looks a bit better when drawn lower
 (setq x-underline-at-descent-line t)
@@ -398,8 +186,8 @@
 
 
 (use-package comint
-  :config
-  ;; Arrange for Emacs to notice password prompts and turn off echoing for them, as follows:
+  :config 
+;; Arrange for Emacs to notice password prompts and turn off echoing for them, as follows:
   (add-hook 'comint-output-filter-functions
             'comint-watch-for-password-prompt))
 
@@ -478,23 +266,9 @@
   (setq dabbrev-eliminate-newlines nil)
   (setq dabbrev-upcase-means-case-search t))
 
-(use-package visual-fill-column-mode
-  :commands visual-fill-column-mode
-  )
-
-(use-package diff-mode
-  :defer
-  :general
-  (:keymaps 'diff-mode-map
-   :states 'motion
-   "i" 'ignore
-   "f" 'next-error-follow-minor-mode
-   "q" 'quit-window))
-
 (use-package iedit
   :commands iedit-dwim
   :ensure t
-  :general ("C-M-;" 'iedit-dwim)
   :config
   (defun iedit-dwim (arg)
     "Starts iedit but uses \\[narrow-to-defun] to limit its scope."
@@ -509,19 +283,13 @@
               (iedit-done)
             ;; `current-word' can of course be replaced by other
             ;; functions.
-            (when (region-active-p)
-              (narrow-to-region (region-beginning) (region-end)))
-            (iedit-start (current-word) (point-min) (point-max))))))))
+            (narrow-to-defun)
+            (iedit-start (current-word) (point-min) (point-max)))))))
 
-(use-package replace
-  :defer
-  :general
-   (:keymaps 'occur-mode-map
-    :states '(normal motion)
-    "gc" 'next-error-follow-minor-mode
-    :states 'motion
-    "f" 'next-error-follow-minor-mode)
-  )
+
+
+  (global-set-key (kbd "C-M-;") 'iedit-mode))
+
 (require 'better-editing nil t)
 
 ;;######################################################################
@@ -534,30 +302,20 @@
   :hook ((help-mode . visual-line-mode)
          (Custom-mode . visual-line-mode)
          (helpful-mode . visual-line-mode))
-  ;; :bind (;; ("C-x +" . balance-windows-area)
-  ;;        ("<f8>" . +make-frame-floating-with-current-buffer)
-  ;;        ("C-M-`" . window-toggle-side-windows))
-  :general
-  ("<f8>" '+make-frame-floating-with-current-buffer
-   "C-M-`" 'window-toggle-side-windows)
-  (:keymaps 'space-menu-window-map
-   :wk-full-keys nil
-   "w" '(window-toggle-side-windows :wk "toggle side windows"))
-  )
+  :bind (;; ("C-x +" . balance-windows-area)
+         ("<f8>" . +make-frame-floating-with-current-buffer)
+         ("C-M-`" . window-toggle-side-windows)))
 
 (require 'better-buffers nil t)
 
 (use-package popup-buffers
   :after setup-windows
-  :config
+  :config 
   (setq popup-buffers-reference-modes-list
         (append +help-modes-list
                 +repl-modes-list
                 +occur-grep-modes-list
-                +man-modes-list
-                '(Custom-mode
-                  compilation-mode)
-                ))
+                '(Custom-mode)))
   (setq popup-buffers-reference-buffer-list
         '("^\\*Warnings\\*"
           "^\\*Compile-Log\\*"
@@ -571,53 +329,20 @@
           "\\*Shell Command Output\\*"
           "\\*Async Shell Command\\*"
           "\\*Completions\\*"
-          "[Oo]utput\\*"
+          "Output\\*"
           "\\*scratch\\*"))
   (popup-buffers-mode +1))
-
-(use-package winum
-  :init
-  (setq winum-keymap
-    (let ((map (make-sparse-keymap)))
-      ;; (define-key map (kbd "C-`") 'winum-select-window-by-number)
-      ;; (define-key map (kbd "C-²") 'winum-select-window-by-number)
-      (define-key map (kbd "M-0") 'winum-select-window-0-or-10)
-      (define-key map (kbd "M-1") 'winum-select-window-1)
-      (define-key map (kbd "M-2") 'winum-select-window-2)
-      (define-key map (kbd "M-3") 'winum-select-window-3)
-      (define-key map (kbd "M-4") 'winum-select-window-4)
-      (define-key map (kbd "M-5") 'winum-select-window-5)
-      (define-key map (kbd "M-6") 'winum-select-window-6)
-      (define-key map (kbd "M-7") 'winum-select-window-7)
-      (define-key map (kbd "M-8") 'winum-select-window-8)
-      map))
-
-(setq winum--mode-line-segment
-      '(:eval
-        (propertize (format winum-format (int-to-string (winum-get-number)))
-                    'face (+evil-mode-line-faces))))
-  (require 'winum)
-  (winum-mode 1)
-  )
 
 (use-package winner
   :commands winner-undo
   ;; :bind ("C-c <left>" . winner-undo)
-  :general
-  (:keymaps 'space-menu-window-map
-   :wk-full-keys nil
-   "u" 'winner-undo
-   "r" 'winner-redo)
   :config
   (winner-mode +1))
 
 (use-package ace-window
   :ensure t
-  ;; :bind ("C-x o" . ace-window)
-  :general
-  ("C-x o" 'ace-window)
-  (:keymaps 'space-menu-map
-   "TAB" 'ace-window)
+  :bind ("C-x o" . ace-window)
+  :commands ace-window
   :config
   (setq aw-dispatch-always t
         aw-scope 'frame
@@ -659,13 +384,12 @@
                           ;; (registers . 5)
                           )))
 
-;; Colorize color names and parens in buffers
+;; Colorize color names in buffers
 (use-package rainbow-mode
-  :commands rainbow-mode
   :ensure t
   :config
-  ;; (setq rainbow-delimiters-max-face-count 3)
-  )
+  (setq rainbow-delimiters-max-face-count 3)
+  (rainbow-mode))
 
 (defun sudo-find-file (file)
   "Open FILE as root."
@@ -706,7 +430,7 @@
                                 (region-end))
             (thing-at-point 'word))) )
     (shell-command (concat "dict " (cond ((null prefix) nil)
-                                         (t "-f "))
+                                              (t "-f "))
                            word))))
 
 (use-package outline
@@ -770,7 +494,7 @@ Essentially a much simplified version of `next-line'."
           (t
            ;; Not at a headline: Do indent-relative
            (outline-back-to-heading))))
-  )
+)
 
 ;;######################################################################
 ;;;* COMPILATION
@@ -852,6 +576,7 @@ Essentially a much simplified version of `next-line'."
    )
   (use-package lsp-ui
     :disabled t
+    :ensure t
     :commands lsp-ui-mode
     :config
     (define-key lsp-ui-mode-map [remap xref-find-definitions] #'lsp-ui-peek-find-definitions)
@@ -881,7 +606,6 @@ Essentially a much simplified version of `next-line'."
 ;;----------------------------------------------------------------------
 (use-package latex
   :defer 5
-  :after tex
   :ensure auctex
   :mode
   ("\\.tex\\'" . latex-mode)
@@ -889,7 +613,6 @@ Essentially a much simplified version of `next-line'."
                   (lambda ()  (interactive) (outline-minor-mode)
                     (setq-local page-delimiter "\\\\section\\**{")
                     (setq-local outline-regexp "\\\\\\(sub\\)*section\\**{")
-                    ;(setq-local prettify-symbols-alist tex--prettify-symbols-alist)
                     (outline-hide-sublevels 3)
                     ))
   :defines (TeX-auto-save
@@ -900,71 +623,17 @@ Essentially a much simplified version of `next-line'."
             TeX-newline-function
             TeX-view-program-list
             TeX-view-program-selection
-            TeX-mode-map
-            )
-  ;; :bind (:map TeX-mode-map
-  ;;             ;; ("M-SPC" . TeX-matrix-spacer)
-  ;;             ("C-M-9" . TeX-insert-smallmatrix)
-  ;;             ("C-M-]" . TeX-insert-bmatrix)
-  ;;             ;; ("C-;" . TeX-complete-symbol)
-  ;;             )
-  :general
-  (leader-define-key :keymaps 'LaTeX-mode-map
-
-   "t8" '(prettify-symbols-mode       :wk "Toggle Pretty Symbols")
-   "tp" '(preview-clearout-at-point   :wk "!Preview at point")
-   "ts" '(preview-clearout-section    :wk "!Preview in section")
-   "tb" '(preview-clearout-buffer     :wk "!Preview in buffer")
-
-   "cn" '(TeX-next-error :wk "Next Error")
-   "cp" '(TeX-previous-error :wk "Prev Error"))
-
-  (localleader-define-key :keymaps 'LaTeX-mode-map
-
-    "c" '(:ignore t                   :wk "Compile")
-    "cc" '(TeX-command-master         :wk "Compile doc")
-    "C" '(TeX-command-run-all         :wk "Compile and view")
-    "ca" '(TeX-command-run-all        :wk "Compile and view")
-    "cr" '(TeX-command-run-all-region :wk "Compile region")
-    "cn" '(TeX-next-error             :wk "Next Error")
-    "cp" '(TeX-previous-error         :wk "Prev Error")
-
-    "p"  '(:ignore t                  :wk "Preview")
-    "pp" '(preview-at-point           :wk "Preview at point")
-    "pb" '(preview-buffer             :wk "Preview buffer")
-    "pr" '(preview-region             :wk "Preview region")
-    "pe" '(preview-environment        :wk "Preview environment")
-    "pd" '(preview-document           :wk "Preview document")
-    "ps" '(preview-section            :wk "Preview section")
-    "pw" '(preview-copy-region-as-mml :wk "Copy MathML")
-    "pc" '(preview-clearout-at-point  :wk "!Clearout at point")
-    "pC" '(preview-clearout-buffer    :wk "!Clearout in buffer")
-
-    "t" '(:ignore t                   :wk "Toggle")
-    "t8" '(prettify-symbols-mode      :wk "!Pretty Symbols mode")
-    "tp" '(preview-clearout-at-point  :wk "!Preview at point")
-    "ts" '(preview-clearout-section   :wk "!Preview in section")
-    "tb" '(preview-clearout-buffer    :wk "!Preview in buffer")
-
-    "=" '(reftex-toc                  :wk "TOC")
-    "(" '(reftex-label                :wk "Insert Label")
-    ")" '(reftex-reference            :wk "Insert Ref")
-    "[" '(reftex-citation             :wk "Insert Cite")
-    )
-
-    ;; (evil-leader/set-key-for-mode 'latex-mode
-    ;; "cc" 'TeX-command-master
-    ;; "ca" 'TeX-command-run-all
-    ;; "=" 'reftex-toc
-    ;; "("  'reftex-label
-    ;; ")" 'reftex-reference
-    ;; "[" 'reftex-citation
-    ;; "{" 'cdlatex-environment)
-
+            TeX-mode-map)
+  :bind (:map TeX-mode-map
+              ;; ("M-SPC" . TeX-matrix-spacer)
+              ("C-M-9" . TeX-insert-smallmatrix)
+              ("C-M-]" . TeX-insert-bmatrix)
+              ;; ("C-;" . TeX-complete-symbol)
+              )
   :config
-  (progn
+  (progn  
     (defvar my-preamble-file (concat (expand-file-name
-                                      (file-name-as-directory "~/Documents/"))
+                                           (file-name-as-directory "~/Documents/"))
                                      "hwstyle.tex")
       "File containing my stock preamble for LaTeX documents")
     ;; (defun TeX-matrix-spacer () (interactive) (insert " & "))
@@ -1011,17 +680,12 @@ Essentially a much simplified version of `next-line'."
 
 (use-package latex-extra
   :after latex
-  :defines (latex-extra-mode)
-  :hook (LaTeX-mode . latex-extra-mode)
-  :general
-  (localleader-define-key
-    :keymaps 'latex-extra-mode-map
-    "C-q" '(latex/clean-fill-indent-environment :wk "clean up doc")))
-;; :config
-;; (defface latex/unimportant-latex-face
-;;  '((t :height 0.7
-;;       :inherit font-lock-comment-face))
-;;  "Face used on less relevant math commands.")
+  :hook (LaTeX-mode . latex-extra-mode))
+ ;; :config
+ ;; (defface latex/unimportant-latex-face
+ ;;  '((t :height 0.7
+ ;;       :inherit font-lock-comment-face))
+ ;;  "Face used on less relevant math commands.")
 
 ;; (font-lock-add-keywords
 ;;  'latex-mode
@@ -1036,7 +700,7 @@ Essentially a much simplified version of `next-line'."
 
 (use-package preview
   :after latex
-  :defer 5
+  :defer 3
   :init
   (setq preview-scale-function '+preview-scale-larger)
   :config
@@ -1046,7 +710,7 @@ Essentially a much simplified version of `next-line'."
 
 (use-package reftex
   :after latex
-  :defer 20
+  :defer 3
   :commands turn-on-reftex
   :hook ((latex-mode LaTeX-mode) . turn-on-reftex)
   :config
@@ -1096,13 +760,12 @@ Essentially a much simplified version of `next-line'."
   )
 
 (use-package inkscape-figures
-  :defer
+  :disabled
+  :defer 
   :after latex
-  :general (:keymaps 'LaTeX-mode-map
-            "C-c i" '+inkscape-figures-create-at-point
-            "C-c e" '+inkscape-figures-edit
-            )
-  )
+  :bind (:map LaTex-mode-map
+              ("C-c i" . #'+inkscape-figures-create-at-point-latex)
+              ("C-c e" . #'+inkscape-figures-edit)))
 
 ;;----------------------------------------------------------------------
 ;;;** MATLAB
@@ -1113,38 +776,28 @@ Essentially a much simplified version of `next-line'."
 
   ;; :after 'evil
   ;; :commands (matlab-mode matlab-shell matlab-shell-run-block)
-  :hook ((matlab-mode . company-mode-on)
-         (matlab-mode . (lambda ()  (interactive)
-                          (setq-local buffer-file-coding-system 'us-ascii)
-                          (outline-minor-mode)
-                          (setq-local page-delimiter "%%+")
-                          (setq-local outline-regexp "^\\s-*%%+")
-                          (outline-hide-sublevels 3)
-                          ))
-         (matlab-shell-mode . (lambda () (setq-local company-idle-delay nil)
-                                (company-mode-on))))
   :bind (:map matlab-mode-map
               ("C-c C-b" . 'matlab-shell-run-block))
-  :config
+  :init
   ;; (load-library "matlab-load")
   (matlab-cedet-setup)
   (semantic-mode 1)
   (global-semantic-stickyfunc-mode 1)
-  (global-semantic-decoration-mode 1)
-  ;; (add-hook 'matlab-mode-hook #'company-mode-on)
+  (global-semantic-decoration-mode 1) 
+  (add-hook 'matlab-mode-hook #'company-mode-on)
   ;; (add-hook 'matlab-mode-hook #'hs-minor-mode)
-  ;; (add-hook 'matlab-mode-hook (lambda ()  (interactive)
-  ;;                               (setq-local buffer-file-coding-system 'us-ascii)
-  ;;                              (outline-minor-mode)
-  ;;                               (setq-local page-delimiter "%%+")
-  ;;                               (setq-local outline-regexp "^\\s-*%%+")
-  ;;                               (outline-hide-sublevels 3)
-  ;;                               ))
+  (add-hook 'matlab-mode-hook (lambda ()  (interactive)
+                                (setq-local buffer-file-coding-system 'us-ascii)
+                               (outline-minor-mode)
+                                (setq-local page-delimiter "%%+")
+                                (setq-local outline-regexp "^\\s-*%%+")
+                                (outline-hide-sublevels 3)
+                                ))
 
   ;; (add-hook 'matlab-mode-hook #'turn-on-evil-matlab-textobjects-mode)
-  ;; (add-hook 'matlab-shell-mode-hook (lambda ()
-  ;;                                     (setq-local company-idle-delay nil)
-  ;;                                     (company-mode-on) ))
+  (add-hook 'matlab-shell-mode-hook (lambda ()
+                                      (setq-local company-idle-delay nil)
+                                      (company-mode-on) ))
 
   ;; (define-key matlab-mode-map (kbd "C-c C-b") #'matlab-shell-run-block)
 
@@ -1153,14 +806,13 @@ Essentially a much simplified version of `next-line'."
   (setq matlab-shell-run-region-function 'matlab-shell-region->script)
   (add-hook 'matlab-shell-mode-hook (lambda () (interactive)
                                       (define-key matlab-shell-mode-map (kbd "C-<tab>") nil)))
-;;;###autoload
+
   (defun matlab-select-block ()
     (save-excursion
       (let ((block-beg (search-backward-regexp "^%%" nil t))
             (block-end (search-forward-regexp "^%%" nil t 2)))
         (cons block-beg block-end))))
 
-;;;###autoload
   (defun matlab-shell-run-block (&optional prefix)
     "Run a block of code around point separated by %% and display
   result in MATLAB shell. If prefix argument is non-nil, replace
@@ -1174,7 +826,6 @@ Essentially a much simplified version of `next-line'."
           (matlab-shell-run-region beg end prefix)
         (matlab-shell-run-region beg end))))
 
-;;;###autoload
   (defun matlab-forward-section ()
     "Move forward section in matlab mode"
     (interactive)
@@ -1182,7 +833,6 @@ Essentially a much simplified version of `next-line'."
     (re-search-forward "^\\s-*%%" nil t)
     (match-end 0))
 
-;;;###autoload
   (defun matlab-backward-section ()
     "Move forward section in matlab mode"
     (interactive)
@@ -1202,8 +852,9 @@ Essentially a much simplified version of `next-line'."
   (add-hook 'pyvenv-post-activate-hooks 'pyvenv-restart-python))
 
 (use-package elpy
-  :disabled t
-  ;; :ensure t
+  ;; :disabled t
+  :ensure t
+  :defer t
   ;; :init
   ;; (setq python-shell-interpreter "jupyter"
   ;;       python-shell-interpreter-args "console --simple-prompt"
@@ -1211,33 +862,34 @@ Essentially a much simplified version of `next-line'."
   ;; (add-to-list 'python-shell-completion-native-disabled-interpreters
   ;;              "jupyter")
   ;; (advice-add 'python-mode :before 'elpy-enable)
-  :config
-  (add-hook
-   'python-mode-hook
-   (lambda ()
-     (mapc (lambda (pair) (push pair prettify-symbols-alist))
-           '(;; Syntax
-             ("def" .      #x2131)
-             ("not" .      #x2757)
-             ("in" .       #x2208)
-             ("not in" .   #x2209)
-             ("return" .   #x27fc)
-             ("yield" .    #x27fb)
-             ("for" .      #x2200)
-             ;; Base Types
-             ("int" .      #x2124)
-             ("float" .    #x211d)
-             ("str" .      #x1d54a)
-             ("True" .     #x1d54b)
-             ("False" .    #x1d53d)
-             ;; Mypy
-             ("Dict" .     #x1d507)
-             ("List" .     #x2112)
-             ("Tuple" .    #x2a02)
-             ("Set" .      #x2126)
-             ("Iterable" . #x1d50a)
-             ("Any" .      #x2754)
-             ("Union" .    #x22c3))))))
+  )
+
+(add-hook
+ 'python-mode-hook
+ (lambda ()
+   (mapc (lambda (pair) (push pair prettify-symbols-alist))
+         '(;; Syntax
+           ("def" .      #x2131)
+           ("not" .      #x2757)
+           ("in" .       #x2208)
+           ("not in" .   #x2209)
+           ("return" .   #x27fc)
+           ("yield" .    #x27fb)
+           ("for" .      #x2200)
+           ;; Base Types
+           ("int" .      #x2124)
+           ("float" .    #x211d)
+           ("str" .      #x1d54a)
+           ("True" .     #x1d54b)
+           ("False" .    #x1d53d)
+           ;; Mypy
+           ("Dict" .     #x1d507)
+           ("List" .     #x2112)
+           ("Tuple" .    #x2a02)
+           ("Set" .      #x2126)
+           ("Iterable" . #x1d50a)
+           ("Any" .      #x2754)
+           ("Union" .    #x22c3)))))
 
 ;;----------------------------------------------------------------------
 ;;;** GEISER
@@ -1245,14 +897,14 @@ Essentially a much simplified version of `next-line'."
 (use-package geiser
   :defer
   :if (not (version-list-<
-            (version-to-list emacs-version)
-            '(27 0 0 0)))
+           (version-to-list emacs-version)
+           '(27 0 0 0)))
   :ensure t
   :init
   (add-hook 'geiser-repl-mode-hook (lambda ()
-                                     (setq-local company-idle-delay nil)
-                                     ;; (company-mode-on)
-                                     ))
+                                      (setq-local company-idle-delay nil)
+                                      ;; (company-mode-on)
+                                      ))
   :config
   (setq geiser-default-implementation 'mit)
   (setq geiser-mit-binary "mechanics"))
@@ -1274,7 +926,7 @@ Essentially a much simplified version of `next-line'."
 ;;----------------------------------------------------------------------
 
 ;; Make sure mit-scheme (from repos) and scmutils (from internet + sudo ./install.sh)are installed
-;;;###autoload
+;;;###autoload 
 (defun mechanics ()
   "Run mit-scheme with SCMUTILS loaded, to work with (Structure and Interpretation of Classical Mechanics) - The book"
   (interactive)
@@ -1282,151 +934,17 @@ Essentially a much simplified version of `next-line'."
   (setenv "MITSCHEME_HEAP_SIZE" "100000")
   (run-scheme
    "/usr/bin/mit-scheme --library /opt/mit-scheme/lib/mit-scheme-x86-64/")
-  )
+)
 
 ;;######################################################################
 ;;;* PLUGINS
 ;;######################################################################
 
 ;;----------------------------------------------------------------------
-;;;** HYDRAS
-;;----------------------------------------------------------------------
-(use-package hydra
-  :defer
-  :config
-  (defmacro hydra-move (hydra-move-name pre-body-func)
-    `(defhydra ,hydra-move-name (:body-pre (funcall ,pre-body-func))
-       "move"
-       ("n" next-line)
-       ("p" previous-line)
-       ("f" forward-char)
-       ("b" backward-char)
-       ("a" beginning-of-line)
-       ("e" move-end-of-line)
-       ("v" scroll-up-command)
-       ("s" isearch-forward)
-       ("r" isearch-backward)
-       ;; Converting M-v to V here by analogy.
-       ("V" scroll-down-command)
-       (">" end-of-buffer)
-       ("<" beginning-of-buffer)
-       ("l" recenter-top-bottom)))
-  :general
-  (:states 'emacs
-   "C-n" (hydra-move hydra-move-down  'next-line)
-   "C-p" (hydra-move hydra-move-up    'previous-line)
-   )
-  (:states 'emacs
-   :keymaps 'minibuffer-inactive-mode-map
-   "C-n" 'next-line
-   "C-p" 'previous-line )
-  (:keymaps 'space-menu-window-map
-    "u" `(,(defhydra hydra-winner ()
-             "winner"
-             ("u" winner-undo "undo window config")
-             ("r" winner-redo "redo window config")
-             ("q" nil "quit" :color blue)
-             )
-          :wk "winner-mode"))
-  )
-
-;; (global-set-key (kbd "C-n")
-;;                   (hydra-move
-;;                    hydra-move-down 'next-line))
-;;   (global-set-key (kbd "C-p")
-;;                   (hydra-move
-;;                    hydra-move-up 'previous-line))
-;; (global-set-key (kbd "C-n") 'next-line)
-;; (global-set-key (kbd "C-p") 'previous-line)
-
-;;----------------------------------------------------------------------
-;;;** TABS!TABS!TABS!
-;;;*** TAB-BAR
-;;----------------------------------------------------------------------
-(use-package tab-bar
-  :if (not (version-list-<
-            (version-to-list emacs-version)
-            '(27 0 1 0)))
-  :after cus-face
-  :general
-  ("C-x t 2" 'tab-new
-   "C-<tab>" 'tab-bar-switch-to-next-tab
-   "C-S-<tab>" 'tab-bar-switch-to-prev-tab)
-
-  :config
-  (setq  tab-bar-close-last-tab-choice 'tab-bar-mode-disable
-         tab-bar-show                  1
-         tab-bar-tab-name-truncated-max 14
-         tab-bar-new-tab-choice        'ibuffer
-         ;; tab-bar-select-tab-modifiers  '(meta)
-         tab-bar-tab-name-function     '(lambda nil (upcase (buffer-name))))
-
-  (tab-bar-mode 1)
-
-  (custom-set-faces
-   '(tab-bar ((t (:inherit nil :height 1.1))))
-   '(tab-bar-tab ((t (:inherit tab-bar :underline t :weight bold))))
-   '(tab-bar-tab-inactive ((t (:inherit tab-bar :weight normal :height 0.8)))))
-
-  (advice-add 'tab-bar-rename-tab
-              :after
-              (defun +tab-bar-name-upcase (name &optional arg)
-                "Upcase current tab name"
-                (let* ((tab (assq 'current-tab (frame-parameter nil 'tabs)))
-                       (tab-name (alist-get 'name tab)))
-                  (setf (alist-get 'name tab) (upcase tab-name)
-                        (alist-get 'explicit-name tab) t))
-                )))
-;;----------------------------------------------------------------------
-;;;*** EYEBROWSE
-;;----------------------------------------------------------------------
-;; This is superceded by native tabs (tab-bar-mode) in Emacs 27, only
-;; load if running a lower Emacs version
-(when (version-list-<
-       (version-to-list emacs-version)
-       '(27 0 1 0))
-  (use-package eyebrowse
-    :ensure t
-    ;; :bind ("C-c C-w c" . eyebrowse-create-window-config)
-    ;; :commands eyebrowse-create-window-config
-    :hook (after-init . eyebrowse-mode)
-    :init (setq eyebrowse-keymap-prefix (kbd "C-x t"))
-    :config
-    (setq eyebrowse-new-workspace (lambda nil "Buffer menu for user buffers" (buffer-menu 1))
-          eyebrowse-wrap-around t
-          eyebrowse-switch-back-and-forth t)
-    (define-key eyebrowse-mode-map (kbd "C-M-TAB") 'eyebrowse-next-window-config)
-    (define-key eyebrowse-mode-map (kbd "C-M-<tab>") 'eyebrowse-next-window-config)
-    (define-key eyebrowse-mode-map (kbd "<C-M-iso-lefttab>") 'eyebrowse-last-window-config)
-    ;; (define-key eyebrowse-mode-map (kbd "M-1") 'eyebrowse-switch-to-window-config-1)
-    ;; (define-key eyebrowse-mode-map (kbd "M-2") 'eyebrowse-switch-to-window-config-2)
-    ;; (define-key eyebrowse-mode-map (kbd "M-3") 'eyebrowse-switch-to-window-config-3)
-    ;; (defmacro eyebrowse-remap-tab-keys () )
-    ;; (eyebrowse-setup-opinionated-keys)
-
-    ;; Display tab configuration in Emacs title bar
-    (defun my-title-bar-format()
-      (let* ((current-slot (eyebrowse--get 'current-slot))
-             (window-configs (eyebrowse--get 'window-configs))
-             (window-config (assoc current-slot window-configs))
-             (window-config-name (nth 2 window-config))
-             (num-slots (length window-configs)))
-        (concat window-config-name " [" (number-to-string current-slot)
-                "/" (number-to-string num-slots) "] | " "%b")))
-
-    (if (display-graphic-p)
-        (progn
-          (setq frame-title-format
-                '(:eval (my-title-bar-format)))))
-
-    ))
-;; (define-key ivy-minibuffer-map (kbd "C-M-w") 'ivy-yank-word)
-;;----------------------------------------------------------------------
 ;;;** MIXED-PITCH-MODE
 ;;----------------------------------------------------------------------
 (use-package mixed-pitch
-  :disabled
-  :defer 5
+  :defer 2
   :ensure t
   :hook (text-mode . mixed-pitch-mode)
   :config (add-to-list 'mixed-pitch-fixed-pitch-faces 'line-number))
@@ -1448,6 +966,50 @@ Essentially a much simplified version of `next-line'."
 
 
 ;;----------------------------------------------------------------------
+;;;** EYEBROWSE - tab emulation for emacs
+;;----------------------------------------------------------------------
+;; This is superceded by native tabs (tab-bar-mode) in Emacs 27, only
+;; load if running a lower Emacs version
+(use-package eyebrowse
+  :if (version-list-<
+       (version-to-list emacs-version)
+       '(27 0 1 0))
+  :ensure t
+  ;; :bind ("C-c C-w c" . eyebrowse-create-window-config)
+  ;; :commands eyebrowse-create-window-config
+  :hook (after-init . eyebrowse-mode)
+  :init (setq eyebrowse-keymap-prefix (kbd "C-x t"))
+  :config
+  (setq eyebrowse-new-workspace (lambda nil "Buffer menu for user buffers" (buffer-menu 1))
+        eyebrowse-wrap-around t
+        eyebrowse-switch-back-and-forth t)
+  (define-key eyebrowse-mode-map (kbd "C-M-TAB") 'eyebrowse-next-window-config)
+  (define-key eyebrowse-mode-map (kbd "C-M-<tab>") 'eyebrowse-next-window-config)
+  (define-key eyebrowse-mode-map (kbd "<C-M-iso-lefttab>") 'eyebrowse-last-window-config)
+  ;; (define-key eyebrowse-mode-map (kbd "M-1") 'eyebrowse-switch-to-window-config-1)
+  ;; (define-key eyebrowse-mode-map (kbd "M-2") 'eyebrowse-switch-to-window-config-2)
+  ;; (define-key eyebrowse-mode-map (kbd "M-3") 'eyebrowse-switch-to-window-config-3)
+  ;; (defmacro eyebrowse-remap-tab-keys () )
+  ;; (eyebrowse-setup-opinionated-keys)
+
+  ;; Display tab configuration in Emacs title bar
+  (defun my-title-bar-format()
+    (let* ((current-slot (eyebrowse--get 'current-slot))
+           (window-configs (eyebrowse--get 'window-configs))
+           (window-config (assoc current-slot window-configs))
+           (window-config-name (nth 2 window-config))
+           (num-slots (length window-configs)))
+      (concat window-config-name " [" (number-to-string current-slot)
+              "/" (number-to-string num-slots) "] | " "%b")))
+
+  (if (display-graphic-p)
+      (progn
+        (setq frame-title-format
+              '(:eval (my-title-bar-format)))))
+
+  )
+;; (define-key ivy-minibuffer-map (kbd "C-M-w") 'ivy-yank-word)
+;;----------------------------------------------------------------------
 ;;;** NAV-FLASH
 ;;----------------------------------------------------------------------
 ;; (use-package nav-flash)
@@ -1459,20 +1021,12 @@ Essentially a much simplified version of `next-line'."
 (use-package yasnippet
   :ensure t
   :defer 5
-  :after warnings
   :hook ((prog-mode LaTeX-mode org-mode) . yas-minor-mode)
   :config
   ;; (use-package yasnippet-snippets
   ;;   :ensure t)
   ;; (yas-reload-all)
   ;; Redefine yas expand key from TAB because company-mode uses TAB.
-
-  ;; (push '(yasnippet backquote-change) warning-suppress-types)
-
-  ;; Don't throw a warning if lisp code in a snippet modifies the
-  ;; buffer. We need this for auto expanded snippets in latex/org.
-  (cl-pushnew '(yasnippet backquote-change) warning-suppress-types
-              :test 'equal)
 
   (setq yas-wrap-around-region t
         yas-triggers-in-field t)
@@ -1486,7 +1040,7 @@ Essentially a much simplified version of `next-line'."
   (with-eval-after-load 'cdlatex
     (add-hook 'cdlatex-tab-hook #'yas-expand))
 
-  (with-eval-after-load 'company
+  (with-eval-after-load 'company 
 ;;;###autoload
     (defun my-yas-company-next-field ()
       "company-complete-common or yas-next-field-or-maybe-expand."
@@ -1507,7 +1061,7 @@ Essentially a much simplified version of `next-line'."
 
     (define-key yas-keymap (kbd "C-g") #'my-yas-company-cancel))
 
-
+  
   ;; (when (fboundp 'smartparens)
   ;;   (with-eval-after-load 'smartparens
   ;;     (defvar yas--smartparen-flag nil)
@@ -1630,26 +1184,14 @@ Essentially a much simplified version of `next-line'."
   (global-set-key (kbd "C-h k") #'helpful-key)
   (global-set-key (kbd "C-h C") #'helpful-command)
   (global-set-key (kbd "C-h .") #'helpful-at-point)
-  (global-set-key (kbd "C-h C-.") #'helpful-at-point)
-  :general
-  (:keymaps 'help-map
-            :wk-full-keys nil
-            "." '(helpful-at-point :wk "help at point"))
-  ;; (:keymaps 'space-menu-help-map
-  ;;           :wk-full-keys nil
-  ;;           "f" '(helpful-callable :wk "Describe function")
-  ;;           "v" '(helpful-variable :wk "Describe variable")
-  ;;           "k" '(helpful-key :wk "Describe keybind")
-  ;;           "." '(helpful-at-point :wk "Help at point")
-  ;;           "C" '(helpful-command :wk "Describe command"))
-  )
-
+  (global-set-key (kbd "C-h C-.") #'helpful-at-point)) 
 
 ;;----------------------------------------------------------------------
 ;;;** SHACKLE
 ;;----------------------------------------------------------------------
 (use-package shackle
   :disabled t
+  :ensure t
   :init (shackle-mode))
 
 ;;----------------------------------------------------------------------
@@ -1675,25 +1217,20 @@ Essentially a much simplified version of `next-line'."
   :ensure t
   :defer 1
   :init
-  (setq which-key-sort-order #'which-key-description-order
-        ;; which-key-sort-order #'which-key-prefix-then-key-order
-        which-key-idle-delay 0.8
-        which-key-idle-secondary-delay 0.1
+  (setq which-key-sort-order #'which-key-prefix-then-key-order
         which-key-sort-uppercase-first nil
-        which-key-add-column-padding 0
+        which-key-add-column-padding 1
         which-key-max-display-columns nil
         which-key-min-display-lines 8
         which-key-side-window-slot -10)
   :config
-  (with-eval-after-load 'general
-    (which-key-add-key-based-replacements general-localleader "major-mode")
-    (which-key-add-key-based-replacements general-localleader-alt "major-mode"))
-
   (set-face-attribute 'which-key-local-map-description-face nil :weight 'bold)
   (which-key-setup-side-window-bottom)
   (add-hook 'which-key-init-buffer-hook
             (lambda () (setq-local line-spacing 3)))
 
+  ;; (which-key-add-key-based-replacements doom-leader-key "<leader>")
+  ;; (which-key-add-key-based-replacements doom-localleader-key "<localleader>")
   (which-key-mode +1)
 
   :diminish "")
@@ -1712,8 +1249,6 @@ Essentially a much simplified version of `next-line'."
 (global-set-key (kbd "C-S-e") 'calc-on-line)
 
 ;;----------------------------------------------------------------------
-;;;** ISEARCH
-(require 'setup-isearch)
 ;;;** ABBREV MODE
 ;;----------------------------------------------------------------------
 ;; (setq save-abbrevs t)
@@ -1763,10 +1298,10 @@ Essentially a much simplified version of `next-line'."
         ;;       )
         company-backends '((company-files company-capf company-keywords)
                            ;; (company-dabbrev-code)
-                                        ;my-try-expand-company
+                           ;my-try-expand-company
                            company-dabbrev)
         )
-
+  
   (add-hook 'matlab-mode-hook (lambda ()
                                 ;; (unless (featurep 'company-matlab)
                                 ;;   (require 'company-matlab))
@@ -1778,9 +1313,9 @@ Essentially a much simplified version of `next-line'."
                                 ;;              )
                                 ))
   (add-hook 'matlab-shell-mode-hook (lambda ()
-                                      (make-local-variable 'company-backends)
-                                      (setq-local company-idle-delay 0.3)
-                                      (add-to-list 'company-backends 'company-matlab-shell)))
+                                (make-local-variable 'company-backends)
+                                (setq-local company-idle-delay 0.3)
+                                (add-to-list 'company-backends 'company-matlab-shell)))
 
   (add-hook 'LaTeX-mode-hook (lambda ()
                                (make-local-variable 'company-idle-delay)
@@ -1823,7 +1358,7 @@ Essentially a much simplified version of `next-line'."
   ;;       (he-substitute-string (car he-expand-list))
   ;;       (setq he-expand-list (cdr he-expand-list))
   ;;       t)))
-
+  
   ;; AC-mode style settings
   ;; (defun company-ac-setup ()
   ;;   "Sets up `company-mode' to behave similarly to `auto-complete-mode'."
@@ -1867,16 +1402,14 @@ Essentially a much simplified version of `next-line'."
   (company-tng-configure-default)
   )
 
-(use-package company-statistics
-  ;; :disabled t
-  :after company
-  :defer 5
-  :ensure t
-  ;; :init   (add-hook 'after-init-hook 'company-statistics-mode)
-  :config
-  (setq company-statistics-file (concat (expand-file-name
-                                         (file-name-as-directory "~/.cache"))
-                                        "company-statistics-cache.el")))
+  (use-package company-statistics
+    ;; :disabled t
+    :ensure t
+    :init
+    (setq company-statistics-file (concat (expand-file-name
+                                           (file-name-as-directory "~/.cache"))
+                                          "company-statistics-cache.el"))
+    (add-hook 'after-init-hook 'company-statistics-mode))
 
 ;;----------------------------------------------------------------------
 ;;;** SMARTPARENS-MODE
@@ -1908,16 +1441,11 @@ Essentially a much simplified version of `next-line'."
 ;;----------------------------------------------------------------------
 ;;;** AVY-MODE
 ;;----------------------------------------------------------------------
-(defvar my-evil-leader "SPC")
 (use-package avy
   :ensure t
   :commands (avy-goto-word-1 avy-goto-char-2 avy-goto-char-timer)
-  :general
-  ("C-'" '(avy-goto-word-or-subword-1 :wk "Goto word")
-   "M-'" '(avy-got-char-2 :wk "Goto char"))
-  (:states '(normal visual)
-   :prefix "g"
-   "s" 'avy-goto-char-timer)
+  :bind (("C-'" . 'avy-goto-word-1)
+         ("M-'" . 'avy-goto-char-2))
   )
 
 ;;----------------------------------------------------------------------
@@ -1944,24 +1472,20 @@ Essentially a much simplified version of `next-line'."
 ;;----------------------------------------------------------------------
 (require 'setup-anki nil t)
 ;;######################################################################
-;;;** COMPLETION FRAMEWORKS:
+;;;** COMPLETION FRAMEWORKS: 
 ;;----------------------------------------------------------------------
 ;;;*** ICOMPLETE
 ;;----------------------------------------------------------------------
 (use-package icomplete
   :disabled
-  :demand
   :config
-  (require 'setup-icomplete nil t)
-  (icomplete-mode 1)
-  )
+  (require 'setup-icomplete nil t))
 
 ;;----------------------------------------------------------------------
 ;;;*** IVY/COUNSEL/SWIPER
 ;;----------------------------------------------------------------------
 (require 'setup-ivy)
-
-;;; Bibtex management from ivy. Call ivy-bibtex.
+  ;;; Bibtex management from ivy. Call ivy-bibtex.
 (use-package ivy-bibtex
   :disabled
   :ensure t
@@ -1994,27 +1518,24 @@ Essentially a much simplified version of `next-line'."
    '(("P" ivy-bibtex-open-pdf-external "Open PDF file in external viewer (if present)"))))
 
 (use-package ivy-youtube
-  ;; :disabled
+  :disabled
   :after ivy
-  :general
-  (leader-define-key
-    "Y" '(ivy-youtube :wk "Youtube search"))
+  :init
+  (with-eval-after-load 'evil-leader
+    (evil-leader/set-key (kbd "Y") 'ivy-youtube))
   :config
   (setq ivy-youtube-key my-ivy-youtube-key
-        ivy-youtube-play-at (expand-file-name
+        ivy-youtube-play-at (expand-file-name 
                              "~/.local/bin/i3cmds/umpv")))
 
 (use-package counsel-spotify
   :disabled
-  :commands counsel-spotify-start-search
   :after counsel
-  :general
-  (leader-define-key
-    "U" `(, :wk "spotify"))
+  :init
+  (with-eval-after-load 'evil-leader
+    (evil-leader/set-key (kbd "U") (lambda () (interactive)
+                                     (counsel-M-x "counsel-spotify-search-"))))
   :config
-  (defun counsel-spotify-start-search ()
-    (interactive)
-    (counsel-M-x "counsel-spotify-search-"))
   (setq counsel-spotify-client-id my-counsel-spotify-client-id
         counsel-spotify-client-secret my-counsel-spotify-client-secret
         counsel-spotify-use-notifications nil))
@@ -2061,6 +1582,7 @@ Essentially a much simplified version of `next-line'."
 
 (use-package doom-modeline
   :disabled
+  :ensure t
   :init (doom-modeline-mode 1))
 
 (use-package smart-mode-line
@@ -2168,11 +1690,10 @@ Essentially a much simplified version of `next-line'."
 
 ;; (display-time-mode 0)
 
-(use-package custom
-  :disabled
-  :init
-  (load-theme 'atom-one-dark t)
-  (load-theme 'smart-mode-line-atom-one-dark)
+(use-package custom 
+:init
+(load-theme 'atom-one-dark t)
+(load-theme 'smart-mode-line-atom-one-dark)
 )
 
 ;;######################################################################
@@ -2190,7 +1711,7 @@ Essentially a much simplified version of `next-line'."
   (use-package dracula-theme
     :defer
     :config
-    (custom-theme-set-faces 'dracula
+    (custom-theme-set-faces 'dracula 
                             '(aw-background-face
                               ((t (:background "#282a36" :inverse-video nil :weight normal))))
                             '(aw-leading-char-face

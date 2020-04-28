@@ -16,6 +16,7 @@
  '(eglot-put-doc-in-help-buffer nil)
  '(evil-goggles-duration 0.1)
  '(evil-search-module 'evil-search)
+ '(evil-snipe-mode t)
  '(eyebrowse-new-workspace 'ibuffer)
  '(fci-rule-color "#F1F1F1")
  '(fringe-mode '(nil . 0) nil (fringe))
@@ -37,8 +38,10 @@
      ("\\?\\?\\?+" . "#dc752f")))
  '(ibuffer-deletion-face 'dired-flagged)
  '(ibuffer-marked-face 'dired-marked)
+ '(ivy-prescient-mode t)
  '(line-number-display-limit 16777216)
  '(lsp-signature-auto-activate nil)
+ '(org-agenda-files '("~/do.org" "~/.local/share/org/schedule.org"))
  '(org-babel-load-languages
    '((emacs-lisp . t)
      (matlab . t)
@@ -47,8 +50,9 @@
      (shell . t)
      (scheme . t)))
  '(package-selected-packages
-   '(eyebrowse counsel-spotify company-anaconda general which-key ibuffer-vc evil-embrace flx latex-extra latex-preview-pane smart-mode-line-atom-one-dark-theme mixed-pitch-mode mixed-pitch iedit presentation ivy-prescient rainbow-delimiters ivy-hydra counsel counsel-notmuch ivy-bibtex ivy-rich atom-one-dark-theme anki-editor dired-x geiser wgrep-ag wgrep company-lsp elpy pyvenv matlab-mode eglot elgot lsp-mode ox-hugo org-gcal dracula-theme dired-sidebar helpful org-re-reveal matlab auctex cdlatex yasnippet-snippets fish-completion fish-mode visual-fill-column-mode tao-theme ace-window ibuffer-sidebar visual-fill-column notmuch embrace company-statistics company-jedi company company-bibtex evil-collection wrap-region magit swiper evil-exchange evil-lion evil-numbers evil-rsi evil-snipe evil-visualstar org-bullets smart-mode-line rainbow-mode evil-magit undo-tree evil-tabs org-evil use-package gruvbox-theme ido-completing-read+ evil-commentary evil-replace-with-register iy-go-to-char smex ido-grid-mode composable evil wolfram-mode julia-repl julia-shell julia-mode dash deferred request-deferred s dash-functional ein ein-mumamo color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme expand-region multiple-cursors))
+   '(which-key ibuffer-vc evil-embrace flx latex-extra latex-preview-pane smart-mode-line-atom-one-dark-theme pdf-tools doom-modeline mixed-pitch-mode mixed-pitch eyebrowse iedit presentation ivy-youtube ivy-prescient rainbow-delimiters ivy-hydra counsel counsel-notmuch ivy-bibtex ivy-rich atom-one-dark-theme anki-editor dired-x geiser wgrep-ag wgrep company-lsp elpy pyvenv matlab-mode eglot elgot lsp-ui lsp-mode ox-hugo org-gcal dracula-theme dired-sidebar helpful shackle org-re-reveal matlab auctex cdlatex yasnippet-snippets fish-completion fish-mode visual-fill-column-mode tao-theme ace-window ibuffer-sidebar visual-fill-column notmuch embrace evil-vimish-fold company-statistics company-dict company-jedi company company-bibtex evil-collection wrap-region magit swiper evil-exchange evil-lion evil-numbers evil-rsi evil-snipe evil-space evil-visualstar org-bullets smart-mode-line rainbow-mode evil-magit undo-tree evil-tabs evil-leader org-evil use-package gruvbox-theme ido-completing-read+ evil-commentary evil-goggles evil-paredit evil-replace-with-register iy-go-to-char smex ido-grid-mode composable evil wolfram-mode julia-repl julia-shell julia-mode dash deferred request-deferred s dash-functional ein ein-mumamo color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme expand-region multiple-cursors))
  '(pdf-view-midnight-colors '("#DCDCCC" . "#383838"))
+ '(popup-buffers-mode t)
  '(pos-tip-background-color "#36473A")
  '(pos-tip-foreground-color "#FFFFC8")
  '(projectile-generic-command "fd . -0 --type f --color=never -L -H")
@@ -88,6 +92,12 @@
      (shell-mode :select t :popup t :align t :size 0.2)
      ("*Shell Command Output*" :select nil :inhibit-window-quit t)))
  '(sml/pre-modes-separator (propertize " " 'face 'sml/modes))
+ '(tab-bar-close-last-tab-choice 'tab-bar-mode-disable)
+ '(tab-bar-mode t)
+ '(tab-bar-new-tab-choice 'ibuffer)
+ '(tab-bar-select-tab-modifiers '(meta))
+ '(tab-bar-show 1)
+ '(tab-bar-tab-name-function '(lambda nil (upcase (buffer-name))))
  '(tetris-x-colors
    [[229 192 123]
     [97 175 239]
@@ -127,12 +137,12 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(default ((t (:family "Iosevka Nerd Font" :foundry "PfEd" :slant normal :weight normal :height 125 :width normal))))
+ '(default ((t (:family "Fantasque Sans Mono" :foundry "PfEd" :slant normal :weight normal :height 125 :width normal))))
  '(aw-leading-char-face ((t (:height 2.5))))
  '(org-document-title ((t (:weight bold :height 1.4))))
  '(org-level-1 ((t (:inherit outline-1 :weight bold :height 1.3))))
  '(org-level-2 ((t (:inherit outline-2 :weight bold :height 1.1))))
  '(tab-bar ((t (:inherit nil :height 1.1))))
  '(tab-bar-tab ((t (:inherit tab-bar :underline t :weight bold))))
- '(tab-bar-tab-inactive ((t (:inherit tab-bar :weight normal :height 0.8))))
+ '(tab-bar-tab-inactive ((t (:inherit nil :weight normal :height 0.8))))
  '(variable-pitch ((t (:family "Bitstream Vera Serif")))))

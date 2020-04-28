@@ -37,6 +37,46 @@
      ("\\?\\?\\?+" . "#dc752f")))
  '(ibuffer-deletion-face 'dired-flagged)
  '(ibuffer-marked-face 'dired-marked)
+ '(ibuffer-saved-filter-groups
+   '(("vc"
+      ("Git: ~/.emacs.d.orig/"
+       (vc-root Git . "~/.emacs.d.orig/"))
+      ("Git: ~/dotfiles/"
+       (vc-root Git . "~/dotfiles/")))))
+ '(ibuffer-saved-filters
+   '(("programming"
+      (or
+       (derived-mode . prog-mode)
+       (mode . ess-mode)
+       (mode . compilation-mode)))
+     ("text document"
+      (and
+       (derived-mode . text-mode)
+       (not
+        (starred-name))))
+     ("TeX"
+      (or
+       (derived-mode . tex-mode)
+       (mode . latex-mode)
+       (mode . context-mode)
+       (mode . ams-tex-mode)
+       (mode . bibtex-mode)))
+     ("web"
+      (or
+       (derived-mode . sgml-mode)
+       (derived-mode . css-mode)
+       (mode . javascript-mode)
+       (mode . js2-mode)
+       (mode . scss-mode)
+       (derived-mode . haml-mode)
+       (mode . sass-mode)))
+     ("gnus"
+      (or
+       (mode . message-mode)
+       (mode . mail-mode)
+       (mode . gnus-group-mode)
+       (mode . gnus-summary-mode)
+       (mode . gnus-article-mode)))))
  '(line-number-display-limit 16777216)
  '(lsp-signature-auto-activate nil)
  '(org-babel-load-languages

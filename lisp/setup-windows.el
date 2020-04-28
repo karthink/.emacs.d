@@ -139,7 +139,7 @@ If buffer-or-name is nil return current buffer's mode."
          (window-height . shrink-window-if-larger-than-buffer)
          ;; (window-height . 0.16)
          (side . top)
-         (slot . 0)
+         (slot . 1)
          (window-parameters . ((mode-line-format . (:eval (+helper-window-mode-line-format)))
                                (no-other-window . t))))
 
@@ -184,25 +184,33 @@ If buffer-or-name is nil return current buffer's mode."
 
         ("\\*Custom.*"
          (display-buffer-in-side-window)
-         (window-width . fit-window-to-buffer)
+         (window-width . (lambda (win) (fit-window-to-buffer win nil nil 65)))
          (side . right)
          (slot . 5)
          (window-parameters . (;; (no-other-window . t)
                                (mode-line-format . (:eval (+helper-window-mode-line-format))))))
 
         ;; Windows at the bottom
+        ("\\*Backtrace\\*" (display-buffer-in-side-window)
+         (window-height . 0.20)
+         (side . bottom)
+         (slot . -9)
+         (preserve-size . (nil . t))
+         (window-parameters . ((mode-line-format . (:eval (+helper-window-mode-line-format)))))
+         )
+
         ("\\*scratch\\*"
          +select-buffer-in-side-window
          ;; (window-width 35)
          (window-height . (lambda (win) (fit-window-to-buffer win 20 nil 85)))
          (side . bottom)
-         (slot . 0))
+         (slot . -8))
 
         ((lambda (buf act) (member (buffer-mode buf) +message-modes-list))
          (display-buffer-at-bottom display-buffer-in-side-window)
          (window-height . 0.25)
          (side . bottom)
-         (slot . 0)
+         (slot . -6)
          (preserve-size . (nil . t))
          (window-parameters . ((no-other-window . #'ignore)
                                (mode-line-format . (:eval (+helper-window-mode-line-format))))))
@@ -211,25 +219,17 @@ If buffer-or-name is nil return current buffer's mode."
          (display-buffer-at-bottom display-buffer-in-side-window)
          (window-height . 0.20)
          (side . bottom)
-         (slot . 0)
+         (slot . -5)
          (preserve-size . (nil . t))
          (window-parameters . ((split-window . #'ignore)
                                (no-other-window . t)
                                (mode-line-format . (:eval (+helper-window-mode-line-format)))
                                )))
 
-        ("\\*Backtrace\\*" (display-buffer-in-side-window)
-         (window-height . 0.20)
-         (side . bottom)
-         (slot . -2)
-         (preserve-size . (nil . t))
-         (window-parameters . ((mode-line-format . (:eval (+helper-window-mode-line-format)))))
-         )
-
         ("\\(?:[Oo]utput\\)\\*" display-buffer-in-side-window
          (window-height . 0.20)
          (side . bottom)
-         (slot . -2)
+         (slot . -4)
          (preserve-size . (nil . t))
          (window-parameters . ((no-other-window . t)
                                (mode-line-format . (:eval (+helper-window-mode-line-format))))))
@@ -237,7 +237,7 @@ If buffer-or-name is nil return current buffer's mode."
         ("\\*\\(Output\\|Register Preview\\).*" (display-buffer-in-side-window)
          (window-height . 0.20)       ; See the :hook
          (side . bottom)
-         (slot . -2)
+         (slot . -4)
          (window-parameters . ((no-other-window . t)
                                (mode-line-format . (:eval (+helper-window-mode-line-format)))
                                )))
@@ -245,7 +245,7 @@ If buffer-or-name is nil return current buffer's mode."
         ("\\*\\(?:Completions\\|Apropos\\)\\*" (display-buffer-in-side-window)
          (window-height . 0.20)
          (side . bottom)
-         (slot . -1)
+         (slot . -3)
          (window-parameters . ((no-other-window . t)
                                (mode-line-format . (:eval (+helper-window-mode-line-format)))
                                )))
@@ -255,7 +255,7 @@ If buffer-or-name is nil return current buffer's mode."
          +select-buffer-in-side-window
          (window-height . .25)
          (side . bottom)
-         (slot . 1)
+         (slot . 2)
          (preserve-size . (nil . t)))
 
         ;; ("\\*[Ss]hell\\*"

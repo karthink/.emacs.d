@@ -109,8 +109,7 @@
               (member b popup-buffers--user-buffers-alist))
           ;; (add-to-list 'open-popups (cons (get-buffer-window b) b))
           (push (cons (get-buffer-window b) b)
-                open-popups)
-        ))))
+                open-popups)))))
 
 ;;;###autoload
 (defun popup-buffers-update-open-popups ()
@@ -217,7 +216,7 @@
 (defun popup-buffers-raise-popup (&optional buffer)
   "Raise a popup to regular status"
   (interactive)
-  (let ((buf (or buffer (current-buffer))))
+  (let ((buf (get-buffer (or buffer (current-buffer)))))
     (setq popup-buffers--user-buffers-alist
           (delete buf popup-buffers--user-buffers-alist))
     (popup-buffers-update-open-popups)
@@ -229,8 +228,8 @@
 (defun popup-buffers-lower-to-popup (&optional buffer)
   "Turn a regular window into a popup"
   (interactive)
-  (let ((buf (or buffer (current-buffer))))
-    (with-current-buffer buf (delete-window))
+  (let ((buf (get-buffer (or buffer (current-buffer)))))
+    (delete-window (get-buffer-window buf t))
     (+display-popup-in-side-window buf)
     (push buf popup-buffers--user-buffers-alist)
     (popup-buffers-update-open-popups)))

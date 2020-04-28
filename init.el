@@ -217,6 +217,8 @@
   (general-def
     :keymaps 'space-menu-window-map
     :wk-full-keys nil
+    "S" '(window-configuration-to-register)
+    "J" '(jump-to-register :wk "window config jump")
     "k" '(delete-window :wk "delete window")
     "K" '(kill-buffer-and-window :wk "kill buf and win"))
 
@@ -573,7 +575,32 @@
           "\\*Completions\\*"
           "[Oo]utput\\*"
           "\\*scratch\\*"))
-  (popup-buffers-mode +1))
+  (popup-buffers-mode +1)
+
+  (defun +popup-raise-popup ()
+    "Choose a popup-window to raise as a regular window"
+    (interactive)
+    (popup-buffers-raise-popup
+     (completing-read "Raise popup: "
+                      (mapcar (lambda (win-and-buf) (buffer-name (cdr win-and-buf)))
+                              (append popup-buffers-open-buffer-window-alist
+                                      popup-buffers-buried-buffer-window-alist))
+     nil t)))
+
+  (defun +popup-lower-to-popup ()
+    "Choose a regular window to make a lower"
+    (interactive)
+    (popup-buffers-lower-to-popup
+     (completing-read "Lower to popup: "
+                      (mapcar 'buffer-name (buffer-list)) nil t)))
+  :general
+  (:states 'motion
+   "C-w ^" '(popup-buffers-raise-popup :wk "raise popup")
+   "C-w _" '(popup-buffers-lower-to-popup :wk "lower to popup"))
+  (:keymaps 'space-menu-window-map
+   "^" '(+popup-raise-popup :wk "raise popup")
+   "_" '(+popup-lower-to-popup :wk "lower to popup"))
+  )
 
 (use-package winum
   :init
@@ -1323,8 +1350,8 @@ Essentially a much simplified version of `next-line'."
   (:keymaps 'space-menu-window-map
     "u" `(,(defhydra hydra-winner ()
              "winner"
-             ("u" winner-undo "undo window config")
-             ("r" winner-redo "redo window config")
+             ("u" winner-undo "undo")
+             ("r" winner-redo "redo")
              ("q" nil "quit" :color blue)
              )
           :wk "winner-mode"))

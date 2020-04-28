@@ -1,5 +1,8 @@
 (use-package anki-editor
   :after org
+  :init 
+  (setq org-my-anki-file (concat (file-name-as-directory org-directory)
+                               "anki-notes.org"))
   :bind (:map org-mode-map
               ("<f12>" . anki-editor-cloze-region-auto-incr)
               ("<f11>" . anki-editor-cloze-region-dont-incr)

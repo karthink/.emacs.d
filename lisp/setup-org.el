@@ -1,11 +1,11 @@
 ;;;; Org mode
-(require 'use-package nil t)
+;; (require 'use-package nil t)
 
 ;;----------------------------------------------------------------------
 ;; ORG
 ;;----------------------------------------------------------------------
 (use-package org
-  :defer 5
+  :defer 10
   :bind (("\C-cl" . org-store-link)
          ("\C-ca" . org-agenda)
          ("<f5>" . org-capture)
@@ -141,10 +141,19 @@
   
   )
 
+(use-package org-agenda
+  :after org
+  :commands org-agenda
+  :config
+  (setq org-agenda-files '("~/do.org"
+                           "~/.local/share/org/schedule.org"))
+  )
+
 (use-package org-capture
   :after org
   :commands org-capture
   :config
+  (require 'setup-anki nil t)
  (add-to-list 'org-capture-after-finalize-hook
              (defun org-capture-after-delete-frame ()
                "If this is a dedicated org-capture frame, delete it after"
@@ -161,7 +170,8 @@
                     entry
                     (file+olp "~/do.org" "Research")
                     "* TODO %? :research: \n  DEADLINE: %^{Do by}t\n  %a\n  %x\n"
-                    :prepend t)
+                    :prepend t
+                    )
 
                    ("tg" "TODO general"
                     entry
@@ -171,12 +181,21 @@
                     :prepend t
                     )
 
+                   ("tc" "Config projects"
+                    entry
+                    (file+olp "~/do.org" "Configuration")
+                    "* TODO %? :config:\n %a\n %x\n"
+                    :kill-buffer t
+                    :prepend t
+                    )
+
                    ("tp" "Other Projects"
                     entry
                     (file+olp "~/do.org" "Other Projects")
                     "* %? :projects:\n %a\n %x\n"
                     :prepend t
-                    :kill-buffer t)
+                    :kill-buffer t
+                    )
                    )))
 ;;;###autoload
   (defun make-orgcapture-frame ()
@@ -206,10 +225,21 @@
   (setq org-export-with-LaTeX-fragments t))
 
 ;;----------------------------------------------------------------------
-;; ORG-BABEL-EVAL-IN-REPL
+;; ORG-BABEL
 ;;----------------------------------------------------------------------
 (use-package ob-octave-fix
    :after ob-octave)
+
+(use-package ob
+  :after org
+  :defer
+  :config
+  (setq org-babel-load-languages '((emacs-lisp . t)
+                                   (matlab . t)
+                                   (python . t)
+                                   (R . t)
+                                   (shell . t)
+                                   (scheme . t))))
 
 
 (use-package org-babel-eval-in-repl

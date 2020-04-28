@@ -1,6 +1,12 @@
 ;; ----------------------------
 ;; Completion
 ;; ----------------------------
+(setq user-emacs-directory "~/.emacs.d.orig")
+(defun dir-concat (dir file) (concat (file-name-as-directory dir)
+				     file))
+(push (dir-concat user-emacs-directory "plugins/") load-path)
+(push (dir-concat user-emacs-directory "lisp/") load-path)
+
 (add-to-list 'load-path "~/.emacs.d/lisp/")
 (add-to-list 'load-path "~/.emacs.d/plugins/")
 (add-to-list 'custom-theme-load-path "~/.emacs.d/elpa/atom-one-dark-theme-20190705.554/")

@@ -4,4 +4,5 @@
 # condition: (and (texmathp) 'auto)
 # group: math
 # --
-\\\\`(default-indent-new-line)`$0
+\\\\
+`(save-excursion (previous-line)(make-string (current-indentation) ?\s))`$0

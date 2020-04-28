@@ -1,16 +1,22 @@
 ;; -*- lexical-binding: t -*-
-(require 'use-package nil t)
-(add-hook 'dired-mode-hook
-          (function (lambda ()
-                      ;; Set dired-x buffer-local variables here.
-                      ;; dired-details and dired-details+ add the
-                      ;; option to display only filenames in dired.
-                      ;; ")" to toggle
-                      ;; (require 'dired-details+ nil t)
-                      ;; dired-x lets you jump to the directory the
-                      ;; current file is in with C-x C-j
-                      (define-key dired-mode-map "e" 'ora-ediff-files)
-                      )))
+;; (require 'use-package nil t)
+(use-package dired
+  ;; (dired-mode . (lambda ()
+  ;;                 ;; Set dired-x buffer-local variables here.
+  ;;                 ;; dired-details and dired-details+ add the
+  ;;                 ;; option to display only filenames in dired.
+  ;;                 ;; ")" to toggle
+  ;;                 ;; (require 'dired-details+ nil t)
+  ;;                 ;; dired-x lets you jump to the directory the
+  ;;                 ;; current file is in with C-x C-j
+  ;;                 (define-key dired-mode-map "e" 'ora-ediff-files)
+  ;;                 ))
+  :defer
+  :general
+  (:keymaps 'space-menu-map
+            "fd" '(dired :wk "Dired"))
+  (:keymaps 'dired-mode-map
+            "e" '(ora-ediff-files :wk "Diff marked files")))
 
 (use-package dired-x
   :after dired
@@ -54,8 +60,9 @@
               ("<S-iso-lefttab>" . dired-subtree-remove)))
 
 (use-package dired-sidebar
+  :after dired
   :ensure t
-  ;; :commands (dired-sidebar-toggle-sidebar)
+  :commands (dired-sidebar-toggle-sidebar)
   :bind (("C-x C-d" . dired-sidebar-toggle-sidebar)
          ("C-x D"   . list-directory))
   :init
@@ -73,8 +80,8 @@
   (setq dired-sidebar-use-custom-font t))
 
 (use-package ibuffer-sidebar
-  ;; :load-path "~/.emacs.d/fork/ibuffer-sidebar"
   :ensure t
+  :after (dired dired-sidebar ibuffer)
   :commands (ibuffer-sidebar-toggle-sidebar)
   :config
   ;; (setq ibuffer-sidebar-use-custom-font t)

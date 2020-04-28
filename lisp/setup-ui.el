@@ -44,7 +44,9 @@
 ;; Reduce the clutter in the fringes; we'd like to reserve that space for more
 ;; useful information, like git-gutter and flycheck.
 (setq indicate-buffer-boundaries nil
-      indicate-empty-lines nil)
+      indicate-empty-lines nil
+      scroll-conservatively 101
+      auto-window-vscroll nil)
 
 ;; remove continuation arrow on right fringe
 ;; (delq! 'continuation fringe-indicator-alist 'assq)

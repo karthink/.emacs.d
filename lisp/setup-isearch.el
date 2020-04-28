@@ -57,3 +57,5 @@ afterwards exit the search altogether."
          ("C-SPC" . my/isearch-mark-and-exit)
          ("DEL" . my/isearch-abort)
          ("<C-return>" . my/isearch-other-end)))
+
+(provide 'setup-isearch)

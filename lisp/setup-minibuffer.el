@@ -19,6 +19,7 @@
 ;; Technically, this is not specific to the minibuffer, but I define
 ;; it here so that you can see how it is also used from inside the
 ;; "Completions" buffer
+;;;###autoload
 (defun my/describe-symbol-at-point (&optional arg)
   "Get help (documentation) for the symbol at point.
 
@@ -36,6 +37,7 @@ instead."
             (select-window help)
           (select-window (get-mru-window)))))))
 
+;;;###autoload
 (defun my/completions-kill-save-symbol ()
   "Add symbol-at-point to the kill ring.
 
@@ -62,6 +64,7 @@ key in `completion-list-mode-map'."
 				(interactive)
 				(my/describe-symbol-at-point '(4))))
 
+;;;###autoload
 (defun my/focus-minibuffer ()
   "Focus the active minibuffer.
 
@@ -74,6 +77,7 @@ completions if invoked from inside the minibuffer."
     (when mini
       (select-window mini))))
 
+;;;###autoload
 (defun my/focus-minibuffer-or-completions ()
   "Focus the active minibuffer or the \\*Completions\\*.
 

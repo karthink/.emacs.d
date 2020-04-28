@@ -1,26 +1,34 @@
 ;; -*- lexical-binding: t; -*-
-(require 'use-package nil t)
+;; (require 'use-package nil t)
 (use-package ivy
   :ensure t
+  :general
+  (:keymaps 'space-menu-map
+            :wk-full-keys t
+            "." '(ivy-resume :wk "Resume last search")
+            )
   :bind (("C-S-s" . swiper)
          ("M-s O" . swiper)
          :map ivy-minibuffer-map
-         ("C-m"   . ivy-alt-done))
+         ("C-m"   . ivy-alt-done)
+         ("C-,"   . ivy-rotate-preferred-builders))
   :init
   (ivy-mode 1)
 
   :config
   (setq ivy-use-virtual-buffers t
         ivy-height 14
+        ivy-read-action-format-function 'ivy-read-action-format-columns
         ivy-re-builders-alist '((read-file-name-internal . ivy--regex-plus)
                                 (swiper . ivy--regex-plus)
                                 (swiper-isearch . ivy--regex-plus)
                                 (counsel-ag . ivy--regex-plus)
-                                (counsel-M-x . ivy--regex-fuzzy)
+                                ;; (counsel-M-x . ivy--regex-fuzzy)
                                 (ivy-completion-in-region . ivy--regex-fuzzy)
                                 (t . ivy--regex-ignore-order)))
   (setq enable-recursive-minibuffers t)
   ;; (setq ivy-initial-inputs-alist nil)
+  ;; (setq ivy-read-action-function 'ivy-read-action-by-key)  
 
   ;; Ensure a jump point is registered before jumping to new locations with ivy
   (defvar +ivy--origin nil)
@@ -115,49 +123,84 @@
 
 ;;; ivy-hydra allows additional actions and vim-like navigation on ivy candidates.
 ;;; Initialize in ivy with C-o
+  )
 
-  (use-package  ivy-hydra
-    :ensure t
-    :commands (ivy-dispatching-done-hydra ivy--matcher-desc ivy-hydra/body)
-    :init
-    ;; (define-key! ivy-minibuffer-map
-    ;;   "C-o" #'ivy-dispatching-done-hydra
-    ;;   "M-o" #'hydra-ivy/body)
-    :config
-    ;; ivy-hydra rebinds this, so we have to do so again
-    ;; (define-key ivy-minibuffer-map (kbd "M-o") #'hydra-ivy/body)
-    ))
+(use-package  ivy-hydra
+  :after ivy
+  :ensure t
+  :commands (ivy-dispatching-done-hydra
+             ivy--matcher-desc
+             ;ivy-hydra/body
+             ivy-hydra-read-action)
+  :config
+  (setq ivy-read-action-function 'ivy-hydra-read-action))
 
 (use-package counsel
+  ;; :disabled
   :ensure t
   :commands counsel-describe-face
-  :bind (("C-r" . counsel-minibuffer-history)
-         :map counsel-find-file-map
-              ("M-s" . +ivy-switch-file-search)
-              ("C-s" . +ivy-switch-file-search))
+  :general
+  ("M-x" 'counsel-M-x)
+  (:keymaps 'space-menu-map
+   :wk-full-keys t        
+   "," '(counsel-switch-buffer :wk "Switch to buffer")
+   :prefix "f"
+   "x" '(counsel-M-x :wk "M-x")
+   "f" '(counsel-find-file     :wk "Find file")
+   "D" '(find-file-Documents   :wk "Find Document")
+   "C" '(find-file-config-dirs :wk "Find user config file")
+   "c" '(find-file-config-dirs :wk t)
+   "R" '(find-file-Research    :wk "Find Research file")
+   "z" '(counsel-fzf           :wk "FZF in this dir")
+   "j" '(counsel-file-jump     :wk "Jump to file")
+   "g" '(counsel-git           :wk "Find file in git repo")
+   "l" '(counsel-locate        :wk "Locate file on system")
+   "r" '(counsel-recentf       :wk "Find recent file")
+   "m" '(counsel-bookmark      :wk "Jump or set bookmark")
+   "'" '(counsel-bookmark      :wk "Jump or set bookmark"))
+  (:keymaps 'space-menu-search-map
+   :wk-full-keys t
+   "i" '(counsel-imenu :wk "imenu")
+   "a" '(counsel-ag :wk "Ag in dir")
+   "s" '(counsel-grep-or-swiper :wk "Swiper")
+   "G" '(counsel-git-grep :wk "Grep through Git"))
+  (:keymaps 'counsel-find-file-map
+   "M-s" '+ivy-switch-file-search
+   "C-s" '+ivy-switch-file-search)
+  (:keymaps 'help-map ;'space-menu-help-map
+   "f" 'counsel-describe-function
+   "b" 'counsel-descbinds
+   "v" 'counsel-describe-variable
+   "a" 'counsel-apropos)
+  (:keymaps 'counsel-find-file-map
+            "C-s" '+ivy-switch-file-search)
+  ;; :bind (("C-r" . counsel-minibuffer-history)
+  ;;        :map counsel-find-file-map
+  ;;             ("M-s" . +ivy-switch-file-search)
+  ;;             ("C-s" . +ivy-switch-file-search))
   :config
-  (dolist (switch-version
-           '((apropos                  . counsel-apropos)
-             (bookmark-jump            . counsel-bookmark)
-             (describe-face            . counsel-faces)
-             (describe-function        . counsel-describe-function)
-             (describe-variable        . counsel-describe-variable)
-             (describe-bindings        . counsel-descbinds)
-             (set-variable             . counsel-set-variable)
-             (execute-extended-command . counsel-M-x)
-             (locate                   . counsel-locate)
-             ;(find-file                . counsel-find-file)
-             (find-library             . counsel-find-library)
-             (info-lookup-symbol       . counsel-info-lookup-symbol)
-             (imenu                    . counsel-imenu)
-             (recentf-open-files       . counsel-recentf)
-             ;; (swiper                . counsel-grep-or-swiper)
-             (evil-ex-registers        . counsel-evil-registers)
-             (yank-pop                 . counsel-yank-pop)
-             (imenu                    . counsel-imenu)) t)
-    (let ((old-cmd (car switch-version))
-          (new-cmd (cdr switch-version)))
-      (defalias old-cmd new-cmd)))
+  ;; (dolist (switch-version
+  ;;          '((apropos                  . counsel-apropos)
+  ;;            (bookmark-jump            . counsel-bookmark)
+  ;;            (describe-face            . counsel-faces)
+  ;;            (describe-function        . counsel-describe-function)
+  ;;            (describe-variable        . counsel-describe-variable)
+  ;;            (describe-bindings        . counsel-descbinds)
+  ;;            (set-variable             . counsel-set-variable)
+  ;;            (execute-extended-command . counsel-M-x)
+  ;;            (locate                   . counsel-locate)
+  ;;            ;(find-file                . counsel-find-file)
+  ;;            (find-library             . counsel-find-library)
+  ;;            (info-lookup-symbol       . counsel-info-lookup-symbol)
+  ;;            (imenu                    . counsel-imenu)
+  ;;            (recentf-open-files       . counsel-recentf)
+  ;;            ;; (swiper                . counsel-grep-or-swiper)
+  ;;            (evil-ex-registers        . counsel-evil-registers)
+  ;;            (yank-pop                 . counsel-yank-pop)
+  ;;            (imenu                    . counsel-imenu)) t)
+  ;;   (let ((old-cmd (car switch-version))
+  ;;         (new-cmd (cdr switch-version)))
+  ;;     (defalias old-cmd new-cmd)))
 
   (with-eval-after-load 'org
     (defalias 'org-goto 'counsel-org-goto))
@@ -217,7 +260,7 @@ cmd, a function of one argument."
        ("r" (lambda (path) (rename-file path (read-string "New name: "))) "rename")
        ("R" ,(+ivy-action-reloading (+ivy-action-given-file #'rename-file "Move")) "move")
        ("j" ,(+ivy-ace-window #'find-file) "ace window")
-       ("F" find-file-other-frame "other frame")
+       ("f" find-file-other-frame "other frame")
        ("p" (lambda (path) (with-ivy-window (insert (file-relative-name path default-directory)))) "insert relative path")
        ("x" counsel-find-file-extern "xdg-open")
        ("P" (lambda (path) (with-ivy-window (insert path))) "insert absolute path")
@@ -255,11 +298,8 @@ cmd, a function of one argument."
   (defun find-file-config-dirs ()
     "Find files in all system config locations"
     (interactive)
-    (counsel-file-jump-multi-dir "" (mapcar (lambda (dir) (concat
-                                                      (abbreviate-file-name (file-name-as-directory (getenv "HOME")))
-                                                      dir))
-                                            '(".local/bin" ".emacs.d" ".config"))))
-  
+    (counsel-file-jump-multi-dir "" `("~/.local/bin" ,user-emacs-directory "~/.config")))
+
 ;;;;###autoload
   (defun counsel-file-jump-multi-dir (initial-input initial-directories)
     (counsel-require-program find-program)
@@ -287,23 +327,6 @@ cmd, a function of one argument."
                 :keymap counsel-find-file-map
                 :caller 'counsel-file-jump))
     )
-
-  ;; ;;;###autoload
-  ;;   (defun find-file-system-config ()
-  ;;     "Find file in system config"
-  ;;     (interactive)
-  ;;     (let ((configdir (getenv "CONFIGDIR")))
-  ;;       (if configdir
-  ;;           (counsel-file-jump "" (getenv "CONFIGDIR"))
-  ;;         (message "ENV variable CONFIGDIR not set"))))
-
-  ;; ;;;###autoload
-  ;;   (defun find-file-emacs-config ()
-  ;;     "Find file in emacs config"
-  ;;     (interactive)
-  ;;     (counsel-file-jump "" (concat
-  ;;                            (file-name-as-directory (getenv "HOME"))
-  ;;                            ".emacs.d")))
 
   )
 
@@ -335,7 +358,7 @@ cmd, a function of one argument."
    ivy-initial-inputs-alist '((org-refile . "^")
                               (org-agenda-refile . "^")
                               (org-capture-refile . "^")
-                              (counsel-M-x . "^")
+                              ;; (counsel-M-x . "^")
                               (counsel-describe-function . "^")
                               (counsel-describe-variable . "^")
                               (counsel-org-capture . "^")

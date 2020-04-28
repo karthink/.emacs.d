@@ -221,7 +221,9 @@
     (setq popup-buffers--user-buffers-alist
           (delete buf popup-buffers--user-buffers-alist))
     (popup-buffers-update-open-popups)
-    (display-buffer-at-bottom buf '((window-height . 0.50)))))
+    (display-buffer-at-bottom
+     buf '((window-height . 0.50)
+           (window-parameters ((mode-line-format . mode-line-format)))))))
 
 ;;;###autoload
 (defun popup-buffers-lower-to-popup (&optional buffer)
@@ -252,7 +254,7 @@
       (add-to-list 'display-buffer-alist
                    '((lambda (buf act) (let ((buffer (if (bufferp buf) buf (get-buffer buf))))
                                     (member buffer popup-buffers--user-buffers-alist)))
-                     (+display-popup-in-side-window)))
+                     (+display-popup-in-side-window))))
    ;; Turning the mode OFF
     (remove-hook 'window-configuration-change-hook 'popup-buffers-update-open-popups)
     (delete
@@ -260,7 +262,6 @@
                       (member buffer popup-buffers--user-buffers-alist)))
        (+display-popup-in-side-window))
      display-buffer-alist)
-   )
-  )
+  ))
 
 (provide 'popup-buffers)

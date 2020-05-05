@@ -1,17 +1,17 @@
 ;; -*- lexical-binding: t -*-
-;; (require 'use-package nil t)
+;;(require 'use-package nil t)
 (use-package dired
-  ;; (dired-mode . (lambda ()
-  ;;                 ;; Set dired-x buffer-local variables here.
-  ;;                 ;; dired-details and dired-details+ add the
-  ;;                 ;; option to display only filenames in dired.
-  ;;                 ;; ")" to toggle
-  ;;                 ;; (require 'dired-details+ nil t)
-  ;;                 ;; dired-x lets you jump to the directory the
-  ;;                 ;; current file is in with C-x C-j
-  ;;                 (define-key dired-mode-map "e" 'ora-ediff-files)
-  ;;                 ))
-  :defer
+  :commands dired
+  :hook (;; (dired-mode-hook . dired-hide-details-mode)
+         (dired-mode . hl-line-mode))
+  :config
+  (put 'dired-find-alternate-file 'disabled nil)
+   (setq dired-listing-switches
+        "-AGFhlv --time-style=long-iso")
+   (setq dired-recursive-copies 'always
+         dired-recursive-deletes 'always)
+    (setq dired-dwim-target t)
+
   :general
   (:keymaps 'space-menu-map
             "fd" '(dired :wk "Dired"))
@@ -27,6 +27,24 @@
   (setq directory-free-space-program nil)
   (setq dired-x-hands-off-my-keys t)
   )
+
+(use-package find-dired
+  :defer
+  :after dired
+  :general
+  ("M-s f" 'find-name-dired
+   "M-s g" 'find-grep-dired)
+  :config
+  (setq find-ls-option
+        '("-ls" . "-AGFhlv --group-directories-first --time-style=long-iso"))
+  (setq find-name-arg "-iname"))
+
+(use-package async
+  :ensure)
+
+(use-package dired-async
+  :after (dired async)
+  :hook (dired-mode-hook . dired-async-mode))
 
 ;;;###autoload
 (defun ora-ediff-files ()
@@ -56,15 +74,20 @@
   (setq dired-subtree-use-backgrounds nil)
   :bind (:map dired-mode-map
               ("<tab>" . dired-subtree-toggle)
-              ;; ("<C-tab>" . dired-subtree-cycle)
+              ("<C-tab>" . dired-subtree-cycle)
               ("<S-iso-lefttab>" . dired-subtree-remove)))
 
 (use-package dired-sidebar
   :after dired
   :ensure t
   :commands (dired-sidebar-toggle-sidebar)
-  :bind (("C-x C-d" . dired-sidebar-toggle-sidebar)
-         ("C-x D"   . list-directory))
+  :general
+  ("C-x D"  'list-directory)
+  (:keymaps 'dired-sidebar-mode-map
+   :states  '(normal)
+   "gO"     'dired-sidebar-find-file-alt
+   "RET"    'dired-sidebar-find-file)
+
   :init
   (add-hook 'dired-sidebar-mode-hook
             (lambda ()
@@ -82,14 +105,16 @@
 (use-package ibuffer-sidebar
   :ensure t
   :after (dired dired-sidebar ibuffer)
-  :commands (ibuffer-sidebar-toggle-sidebar)
+  :commands (ibuffer-sidebar-toggle-sidebar +ibuffer-sidebar-toggle)
+  :general
+  ("C-x C-d" '+ibuffer-sidebar-toggle)
   :config
   ;; (setq ibuffer-sidebar-use-custom-font t)
   ;; (setq ibuffer-sidebar-face `(:family "Helvetica" :height 140))
-  (defun +sidebar-toggle ()
+  (defun +ibuffer-sidebar-toggle ()
     "Toggle both `dired-sidebar' and `ibuffer-sidebar'."
     (interactive)
-    (dired-sidebar-toggle-sidebar)
-    (ibuffer-sidebar-toggle-sidebar)))
+    (ibuffer-sidebar-toggle-sidebar)
+    (dired-sidebar-toggle-sidebar)))
 
 (provide 'setup-dired)

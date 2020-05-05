@@ -140,12 +140,15 @@
   :ensure t
   :commands counsel-describe-face
   :general
-  ("M-x" 'counsel-M-x)
+  ("M-x" 'counsel-M-x
+   "M-s a" 'counsel-ag
+   "M-s G" 'counsel-git-grep
+   )
   (:keymaps 'space-menu-map
    :wk-full-keys t        
    "," '(counsel-switch-buffer :wk "Switch to buffer")
    :prefix "f"
-   "x" '(counsel-M-x :wk "M-x")
+   "x" '(counsel-find-file-extern :wk "xdg-open")
    "f" '(counsel-find-file     :wk "Find file")
    "D" '(find-file-Documents   :wk "Find Document")
    "C" '(find-file-config-dirs :wk "Find user config file")

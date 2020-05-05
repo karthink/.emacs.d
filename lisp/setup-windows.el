@@ -59,9 +59,8 @@ If buffer-or-name is nil return current buffer's mode."
 (defun +helper-window-mode-line-format ()
     "Mode-line format for helper (popup) windows"
   (list " "
-        (if (bound-and-true-p winum-format)
-            (format winum-format (winum-get-number-string))
-          "")
+        (when (bound-and-true-p winum-format)
+            winum--mode-line-segment)
         " POP "
         mode-line-buffer-identification))
 
@@ -128,7 +127,7 @@ If buffer-or-name is nil return current buffer's mode."
          (display-buffer-in-direction display-buffer-in-side-window)
          (side . above)
          (slot . 5)
-         (window-height . shrink-window-if-larger-than-buffer)
+         (window-height . (lambda (win) (fit-window-to-buffer win (/ (frame-height) 3))))
          (direction . above)
          (preserve-size . (nil . t))
          (window-parameters . ((mode-line-format . (:eval (+helper-window-mode-line-format))))))
@@ -215,8 +214,8 @@ If buffer-or-name is nil return current buffer's mode."
          (window-parameters . ((no-other-window . #'ignore)
                                (mode-line-format . (:eval (+helper-window-mode-line-format))))))
 
-        ("\\*\\(?:Warnings\\|Compile-Log\\|Messages\\)\\*"
-         (display-buffer-at-bottom display-buffer-in-side-window)
+        ("\\*\\(?:Warnings\\|Compile-Log\\|Messages\\|Tex Help\\)\\*"
+         (display-buffer-in-side-window display-buffer-at-bottom)
          (window-height . 0.20)
          (side . bottom)
          (slot . -5)
@@ -290,7 +289,8 @@ The name is meant to be used by the external rules of a tiling
 window manager to present the frame in a floating state."
   (interactive)
   (let ((buf (current-buffer)))
-    (delete-window)
+    (if (not (one-window-p t))
+        (delete-window))
     (make-frame '((name . "dropdown_emacs-buffer")
                   (window-system . x)
                   (minibuffer . nil)))

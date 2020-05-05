@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t -*-
                                         ; my dot emacs grows ;
                                         ; one day i look inside it ;
                                         ; singularity ;
@@ -60,6 +61,7 @@
 ;;;* AUTOLOADS
 ;;######################################################################
 (require 'setup-autoloads nil t)
+(require 'plugin-autoloads nil t)
 
 ;;######################################################################
 ;;;* PACKAGE MANAGEMENT
@@ -111,7 +113,7 @@
 
   ;; With evil-mode
     (general-define-key
-     :states '(normal motion visual emacs)
+     :states '(normal visual emacs)
      :prefix general-leader
      :non-normal-prefix general-leader-alt
      :prefix-command 'space-menu
@@ -127,6 +129,10 @@
       :prefix general-localleader
       :non-normal-prefix general-localleader-alt)
 
+    (general-def
+      :states '(motion)
+      :prefix general-leader-alt
+      "" 'space-menu)
     ;; Pure emacs
      ;; (general-define-key
      ;;   ;; :states '(normal motion visual emacs)
@@ -191,6 +197,7 @@
     "B" '(presentation-mode         :wk "presentation mode")
     "n" '(display-line-numbers-mode :wk "line numbers")
     "r" '(read-only-mode            :wk "read only")
+    "V"  '(view-mode                :wk "view/pager mode")
     )
 
   (leader-define-key
@@ -212,12 +219,13 @@
     "[" '(previous-buffer       :wk "prev buffer")
     "]" '(next-buffer           :wk "next buffer")
     "=" '(diff-buffer-with-file :wk "diff against file")
+    "C-o" '(display-buffer      :wk "display buffer")
     )
 
   (general-def
     :keymaps 'space-menu-window-map
     :wk-full-keys nil
-    "S" '(window-configuration-to-register)
+    "S" 'window-configuration-to-register
     "J" '(jump-to-register :wk "window config jump")
     "k" '(delete-window :wk "delete window")
     "K" '(kill-buffer-and-window :wk "kill buf and win"))
@@ -357,8 +365,18 @@
 
 ;; Save and resume session
 (use-package desktop
-  ;; :init (desktop-save-mode 1)
-  )
+  :config
+  (setq desktop-auto-save-timeout 300)
+  (setq desktop-path '("~/.cache/emacsdesktop"))
+  (setq desktop-dirname "~/.cache/emacsdesktop")
+  (setq desktop-base-file-name "desktop")
+  (setq desktop-globals-to-clear nil)
+  (setq desktop-load-locked-desktop t)
+  (setq desktop-missing-file-warning t)
+  (setq desktop-restore-eager 4)
+  (setq desktop-restore-frames t)
+  (setq desktop-save 'ask-if-new)
+  (desktop-save-mode 1))
 
 ;;--------------------------
 ;;;** MINIBUFFER PREFERENCES
@@ -526,6 +544,23 @@
   )
 (require 'better-editing nil t)
 
+(use-package emacs
+  :config
+   (setq set-mark-command-repeat-pop t)
+  :general
+  ("M-z"  'zap-up-to-char
+   "<C-M-backspace>" 'backward-kill-sexp))
+
+(use-package view
+  :general
+  (:keymaps 'view-mode-map
+   :states '(normal motion visual)
+   "M-SPC" 'space-menu))
+
+(use-package register
+  :general
+  ("M-r" (general-simulate-key "C-x r")))
+
 ;;######################################################################
 ;;;* BUFFER AND WINDOW MANAGEMENT
 ;;######################################################################
@@ -551,15 +586,15 @@
 
 (use-package popup-buffers
   :after setup-windows
-  :config
+  :init
   (setq popup-buffers-reference-modes-list
         (append +help-modes-list
                 +repl-modes-list
                 +occur-grep-modes-list
                 +man-modes-list
                 '(Custom-mode
-                  compilation-mode)
-                ))
+                  compilation-mode)))
+
   (setq popup-buffers-reference-buffer-list
         '("^\\*Warnings\\*"
           "^\\*Compile-Log\\*"
@@ -575,6 +610,7 @@
           "\\*Completions\\*"
           "[Oo]utput\\*"
           "\\*scratch\\*"))
+
   (popup-buffers-mode +1)
 
   (defun +popup-raise-popup ()
@@ -590,9 +626,17 @@
   (defun +popup-lower-to-popup ()
     "Choose a regular window to make a lower"
     (interactive)
-    (popup-buffers-lower-to-popup
-     (completing-read "Lower to popup: "
-                      (mapcar 'buffer-name (buffer-list)) nil t)))
+    (let ((window-list (cl-set-difference
+                        (window-list)
+                        (mapcar 'car popup-buffers-open-buffer-window-alist))))
+      (if (< (length window-list) 2)
+          (message "Only one main window!")
+        (popup-buffers-lower-to-popup
+         (get-buffer
+          (completing-read "Lower to popup: "
+                           (mapcar (lambda (win) (buffer-name (window-buffer win)))
+                                   window-list)
+                           nil t))))))
   :general
   (:states 'motion
    "C-w ^" '(popup-buffers-raise-popup :wk "raise popup")
@@ -604,53 +648,79 @@
 
 (use-package winum
   :init
+
+  (defmacro +winum-select (num)
+    `(lambda (&optional arg) (interactive)
+         (if (equal ,num (winum-get-number))
+             (winum-select-window-by-number (winum-get-number (get-mru-window t)))
+           (winum-select-window-by-number (if arg (- 0 ,num) ,num)))
+         )
+    )
+
+  ;; (setq winum-keymap
+  ;;   (let ((map (make-sparse-keymap)))
+  ;;     ;; (define-key map (kbd "C-`") 'winum-select-window-by-number)
+  ;;     ;; (define-key map (kbd "C-²") 'winum-select-window-by-number)
+  ;;     (define-key map (kbd "M-0") 'winum-select-window-0-or-10)
+  ;;     (define-key map (kbd "M-1") (lambda () (interactive) (if (equal 1 (winum-get-number))
+  ;;                                           (winum-select-window-by-number
+  ;;                                            (winum-get-number (previous-window)))
+  ;;                                         (winum-select-window-by-number 1))))
+  ;;     (define-key map (kbd "M-2") (lambda () (interactive) (if (equal 2 (winum-get-number))
+  ;;                                           (winum-select-window-by-number
+  ;;                                            (winum-get-number (previous-window)))
+  ;;                                         (winum-select-window-by-number 2))))
+  ;;     (define-key map (kbd "M-3") (lambda () (interactive) (if (equal 3 (winum-get-number))
+  ;;                                           (winum-select-window-by-number
+  ;;                                            (winum-get-number (previous-window)))
+  ;;                                         (winum-select-window-by-number 3))))
+  ;;     (define-key map (kbd "M-4") (lambda () (interactive) (if (equal 4 (winum-get-number))
+  ;;                                           (winum-select-window-by-number
+  ;;                                            (winum-get-number (previous-window)))
+  ;;                                         (winum-select-window-by-number 4))))
+  ;;     (define-key map (kbd "M-5") 'winum-select-window-5)
+  ;;     (define-key map (kbd "M-6") 'winum-select-window-6)
+  ;;     (define-key map (kbd "M-7") 'winum-select-window-7)
+  ;;     (define-key map (kbd "M-8") 'winum-select-window-8)
+  ;;     (define-key map (kbd "M-9") 'winum-select-window-9)
+  ;;     map))
+
   (setq winum-keymap
     (let ((map (make-sparse-keymap)))
-      ;; (define-key map (kbd "C-`") 'winum-select-window-by-number)
-      ;; (define-key map (kbd "C-²") 'winum-select-window-by-number)
       (define-key map (kbd "M-0") 'winum-select-window-0-or-10)
-      (define-key map (kbd "M-1") 'winum-select-window-1)
-      (define-key map (kbd "M-2") 'winum-select-window-2)
-      (define-key map (kbd "M-3") 'winum-select-window-3)
-      (define-key map (kbd "M-4") 'winum-select-window-4)
-      (define-key map (kbd "M-5") 'winum-select-window-5)
-      (define-key map (kbd "M-6") 'winum-select-window-6)
-      (define-key map (kbd "M-7") 'winum-select-window-7)
-      (define-key map (kbd "M-8") 'winum-select-window-8)
+      (dolist (num '(1 2 3 4 5 6 7 8 9) nil)
+        (define-key map (kbd (concat "M-" (int-to-string num)))
+          (+winum-select num)))
       map))
+
+        ;; (define-key map (kbd (concat "M-" (int-to-string num)))
+        ;;   (lambda ()
+        ;;     (interactive)
+        ;;     (if (equal num
+        ;;                (winum-get-number))
+        ;;         (winum-select-window-by-number (winum-get-number (previous-window)))
+        ;;       (winum-select-window-by-number num))))
+
+;;;###autoload
+(defun +evil-mode-line-faces ()
+  (if (not (fboundp 'evil-mode))
+      'winum-face
+    (cond
+     ((evil-emacs-state-p)    '((bold :background "SkyBlue2" :foreground "black")))
+     ((evil-insert-state-p)   '((bold :background "chartreuse3" :foreground "black")))
+     ((evil-replace-state-p)  '((bold :background "chocolate" :foreground "black")))
+     ((evil-motion-state-p)   '((bold :background "plum3" :foreground "black")))
+     ((evil-visual-state-p)   '((bold :background "gray" :foreground "black")))
+     ((evil-operator-state-p) '((bold :background "sandy brown" :foreground "black")))
+     (t '((bold :background "DarkGoldenrod2" :foreground "black")) ;; ''((bold :inherit mode-line))
+        )
+    )))
 
 (setq winum--mode-line-segment
       '(:eval
         (propertize (format winum-format (int-to-string (winum-get-number)))
                     'face (+evil-mode-line-faces))))
-  (require 'winum)
-  (winum-mode 1)
-  )
-
-(use-package winum
-  :init
-  (setq winum-keymap
-    (let ((map (make-sparse-keymap)))
-      ;; (define-key map (kbd "C-`") 'winum-select-window-by-number)
-      ;; (define-key map (kbd "C-²") 'winum-select-window-by-number)
-      (define-key map (kbd "M-0") 'winum-select-window-0-or-10)
-      (define-key map (kbd "M-1") 'winum-select-window-1)
-      (define-key map (kbd "M-2") 'winum-select-window-2)
-      (define-key map (kbd "M-3") 'winum-select-window-3)
-      (define-key map (kbd "M-4") 'winum-select-window-4)
-      (define-key map (kbd "M-5") 'winum-select-window-5)
-      (define-key map (kbd "M-6") 'winum-select-window-6)
-      (define-key map (kbd "M-7") 'winum-select-window-7)
-      (define-key map (kbd "M-8") 'winum-select-window-8)
-      map))
-
-(setq winum--mode-line-segment
-      '(:eval
-        (propertize (format winum-format (int-to-string (winum-get-number)))
-                    'face (+evil-mode-line-faces))))
-  (require 'winum)
-  (winum-mode 1)
-  )
+  (winum-mode 1))
 
 (use-package winner
   :commands winner-undo
@@ -669,12 +739,12 @@
   :general
   ("C-x o" 'ace-window)
   (:keymaps 'space-menu-map
-   "TAB" 'ace-window)
+   "`" 'ace-window)
   :config
   (setq aw-dispatch-always t
-        aw-scope 'frame
+        aw-scope 'global
         aw-background nil
-        aw-keys '(?q ?w ?e ?r ?u ?i ?o ?p))
+        aw-keys '(?1 ?2 ?3 ?4 ?5 ?6 ?7 ?8 ?9))
   (setq aw-dispatch-alist
         '((?k aw-delete-window "Delete Window")
           (?m aw-swap-window "Swap Windows")
@@ -1346,7 +1416,17 @@ Essentially a much simplified version of `next-line'."
 (use-package hydra
   :defer
   :config
-  (defmacro hydra-move (hydra-move-name pre-body-func)
+
+(defhydra go-menu ()
+  "Occur mode"
+  ("n" next-error "next error" :color red)
+  ("p" previous-error "prev error" :color red)
+  ("g" goto-line "goto line" :color blue)
+  ("TAB" move-to-column "goto col" :color blue)
+  ("c" goto-char "goto char" :color blue )
+  )
+
+(defmacro hydra-move (hydra-move-name pre-body-func)
     `(defhydra ,hydra-move-name (:body-pre (funcall ,pre-body-func))
        "move"
        ("n" next-line)
@@ -1364,10 +1444,12 @@ Essentially a much simplified version of `next-line'."
        ("<" beginning-of-buffer)
        ("l" recenter-top-bottom)))
   :general
+
   (:states 'emacs
    "C-n" (hydra-move hydra-move-down  'next-line)
    "C-p" (hydra-move hydra-move-up    'previous-line)
    )
+  ("M-g" 'go-menu/body)
   (:states 'emacs
    :keymaps 'minibuffer-inactive-mode-map
    "C-n" 'next-line
@@ -1400,6 +1482,7 @@ Essentially a much simplified version of `next-line'."
             (version-to-list emacs-version)
             '(27 0 1 0)))
   :after cus-face
+  :defer
   :general
   ("C-x t 2" 'tab-new
    "C-<tab>" 'tab-bar-switch-to-next-tab
@@ -1412,8 +1495,6 @@ Essentially a much simplified version of `next-line'."
          tab-bar-new-tab-choice        'ibuffer
          ;; tab-bar-select-tab-modifiers  '(meta)
          tab-bar-tab-name-function     '(lambda nil (upcase (buffer-name))))
-
-  (tab-bar-mode 1)
 
   (custom-set-faces
    '(tab-bar ((t (:inherit nil :height 1.1))))
@@ -1966,7 +2047,7 @@ Essentially a much simplified version of `next-line'."
   :commands (avy-goto-word-1 avy-goto-char-2 avy-goto-char-timer)
   :general
   ("C-'" '(avy-goto-word-or-subword-1 :wk "Goto word")
-   "M-'" '(avy-got-char-2 :wk "Goto char"))
+   "M-'" '(avy-goto-char-2 :wk "Goto char"))
   (:states '(normal visual)
    :prefix "g"
    "s" 'avy-goto-char-timer)
@@ -1976,6 +2057,7 @@ Essentially a much simplified version of `next-line'."
 ;;;** IY-GO-TO-CHAR
 ;;----------------------------------------------------------------------
 (use-package iy-go-to-char
+  :disabled
   :bind (("M-j" . iy-go-to-char)
          ("M-r" . iy-go-to-char-key-backward)))
 
@@ -2223,8 +2305,8 @@ Essentially a much simplified version of `next-line'."
 (use-package custom
   :disabled
   :init
-  (load-theme 'atom-one-dark t)
   (load-theme 'smart-mode-line-atom-one-dark)
+  (load-theme 'atom-one-dark t)
 )
 
 ;;######################################################################
@@ -2271,7 +2353,9 @@ Essentially a much simplified version of `next-line'."
                           ))
   (cond (IS-LINUX
          (custom-set-faces
-          '(default ((t (:family "Iosevka Nerd Font" :foundry "PfEd" :slant normal :weight normal :height 125 :width normal))))))
+          '(default ((t ;; (:family "Iosevka Nerd Font" :foundry "PfEd" :slant normal :weight normal :height 125 :width normal)
+                        (:family "Fantasque Sans Mono" :foundry "PfEd" :slant normal :weight normal :height 125 :width normal)
+                        )))))
         (IS-WINDOWS
          (custom-set-faces
           '(default ((t (:family "Consolas" :foundry "outline" :slant normal :weight normal :height 120 :width normal)))))))

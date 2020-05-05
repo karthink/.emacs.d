@@ -18,8 +18,8 @@
   (add-hook 'org-load-hook
             '(lambda nil
                (define-key org-mode-map (kbd "C-c C-S-l") 'org-toggle-link-display)
-               (define-key org-mode-map (kbd "<C-tab>") 'other-window)
-               (define-key org-mode-map (kbd "<C-S-tab>") (lambda () (other-window -1)))
+               ;; (define-key org-mode-map (kbd "<C-tab>") 'other-window)
+               ;; (define-key org-mode-map (kbd "<C-S-tab>") (lambda () (other-window -1)))
                ;; Org-cdlatex options
                (define-key org-cdlatex-mode-map (kbd "$") 'cdlatex-dollar)
                ))

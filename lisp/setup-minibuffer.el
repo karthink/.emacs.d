@@ -59,10 +59,20 @@ key in `completion-list-mode-map'."
 (define-key completion-list-mode-map "b" 'previous-completion)
 (define-key completion-list-mode-map "M-v" 'my/focus-minibuffer)
 (define-key completion-list-mode-map "?" 'my/focus-minibuffer)
+(define-key completion-list-mode-map "j" 'my/buffer-other-window)
 (global-set-key (kbd "C-h .") 'my/describe-symbol-at-point)
 (global-set-key (kbd "C-h C-.") (lambda ()
 				(interactive)
 				(my/describe-symbol-at-point '(4))))
+
+(defun my/buffer-other-window ()
+  (interactive)
+  (let* ((candidate (thing-at-point 'symbol))
+	 (start (car (bounds-of-thing-at-point 'symbol)))
+	 (category (alist-get 'category (cdr (completion--field-metadata start)))))
+    (if (eq category 'file)
+	(find-file-other-window candidate)
+      )))
 
 ;;;###autoload
 (defun my/focus-minibuffer ()

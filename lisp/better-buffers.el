@@ -41,9 +41,14 @@
   ;; (setq ibuffer-saved-filter-groups nil)
   :hook (ibuffer-mode . hl-line-mode)
   :general
-  (:keymaps 'space-menu-map
+  (:keymaps 'space-menu-buffer-map
    :wk-full-keys nil
    "i" '(ibuffer :wk "ibuffer"))
+  (:keymaps 'ibuffer-mode-map
+   :states 'normal
+   "s V" 'ibuffer-vc-set-filter-groups-by-vc-root)
+  (:keymaps 'ibuffer-mode-map
+   "/ V" 'ibuffer-vc-set-filter-groups-by-vc-root)
   ("C-x C-b" 'ibuffer)
   ;; :bind (("C-x C-b" . ibuffer))
          ;; :map ibuffer-mode-map

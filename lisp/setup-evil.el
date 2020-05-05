@@ -198,16 +198,16 @@
   :general
   (:keymaps 'space-menu-map
    :wk-full-keys nil
-   "`" '(evil-switch-to-windows-last-buffer :wk "prev buffer"))
+   "TAB" '(evil-switch-to-windows-last-buffer :wk "prev buffer"))
   :bind (:map evil-motion-state-map
               ("C-w C-h" . evil-window-left)
               ("C-w C-l" . evil-window-right)
               ("C-w C-k" . evil-window-up)
               ("C-w C-j" . evil-window-down)
-              ("C-h" . evil-window-left)
-              ("C-l" . evil-window-right)
-              ("C-k" . evil-window-up)
-              ("C-j" . evil-window-down)
+              ;; ("C-h" . evil-window-left)
+              ;; ("C-l" . evil-window-right)
+              ;; ("C-k" . evil-window-up)
+              ;; ("C-j" . evil-window-down)
               ;; ("C-w C-f" . winner-redo)
               ;; ("C-w C-b" . winner-undo)
               ("C-w C-w" . winner-undo)
@@ -234,6 +234,13 @@
                   ) nil)
     (cl-pushnew mode evil-motion-state-modes))
 
+  ;; (defun my-move-key (keymap-from keymap-to key)
+  ;;   "Moves key binding from one keymap to another, deleting from the old location. "
+  ;;   (define-key keymap-to key (lookup-key keymap-from key))
+  ;;   (define-key keymap-from key nil))
+  ;; (my-move-key evil-motion-state-map evil-normal-state-map (kbd "RET"))
+  ;; (my-move-key evil-motion-state-map evil-normal-state-map " ")
+
 ;  (nconc evil-motion-state-modes '(occur-mode ivy-occur-mode ivy-occur-grep-mode))
 
   (evil-define-key 'normal 'global (kbd "[ SPC") (lambda (&optional arg) (interactive)
@@ -245,21 +252,6 @@
                                                    (save-excursion
                                                      (end-of-line)
                                                      (open-line arg))))
-
-;;;###autoload
-(defun +evil-mode-line-faces ()
-  (if (not (fboundp 'evil-mode))
-      ''winum-face
-    (cond
-     ((evil-emacs-state-p)    ''((bold :background "SkyBlue2" :foreground "black")))
-     ((evil-insert-state-p)   ''((bold :background "chartreuse3" :foreground "black")))
-     ((evil-replace-state-p)  ''((bold :background "chocolate" :foreground "black")))
-     ((evil-motion-state-p)   ''((bold :background "plum3" :foreground "black")))
-     ((evil-visual-state-p)   ''((bold :background "gray" :foreground "black")))
-     ((evil-operator-state-p) ''((bold :background "sandy brown" :foreground "black")))
-     (t ''((bold :inherit mode-line)))
-    )))
-
 
   ;; (dolist (state-tag '((" N " . 'evil-normal-state-tag)
   ;;                      (" E " . 'evil-emacs-state-tag)
@@ -730,6 +722,7 @@
       (occur replace)
       xref
       doc-view
+      view
       )
     "The list of `evil-collection' modules to load. evil-mode bindings will be enabled for these modes. See `evil-collection-mode-list' for the full set of supported modes.")
   :config
@@ -790,10 +783,12 @@
     ;;                   (kbd "C-<tab>") nil)
     
     (evil-collection-define-key 'normal 'notmuch-tree-mode-map
-      "j" 'notmuch-tree-next-message
-      "k" 'notmuch-tree-prev-message
+      "j"  'notmuch-tree-next-message
+      "k"  'notmuch-tree-prev-message
       "gj" 'notmuch-tree-next-matching-message
-      "gk" 'notmuch-tree-prev-matching-message)
+      "gk" 'notmuch-tree-prev-matching-message
+      "]]" 'notmuch-tree-next-thread
+      "[[" 'notmuch-tree-prev-thread)
 
     (fset 'evil-collection-notmuch-search-toggle-delete
           (lambda ()

@@ -11,6 +11,7 @@
 (add-to-list 'load-path "~/.emacs.d/plugins/")
 (add-to-list 'custom-theme-load-path "~/.emacs.d/elpa/atom-one-dark-theme-20190705.554/")
 
+(require 'cl-seq)
 (require 'setup-completion nil t)
 (require 'setup-minibuffer nil t)
 (when (require 'icomplete nil t)
@@ -61,12 +62,17 @@
 ;; ----------------------------
 ;; Editing
 ;; ----------------------------
+(setq scroll-conservatively 1)
+(setq scroll-preserve-screen-position t)
 (electric-pair-mode 1)
 
 (global-set-key (kbd "M-SPC")
 		(defun my/cycle-spacing-impatient (&optional n preserve-nl-back)
 		  (interactive "*p")
 		  (cycle-spacing n preserve-nl-back 'fast)))
+
+(global-set-key (kbd "<C-M-backspace>") 'backward-kill-sexp)
+
 (global-set-key
  (kbd "C-w")
  (defun backward-kill-word-or-region (&optional arg)

@@ -198,7 +198,27 @@ Bind this function in `icomplete-minibuffer-map'."
   (defun my/icomplete-insert-candidate-finalize ()
     (interactive)
     (my/icomplete-kill-or-insert-candidate '(16))))
+(define-key icomplete-menu-map (kbd "j") (defun my/icomplete-open-other-buffer ()
+					   (interactive)
+					       (let ((candidate (car completion-all-sorted-completions)))
+						 (cond  
+						 ((eq (icomplete--category) 'file) (find-file-other-window candidate) (other-window 1))
+						 ((eq (icomplete--category) 'buffer) (display-buffer candidate) (other-window 1))
+						 (t nil)
+						 ))))
+(define-key icomplete-menu-map (kbd "J") (lambda () (interactive)
+					   (my/icomplete-open-other-buffer)
+					   (top-level)))
+(define-key icomplete-menu-map (kbd "h") (defun my/icomplete-help ()
+					   (interactive)
+					   (let ((candidate (car completion-all-sorted-completions)))
+					     (describe-symbol candidate) ;; (if (eq (icomplete--category) nil)
+						 ;; ;
+						 ;;  )
+					     )))
 (define-key icomplete-menu-map (kbd "o") 'icomplete-fido-ret)
+
+
 
 ;; (defvar icomplete-menu-map
 ;;   (let ((map (make-sparse-keymap)))

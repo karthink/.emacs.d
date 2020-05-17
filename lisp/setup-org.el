@@ -1,5 +1,5 @@
 ;;;; Org mode
-;; (require 'use-package nil t)
+;;(require 'use-package nil t)
 
 ;;----------------------------------------------------------------------
 ;; ORG
@@ -18,7 +18,7 @@
   (add-hook 'org-load-hook
             '(lambda nil
                (define-key org-mode-map (kbd "C-c C-S-l") 'org-toggle-link-display)
-               ;; (define-key org-mode-map (kbd "<C-tab>") 'other-window)
+               (define-key org-mode-map (kbd "<C-tab>") nil)
                ;; (define-key org-mode-map (kbd "<C-S-tab>") (lambda () (other-window -1)))
                ;; Org-cdlatex options
                (define-key org-cdlatex-mode-map (kbd "$") 'cdlatex-dollar)
@@ -70,8 +70,7 @@
                 )
 
   ;; My defaults
-  (setq org-directory "~/.local/share/org" 
-        org-agenda-files '("~/do.org" "~/.local/share/org/schedule.org")
+  (setq org-agenda-files '("~/do.org" "~/org/schedule.org")
         org-file-apps '((auto-mode . emacs)
                         ("\\.mm\\'" . default)
                         ("\\.x?html?\\'" . default)
@@ -79,6 +78,8 @@
         ;; Larger equations
         org-format-latex-options (plist-put org-format-latex-options :scale 1.5))
 
+  ;; Make org use `display-buffer' like every other Emacs citizen.
+  (advice-add #'org-switch-to-buffer-other-window :override #'switch-to-buffer-other-window)
 
 ;;;###autoload
   (defun org-cdlatex-pbb (&rest _arg)
@@ -125,7 +126,7 @@
                                (nth (if table-p 2 0) org-script-display)))
           (add-text-properties (match-beginning 2) (match-end 2)
                                (list 'invisible t))
-          ;; Do NOT hide the {}'s. This is what causes org-cdlatex-tab to fail.
+          ;;;; Do NOT hide the {}'s. This is what causes org-cdlatex-tab to fail.
           ;; (when (and (eq (char-after (match-beginning 3)) ?{)
           ;; 	   (eq (char-before (match-end 3)) ?}))
           ;;   (add-text-properties (match-beginning 3) (1+ (match-beginning 3))
@@ -138,6 +139,8 @@
 ;; (add-hook 'org-mode-hook '(lambda ()
 ;;			   (define-key org-mode-map (kbd "C-;") 'org-complete))
 
+  (add-to-list 'org-structure-template-alist '("ma" . "src matlab"))
+  (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
   
   )
 
@@ -149,11 +152,19 @@
                            "~/.local/share/org/schedule.org"))
   )
 
+(use-package org-agenda
+  :after org
+  :defer
+  :commands (org-agenda)
+  :config
+  (setq org-agenda-restore-windows-after-quit t
+        org-agenda-window-setup 'current-window))
+
 (use-package org-capture
   :after org
-  :commands org-capture
+  :defer 
+  :commands (org-capture make-orgcapture-frame)
   :config
-  (require 'setup-anki nil t)
  (add-to-list 'org-capture-after-finalize-hook
              (defun org-capture-after-delete-frame ()
                "If this is a dedicated org-capture frame, delete it after"
@@ -184,7 +195,7 @@
                    ("tc" "Config projects"
                     entry
                     (file+olp "~/do.org" "Configuration")
-                    "* TODO %? :config:\n %a\n %x\n"
+                    "* TODO %? :config:\n  %a\n  %x\n"
                     :kill-buffer t
                     :prepend t
                     )
@@ -192,7 +203,7 @@
                    ("tp" "Other Projects"
                     entry
                     (file+olp "~/do.org" "Other Projects")
-                    "* %? :projects:\n %a\n %x\n"
+                    "* %? :projects:\n  %a\n  %x\n"
                     :prepend t
                     :kill-buffer t
                     )
@@ -211,6 +222,7 @@
 
 (use-package ox
   :after org
+  :commands org-export-dispatch
   :config
   (setq org-html-htmlize-output-type 'css)
   (with-eval-after-load 'ox-latex
@@ -374,3 +386,30 @@ See `org-capture-templates' for more information."
               ("C-c e" . #'+inkscape-figures-edit)))
 
 (provide 'setup-org)
+
+;;----------------------------------------------------------------------
+;; ORG-ROAM
+;;----------------------------------------------------------------------
+(use-package org-roam
+  :after org
+  :commands org-roam-mode
+  :defer
+  :config
+  (setq org-roam-directory (dir-concat org-directory "roam"))
+  :bind (:map org-roam-mode-map
+              (("C-c n l" . org-roam)
+               ("C-c n f" . org-roam-find-file)
+               ("C-c n j" . org-roam-jump-to-index)
+               ("C-c n b" . org-roam-switch-to-buffer)
+               ("C-c n g" . org-roam-graph))
+              :map org-mode-map
+              (("C-c n i" . org-roam-insert))))
+
+  (use-package company-org-roam
+  :load-path "~/.local/share/git/company-org-roam/"
+  :after (company org org-roam)
+  :init
+  (add-hook 'org-roam-mode-hook (lambda ()
+                                  (make-local-variable 'company-backends)
+                                  (push 'company-org-roam company-backends)
+                                  )))

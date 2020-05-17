@@ -1,7 +1,7 @@
 ;;######################################################################
 ;; BETTER BUFFERS
 ;;######################################################################
-
+;;(require 'use-package nil t)
 ;; Collection of commands to make handling buffers less painful
 
 ;;----------------------------------------------------------------------
@@ -39,16 +39,12 @@
   ;; (setq ibuffer-movement-cycle nil)
   ;; (setq ibuffer-default-shrink-to-minimum-size nil)
   ;; (setq ibuffer-saved-filter-groups nil)
-  :hook (ibuffer-mode . hl-line-mode)
+  :hook ((ibuffer-mode . hl-line-mode)
+         (ibuffer-mode . ibuffer-vc-set-filter-groups-by-vc-root))
   :general
   (:keymaps 'space-menu-buffer-map
    :wk-full-keys nil
    "i" '(ibuffer :wk "ibuffer"))
-  (:keymaps 'ibuffer-mode-map
-   :states 'normal
-   "s V" 'ibuffer-vc-set-filter-groups-by-vc-root)
-  (:keymaps 'ibuffer-mode-map
-   "/ V" 'ibuffer-vc-set-filter-groups-by-vc-root)
   ("C-x C-b" 'ibuffer)
   ;; :bind (("C-x C-b" . ibuffer))
          ;; :map ibuffer-mode-map
@@ -62,9 +58,14 @@
 (use-package ibuffer-vc
   :ensure t
   :after (ibuffer vc)
-  :bind (:map ibuffer-mode-map
-              ("/ V" . ibuffer-vc-set-filter-groups-by-vc-root)
-              ("/ <deletechar>" . ibuffer-clear-filter-groups)))
+  :general
+  (:keymaps 'ibuffer-mode-map
+   :states 'normal
+   "s V" 'ibuffer-vc-set-filter-groups-by-vc-root
+   "s <backspace>" 'ibuffer-clear-filter-groups)
+  (:keymaps 'ibuffer-mode-map
+   "/ V" 'ibuffer-vc-set-filter-groups-by-vc-root
+   "/ <backspace>" 'ibuffer-clear-filter-groups))
 
 ;; Keys to traverse buffers
 ;; (global-set-key (kbd "<C-M-return>") 'ido-display-buffer)

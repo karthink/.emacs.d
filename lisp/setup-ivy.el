@@ -1,5 +1,5 @@
 ;; -*- lexical-binding: t; -*-
-;; (require 'use-package nil t)
+;;(require 'use-package nil t)
 (use-package ivy
   :ensure t
   :general
@@ -27,7 +27,6 @@
                                 (ivy-completion-in-region . ivy--regex-fuzzy)
                                 (t . ivy--regex-ignore-order)))
   (setq enable-recursive-minibuffers t)
-  ;; (setq ivy-initial-inputs-alist nil)
   ;; (setq ivy-read-action-function 'ivy-read-action-by-key)  
 
   ;; Ensure a jump point is registered before jumping to new locations with ivy
@@ -143,7 +142,9 @@
   ("M-x" 'counsel-M-x
    "M-s a" 'counsel-ag
    "M-s G" 'counsel-git-grep
-   )
+   "C-c C-j" 'counsel-outline)
+  (:keymaps 'LaTeX-mode-map
+   "C-c C-j" nil)
   (:keymaps 'space-menu-map
    :wk-full-keys t        
    "," '(counsel-switch-buffer :wk "Switch to buffer")
@@ -262,8 +263,9 @@ cmd, a function of one argument."
        ("k" ,(+ivy-action-reloading (lambda (x) (dired-delete-file x 'confirm-each-subdirectory))) "delete")
        ("r" (lambda (path) (rename-file path (read-string "New name: "))) "rename")
        ("R" ,(+ivy-action-reloading (+ivy-action-given-file #'rename-file "Move")) "move")
-       ("j" ,(+ivy-ace-window #'find-file) "ace window")
+       ("`" ,(+ivy-ace-window #'find-file) "ace window")
        ("f" find-file-other-frame "other frame")
+       ("j" find-file-other-window "other window")
        ("p" (lambda (path) (with-ivy-window (insert (file-relative-name path default-directory)))) "insert relative path")
        ("x" counsel-find-file-extern "xdg-open")
        ("P" (lambda (path) (with-ivy-window (insert path))) "insert absolute path")
@@ -274,7 +276,10 @@ cmd, a function of one argument."
        )))
 
   (ivy-add-actions 'ivy-switch-buffer
-                   `(("f" ,(+ivy-ace-window #'switch-to-buffer) "ace window")))
+                   `(("`" ,(+ivy-ace-window #'switch-to-buffer) "ace window")))
+  (ivy-add-actions 'counsel-bookmark
+                   '(("f" find-file-other-frame "other frame")
+                     ("j" find-file-other-window "other window")))
 
 ;;;###autoload
   (defun find-file-Documents ()
@@ -347,10 +352,11 @@ cmd, a function of one argument."
 
 (use-package ivy-prescient
   :ensure t
-  :after ivy
+  :after (ivy counsel)
   :hook (ivy-mode . ivy-prescient-mode)
   :init
   (ivy-prescient-mode +1)
+  :config
   (setq ;; prescient-filter-method
    ;; (if (featurep +fuzzy)
    ;;     '(literal regexp initialism fuzzy)
@@ -358,15 +364,6 @@ cmd, a function of one argument."
    ivy-prescient-enable-filtering nil  ; we do this ourselves
    ivy-prescient-enable-sorting t
    ivy-prescient-retain-classic-highlighting t
-   ivy-initial-inputs-alist '((org-refile . "^")
-                              (org-agenda-refile . "^")
-                              (org-capture-refile . "^")
-                              ;; (counsel-M-x . "^")
-                              (counsel-describe-function . "^")
-                              (counsel-describe-variable . "^")
-                              (counsel-org-capture . "^")
-                              (Man-completion-table . "^")
-                              (woman . "^"))
    ;; ivy-prescient-sort-commands (list 'counsel-file-jump
    ;;                                   'counsel-fzf
    ;;                                   'counsel-git
@@ -381,7 +378,16 @@ cmd, a function of one argument."
    ;;   (t . ivy-prescient-re-builder))
    )
 
-  :config
+  (setq ivy-initial-inputs-alist '((org-refile                . "^")
+                                   (org-agenda-refile         . "^")
+                                   (org-capture-refile        . "^")
+                                   (Man-completion-table      . "^")
+                                   (woman                     . "^")
+                                   (counsel-M-x               . "")
+                                   (counsel-describe-function . "^")
+                                   (counsel-describe-variable . "^")
+                                   (counsel-org-capture       . "^")))
+
   ;; (defun +ivy-prescient-non-fuzzy (str)
   ;;   (let ((prescient-filter-method '(literal regexp)))
   ;;     (ivy-prescient-re-builder str)))
@@ -395,6 +401,7 @@ cmd, a function of one argument."
 ;; ivy-rich shows descriptions along with selection candidates in ivy
 (use-package ivy-rich
   :ensure t
+  :defer 3
   :after ivy
   :config
   (setcdr (assq t ivy-format-functions-alist) #'ivy-format-function-line)

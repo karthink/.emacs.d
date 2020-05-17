@@ -7,6 +7,7 @@
 # Personal files
 ido.last
 .mc-lists.el
+.yas*
 auto-save-list
 move-line-region.el
 personal.el
@@ -22,3 +23,4 @@ transient/*
 request/*
 srecode-map.el
 .org-id-locations
+*~

@@ -14,7 +14,8 @@ If buffer-or-name is nil return current buffer's mode."
 (defun +select-buffer-in-side-window (buffer alist)
   "Display buffer in a side window and select it"
   (let ((window (display-buffer-in-side-window buffer alist)))
-    (select-window window)))
+    (select-window window)
+    ))
 
 (defvar +occur-grep-modes-list '(occur-mode
                                  grep-mode
@@ -46,8 +47,7 @@ If buffer-or-name is nil return current buffer's mode."
                            help-mode
                            matlab-shell-help-mode
                            pydoc-mode
-                           TeX-special-mode
-                           eww-mode)
+                           TeX-special-mode)
   "List of major-modes used in documentation buffers")
 
 (defvar +man-modes-list '(Man-mode Info-mode woman-mode)
@@ -115,13 +115,25 @@ If buffer-or-name is nil return current buffer's mode."
 
 (setq display-buffer-alist
       '(
+
+        ;; ----------------------------------------------------------------
         ;; Windows on top
+        ;; ----------------------------------------------------------------
+
+        ("\\*\\(?:Org Select\\|Agenda Commands\\)\\*"
+         (+select-buffer-in-side-window)
+         (window-height . (lambda (win) (fit-window-to-buffer win))) ;(/ (frame-height) 3))))
+         (side . top)
+         (slot . -2)
+         (preserve-size . (nil . t))
+         (window-parameters . ((mode-line-format . nil))))
 
         ("\\*Buffer List\\*" (display-buffer-in-side-window)
          (side . top)
          (slot . 0)
          (window-height . shrink-window-if-larger-than-buffer)
-         (preserve-size . (nil . t)))
+         ;; (preserve-size . (nil . t))
+         )
 
         ((lambda (buf act) (member (buffer-mode buf) +occur-grep-modes-list))
          (display-buffer-in-direction display-buffer-in-side-window)
@@ -142,34 +154,15 @@ If buffer-or-name is nil return current buffer's mode."
          (window-parameters . ((mode-line-format . (:eval (+helper-window-mode-line-format)))
                                (no-other-window . t))))
 
+        ;; ----------------------------------------------------------------
         ;; Windows on the side
+        ;; ----------------------------------------------------------------
 
-        ;; ((lambda (buf act) (eq (buffer-mode buf) 'matlab-shell-help-mode))
-        ;;  (display-buffer-in-side-window)
-        ;;  (window-width . 81)
-        ;;  (side . right)
-        ;;  (slot . 0)
-        ;;  (window-parameters . (;; (no-other-window . t)
-        ;;                        (mode-line-format . (" "
-        ;;                                             mode-line-buffer-identification)))))
-
-        ((lambda (buf act) (member (buffer-mode buf) +help-modes-list))
-         (display-buffer-in-direction display-buffer-in-side-window)
-         ;; (direction . below)
-         ;; (window-width . (lambda (win) (fit-window-to-buffer win 25 14)))       ; See the :hook
-         (window-width . (lambda (win) (fit-window-to-buffer win nil nil 85 55)))
-         (direction . right)
-         (side . right)
-         (slot . 1)
-         (window-parameters . ((split-window . #'ignore)
-                               ;; (no-other-window . t)
-                               (mode-line-format . (:eval (+helper-window-mode-line-format))))))
-
-        ((lambda (buf act) (member (buffer-mode buf) +man-modes-list))
-         ;; "^\\*\\(?:Wo\\)?Man"
+        (;; (lambda (buf act) (member (buffer-mode buf) +man-modes-list))
+         "^\\*\\(?:Wo\\)?Man"
          (display-buffer-in-side-window)
          (window-width . 76)       ; See the :hook
-         (side . right)
+         (side . left)
          (slot . 9)
          (window-parameters . (;; (no-other-window . t)
                                (mode-line-format . (:eval (+helper-window-mode-line-format))))))
@@ -189,12 +182,23 @@ If buffer-or-name is nil return current buffer's mode."
          (window-parameters . (;; (no-other-window . t)
                                (mode-line-format . (:eval (+helper-window-mode-line-format))))))
 
+        ;; ----------------------------------------------------------------
         ;; Windows at the bottom
+        ;; ----------------------------------------------------------------
+
         ("\\*Backtrace\\*" (display-buffer-in-side-window)
          (window-height . 0.20)
          (side . bottom)
          (slot . -9)
-         (preserve-size . (nil . t))
+         ;; (preserve-size . (nil . t))
+         (window-parameters . ((mode-line-format . (:eval (+helper-window-mode-line-format)))))
+         )
+
+        ("\\*RefTex" (display-buffer-in-side-window)
+         (window-height . 0.25)
+         (side . bottom)
+         (slot . -9)
+         ;; (preserve-size . (nil . t))
          (window-parameters . ((mode-line-format . (:eval (+helper-window-mode-line-format)))))
          )
 
@@ -210,7 +214,7 @@ If buffer-or-name is nil return current buffer's mode."
          (window-height . 0.25)
          (side . bottom)
          (slot . -6)
-         (preserve-size . (nil . t))
+         ;; (preserve-size . (nil . t))
          (window-parameters . ((no-other-window . #'ignore)
                                (mode-line-format . (:eval (+helper-window-mode-line-format))))))
 
@@ -219,7 +223,7 @@ If buffer-or-name is nil return current buffer's mode."
          (window-height . 0.20)
          (side . bottom)
          (slot . -5)
-         (preserve-size . (nil . t))
+         ;; (preserve-size . (nil . t))
          (window-parameters . ((split-window . #'ignore)
                                (no-other-window . t)
                                (mode-line-format . (:eval (+helper-window-mode-line-format)))
@@ -229,14 +233,14 @@ If buffer-or-name is nil return current buffer's mode."
          (window-height . 0.20)
          (side . bottom)
          (slot . -4)
-         (preserve-size . (nil . t))
+         ;; (preserve-size . (nil . t))
          (window-parameters . ((no-other-window . t)
                                (mode-line-format . (:eval (+helper-window-mode-line-format))))))
 
-        ("\\*\\(Output\\|Register Preview\\).*" (display-buffer-in-side-window)
+        ("\\*\\(Register Preview\\).*" (display-buffer-in-side-window)
          (window-height . 0.20)       ; See the :hook
          (side . bottom)
-         (slot . -4)
+         (slot . -3)
          (window-parameters . ((no-other-window . t)
                                (mode-line-format . (:eval (+helper-window-mode-line-format)))
                                )))
@@ -244,7 +248,7 @@ If buffer-or-name is nil return current buffer's mode."
         ("\\*\\(?:Completions\\|Apropos\\)\\*" (display-buffer-in-side-window)
          (window-height . 0.20)
          (side . bottom)
-         (slot . -3)
+         (slot . -2)
          (window-parameters . ((no-other-window . t)
                                (mode-line-format . (:eval (+helper-window-mode-line-format)))
                                )))
@@ -255,16 +259,35 @@ If buffer-or-name is nil return current buffer's mode."
          (window-height . .25)
          (side . bottom)
          (slot . 2)
-         (preserve-size . (nil . t)))
+         ;; (preserve-size . (nil . t))
+         )
 
-        ;; ("\\*[Ss]hell\\*"
-        ;;  +select-buffer-in-side-window
-        ;;  (window-width . 40)
-        ;;  (side . left)
-        ;;  (slot . -1)
-        ;;  (preserve-size . (nil . t))
+        ((lambda (buf act) (member (buffer-mode buf) +help-modes-list))
+         (+select-buffer-in-side-window display-buffer-in-direction)
+         (direction . below)
+         (window-width . (lambda (win) (fit-window-to-buffer win 25 14))) 
+         ;; (window-width . (lambda (win) (fit-window-to-buffer win nil nil 85 55)))
+         ;; (direction . right)
+         (side . bottom)
+         (slot . 1)
+         (window-parameters . ((split-window . #'ignore)
+                               ;; (no-other-window . t)
+                               (mode-line-format . (:eval (+helper-window-mode-line-format))))))
+        ((lambda (buf act) (with-current-buffer buf view-mode))
+         (display-buffer-in-side-window)
+         (window-height . (/ (frame-height) 3))
+         (side . bottom)
+         (slot . 10)
+         (window-parameters . (;; (no-other-window . t)
+                               (mode-line-format . (:eval (+helper-window-mode-line-format)))))) 
+ 
+        ;; ("\\*elfeed-entry\\*" (lambda (buf act) (let ((parent-win (get-buffer-window)))
+        ;;                                      (display-buffer-in-direction buf act)
+        ;;                                      (select-window parent-win)
+        ;;                                      ))
+        ;;  (direction . below)
+        ;;  (window-height . 0.5)
         ;;  )
-
         ))
 
 (setq window-combination-resize t
@@ -313,5 +336,27 @@ didactic purposes."
                                    (fit-window-to-buffer
                                     win (/ (frame-height) 3)))))
        ))))
+
+(eval-after-load 'org
+  (progn 
+    (defun +org-fix-delete-other-windows-a (orig-fn &rest args)
+      "docstring"
+      (interactive "P")
+      (if popup-buffers-mode 
+          (cl-letf (((symbol-function #'delete-other-windows)
+                     (symbol-function #'ignore))
+                    ((symbol-function #'delete-window)
+                     (symbol-function #'ignore)))
+            (apply orig-fn args))
+        (apply orig-fn args)))
+
+    (dolist (org-function '(org-add-log-note
+                            org-capture-place-template
+                            org-export--dispatch-ui
+                            org-agenda-get-restriction-and-command
+                            org-fast-tag-selection
+                            org-fast-todo-selection))
+
+      (advice-add org-function :around #'+org-fix-delete-other-windows-a))))
 
 (provide 'setup-windows)

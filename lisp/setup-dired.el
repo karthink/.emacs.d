@@ -2,31 +2,57 @@
 ;;(require 'use-package nil t)
 (use-package dired
   :commands dired
-  :hook (;; (dired-mode-hook . dired-hide-details-mode)
+  :hook (;; (dired-mode . dired-hide-details-mode)
          (dired-mode . hl-line-mode))
+  :general
+  ("C-x D" 'list-directory)
+  (:keymaps 'space-menu-map "fd" '(dired :wk "Dired"))
+  (:keymaps 'dired-mode-map "e" '(ora-ediff-files :wk "Diff marked files"))
+  (:keymaps 'dired-mode-map :states '(normal visual) "SPC" 'space-menu)
+  (:keymaps 'evil-window-map :states '(normal visual) "d" 'dired-sidebar-toggle-sidebar)
   :config
   (put 'dired-find-alternate-file 'disabled nil)
-   (setq dired-listing-switches
-        "-AGFhlv --time-style=long-iso")
-   (setq dired-recursive-copies 'always
-         dired-recursive-deletes 'always)
-    (setq dired-dwim-target t)
-
-  :general
-  (:keymaps 'space-menu-map
-            "fd" '(dired :wk "Dired"))
-  (:keymaps 'dired-mode-map
-            "e" '(ora-ediff-files :wk "Diff marked files")))
+  (setq dired-listing-switches "-AGFhlv"
+        dired-recursive-copies 'always
+        dired-recursive-deletes 'always
+        dired-dwim-target t)
+  (advice-add 'dired-view-file :around
+              (defun dired-view-other-buffer-a (orig-fn &rest args)
+                (cl-letf (((symbol-function 'view-file) #'view-file-other-window))
+                  (funcall orig-fn))))
+  )
 
 (use-package dired-x
   :after dired
   :config
   (setq dired-omit-mode 1)
   (setq ls-lisp-use-insert-directory-program nil)
+  (setq dired-clean-confirm-killing-deleted-buffers nil)
   (require 'ls-lisp)
   (setq directory-free-space-program nil)
   (setq dired-x-hands-off-my-keys t)
-  )
+  (setq dired-omit-verbose nil
+        dired-omit-files
+        (concat dired-omit-files
+                "\\|^.DS_Store\\'"
+                "\\|^.project\\(?:ile\\)?\\'"
+                "\\|^.\\(svn\\|git\\)\\'"
+                "\\|^.ccls-cache\\'"
+                "\\|\\(?:\\.js\\)?\\.meta\\'"
+                "\\|\\.\\(?:elc\\|o\\|pyo\\|swp\\|class\\)\\'"))
+  (when-let (cmd (cond (IS-MAC "open")
+                       (IS-LINUX "xdg-open")
+                       (IS-WINDOWS "start")))
+    (setq dired-guess-shell-alist-user
+          `(("\\.\\(?:docx\\|pdf\\|djvu\\|eps\\)\\'" ,cmd)
+            ("\\.\\(?:jpe?g\\|png\\|gif\\|xpm\\)\\'" ,cmd)
+            ("\\.\\(?:xcf\\)\\'" ,cmd)
+            ("\\.csv\\'" ,cmd)
+            ("\\.tex\\'" ,cmd)
+            ("\\.\\(?:mp4\\|mkv\\|avi\\|flv\\|rm\\|rmvb\\|ogv\\)\\(?:\\.part\\)?\\'" ,cmd)
+            ("\\.\\(?:mp3\\|flac\\)\\'" ,cmd)
+            ("\\.html?\\'" ,cmd)
+            ("\\.md\\'" ,cmd)))))
 
 (use-package find-dired
   :defer
@@ -34,9 +60,12 @@
   :general
   ("M-s f" 'find-name-dired
    "M-s g" 'find-grep-dired)
+  (:keymaps 'space-menu-search-map
+   :wk-full-keys nil
+   "F" '(find-name-dired :wk "file by name"))
   :config
   (setq find-ls-option
-        '("-ls" . "-AGFhlv --group-directories-first --time-style=long-iso"))
+        '("-ls" . "-AGFhlv --group-directories-first"))
   (setq find-name-arg "-iname"))
 
 (use-package async
@@ -104,17 +133,16 @@
 
 (use-package ibuffer-sidebar
   :ensure t
-  :after (dired dired-sidebar ibuffer)
-  :commands (ibuffer-sidebar-toggle-sidebar +ibuffer-sidebar-toggle)
-  :general
-  ("C-x C-d" '+ibuffer-sidebar-toggle)
+  :commands +ibuffer-sidebar-toggle
+  :general ("C-x C-d" '+ibuffer-sidebar-toggle)
   :config
   ;; (setq ibuffer-sidebar-use-custom-font t)
   ;; (setq ibuffer-sidebar-face `(:family "Helvetica" :height 140))
   (defun +ibuffer-sidebar-toggle ()
     "Toggle both `dired-sidebar' and `ibuffer-sidebar'."
     (interactive)
-    (ibuffer-sidebar-toggle-sidebar)
+    (when (featurep 'ibuffer)
+      (ibuffer-sidebar-toggle-sidebar))
     (dired-sidebar-toggle-sidebar)))
 
 (provide 'setup-dired)

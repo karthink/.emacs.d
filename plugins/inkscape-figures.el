@@ -31,6 +31,20 @@ code."
              )
      nil "*inkscape-figures-output*")
     
+    ;; TODO: Replace with async command so emacs isn't blocked.
+    ;; (start-process-shell-command "inkscape-create"
+    ;;                              "*inkscape-output*"
+    ;;                              "inkscape-figures"
+    ;;                              "create"
+    ;;                              (shell-quote-argument (if (symbolp figname)
+    ;;                                                        (symbol-name figname)
+    ;;                                                      figname))
+    ;;                              (expand-file-name (file-name-as-directory +inkscape-figures-directory)
+    ;;                                                (file-name-directory tex-file))
+    ;;                              (if silent-p ">/dev/null")
+    ;;                              ;; "2>/dev/null"
+    ;;                              )
+
     (insert (funcall transform figname (with-current-buffer "*inkscape-figures-output*" (buffer-substring (point-min) (point-max)))))
     (kill-buffer "*inkscape-figures-output*")
     ))

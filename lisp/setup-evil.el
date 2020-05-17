@@ -1,5 +1,5 @@
 ;; -*- lexical-binding: t -*-
-;; (require 'use-package nil t)
+;;(require 'use-package nil t)
 (use-package evil-leader
   :disabled
   :commands global-evil-leader-mode
@@ -187,6 +187,7 @@
   :init
   (setq evil-want-keybinding nil)
   (setq evil-want-C-u-scroll t)
+  (setq evil-want-C-i-jump (display-graphic-p))
   (setq evil-want-integration t)
   (setq evil-want-keybinding nil)
   (setq-default evil-symbol-word-search t)
@@ -196,35 +197,45 @@
   (setq evil-mode-line-format '(before . mode-line-front-space))
   ;; (add-hook 'evil-jumps-post-jump-hook #'recenter)
   :general
+  (:states '(motion)
+   "g C-f" 'scroll-other-window
+   "g C-b" 'scroll-other-window-down)
+  ;; TODO: map comma comma to previous match when comma is localleader.
+  ;; (localleader-define-key
+  ;;   "" nil
+  ;;   "," '(evil-repeat-find-char-reverse :wk "last char match"))
   (:keymaps 'space-menu-map
    :wk-full-keys nil
    "TAB" '(evil-switch-to-windows-last-buffer :wk "prev buffer"))
   :bind (:map evil-motion-state-map
-              ("C-w C-h" . evil-window-left)
-              ("C-w C-l" . evil-window-right)
-              ("C-w C-k" . evil-window-up)
-              ("C-w C-j" . evil-window-down)
-              ;; ("C-h" . evil-window-left)
-              ;; ("C-l" . evil-window-right)
-              ;; ("C-k" . evil-window-up)
-              ;; ("C-j" . evil-window-down)
-              ;; ("C-w C-f" . winner-redo)
-              ;; ("C-w C-b" . winner-undo)
-              ("C-w C-w" . winner-undo)
-              ("C-w |" . toggle-window-split)
-              ("C-w f" . find-file-other-window)
-              ("C-w b" . switch-to-buffer-other-window)
-              ("C-w S-<up>" . evil-window-increase-height)
-              ("C-w S-<down>" . evil-window-decrease-height)
-              ("C-w S-<left>" . evil-window-decrease-width)
-              ("C-w S-<right>" . evil-window-increase-height)
               ("[q" . previous-error)
               ("]q" . next-error)
+              ("]h" . outline-next-visible-heading)
+              ("[h" . 'outline-previous-visible-heading)
+         :map evil-window-map
+              ("C-h"           . evil-window-left)
+              ("C-l"           . evil-window-right)
+              ("C-k"           . evil-window-up)
+              ("C-j"           . evil-window-down)
+              ;; ("C-h"        . evil-window-left)
+              ;; ("C-l"        . evil-window-right)
+              ;; ("C-k"        . evil-window-up)
+              ;; ("C-j"        . evil-window-down)
+              ;; ("C-w C-f"    . winner-redo)
+              ;; ("C-w C-b"    . winner-undo)
+              ("C-w"           . other-window)
+              ("|"             . toggle-window-split)
+              ("f"             . find-file-other-window)
+              ("b"             . switch-to-buffer-other-window)
+              ("S-<up>"    . evil-window-increase-height)
+              ("S-<down>"  . evil-window-decrease-height)
+              ("S-<left>"  . evil-window-decrease-width)
+              ("S-<right>" . evil-window-increase-height)
               ;; :map evil-normal-state-map
-              ;; ("[o" . open-next-line)
-              ;; ("]o" . open-previous-line)
+              ;; ("[o"         . open-next-line)
+              ;; ("]o"         . open-previous-line)
            :map evil-insert-state-map
-           ("C-w" . backward-kill-word-or-region))
+           ("C-w"              . backward-kill-word-or-region))
   :config
   (dolist (mode '(occur-mode
                   ivy-occur-mode
@@ -242,6 +253,9 @@
   ;; (my-move-key evil-motion-state-map evil-normal-state-map " ")
 
 ;  (nconc evil-motion-state-modes '(occur-mode ivy-occur-mode ivy-occur-grep-mode))
+
+  (eval-after-load 'pulse
+  (add-hook 'evil-jumps-post-jump-hook #'my/pulse-momentary-line))
 
   (evil-define-key 'normal 'global (kbd "[ SPC") (lambda (&optional arg) (interactive)
                                                    (save-excursion
@@ -277,7 +291,7 @@
 
   (setq evil-search-module 'evil-search)
   (add-to-list 'evil-emacs-state-modes 'undo-tree-visualizer-mode)
-  (evil-mode 1)
+  (add-to-list 'evil-emacs-state-modes 'eww-mode)
 
 ;; (fset 'yank-pop #'counsel-yank-pop)
 
@@ -375,7 +389,65 @@
                                       (require 'evil-matlab-textobjects nil t))
                                 (turn-on-evil-matlab-textobjects-mode)))
 
-  )
+  
+
+;;--------------------------------------------------
+;; Evil text objects
+;;--------------------------------------------------
+
+(evil-define-text-object +evil:whole-buffer-txtobj (count &optional _beg _end type)
+  "Text object to select the whole buffer."
+  (evil-range (point-min) (point-max) type))
+
+(evil-define-text-object +evil:defun-txtobj (count &optional _beg _end type)
+  "Text object to select the top-level Lisp form or function definition at
+point."
+  (cl-destructuring-bind (beg . end)
+      (bounds-of-thing-at-point 'defun)
+    (evil-range beg end type)))
+
+(evil-define-text-object +evil:inner-url-txtobj (count &optional _beg _end type)
+  "Text object to select the inner url at point.
+
+This excludes the protocol and querystring."
+  (cl-destructuring-bind (beg . end)
+      (bounds-of-thing-at-point 'url)
+    (evil-range
+     (save-excursion
+       (goto-char beg)
+       (re-search-forward "://" end t))
+     (save-excursion
+       (goto-char end)
+       (- (if-let (pos (re-search-backward "[?#]" beg t))
+              pos
+            end)
+          (if (evil-visual-state-p)
+              1
+            0)))
+     type)))
+
+(evil-define-text-object +evil:outer-url-txtobj (count &optional _beg _end type)
+  "Text object to select the whole url at point."
+  (cl-destructuring-bind (beg . end)
+      (bounds-of-thing-at-point 'url)
+    (evil-range
+     beg (- end (if (evil-visual-state-p) 1 0))
+     type)))
+
+(general-def
+  :keymaps 'evil-inner-text-objects-map 
+  "f" #'+evil:defun-txtobj
+  "d" #'+evil:defun-txtobj
+  "g" #'+evil:whole-buffer-txtobj
+  "u" #'+evil:inner-url-txtobj
+  :keymaps 'evil-outer-text-objects-map 
+  "f" #'+evil:defun-txtobj
+  "d" #'+evil:defun-txtobj
+  "g" #'+evil:whole-buffer-txtobj
+  "u" #'+evil:outer-url-txtobj)
+
+  (evil-mode 1)
+)
 
 ;;--------------------
 ;; OTHER EVIL PACKAGES
@@ -387,7 +459,17 @@
                                          'tex-mode-hook
                                          'text-mode-hook
                                          'message-mode-hook)
-  "List of modes where evil-mode addons (like commentary and snipe) should be enabled")
+  "List of modes where `evil-mode' addons (like commentary and snipe) should be enabled")
+
+(use-package evil-traces
+  :ensure
+  :after evil-ex
+  :defer 5
+  :config
+  ;; (pushnew! evil-traces-argument-type-alist
+  ;;           '(+evil:align . evil-traces-global)
+  ;;           '(+evil:align-right . evil-traces-global))
+  (evil-traces-mode))
 
 ;; EVIL-GOGGLES
 (use-package evil-goggles
@@ -509,19 +591,15 @@
           ">")))
 
 
-;; EVIL-COMMENTARY
-;; gc{motion} to comment/uncomment
-(use-package evil-commentary
-  :defer
+;; EVIL-NERD-COMMENTER
+(use-package evil-nerd-commenter
   :ensure
-  :diminish ""
-  :commands evil-commentary-mode
-  :init
-  (dolist (mode-hook +evil-addons-enabled-modes)
-    (add-hook mode-hook (lambda () "Turn on evil commentary for mode"
-                          (interactive)
-                          (evil-commentary-mode))))
-  )
+  :commands (evilnc-comment-operator
+             evilnc-inner-comment
+             evilnc-outer-commenter)
+  :general
+  (:states '(normal visual)
+   "gc" 'evilnc-comment-operator))
 
 ;; EVIL-EXCHANGE
 ;; gx{motion} to select, gx{motion} on second object to exchange
@@ -660,7 +738,7 @@
 
 ;; ORG-EVIL
 (use-package org-evil
-  :defer 3
+  :defer 1
   :ensure t
   :after org)
 
@@ -668,15 +746,9 @@
 ;; EVIL-SMARTPARENS
 ;;-----------------
 (use-package evil-smartparens
-  :disabled
-  ;; :ensure t
-  :init
-  (add-hook 'lisp-interaction-mode-hook #'evil-smartparens-mode)
-  (add-hook 'emacs-lisp-mode-hook #'evil-smartparens-mode)
-  ;; (add-hook 'lisp-interaction-mode-hook #'evil-smartparens-mode)
+  :after smartparens
+  :hook ((emacs-lisp-mode lisp-interaction-mode) . evil-smartparens-mode)
   :config
-  (evil-define-key 'normal evil-smartparens-mode-map (kbd "(") #'sp-backward-sexp)
-  (evil-define-key 'normal evil-smartparens-mode-map (kbd ")") #'sp-forward-sexp)
   (evil-define-key 'visual evil-smartparens-mode-map (kbd "o") nil)
   ;; (evil-define-key 'normal evil-smartparens-mode-map (kbd "J") #'sp-join-sexp)
   )
@@ -697,6 +769,7 @@
 ;; EVIL-COLLECTION
 (use-package evil-collection
   :ensure t
+  :defer 3
   :after evil
   :init
   (defvar evil-collection-enabled-mode-list
@@ -734,10 +807,8 @@
                     "q" #'kill-current-buffer
                     "d" #'process-menu-delete-process)
   
-  (with-eval-after-load 'ibuffer
-    (evil-collection-define-key '(normal motion) 'ibuffer-mode-map
-      (kbd "C-k") nil
-      (kbd "C-j") nil))
+  (with-eval-after-load 'dired
+    (evil-collection-define-key '(normal visual) 'dired-mode-map (kbd "SPC") nil))
 
   (with-eval-after-load 'reftex
     (evil-collection-define-key 'normal 'reftex-toc-mode-map

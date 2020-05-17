@@ -1,3 +1,4 @@
+;;(require 'use-package nil t)
 (use-package isearch
   :diminish
   :config

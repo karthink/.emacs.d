@@ -8,7 +8,7 @@
 ;;;* PATHS
 ;;######################################################################
 
-(setq user-emacs-directory "~/.emacs.d/")
+;; (setq user-emacs-directory "~/.emacs.d/")
 
 (defun dir-concat (dir file)
   "join path DIR with filename FILE correctly"
@@ -84,7 +84,7 @@
   (require 'cl-lib)
   (require 'use-package)
   ;; (setq use-package-verbose t
-  ;;       ;use-package-compute-statistics t
+  ;;       use-package-compute-statistics t
   ;;       ;use-package-ignore-unknown-keywords t
   ;;       use-package-minimum-reported-time 0.01)
   )
@@ -106,9 +106,9 @@
     "Leader key for Evil")
   (defvar general-leader-alt "M-SPC"
     "Leader key for Emacs and Evil Insert states")
-  (defvar general-localleader "SPC m"
+  (defvar general-localleader ","
     "Local leader key for major-mode specific commands")
-  (defvar general-localleader-alt "M-SPC m"
+  (defvar general-localleader-alt "M-SPC ,"
     "Local leader key for major-mode specific commands for Emacs and Evil Insert states.")
 
   ;; With evil-mode
@@ -158,6 +158,10 @@
    :wk-full-keys nil
    ;; unbind SPC and give it a title for which-key (see echo area)
    ;;"x" '(Control-X-prefix :wk "C-x")
+   "SPC" 'scroll-other-window
+   "M-SPC" '(scroll-other-window :wk nil)
+   "M-S-SPC" '(scroll-other-window-down :wk nil)
+   "S-SPC" 'scroll-other-window-down
    "z" '(repeat-complex-command :wk "M-x again")
    "x" '(execute-extended-command :wk "M-x")
    "f" '(:ignore t :wk "file")
@@ -172,9 +176,9 @@
    "b" '(:prefix-command space-menu-buffer
          :prefix-map space-menu-buffer-map
          :wk "buffers")
-   "t" '(:prefix-command space-menu-toggle
-         :prefix-map space-menu-toggle-map
-         :wk "toggle")
+   "p" '(:prefix-command space-menu-project
+         :prefix-map space-menu-project-map
+         :wk "project")
    "h" '(help-command :wk "help")
    ;; "h" '(:prefix-command space-menu-help
    ;;       :prefix-map space-menu-help-map
@@ -188,25 +192,6 @@
     :keymaps 'space-menu-map
     :wk-full-keys nil
     "s" '(space-menu-search :wk "search"))
-
-  (general-def
-    :keymaps 'space-menu-toggle-map
-    :wk-full-keys nil
-    "v" '(visual-line-mode          :wk "visual lines")
-    "q" '(auto-fill-mode            :wk "auto fill")
-    "B" '(presentation-mode         :wk "presentation mode")
-    "n" '(display-line-numbers-mode :wk "line numbers")
-    "r" '(read-only-mode            :wk "read only")
-    "V"  '(view-mode                :wk "view/pager mode")
-    )
-
-  (leader-define-key
-    :keymaps '(text-mode-map
-               tex-mode-map
-               message-mode-map)
-    :prefix "t"
-    "V" '(visual-fill-column-mode :wk "visual fill")
-    )
 
   (general-def
     :keymaps 'space-menu-buffer-map
@@ -240,6 +225,14 @@
     "f" '(grep-find :wk "grep through find")
     "b" '(batch-replace-strings :wk "batch-replace")
     "i" '(imenu :wk "imenu"))
+
+  (general-def
+   :keymaps 'space-menu-project-map
+   :wk-full-keys nil
+   "f" '(project-find-file :wk "find file in proj")
+   "q" '(project-query-replace-regexp :wk "query replace in proj")
+   "g" '(project-search :wk "grep in proj")
+   "o" '(project-find-regexp :wk "occur in proj"))
 
   (general-def
     :keymaps 'space-menu-map
@@ -306,6 +299,7 @@
 ;; Put backups elsewhere:
 (setq auto-save-interval 2400)
 (setq auto-save-timeout 300)
+(setq auto-save-list-file-prefix "~/.cache/emacs/auto-save-list/.saves-")
 (setq backup-directory-alist '(("." . "~/.emacs-backup"))
       backup-by-copying t ; Use copies
       version-control t ; Use version numbers on backups
@@ -333,12 +327,8 @@
 (use-package uniquify
   :init  (setq uniquify-buffer-name-style 'forward))
 
-;; when you mark a region, you can delete it or replace it as in other
-;; programs. simply hit delete or type whatever you want or yank
-(delete-selection-mode)
-
-                                        ; show the matching parentheses immediately
 (use-package paren
+  :defer 2
   :config
   (show-paren-mode 1)
   (setq show-paren-delay 0.1
@@ -353,8 +343,9 @@
 
 ;; Byte-compile elisp files immediately after saving them if .elc exists:
 (defun auto-byte-recompile ()
-  "If the current buffer is in emacs-lisp-mode and there already exists an `.elc'
-  file corresponding to the current buffer file, then recompile the file."
+  "If the current buffer is in emacs-lisp-mode and there already
+  exists an `.elc' file corresponding to the current buffer file,
+  then recompile the file."
   (interactive)
   (when (and (eq major-mode 'emacs-lisp-mode)
              (file-exists-p (byte-compile-dest-file buffer-file-name)))
@@ -384,13 +375,6 @@
 ;; Enable recursive minibuffer edits
 (setq enable-recursive-minibuffers 1)
 
-;;--------------------------
-;;;** MACROS
-;;--------------------------
-;; Bind call last macro to F4
-(global-set-key (kbd "<f3>") 'kmacro-start-macro)
-(global-set-key (kbd "<f4>") 'kmacro-end-or-call-macro)
-
 ;;######################################################################
 ;;;* INTERFACING WITH THE OS
 ;;######################################################################
@@ -418,20 +402,28 @@
 
 
 (use-package comint
+  :general
+  ("C-!" 'shell-command-at-line)
   :config
   ;; Arrange for Emacs to notice password prompts and turn off echoing for them, as follows:
   (add-hook 'comint-output-filter-functions
-            'comint-watch-for-password-prompt))
+            'comint-watch-for-password-prompt)
 
-  ;;;###package ansi-color
+; package ansi-color
 (setq ansi-color-for-comint-mode t)
 
-;; Key to run current line as bash command
-(global-set-key (kbd "C-!") 'shell-command-at-line)
+;; Auto-kill buffer and window of comint process when done
+(advice-add 'comint-send-eof :after
+            (defun comint-kill-after-finish-a (&rest _args)
+              (let (confirm-kill-processes kill-buffer-query-functions)
+                ;; (set-process-query-on-exit-flag (get-buffer-process (current-buffer)) nil)
+                (ignore-errors (kill-buffer-and-window)))))
 
 ;;;###autoload
 (defun shell-command-at-line (&optional prefix)
-  "Run contents of line around point as a shell command and replace the line with output. With a prefix argument, append the output instead"
+  "Run contents of line around point as a shell command and
+replace the line with output. With a prefix argument, append the
+output instead."
   (interactive "P")
   (let ( (command (thing-at-point 'line)) )
     (cond ((null prefix)
@@ -439,7 +431,7 @@
            (indent-according-to-mode))
           (t (newline-and-indent)))
     (shell-command command t nil)
-    (exchange-point-and-mark)))
+    (exchange-point-and-mark))))
 
 (use-package piper
   :load-path "~/.local/share/git/emacs-piper/"
@@ -455,8 +447,9 @@
 ;;;** ESHELL PREFERENCES
 ;;----------------------------------------------------------------------
 (setq eshell-buffer-shorthand t)
+(setq eshell-directory-name "~/.cache/emacs/eshell/")
 (defun delete-window-if-not-single ()
-  "Delete window if not the only one"
+  "Delete window if not the only one."
   (when (not (one-window-p))
     (delete-window)))
 (advice-add 'eshell-life-is-too-much :after 'delete-window-if-not-single)
@@ -465,7 +458,7 @@
 ;;;* LINE NUMBERS
 ;;######################################################################
 (line-number-mode 1)
-;; (global-display-line-numbers-mode)
+
 (defvar +addons-enabled-modes (list 'prog-mode-hook
                                     'conf-unix-mode-hook
                                     'conf-windows-mode-hook
@@ -473,14 +466,15 @@
                                     'tex-mode-hook
                                     'text-mode-hook
                                     'message-mode-hook)
-  "List of modes where special features (like line numbers) should be enabled")
+  "List of modes where special features (like line numbers) should be enabled.")
 
 (dolist (mode-hook +addons-enabled-modes)
   (add-hook mode-hook (lambda () "Turn on line numbers for major-mode"
                         (interactive)
                         (display-line-numbers-mode))))
 
-(setq display-line-numbers-type 'relative)
+(setq display-line-numbers-width-start t
+      display-line-numbers-type 'relative)
 
 ;;######################################################################
 ;;;* EDITING
@@ -564,7 +558,11 @@
 ;;######################################################################
 ;;;* BUFFER AND WINDOW MANAGEMENT
 ;;######################################################################
-(use-package recentf :defer 2)
+(use-package recentf
+  :defer 2
+  :config
+  (setq recentf-save-file "~/.cache/emacs/recentf")
+  )
 
 (use-package setup-windows
   :demand t
@@ -647,43 +645,17 @@
   )
 
 (use-package winum
+  :ensure
   :init
 
-  (defmacro +winum-select (num)
-    `(lambda (&optional arg) (interactive)
-         (if (equal ,num (winum-get-number))
-             (winum-select-window-by-number (winum-get-number (get-mru-window t)))
-           (winum-select-window-by-number (if arg (- 0 ,num) ,num)))
-         )
-    )
-
-  ;; (setq winum-keymap
-  ;;   (let ((map (make-sparse-keymap)))
-  ;;     ;; (define-key map (kbd "C-`") 'winum-select-window-by-number)
-  ;;     ;; (define-key map (kbd "C-²") 'winum-select-window-by-number)
-  ;;     (define-key map (kbd "M-0") 'winum-select-window-0-or-10)
-  ;;     (define-key map (kbd "M-1") (lambda () (interactive) (if (equal 1 (winum-get-number))
-  ;;                                           (winum-select-window-by-number
-  ;;                                            (winum-get-number (previous-window)))
-  ;;                                         (winum-select-window-by-number 1))))
-  ;;     (define-key map (kbd "M-2") (lambda () (interactive) (if (equal 2 (winum-get-number))
-  ;;                                           (winum-select-window-by-number
-  ;;                                            (winum-get-number (previous-window)))
-  ;;                                         (winum-select-window-by-number 2))))
-  ;;     (define-key map (kbd "M-3") (lambda () (interactive) (if (equal 3 (winum-get-number))
-  ;;                                           (winum-select-window-by-number
-  ;;                                            (winum-get-number (previous-window)))
-  ;;                                         (winum-select-window-by-number 3))))
-  ;;     (define-key map (kbd "M-4") (lambda () (interactive) (if (equal 4 (winum-get-number))
-  ;;                                           (winum-select-window-by-number
-  ;;                                            (winum-get-number (previous-window)))
-  ;;                                         (winum-select-window-by-number 4))))
-  ;;     (define-key map (kbd "M-5") 'winum-select-window-5)
-  ;;     (define-key map (kbd "M-6") 'winum-select-window-6)
-  ;;     (define-key map (kbd "M-7") 'winum-select-window-7)
-  ;;     (define-key map (kbd "M-8") 'winum-select-window-8)
-  ;;     (define-key map (kbd "M-9") 'winum-select-window-9)
-  ;;     map))
+  (eval-when-compile 
+    (defmacro +winum-select (num)
+      `(lambda (&optional arg) (interactive "P")
+         (if arg 
+             (winum-select-window-by-number (- 0 ,num))
+           (if (equal ,num (winum-get-number))
+               (winum-select-window-by-number (winum-get-number (get-mru-window t)))
+             (winum-select-window-by-number ,num))))))
 
   (setq winum-keymap
     (let ((map (make-sparse-keymap)))
@@ -692,14 +664,6 @@
         (define-key map (kbd (concat "M-" (int-to-string num)))
           (+winum-select num)))
       map))
-
-        ;; (define-key map (kbd (concat "M-" (int-to-string num)))
-        ;;   (lambda ()
-        ;;     (interactive)
-        ;;     (if (equal num
-        ;;                (winum-get-number))
-        ;;         (winum-select-window-by-number (winum-get-number (previous-window)))
-        ;;       (winum-select-window-by-number num))))
 
 ;;;###autoload
 (defun +evil-mode-line-faces ()
@@ -943,7 +907,6 @@ Essentially a much simplified version of `next-line'."
 ;;----------------------------------------------------------------------
 (use-package lsp-mode
   :disabled
-  :ensure t
   ;; :hook (python-mode . lsp-deferred)
   :bind (("C-c C-d" . lsp-describe-thing-at-point))
   :commands (lsp lsp-deferred)
@@ -1032,12 +995,6 @@ Essentially a much simplified version of `next-line'."
   ;;             )
   :general
   (leader-define-key :keymaps 'LaTeX-mode-map
-
-   "t8" '(prettify-symbols-mode       :wk "Toggle Pretty Symbols")
-   "tp" '(preview-clearout-at-point   :wk "!Preview at point")
-   "ts" '(preview-clearout-section    :wk "!Preview in section")
-   "tb" '(preview-clearout-buffer     :wk "!Preview in buffer")
-
    "cn" '(TeX-next-error :wk "Next Error")
    "cp" '(TeX-previous-error :wk "Prev Error"))
 
@@ -1059,14 +1016,14 @@ Essentially a much simplified version of `next-line'."
     "pd" '(preview-document           :wk "Preview document")
     "ps" '(preview-section            :wk "Preview section")
     "pw" '(preview-copy-region-as-mml :wk "Copy MathML")
-    "pc" '(preview-clearout-at-point  :wk "!Clearout at point")
-    "pC" '(preview-clearout-buffer    :wk "!Clearout in buffer")
+    "pc" '(preview-clearout           :wk "Clearout")
+    ;; "pC" '(preview-clearout-buffer    :wk "!Clearout in buffer")
 
-    "t" '(:ignore t                   :wk "Toggle")
-    "t8" '(prettify-symbols-mode      :wk "!Pretty Symbols mode")
-    "tp" '(preview-clearout-at-point  :wk "!Preview at point")
-    "ts" '(preview-clearout-section   :wk "!Preview in section")
-    "tb" '(preview-clearout-buffer    :wk "!Preview in buffer")
+    ;; "t" '(:ignore t                   :wk "Toggle")
+    ;; "t8" '(prettify-symbols-mode      :wk "!Pretty Symbols mode")
+    ;; "tp" '(preview-clearout-at-point  :wk "!Preview at point")
+    ;; "ts" '(preview-clearout-section   :wk "!Preview in section")
+    ;; "tb" '(preview-clearout-buffer    :wk "!Preview in buffer")
 
     "=" '(reftex-toc                  :wk "TOC")
     "(" '(reftex-label                :wk "Insert Label")
@@ -1172,7 +1129,9 @@ Essentially a much simplified version of `next-line'."
   :commands turn-on-reftex
   :hook ((latex-mode LaTeX-mode) . turn-on-reftex)
   :config
-  (setq reftex-plug-into-AUCTeX t))
+  (setq reftex-plug-into-AUCTeX t)
+  (setq reftex-use-multiple-selection-buffers t)
+  )
 
 ;; (setq-default TeX-master nil)
 (use-package cdlatex
@@ -1230,9 +1189,8 @@ Essentially a much simplified version of `next-line'."
 ;;;** MATLAB
 ;;----------------------------------------------------------------------
 (use-package matlab
-  ;; :load-path (lambda () (file-name-as-directory (expand-file-name "~/.local/share/git/matlab-emacs-src")))
-  ;; :ensure matlab-mode
-
+  :defer
+  :ensure matlab-mode
   ;; :after 'evil
   ;; :commands (matlab-mode matlab-shell matlab-shell-run-block)
   :hook ((matlab-mode . company-mode-on)
@@ -1243,7 +1201,7 @@ Essentially a much simplified version of `next-line'."
                           (setq-local outline-regexp "^\\s-*%%+")
                           (outline-hide-sublevels 3)
                           ))
-         (matlab-shell-mode . (lambda () (setq-local company-idle-delay nil)
+         (matlab-shell-mode . (lambda () (setq-local company-idle-delay 0.1)
                                 (company-mode-on))))
   :bind (:map matlab-mode-map
               ("C-c C-b" . 'matlab-shell-run-block))
@@ -1275,6 +1233,12 @@ Essentially a much simplified version of `next-line'."
   (setq matlab-shell-run-region-function 'matlab-shell-region->script)
   (add-hook 'matlab-shell-mode-hook (lambda () (interactive)
                                       (define-key matlab-shell-mode-map (kbd "C-<tab>") nil)))
+;;;###autoload
+  (defun +matlab-shell-no-select-a (&rest _args)
+   "Switch back to matlab file buffer after evaluating region"  
+   (select-window (get-mru-window)))
+  (advice-add 'matlab-shell-run-region :after #'+matlab-shell-no-select-a)
+
 ;;;###autoload
   (defun matlab-select-block ()
     (save-excursion
@@ -1398,7 +1362,8 @@ Essentially a much simplified version of `next-line'."
 ;; Make sure mit-scheme (from repos) and scmutils (from internet + sudo ./install.sh)are installed
 ;;;###autoload
 (defun mechanics ()
-  "Run mit-scheme with SCMUTILS loaded, to work with (Structure and Interpretation of Classical Mechanics) - The book"
+  "Run mit-scheme with SCMUTILS loaded, to work with (Structure
+and Interpretation of Classical Mechanics) - The book."
   (interactive)
   (setenv "MITSCHEME_BAND" "mechanics.com")
   (setenv "MITSCHEME_HEAP_SIZE" "100000")
@@ -1411,11 +1376,131 @@ Essentially a much simplified version of `next-line'."
 ;;######################################################################
 
 ;;----------------------------------------------------------------------
+;; FLYMAKE
+;;----------------------------------------------------------------------
+(use-package flymake
+  :defer
+  :config
+;;;###autoload
+  (defun flymake--take-over-error-a (orig-fn &optional arg reset)
+    "If there is no `next-error' locus use `next-error' to go to
+    flymake errors instead"
+   (interactive "P")
+   (let ((sys (+error-delegate)))
+     (cond
+      ((eq 'flymake sys) (funcall 'flymake-goto-next-error arg
+                                  (if current-prefix-arg
+                                      '(:error :warning))
+                                  t))
+      ((eq 'emacs sys) (funcall orig-fn arg reset)))))
+
+;;;###autoload
+  (defun +error-delegate ()
+    "Decide which error API to delegate to.
+
+Delegates to flymake if it is enabled and the `next-error' buffer
+is not visible. Otherwise delegates to regular Emacs next-error."
+    (if (and (bound-and-true-p flymake-mode)
+             (let ((buf (ignore-errors (next-error-find-buffer))))
+               (not (and buf (get-buffer-window buf)))))
+        'flymake
+      'emacs))
+
+  (advice-add 'next-error :around #'flymake--take-over-error-a))
+    
+;;----------------------------------------------------------------------
+;; BROWSE-URL
+;;----------------------------------------------------------------------
+(use-package browse-url
+  :commands (browse-url-at-point-mpv browse-url-mpv) 
+  :config
+  (when IS-LINUX
+    (defun browse-url-mpv (url &optional single)
+      (start-process "mpv" nil (if single "mpv" "umpv") url))
+
+    (defun browse-url-at-point-mpv (&optional single)
+        "Open link in mpv"
+        (interactive "P")
+        (let ((browse-url-browser-function
+               (if single
+                   (lambda (url &optional _new-window) (browse-url-mpv url t))
+                 #'browse-url-mpv)))
+        (browse-url-at-point)))
+
+    (setq browse-url-browser-function
+          '(("https:\\/\\/www\\.youtube." . browse-url-mpv)
+            ("." . browse-url-generic)))))
+
+;;----------------------------------------------------------------------
+;; TRANSIENT
+;;----------------------------------------------------------------------
+(use-package transient
+  :defer
+  :config
+(setq transient-history-file "~/.cache/emacs/transient/history.el"
+      transient-levels-file "~/.cache/emacs/transient/levels.el"
+      transient-values-file "~/.cache/emacs/transient/values.el")
+)
+
+;;----------------------------------------------------------------------
 ;;;** HYDRAS
 ;;----------------------------------------------------------------------
 (use-package hydra
   :defer
   :config
+  (with-eval-after-load 'ediff
+    (defhydra hydra-ediff (:color blue :hint nil)
+      "
+^Buffers           Files           VC                     Ediff regions
+----------------------------------------------------------------------
+_b_uffers           _f_iles (_=_)       _r_evisions              _l_inewise
+_B_uffers (3-way)   _F_iles (3-way)                          _w_ordwise
+                  _c_urrent file
+"
+      ("b" ediff-buffers)
+      ("B" ediff-buffers3)
+      ("=" ediff-files)
+      ("f" ediff-files)
+      ("F" ediff-files3)
+      ("c" ediff-current-file)
+      ("r" ediff-revision)
+      ("l" ediff-regions-linewise)
+      ("w" ediff-regions-wordwise)))
+
+  (with-eval-after-load 'smerge-mode
+    (defhydra hydra-smerge
+      (:color pink :hint nil :post (smerge-auto-leave))
+      "
+^Move^       ^Keep^               ^Diff^                 ^Other^
+^^-----------^^-------------------^^---------------------^^-------
+_n_ext       _b_ase               _<_: upper/base        _C_ombine
+_p_rev       _u_pper              _=_: upper/lower       _r_esolve
+^^           _l_ower              _>_: base/lower        _k_ill current
+^^           _a_ll                _R_efine
+^^           _RET_: current       _E_diff
+"
+      ("n" smerge-next)
+      ("p" smerge-prev)
+      ("b" smerge-keep-base)
+      ("u" smerge-keep-upper)
+      ("l" smerge-keep-lower)
+      ("a" smerge-keep-all)
+      ("RET" smerge-keep-current)
+      ("\C-m" smerge-keep-current)
+      ("<" smerge-diff-base-upper)
+      ("=" smerge-diff-upper-lower)
+      (">" smerge-diff-base-lower)
+      ("R" smerge-refine)
+      ("E" smerge-ediff)
+      ("C" smerge-combine-with-next)
+      ("r" smerge-resolve)
+      ("k" smerge-kill-current)
+      ("ZZ" (lambda ()
+              (interactive)
+              (save-buffer)
+              (bury-buffer))
+       "Save and bury buffer" :color blue)
+      ("q" nil "cancel" :color blue)))
 
 (defhydra go-menu ()
   "Occur mode"
@@ -1426,52 +1511,119 @@ Essentially a much simplified version of `next-line'."
   ("c" goto-char "goto char" :color blue )
   )
 
-(defmacro hydra-move (hydra-move-name pre-body-func)
-    `(defhydra ,hydra-move-name (:body-pre (funcall ,pre-body-func))
-       "move"
-       ("n" next-line)
-       ("p" previous-line)
-       ("f" forward-char)
-       ("b" backward-char)
-       ("a" beginning-of-line)
-       ("e" move-end-of-line)
-       ("v" scroll-up-command)
-       ("s" isearch-forward)
-       ("r" isearch-backward)
-       ;; Converting M-v to V here by analogy.
-       ("V" scroll-down-command)
-       (">" end-of-buffer)
-       ("<" beginning-of-buffer)
-       ("l" recenter-top-bottom)))
-  :general
+;; (eval
+;;  `(defhydra hydra-evil-window-map (:columns 2)
+;;     ,@(mapcar (lambda (x)
+;;                 (list (car x) (intern (cdr x)) (cdr x)))
+;;               (which-key--get-keymap-bindings evil-window-map t))
+;;     ("q" nil "quit")))
+;; (hydra-evil-window-map/body)
 
-  (:states 'emacs
-   "C-n" (hydra-move hydra-move-down  'next-line)
-   "C-p" (hydra-move hydra-move-up    'previous-line)
-   )
-  ("M-g" 'go-menu/body)
-  (:states 'emacs
-   :keymaps 'minibuffer-inactive-mode-map
-   "C-n" 'next-line
-   "C-p" 'previous-line )
-  (:keymaps 'space-menu-window-map
-    "u" `(,(defhydra hydra-winner ()
-             "winner"
-             ("u" winner-undo "undo")
-             ("r" winner-redo "redo")
-             ("q" nil "quit" :color blue)
-             )
-          :wk "winner-mode"))
+(defhydra hydra-toggle-menu (:color blue :hint nil)
+  "
+^Toggle!^ [_Q_]uit
+^Appearance^          ^Editing^             ^Highlight^        ^Code^
+^^^^^^^-------------------------------------------------------------------------------
+_t_: color theme       _r_: read only      _h l_: line         _g_: vc gutter
+_B_: BIG mode          _n_: line numbers   _h p_: paren        _f_: flymake
+_M_: smart mode line   _q_: auto fill      _h w_: whitespace   _o_: outline/folding
+                   _v l_: visual lines   _h d_: delimiters   _e_: electric pair 
+_8_: pretty symbols  _v f_: visual fill    _h r_: rainbow    _s p_: smart parens
+                     _V_: view mode
+" 
+ 
+  ("e" electric-pair-mode)
+  ("s p" smartparens-mode)
+  ("n" display-line-numbers-mode)
+  ("v l" visual-line-mode)
+  ("v f" (lambda () (interactive)
+           (cond
+            (visual-fill-column-mode
+             (visual-line-mode -1)
+             (visual-fill-column-mode -1))
+            (t
+             (visual-line-mode 1)
+             (visual-fill-column-mode 1)))))
+  ("8" prettify-symbols-mode)
+  ("B" presentation-mode)
+  ("t" toggle-theme)
+  ("M" nil)
+  ("r" read-only-mode)
+  ("q" auto-fill-mode)
+  ("V" view-mode)
+  ("h l" hl-line-mode)
+  ("h p" show-paren-mode)
+  ("h w" whitespace-mode)
+  ("h d" rainbow-delimiters-mode)
+  ("h r" rainbow-mode)
+  ("g" diff-hl-mode)
+  ("f" flymake-mode)
+  ("o" outline-minor-mode)
+  ("Q" nil "quit" :color blue))
+
+(defhydra hydra-winner (:body-pre (funcall 'winner-undo))
+  "winner"
+  ("u" winner-undo "undo")
+  ("r" winner-redo "redo")
+  ("q" nil "quit" :color blue)
   )
+  ;; (:states 'emacs
+  ;;  "C-n" (hydra-move hydra-move-down  'next-line)
+  ;;  "C-p" (hydra-move hydra-move-up    'previous-line)
+  ;;  )
+  
+(with-eval-after-load 'outline
+  (defhydra hydra-outline (:color pink :hint nil)
+    "
+^Hide^             ^Show^           ^Move
+^^^^^^------------------------------------------------------
+_q_: sublevels     _a_: all         _u_: up
+_t_: body          _e_: entry       _n_: next visible
+_o_: other         _i_: children    _p_: previous visible
+_c_: entry         _k_: branches    _f_: forward same level
+_l_: leaves        _s_: subtree     _b_: backward same level
+_d_: subtree
 
-;; (global-set-key (kbd "C-n")
-;;                   (hydra-move
-;;                    hydra-move-down 'next-line))
-;;   (global-set-key (kbd "C-p")
-;;                   (hydra-move
-;;                    hydra-move-up 'previous-line))
-;; (global-set-key (kbd "C-n") 'next-line)
-;; (global-set-key (kbd "C-p") 'previous-line)
+"
+    ;; Hide
+    ("q" outline-hide-sublevels)    ; Hide everything but the top-level headings
+    ("t" outline-hide-body)         ; Hide everything but headings (all body lines)
+    ("o" outline-hide-other)        ; Hide other branches
+    ("c" outline-hide-entry)        ; Hide this entry's body
+    ("l" outline-hide-leaves)       ; Hide body lines in this entry and sub-entries
+    ("d" outline-hide-subtree)      ; Hide everything in this entry and sub-entries
+    ;; Show
+    ("a" outline-show-all)          ; Show (expand) everything
+    ("e" outline-show-entry)        ; Show this heading's body
+    ("i" outline-show-children)     ; Show this heading's immediate child sub-headings
+    ("k" outline-show-branches)     ; Show all sub-headings under this heading
+    ("s" outline-show-subtree)      ; Show (expand) everything in this heading & below
+    ;; Move
+    ("u" outline-up-heading)                ; Up
+    ("n" outline-next-visible-heading)      ; Next
+    ("p" outline-previous-visible-heading)  ; Previous
+    ("f" outline-forward-same-level)        ; Forward - same level
+    ("b" outline-backward-same-level)       ; Backward - same level
+    ("z" nil "leave")))
+
+  :general
+  ("M-g" 'go-menu/body)
+  (:keymaps 'smerge-mode-map
+   "C-c s" 'hydra-smerge/body)
+  (:keymaps 'space-menu-window-map
+    "u" '(hydra-winner/body 
+          :wk "winner-mode"))
+  (:states '(motion)
+    "C-w u" 'hydra-winner/body)
+  ("<f8>"  'hydra-toggle-menu/body
+   "C-c <tab>" 'hydra-outline/body
+   )
+   (:keymaps 'space-menu-map
+             "t" 'hydra-toggle-menu/body)
+   (:keymaps 'space-menu-map
+    :prefix "f"
+    "=" 'hydra-ediff/body)
+  )
 
 ;;----------------------------------------------------------------------
 ;;;** TABS!TABS!TABS!
@@ -1503,7 +1655,7 @@ Essentially a much simplified version of `next-line'."
 
   (advice-add 'tab-bar-rename-tab
               :after
-              (defun +tab-bar-name-upcase (name &optional arg)
+              (defun +tab-bar-name-upcase (_name &optional _arg)
                 "Upcase current tab name"
                 (let* ((tab (assq 'current-tab (frame-parameter nil 'tabs)))
                        (tab-name (alist-get 'name tab)))
@@ -1565,20 +1717,122 @@ Essentially a much simplified version of `next-line'."
   :config (add-to-list 'mixed-pitch-fixed-pitch-faces 'line-number))
 
 ;;----------------------------------------------------------------------
-;;;** PULSE
+;;;** HIGHLIGHTS
 ;;----------------------------------------------------------------------
 ;; Flash lines
 (use-package pulse
-  :disabled t
+  :ensure nil
+  :custom-face
+  (pulse-highlight-start-face ((t (:inherit region))))
+  (pulse-highlight-face ((t (:inherit region))))
+  :hook (((dumb-jump-after-jump
+           imenu-after-jump) . my/recenter-and-pulse)
+         ((bookmark-after-jump
+           magit-diff-visit-file
+           next-error) . my/recenter-and-pulse-line))
   :init
-  (add-hook 'evil-jumps-post-jump-hook #'pulse-line-hook-function))
+  (with-no-warnings
+    (defun my/pulse-momentary-line (&rest _)
+      "Pulse the current line."
+      (pulse-momentary-highlight-one-line (point)))
+
+    (defun my/pulse-momentary (&rest _)
+      "Pulse the region or the current line."
+      (if (fboundp 'xref-pulse-momentarily)
+          (xref-pulse-momentarily)
+        (my/pulse-momentary-line)))
+
+    (defun my/recenter-and-pulse(&rest _)
+      "Recenter and pulse the region or the current line."
+      (recenter)
+      (my/pulse-momentary))
+
+    (defun my/recenter-and-pulse-line (&rest _)
+      "Recenter and pulse the current line."
+      (recenter)
+      (my/pulse-momentary-line))
+
+    (dolist (cmd '(recenter-top-bottom
+                   other-window windmove-do-window-select
+                   ace-window aw--select-window
+                   pager-page-down pager-page-up
+                   winum-select-window-by-number
+                   ;; treemacs-select-window
+                   symbol-overlay-basic-jump))
+      (advice-add cmd :after #'my/pulse-momentary-line))
+
+    (dolist (cmd '(pop-to-mark-command
+                   pop-global-mark
+                   goto-last-change))
+      (advice-add cmd :after #'my/recenter-and-pulse))))
+
+;; Highlight uncommitted changes using VC
+(use-package diff-hl
+  :ensure
+  :defer
+  :custom-face
+  (diff-hl-change ((t (:foreground ,(face-background 'highlight) :background nil))))
+  (diff-hl-insert ((t (:background nil))))
+  (diff-hl-delete ((t (:background nil))))
+  :hook ((dired-mode . diff-hl-dired-mode))
+  :init
+  (setq diff-hl-draw-borders t)
+  (dolist (mode-hook +addons-enabled-modes)
+    (add-hook mode-hook #'diff-hl-mode)) 
+  :general
+  (:keymaps 'vc-prefix-map
+            "SPC" 'diff-hl-mark-hunk
+            "n"   'diff-hl-next-hunk
+            "p"   'diff-hl-previous-hunk
+            "["   'nil
+            "]"   'nil
+            "R"   'diff-hl-revert-hunk)
+  (:states '(normal visual)
+           "]d"   'diff-hl-next-hunk
+           "[d"   'diff-hl-previous-hunk)
+  :config
+  ;; Highlight on-the-fly
+  (diff-hl-flydiff-mode 1)
+
+  ;; Recenter to location of diff
+  (advice-add 'diff-hl-next-hunk :after (lambda (&optional _) (recenter)))
+  
+  ;; Set fringe style
+  (setq-default fringes-outside-margins t)
+
+  (with-no-warnings
+    (defun my-diff-hl-fringe-bmp-function (_type _pos)
+      "Fringe bitmap function for use as `diff-hl-fringe-bmp-function'."
+      (define-fringe-bitmap 'my-diff-hl-bmp
+        (vector #b11111100) ;(if sys/macp #b11100000 #b11111100)
+        1 8
+        '(center t)))
+    (setq diff-hl-fringe-bmp-function #'my-diff-hl-fringe-bmp-function)
+
+
+    ;; (unless (display-graphic-p)
+    ;;   (setq diff-hl-margin-symbols-alist
+    ;;         '((insert . " ") (delete . " ") (change . " ")
+    ;;           (unknown . " ") (ignored . " ")))
+    ;;   ;; Fall back to the display margin since the fringe is unavailable in tty
+    ;;   (diff-hl-margin-mode 1)
+    ;;   ;; Avoid restoring `diff-hl-margin-mode'
+    ;;   (with-eval-after-load 'desktop
+    ;;     (add-to-list 'desktop-minor-mode-table
+    ;;                  '(diff-hl-margin-mode nil))))
+    )
+
+    ;; Integration with magit
+    (with-eval-after-load 'magit
+      (add-hook 'magit-post-refresh-hook #'diff-hl-magit-post-refresh))
+  )
+
 ;;----------------------------------------------------------------------
 ;;;** NOTMUCH
 ;;----------------------------------------------------------------------
 ;; Left unchecked, every program grows to the point where it can be
 ;; used to manage your email
 (require 'setup-email)
-
 
 ;;----------------------------------------------------------------------
 ;;;** NAV-FLASH
@@ -1793,6 +2047,10 @@ Essentially a much simplified version of `next-line'."
   ;; :commands magit-status
   :ensure t
   :bind ("C-x g" . magit-status)
+  :hook (magit-diff-visit-file . (lambda ()
+                                   (when (and smerge-mode
+                                              (fboundp 'hydra-smerge/body))
+                                     (hydra-smerge/body))))
   :config
   (define-key magit-mode-map (kbd "C-TAB") nil)
   (define-key magit-mode-map (kbd "C-<tab>") nil)
@@ -1807,6 +2065,9 @@ Essentially a much simplified version of `next-line'."
 (use-package which-key
   :ensure t
   :defer 1
+  :general
+  (:keymaps 'help-map
+   "h" 'which-key-show-major-mode)
   :init
   (setq which-key-sort-order #'which-key-description-order
         ;; which-key-sort-order #'which-key-prefix-then-key-order
@@ -1834,7 +2095,10 @@ Essentially a much simplified version of `next-line'."
 ;;----------------------------------------------------------------------
 ;;;** CALC
 ;;----------------------------------------------------------------------
-(defun calc-on-line () (interactive)
+;;;###autoload
+(defun calc-on-line ()
+ "Evaluate `calc' on the contents of line at point." 
+  (interactive)
        (cond ((region-active-p)
               (let* ((beg (region-beginning))
                      (end (region-end))
@@ -1846,7 +2110,10 @@ Essentially a much simplified version of `next-line'."
 
 ;;----------------------------------------------------------------------
 ;;;** ISEARCH
+;;----------------------------------------------------------------------
 (require 'setup-isearch)
+
+;;----------------------------------------------------------------------
 ;;;** ABBREV MODE
 ;;----------------------------------------------------------------------
 ;; (setq save-abbrevs t)
@@ -1858,53 +2125,58 @@ Essentially a much simplified version of `next-line'."
 ;;----------------------------------------------------------------------
 (use-package company
   :ensure t
-  :defer 2
+  :defer 3
+  :general
+  ("C-;"      'company-complete)
+
+  (:keymaps   'company-active-map
+  "C-;"       'company-other-backend
+  "C-w" nil
+  "C-]"       'company-show-location
+  "M-."       'company-show-location)
+
+  (:keymaps   'company-search-map
+   [return]   'company-complete-selection
+   "RET"      'company-complete-selection
+   "S-SPC"    'company-search-toggle-filtering)
+
+  ;; (:keymaps   'company-active-map
+  ;; "<tab>"     'company-complete-common-or-cycle
+  ;; "TAB"       'company-complete-common-or-cycle
+  ;; "<backtab>" 'company-select-previous
+  ;; "S-TAB"     'company-select-previous
+  ;; "M-n"        nil
+  ;; "M-p"        nil
+  ;; "C-n"       'company-select-next
+  ;; "C-p"       'company-select-previous)
+
   :config
   ;; (add-to-list 'company-backends 'company-files)
   ;; (add-to-list 'company-backends 'company-dabbrev)
   ;; (add-to-list 'company-backends 'company-jedi)
   ;; (add-to-list 'company-backends 'company-dict)
-
-  (global-company-mode)
-  (setq company-idle-delay 0.5
+  (setq company-idle-delay 0.2
         company-dabbrev-downcase 0
         company-minimum-prefix-length 3
         company-selection-wrap-around t
-        ;;company-tooltip-flip-when-above t
         company-tooltip-align-annotations t
         company-require-match 'never
         company-dabbrev-downcase nil
         company-dabbrev-code-other-buffers t
         company-dabbrev-ignore-case nil
-        company-transformers '(company-sort-by-occurrence)
+        ;;company-tooltip-flip-when-above t
+        ;; company-transformers '(company-sort-by-occurrence)
         ;; company-transformers '(company-sort-by-backend-importance)
         ;; company-transformers '(company-sort-by-statistics)
-        company-global-modes '(latex-mode
-                               matlab-mode
-                               emacs-lisp-mode
-                               lisp-interaction-mode
-                               python-mode
-                               sh-mode fish-mode
-                               conf-mode text-mode
-                               org-mode)
-        ;; '(not erc-mode message-mode
-        ;;       help-mode gud-mode
-        ;;       eshell-mode package-menu-mode
-        ;;       notmuch-hello-mode notmuch-show-mode
-        ;;       notmuch-search-mode
-        ;;       calc-mode calc-trail-mode
-        ;;       )
-        company-backends '((company-files company-capf company-keywords)
-                           ;; (company-dabbrev-code)
-                                        ;my-try-expand-company
-                           company-dabbrev)
-        )
+        company-global-modes '(latex-mode matlab-mode emacs-lisp-mode lisp-interaction-mode
+                               python-mode sh-mode fish-mode conf-mode text-mode org-mode)
+        company-backends '((company-files company-capf company-keywords) company-dabbrev))
 
   (add-hook 'matlab-mode-hook (lambda ()
                                 ;; (unless (featurep 'company-matlab)
                                 ;;   (require 'company-matlab))
                                 (make-local-variable 'company-backends)
-                                (setq-local company-backends '((company-files company-dabbrev)))
+                                (setq-local company-backends '((company-files company-capf company-dabbrev)))
                                 ;; (add-to-list 'company-backends
                                 ;;              ;; 'company-matlab
                                 ;;              'company-semantic
@@ -1919,45 +2191,8 @@ Essentially a much simplified version of `next-line'."
                                (make-local-variable 'company-idle-delay)
                                (setq-local company-idle-delay 0.5)
                                ))
-  (define-key company-active-map (kbd "M-n") nil)
-  (define-key company-active-map (kbd "M-p") nil)
-  (define-key company-active-map (kbd "C-n") 'company-select-next)
-  (define-key company-active-map (kbd "C-p") 'company-select-previous)
 
-  ;; (define-key company-active-map (kbd "<tab>") 'company-complete-common-or-cycle)
-  ;; (define-key company-active-map (kbd "TAB") 'company-complete-common-or-cycle)
-  ;; (define-key company-active-map (kbd "<backtab>") 'company-select-previous)
-  ;; (define-key company-active-map (kbd "S-TAB") 'company-select-previous)
-
-  (global-set-key (kbd "C-;") 'company-complete)
-  (define-key company-active-map (kbd "C-;") 'company-other-backend)
-  (define-key company-active-map (kbd "C-w") nil)
-  (define-key company-active-map (kbd "C-]") 'company-show-location)
-
-  ;; (defun my-try-expand-company (old)
-  ;;   (unless company-candidates
-  ;;     (company-auto-begin))
-  ;;   (if (not old)
-  ;;       (progn
-  ;;         (he-init-string (he-lisp-symbol-beg) (point))
-  ;;         (if (not (he-string-member he-search-string he-tried-table))
-  ;;             (setq he-tried-table (cons he-search-string he-tried-table)))
-  ;;         (setq he-expand-list
-  ;;               (and (not (equal he-search-string ""))
-  ;;                    company-candidates))))
-  ;;   (while (and he-expand-list
-  ;;               (he-string-member (car he-expand-list) he-tried-table))
-  ;;     (setq he-expand-list (cdr he-expand-list)))
-  ;;   (if (null he-expand-list)
-  ;;       (progn
-  ;;         (if old (he-reset-string))
-  ;;         ())
-  ;;     (progn
-  ;;       (he-substitute-string (car he-expand-list))
-  ;;       (setq he-expand-list (cdr he-expand-list))
-  ;;       t)))
-
-  ;; AC-mode style settings
+  ;; ;; AC-mode style settings
   ;; (defun company-ac-setup ()
   ;;   "Sets up `company-mode' to behave similarly to `auto-complete-mode'."
   ;;   (defun my-company-visible-and-explicit-action-p ()
@@ -1977,27 +2212,17 @@ Essentially a much simplified version of `next-line'."
   ;;   (define-key company-active-map (kbd "TAB")
   ;;     'company-select-next-if-tooltip-visible-or-complete-selection))
 
-  ;; Tab'n'Go style settings
-  ;; (defun company-tng-setup ()
-  ;;   (define-key company-active-map (kbd "TAB") 'company-select-next)
-  ;;   (define-key company-active-map (kbd "<tab>") 'company-select-next)
-  ;;   (define-key company-active-map (kbd "<ret>") nil)
-  ;;   (setq company-frontends
-  ;;         '(company-pseudo-tooltip-unless-just-one-frontend
-  ;;           company-tng-frontend
-  ;;           company-echo-metadata-frontend)))
-
-
   ;; Not needed. cdlatex mode handles completion just fine
-  ;; (use-package company-auctex
-  ;;   :defer t
-  ;;   :config
-  ;;   (add-to-list 'company-backends 'company-auctex)
-  ;;   (company-auctex-init))
+  (use-package company-auctex
+    :disabled
+    :defer t
+    :config
+    (add-to-list 'company-backends 'company-auctex)
+    (company-auctex-init))
 
   ;; (company-ac-setup)
-  ;; (company-tng-setup)
   (company-tng-configure-default)
+  (global-company-mode)
   )
 
 (use-package company-statistics
@@ -2005,7 +2230,8 @@ Essentially a much simplified version of `next-line'."
   :after company
   :defer 5
   :ensure t
-  ;; :init   (add-hook 'after-init-hook 'company-statistics-mode)
+  ;; :hook (after-init . company-statistics-mode)
+  :init  (company-statistics-mode) 
   :config
   (setq company-statistics-file (concat (expand-file-name
                                          (file-name-as-directory "~/.cache"))
@@ -2015,19 +2241,28 @@ Essentially a much simplified version of `next-line'."
 ;;;** SMARTPARENS-MODE
 ;;----------------------------------------------------------------------
 (or (use-package elec-pair
+      :disabled
       :defer 3
       :config (electric-pair-mode +1))
     (use-package smartparens
-      :disabled
-      ;; :defer 5
-      :hook ((emacs-lisp-mode lisp-interaction-mode) . smartparens-strict-mode)
+      :hook ((emacs-lisp-mode lisp-interaction-mode) . smartparens-mode)
+      :general
+      (:keymaps        'smartparens-mode-map
+       "C-M-<up>"      'sp-raise-sexp
+       "C-<right>"     'sp-forward-slurp-sexp
+       "C-<left>"      'sp-backward-slurp-sexp
+       "M-<right>"     'sp-forward-barf-sexp
+       "M-<left>"      'sp-backward-barf-sexp
+       "C-k"           'sp-kill-hybrid-sexp
+       "C-x C-t"       'sp-transpose-hybrid-sexp
+       "C-M-n"         'sp-next-sexp
+       "C-M-p"         'sp-previous-sexp
+       "C-<backspace>" 'sp-backward-kill-word) 
       :config
+      (sp-with-modes sp-lisp-modes
+        ;; disable ', it's the quote character!
+        (sp-local-pair "'" nil :actions nil))
       ;; (require 'smartparens-config)
-      ;; (define-key smartparens-mode-map (kbd "M-<up>") 'sp-raise-sexp)
-      ;; (define-key smartparens-mode-map (kbd "C-<right>") 'sp-forward-slurp-sexp)
-      ;; (define-key smartparens-mode-map (kbd "C-<left>") 'sp-backward-slurp-sexp)
-      ;; (define-key smartparens-mode-map (kbd "M-<right>") 'sp-forward-barf-sexp)
-      ;; (define-key smartparens-mode-map (kbd "M-<left>") 'sp-backward-barf-sexp)
       ))
 
 ;;----------------------------------------------------------------------
@@ -2041,13 +2276,12 @@ Essentially a much simplified version of `next-line'."
 ;;----------------------------------------------------------------------
 ;;;** AVY-MODE
 ;;----------------------------------------------------------------------
-(defvar my-evil-leader "SPC")
 (use-package avy
   :ensure t
   :commands (avy-goto-word-1 avy-goto-char-2 avy-goto-char-timer)
   :general
   ("C-'" '(avy-goto-word-or-subword-1 :wk "Goto word")
-   "M-'" '(avy-goto-char-2 :wk "Goto char"))
+   "M-j" '(avy-goto-char-2 :wk "Goto char"))
   (:states '(normal visual)
    :prefix "g"
    "s" 'avy-goto-char-timer)
@@ -2076,7 +2310,8 @@ Essentially a much simplified version of `next-line'."
 ;;----------------------------------------------------------------------
 ;;;** ORG-ADDONS (ANKI)
 ;;----------------------------------------------------------------------
-(require 'setup-anki nil t)
+(use-package setup-anki
+  :after (org-capture org))
 ;;######################################################################
 ;;;** COMPLETION FRAMEWORKS:
 ;;----------------------------------------------------------------------
@@ -2128,12 +2363,14 @@ Essentially a much simplified version of `next-line'."
    '(("P" ivy-bibtex-open-pdf-external "Open PDF file in external viewer (if present)"))))
 
 (use-package ivy-youtube
-  ;; :disabled
+  :disabled
   :after ivy
-  :general
-  (leader-define-key
+  :general 
+  (:keymaps 'space-menu-map
     "Y" '(ivy-youtube :wk "Youtube search"))
   :config
+  (setq ivy-youtube-history-file
+        "~/.cache/emacs/ivy-youtube-history")
   (setq ivy-youtube-key my-ivy-youtube-key
         ivy-youtube-play-at (expand-file-name
                              "~/.local/bin/i3cmds/umpv")))
@@ -2143,8 +2380,8 @@ Essentially a much simplified version of `next-line'."
   :commands counsel-spotify-start-search
   :after counsel
   :general
-  (leader-define-key
-    "U" `(, :wk "spotify"))
+  (:keymaps 'space-menu-map
+    "U" '(counsel-spotify-start-search :wk "spotify"))
   :config
   (defun counsel-spotify-start-search ()
     (interactive)
@@ -2157,8 +2394,13 @@ Essentially a much simplified version of `next-line'."
 ;;;** TRAMP
 ;;----------------------------------------------------------------------
 ;; Tramp ssh'es into root@host to edit files. The emacs sudo, kindof.
-(autoload 'tramp "tramp")
-
+(use-package tramp
+  :defer
+  :config
+  (setq tramp-persistency-file-name (dir-concat
+                                   (getenv "HOME")
+                                   ".cache/emacs/tramp"))
+)
 ;;----------------------------------------------------------------------
 ;;;** DIRED
 ;;----------------------------------------------------------------------
@@ -2204,7 +2446,7 @@ Essentially a much simplified version of `next-line'."
   (sml/setup)
   :defines sml/fix-mode-line-a
   :config
-  (defun sml/fix-mode-line-a (theme &rest args)
+  (defun sml/fix-mode-line-a (_theme &rest _args)
     "Advice to `load-theme' to fix the mode-line height after activating/deactivating theme"
     (set-face-attribute 'mode-line nil
                         :box `(:line-width 3 :color ,(plist-get
@@ -2274,11 +2516,15 @@ Essentially a much simplified version of `next-line'."
               )
     (org-cdlatex-mode . "")
     (org-indent-mode . "")
+    (org-roam-mode . "")
     (visual-line-mode . "")
     (latex-mode . "TeX")
     ;; (projectile-mode . " ϸ")
     (outline-minor-mode . " [o]";; " ֍"
-                        ))
+                        )
+    ;; Evil modes
+    (evil-traces-mode . "")
+    )
   "Alist for `clean-mode-line'.
 
   ; ;; When you add a new element to the alist, keep in mind that you
@@ -2303,11 +2549,27 @@ Essentially a much simplified version of `next-line'."
 ;; (display-time-mode 0)
 
 (use-package custom
-  :disabled
-  :init
-  (load-theme 'smart-mode-line-atom-one-dark)
-  (load-theme 'atom-one-dark t)
-)
+  ;; :general
+  :commands toggle-theme
+  :config
+  (setq custom-theme-directory (expand-file-name "lisp" user-emacs-directory))
+
+  (defun toggle-theme (theme)
+    "Swap color themes. With prefix arg, don't disable the currently loaded theme first."
+    (interactive
+     (list
+      (intern (completing-read "Load theme: "
+                               (cons "user" (mapcar #'symbol-name
+                                                    (custom-available-themes)))
+                                     nil t))))
+    (unless current-prefix-arg
+      (mapc #'disable-theme custom-enabled-themes))
+    (load-theme theme t))
+  
+  ;; :init
+  ;; (load-theme 'smart-mode-line-atom-one-dark)
+  ;; (load-theme 'atom-one-dark t)
+  )
 
 ;;######################################################################
 ;;######################################################################
@@ -2353,8 +2615,8 @@ Essentially a much simplified version of `next-line'."
                           ))
   (cond (IS-LINUX
          (custom-set-faces
-          '(default ((t ;; (:family "Iosevka Nerd Font" :foundry "PfEd" :slant normal :weight normal :height 125 :width normal)
-                        (:family "Fantasque Sans Mono" :foundry "PfEd" :slant normal :weight normal :height 125 :width normal)
+          '(default ((t (:family "Iosevka Nerd Font" :foundry "PfEd" :slant normal :weight normal :height 122 :width normal)
+                        ;; (:family "Fantasque Sans Mono" :foundry "PfEd" :slant normal :weight normal :height 125 :width normal)
                         )))))
         (IS-WINDOWS
          (custom-set-faces
@@ -2367,9 +2629,9 @@ Essentially a much simplified version of `next-line'."
 ;; '(org-level-2 ((t (:inherit outline-2 :weight bold :height 1.1))))
 
 ;; Unicode symbols
-(set-fontset-font t 'unicode "Symbola" nil 'prepend)
+(when IS-LINUX (set-fontset-font t 'unicode "Symbola" nil 'prepend))
 
-(add-to-list 'default-frame-alist '(alpha 100 100))
+;; (add-to-list 'default-frame-alist '(alpha 100 100))
 
 ;; (custom-theme-set-faces 'dichromancy
 ;;                         ;; tab-bar & tab-line (since Emacs 27.1)
@@ -2390,6 +2652,14 @@ Essentially a much simplified version of `next-line'."
 (require 'setup-evil)
 
 ;;######################################################################
+;;;* MISC SETTINGS
+;;######################################################################
+;; Settings that I'm not sure where to put:
+(setq srecode-map-save-file "~/.cache/emacs/srecode-map.el" )
+(setq url-configuration-directory "~/.cache/emacs/url/")
+(setq request-storage-directory "~/.cache/emacs/request/")
+(setq semanticdb-default-save-directory "~/.cache/emacs/semanticdb/")
+
 ;;;* LOCAL-VARIABLES
 ;; Local Variables:
 ;; outline-regexp: ";;;\\*+"

@@ -352,8 +352,9 @@ cmd, a function of one argument."
 
 (use-package ivy-prescient
   :ensure t
+  :disabled
   :after (ivy counsel)
-  :hook (ivy-mode . ivy-prescient-mode)
+  ; :hook (ivy-mode . ivy-prescient-mode)
   :init
   (ivy-prescient-mode +1)
   :config
@@ -394,7 +395,7 @@ cmd, a function of one argument."
 
   ;; NOTE prescient config duplicated with `company'
   (setq prescient-save-file (concat (expand-file-name
-                                     (file-name-as-directory "~/.cache"))
+                                     (file-name-as-directory "~/.cache/emacs"))
                                     "prescient-save.el"))
   (prescient-persist-mode +1))
 

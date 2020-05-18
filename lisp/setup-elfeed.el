@@ -1,4 +1,4 @@
-;;;** ELFEED
+;;;** ELFEED  -*- lexical-binding: t; -*-
 ;;----------------------------------------------------------------------
 (use-package elfeed
   :commands elfeed

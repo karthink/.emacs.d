@@ -746,6 +746,7 @@ This excludes the protocol and querystring."
 ;; EVIL-SMARTPARENS
 ;;-----------------
 (use-package evil-smartparens
+  :ensure
   :after smartparens
   :hook ((emacs-lisp-mode lisp-interaction-mode) . evil-smartparens-mode)
   :config

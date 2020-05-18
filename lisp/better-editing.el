@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 ;;----------------------------------------------------------------------
 ;;;; BETTER EDITING
 ;;----------------------------------------------------------------------
@@ -500,7 +501,7 @@
   (interactive (list (batch-replace-strings-prompt)))
   (dolist (pair replacement-alist)
     (save-excursion
-      (replace-string (car pair) (cdr pair)))))
+      (replace-string (car pair) (cdr pair) nil (region-beginning) (region-end)))))
 
 ;;;###autoload
 (defun batch-replace-strings-prompt ()

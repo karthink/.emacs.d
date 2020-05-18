@@ -1,7 +1,7 @@
-;;; Optimizations
+;;; Optimizations  -*- lexical-binding: t; -*-
 
-(eval-when-compile (require 'cl))
-(lexical-let ((emacs-start-time (current-time)))
+(eval-when-compile (require 'cl-lib))
+(let ((emacs-start-time (current-time)))
   (add-hook 'emacs-startup-hook
             (lambda ()
               (let ((elapsed (float-time (time-subtract (current-time) emacs-start-time))))

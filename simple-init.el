@@ -11,12 +11,15 @@
 (add-to-list 'load-path "~/.emacs.d/plugins/")
 (add-to-list 'custom-theme-load-path "~/.emacs.d/elpa/atom-one-dark-theme-20190705.554/")
 
+;(add-to-list 'load-path "~/.local/share/git/melpa/embark/")
+;(require 'embark)
+
 (require 'cl-seq)
 (require 'setup-completion nil t)
 (require 'setup-minibuffer nil t)
 (when (require 'icomplete nil t)
-  (require 'setup-icomplete nil t)
-  (icomplete-mode 1))
+ (require 'setup-icomplete nil t)
+ (icomplete-mode 1))
 
 ;; ----------------------------
 ;; Windows

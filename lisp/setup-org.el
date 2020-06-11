@@ -8,8 +8,10 @@
   :defer 10
   :bind (("\C-cl" . org-store-link)
          ("\C-ca" . org-agenda)
-         ("<f5>" . org-capture)
-         ("<f6>" . org-agenda))
+         ("<f5>"  . org-capture)
+         ("<f6>"  . org-agenda)
+         :map org-mode-map
+         ("C-,"   . nil))
 
   :hook ((org-mode . org-toggle-pretty-entities)
          (org-mode . turn-on-org-cdlatex)
@@ -70,8 +72,7 @@
                 )
 
   ;; My defaults
-  (setq org-agenda-files '("~/do.org" "~/org/schedule.org")
-        org-file-apps '((auto-mode . emacs)
+  (setq org-file-apps '((auto-mode . emacs)
                         ("\\.mm\\'" . default)
                         ("\\.x?html?\\'" . default)
                         ("\\.pdf\\'" . "zathura %s"))
@@ -148,8 +149,7 @@
   :after org
   :commands org-agenda
   :config
-  (setq org-agenda-files '("~/do.org"
-                           "~/.local/share/org/schedule.org"))
+  (setq org-agenda-files '("~/Documents/org/do.org" "~/Documents/org/posts.org"))
   )
 
 (use-package org-agenda
@@ -302,7 +302,7 @@
 ;;----------------------------------------------------------------------
 (use-package ox-hugo
   :ensure t
-  :after (ox org-capture)
+  :after (org-capture)
   :config
   (setq org-hugo-section "blog")
   (with-eval-after-load 'org-capture
@@ -356,8 +356,9 @@ See `org-capture-templates' for more information."
 ;; ORG-REVEAL
 ;;----------------------------------------------------------------------
 (use-package org-re-reveal
-  :disabled
+  ;; :disabled
   :ensure t
+  :after ox
   :commands (org-re-reveal-export-to-html
              org-re-reveal-export-to-html-and-browse)
   :config
@@ -392,9 +393,8 @@ See `org-capture-templates' for more information."
 ;;----------------------------------------------------------------------
 (use-package org-roam
   :after org
-  :commands org-roam-mode
-  :defer
-  :config
+  :commands (org-roam-mode org-roam-find-file)
+  :init
   (setq org-roam-directory (dir-concat org-directory "roam"))
   :bind (:map org-roam-mode-map
               (("C-c n l" . org-roam)
@@ -403,7 +403,14 @@ See `org-capture-templates' for more information."
                ("C-c n b" . org-roam-switch-to-buffer)
                ("C-c n g" . org-roam-graph))
               :map org-mode-map
-              (("C-c n i" . org-roam-insert))))
+              (("C-c n i" . org-roam-insert)))
+  :config
+  (setq org-roam-capture-templates '(("d" "default" plain
+                                     #'org-roam-capture--get-point
+                                     "%?"
+                                     :file-name "%<%Y%m%d%H%M%S>-${slug}"
+                                     :head "#+TITLE: ${title}\n#+ROAM_TAGS:\n#+ROAM_KEY:\n"
+                                     :unnarrowed t))))
 
   (use-package company-org-roam
   :load-path "~/.local/share/git/company-org-roam/"

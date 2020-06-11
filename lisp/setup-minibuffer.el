@@ -46,12 +46,13 @@ key in `completion-list-mode-map'."
   (interactive)
   (kill-new (thing-at-point 'symbol)))
 
+(define-key minibuffer-local-completion-map (kbd "C-,") 'my/minibuffer-toggle-completion-styles)
 (define-key minibuffer-local-completion-map (kbd "?")
   (lambda () (interactive)
     (minibuffer-completion-help)
     (switch-to-completions)))
-(define-key completion-list-mode-map "h" 'my/describe-symbol-at-point)
-(define-key completion-list-mode-map "w" 'my/completions-kill-save-symbol)
+;; (define-key completion-list-mode-map "h" 'my/describe-symbol-at-point)
+;; (define-key completion-list-mode-map "w" 'my/completions-kill-save-symbol)
 (define-key completion-list-mode-map "n" 'next-line)
 (define-key completion-list-mode-map "p" 'previous-line)
 (define-key completion-list-mode-map "n" 'next-line)
@@ -59,7 +60,7 @@ key in `completion-list-mode-map'."
 (define-key completion-list-mode-map "b" 'previous-completion)
 (define-key completion-list-mode-map "M-v" 'my/focus-minibuffer)
 (define-key completion-list-mode-map "?" 'my/focus-minibuffer)
-(define-key completion-list-mode-map "j" 'my/buffer-other-window)
+;; (define-key completion-list-mode-map "j" 'my/buffer-other-window)
 (global-set-key (kbd "C-h .") 'my/describe-symbol-at-point)
 (global-set-key (kbd "C-h C-.") (lambda ()
 				(interactive)
@@ -108,5 +109,32 @@ succession."
                 (not (eq (selected-window)
                          completions)))
            (select-window completions nil)))))
+
+(defvar my/minibuffer-user-completion-styles completion-styles
+  "Default style of completion used by the minibuffer, inherited from `completion-styles'")
+
+(defun my/minibuffer-toggle-completion-styles (&optional arg)
+  "Toggle between flex and default completion styles.
+
+With \\[universal-argument] use basic completion instead.  These
+styles are described in `completion-styles-alist'."
+  (interactive "*P")
+  (when (minibufferp)
+    (let* ((basic '(emacs22 basic))
+           (flex '(flex initials substring partial-completion))
+           (user completion-styles)) ; use my defaults
+      (cond
+       ((equal completion-styles my/minibuffer-user-completion-styles)
+        (setq-local completion-styles flex)
+        (message "%s" (propertize "FLEX first" 'face 'highlight)))
+       ((equal completion-styles flex)
+	(setq-local completion-styles basic)
+        (message "%s" (propertize "BASIC matching" 'face 'highlight))
+	)
+       (t
+        (setq-local completion-styles my/minibuffer-user-completion-styles)
+        (message "%s" (propertize "DEFAULT matching" 'face 'highlight))
+	)
+       ))))
 
 (provide 'setup-minibuffer)

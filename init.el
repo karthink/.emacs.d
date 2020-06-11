@@ -434,7 +434,7 @@ output instead."
     (exchange-point-and-mark))))
 
 (use-package piper
-  :load-path "~/.local/share/git/emacs-piper/"
+  :load-path "~/.local/share/git/melpa/emacs-piper/"
   :bind ("C-x |" . piper)
   :config
   (defun +piper-start (&optional arg)
@@ -442,6 +442,9 @@ output instead."
     (interactive "P")
     (if arg (piper) (piper-user-interface))
     ))
+
+(use-package explain-pause-mode
+  :load-path "~/.local/share/git/melpa/explain-pause-mode/")
 
 ;;----------------------------------------------------------------------
 ;;;** ESHELL PREFERENCES
@@ -468,10 +471,10 @@ output instead."
                                     'message-mode-hook)
   "List of modes where special features (like line numbers) should be enabled.")
 
-(dolist (mode-hook +addons-enabled-modes)
-  (add-hook mode-hook (lambda () "Turn on line numbers for major-mode"
-                        (interactive)
-                        (display-line-numbers-mode))))
+;; (dolist (mode-hook +addons-enabled-modes)
+;;   (add-hook mode-hook (lambda () "Turn on line numbers for major-mode"
+;;                         (interactive)
+;;                         (display-line-numbers-mode))))
 
 (setq display-line-numbers-width-start t
       display-line-numbers-type 'relative)
@@ -676,7 +679,8 @@ output instead."
      ((evil-motion-state-p)   '((bold :background "plum3" :foreground "black")))
      ((evil-visual-state-p)   '((bold :background "gray" :foreground "black")))
      ((evil-operator-state-p) '((bold :background "sandy brown" :foreground "black")))
-     (t '((bold :background "DarkGoldenrod2" :foreground "black")) ;; ''((bold :inherit mode-line))
+     (t ;;'((bold :background "DarkGoldenrod2" :foreground "black")) 
+         '((bold :inherit mode-line))
         )
     )))
 
@@ -968,6 +972,7 @@ Essentially a much simplified version of `next-line'."
   :defer 5
   :after tex
   :ensure auctex
+  :hook (LaTeX-mode . electric-pair-mode)
   :mode
   ("\\.tex\\'" . latex-mode)
   :init (add-hook 'latex-mode-hook
@@ -1140,6 +1145,7 @@ Essentially a much simplified version of `next-line'."
   :defer 2
   ;; :commands turn-on-cdlatex
   :hook (LaTeX-mode . turn-on-cdlatex)
+  :general (:keymaps 'cdlatex-mode-map "[" nil "(" nil "{" nil)
   :config
   (progn
     (setq cdlatex-command-alist
@@ -1201,7 +1207,9 @@ Essentially a much simplified version of `next-line'."
                           (setq-local outline-regexp "^\\s-*%%+")
                           (outline-hide-sublevels 3)
                           ))
-         (matlab-shell-mode . (lambda () (setq-local company-idle-delay 0.1)
+         (matlab-shell-mode . (lambda ()
+                                (setq comint-process-echoes t)
+                                (setq-local company-idle-delay 0.1)
                                 (company-mode-on))))
   :bind (:map matlab-mode-map
               ("C-c C-b" . 'matlab-shell-run-block))
@@ -1376,6 +1384,14 @@ and Interpretation of Classical Mechanics) - The book."
 ;;######################################################################
 
 ;;----------------------------------------------------------------------
+;; UNDO-TREE
+;;----------------------------------------------------------------------
+(use-package undo-tree
+  :defer
+  :config (setq undo-tree-enable-undo-in-region  t)
+  )
+
+;;----------------------------------------------------------------------
 ;; FLYMAKE
 ;;----------------------------------------------------------------------
 (use-package flymake
@@ -1416,7 +1432,8 @@ is not visible. Otherwise delegates to regular Emacs next-error."
   :config
   (when IS-LINUX
     (defun browse-url-mpv (url &optional single)
-      (start-process "mpv" nil (if single "mpv" "umpv") url))
+      (start-process "mpv" nil (if single "mpv" "umpv")
+                     (shell-quote-wildcard-pattern url)))
 
     (defun browse-url-at-point-mpv (&optional single)
         "Open link in mpv"
@@ -1428,7 +1445,7 @@ is not visible. Otherwise delegates to regular Emacs next-error."
         (browse-url-at-point)))
 
     (setq browse-url-browser-function
-          '(("https:\\/\\/www\\.youtube." . browse-url-mpv)
+          '(("https:\\/\\/www\\.youtu\\.*be." . browse-url-mpv)
             ("." . browse-url-generic)))))
 
 ;;----------------------------------------------------------------------
@@ -1437,10 +1454,9 @@ is not visible. Otherwise delegates to regular Emacs next-error."
 (use-package transient
   :defer
   :config
-(setq transient-history-file "~/.cache/emacs/transient/history.el"
-      transient-levels-file "~/.cache/emacs/transient/levels.el"
-      transient-values-file "~/.cache/emacs/transient/values.el")
-)
+  (setq transient-history-file "~/.cache/emacs/transient/history.el"
+        transient-levels-file "~/.cache/emacs/transient/levels.el"
+        transient-values-file "~/.cache/emacs/transient/values.el"))
 
 ;;----------------------------------------------------------------------
 ;;;** HYDRAS
@@ -1763,7 +1779,9 @@ _d_: subtree
 
     (dolist (cmd '(pop-to-mark-command
                    pop-global-mark
-                   goto-last-change))
+                   goto-last-change
+                   scroll-up-command
+                   scroll-down-command))
       (advice-add cmd :after #'my/recenter-and-pulse))))
 
 ;; Highlight uncommitted changes using VC
@@ -2077,14 +2095,18 @@ _d_: subtree
         which-key-add-column-padding 0
         which-key-max-display-columns nil
         which-key-min-display-lines 8
-        which-key-side-window-slot -10)
+        which-key-side-window-slot -10
+        which-key-show-transient-maps nil)
   :config
+  (push '(("^[0-9-]\\|kp-[0-9]\\|kp-subtract\\|C-u$" . nil) . ignore)
+      which-key-replacement-alist)
   (with-eval-after-load 'general
     (which-key-add-key-based-replacements general-localleader "major-mode")
     (which-key-add-key-based-replacements general-localleader-alt "major-mode"))
 
   (set-face-attribute 'which-key-local-map-description-face nil :weight 'bold)
-  (which-key-setup-side-window-bottom)
+  ;; (which-key-setup-side-window-bottom)
+  (which-key-setup-side-window-right-bottom)
   (add-hook 'which-key-init-buffer-hook
             (lambda () (setq-local line-spacing 3)))
 
@@ -2225,8 +2247,13 @@ _d_: subtree
   (global-company-mode)
   )
 
+(use-package company-prescient
+  :after company
+  :defer 3
+  :ensure t
+  :init (company-prescient-mode))
 (use-package company-statistics
-  ;; :disabled t
+  :disabled
   :after company
   :defer 5
   :ensure t
@@ -2386,6 +2413,7 @@ _d_: subtree
   (defun counsel-spotify-start-search ()
     (interactive)
     (counsel-M-x "counsel-spotify-search-"))
+  (setq counsel-spotify-service-name "spotify")
   (setq counsel-spotify-client-id my-counsel-spotify-client-id
         counsel-spotify-client-secret my-counsel-spotify-client-secret
         counsel-spotify-use-notifications nil))
@@ -2497,6 +2525,7 @@ _d_: subtree
     (evil-rsi-mode . "")
     (evil-commentary-mode . "")
     (ivy-mode . "")
+    (counsel-mode . "")
     (wrap-region-mode . "")
     (rainbow-mode . "")
     (which-key-mode . "")
@@ -2572,7 +2601,6 @@ _d_: subtree
   )
 
 ;;######################################################################
-;;######################################################################
 ;;;* MINIBUFFER
 ;;######################################################################
 (use-package minibuffer
@@ -2615,8 +2643,8 @@ _d_: subtree
                           ))
   (cond (IS-LINUX
          (custom-set-faces
-          '(default ((t (:family "Iosevka Nerd Font" :foundry "PfEd" :slant normal :weight normal :height 122 :width normal)
-                        ;; (:family "Fantasque Sans Mono" :foundry "PfEd" :slant normal :weight normal :height 125 :width normal)
+          '(default ((t (:family "Iosevka" :foundry "PfEd" :slant normal :weight normal :height 122 :width normal)
+                        ;; (:family "FantasqueSansMono Nerd Font" :foundry "PfEd" :slant normal :weight normal :height 128 :width normal)
                         )))))
         (IS-WINDOWS
          (custom-set-faces

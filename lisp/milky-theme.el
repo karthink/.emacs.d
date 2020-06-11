@@ -39,7 +39,7 @@
  '(link ((t (:underline (:color foreground-color :style line) :foreground "#0066CC"))))
  '(link-visited ((t (:underline (:color foreground-color :style line) :foreground "#6799CC"))))
  '(fringe ((t (:background "#E6E6E6"))))
- '(header-line ((t (:foreground "#2E3436" :background "yellow"))))
+ '(header-line ((t (:foreground "#2E3436" :background "khaki1"))))
  '(tooltip ((((class color)) (:inherit (variable-pitch) :foreground "black" :background "lightyellow")) (t (:inherit (variable-pitch)))))
  '(mode-line ((t (:box (:line-width 3 :color "white" :style nil) :foreground "#2E3436" :background "white"))))
  '(mode-line-buffer-id ((t (:weight bold))))

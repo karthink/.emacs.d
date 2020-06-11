@@ -322,7 +322,7 @@
       (evil-define-key 'normal 'dired-sidebar-mode-map (kbd "<mouse-2>") 'dired-sidebar-mouse-subtree-cycle-or-find-file)))
 
   (with-eval-after-load 'ibuffer-sidebar
-    (evil-define-key* '(normal visual) 'global (kbd "C-w C-d") #'+sidebar-toggle))
+    (evil-define-key* '(normal visual) 'global (kbd "C-w C-d") #'+ibuffer-sidebar-toggle))
 
   ;; (evil-define-key 'normal 'emacs-lisp-mode-map (kbd "(")
   ;;   (defun evil-backward-sexp (&optional arg) (interactive)
@@ -549,8 +549,8 @@ This excludes the protocol and querystring."
         (make-embrace-pair-struct
          :key ?\\
          :read-function #'+evil--embrace-escaped
-         :left-regexp "\\[[{(]"
-         :right-regexp "\\[]})]"))
+         :left-regexp "\\[[{(]|"
+         :right-regexp "\\[]})]|"))
 
 ;;;###autoload
   (defun +evil--embrace-get-pair (char)

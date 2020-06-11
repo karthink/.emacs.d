@@ -17,6 +17,13 @@ If buffer-or-name is nil return current buffer's mode."
     (select-window window)
     ))
 
+;;;###autoload
+(defun +select-buffer-at-bottom (buffer alist)
+  "Display buffer in a side window and select it"
+  (let ((window (display-buffer-at-bottom buffer alist)))
+    (select-window window)
+    ))
+
 (defvar +occur-grep-modes-list '(occur-mode
                                  grep-mode
                                  xref--xref-buffer-mode
@@ -253,10 +260,17 @@ If buffer-or-name is nil return current buffer's mode."
                                (mode-line-format . (:eval (+helper-window-mode-line-format)))
                                )))
 
+        ("\\*Embark Occur\\*" (display-buffer-in-direction)
+         (window-height . 0.25)
+         (direction . below)
+         (window-parameters . ((split-window . #'ignore)
+                               (mode-line-format . (:eval (+helper-window-mode-line-format))))))
+
         ((lambda (buf act) (seq-some (lambda (regex) (string-match-p regex buf))
                                      +repl-names-list))
-         +select-buffer-in-side-window
-         (window-height . .25)
+         ;;+select-buffer-in-side-window
+         +select-buffer-at-bottom
+         (window-height . .30)
          (side . bottom)
          (slot . 2)
          ;; (preserve-size . (nil . t))
@@ -265,7 +279,7 @@ If buffer-or-name is nil return current buffer's mode."
         ((lambda (buf act) (member (buffer-mode buf) +help-modes-list))
          (+select-buffer-in-side-window display-buffer-in-direction)
          (direction . below)
-         (window-width . (lambda (win) (fit-window-to-buffer win 25 14))) 
+         (window-height . (lambda (win) (fit-window-to-buffer win 25 14))) 
          ;; (window-width . (lambda (win) (fit-window-to-buffer win nil nil 85 55)))
          ;; (direction . right)
          (side . bottom)
@@ -273,6 +287,7 @@ If buffer-or-name is nil return current buffer's mode."
          (window-parameters . ((split-window . #'ignore)
                                ;; (no-other-window . t)
                                (mode-line-format . (:eval (+helper-window-mode-line-format))))))
+
         ((lambda (buf act) (with-current-buffer buf view-mode))
          (display-buffer-in-side-window)
          (window-height . (/ (frame-height) 3))

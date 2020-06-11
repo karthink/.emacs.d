@@ -280,6 +280,13 @@ cmd, a function of one argument."
   (ivy-add-actions 'counsel-bookmark
                    '(("f" find-file-other-frame "other frame")
                      ("j" find-file-other-window "other window")))
+  (ivy-add-actions 'dired
+                   `(("'" counsel-find-file-cd-bookmark-action "cd bookmark")
+                     ("+" counsel-find-file-mkdir-action "mkdir")
+                     ("`" ,(+ivy-ace-window #'find-file) "ace window")
+                     ("f" find-file-other-frame "other frame")
+                     ("j" find-file-other-window "other window")
+                     ("x" counsel-find-file-extern "xdg-open")))
 
 ;;;###autoload
   (defun find-file-Documents ()
@@ -352,7 +359,6 @@ cmd, a function of one argument."
 
 (use-package ivy-prescient
   :ensure t
-  :disabled
   :after (ivy counsel)
   ; :hook (ivy-mode . ivy-prescient-mode)
   :init

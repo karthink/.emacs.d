@@ -64,8 +64,8 @@
    :wk-full-keys nil
    "F" '(find-name-dired :wk "file by name"))
   :config
-  (setq find-ls-option
-        '("-ls" . "-AGFhlv --group-directories-first"))
+  (setq find-ls-option '("-print0 | xargs -0 ls -ld" . "-ld"))
+        ;; '("-ls" . "-AGFhlv --group-directories-first"))
   (setq find-name-arg "-iname"))
 
 (use-package async
@@ -134,7 +134,10 @@
 (use-package ibuffer-sidebar
   :ensure t
   :commands +ibuffer-sidebar-toggle
-  :general ("C-x C-d" '+ibuffer-sidebar-toggle)
+  :general
+  ("C-x C-d" '+ibuffer-sidebar-toggle)
+  (:states '(normal visual)
+   "C-x C-d" '+ibuffer-sidebar-toggle)
   :config
   ;; (setq ibuffer-sidebar-use-custom-font t)
   ;; (setq ibuffer-sidebar-face `(:family "Helvetica" :height 140))

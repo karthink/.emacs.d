@@ -417,7 +417,7 @@
   (save-excursion
     (let ((next (if prefix -1 1)))
     (other-window next)
-    (isearch-backward)
+    (isearch-forward)
     (other-window (- next))
     )))
   
@@ -428,7 +428,7 @@
   (save-excursion
     (let ((next (if prefix 1 -1)))
     (other-window next)
-    (isearch-forward)
+    (isearch-backward)
     (other-window (- next))
     )))
 

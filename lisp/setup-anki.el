@@ -47,12 +47,14 @@
                `("a" "Anki basic"
                  entry
                  (file+headline ,org-my-anki-file "Dispatch Shelf")
-                 "* %<%H:%M>   %^g\n:PROPERTIES:\n:ANKI_NOTE_TYPE: Basic\n:ANKI_DECK: Default\n:END:\n** Front\n%?\n** Back\n\n"))
+                 "* %<%H:%M>   %^g\n:PROPERTIES:\n:ANKI_NOTE_TYPE: Basic\n:ANKI_DECK: Default\n:END:\n** Front\n%?\n** Back\n\n"
+                 :kill-buffer t))
   (add-to-list 'org-capture-templates
                `("A" "Anki cloze"
                  entry
                  (file+headline ,org-my-anki-file "Dispatch Shelf")
-                 "* %<%H:%M>   %^g\n:PROPERTIES:\n:ANKI_NOTE_TYPE: Cloze\n:ANKI_DECK: Default\n:END:\n** Text\n\n** Extra\n")))
+                 "* %<%H:%M>   %^g\n:PROPERTIES:\n:ANKI_NOTE_TYPE: Cloze\n:ANKI_DECK: Default\n:END:\n** Text\n\n** Extra\n"
+                 :kill-buffer t)))
 
 ;; ;; Allow Emacs to access content from clipboard.
 ;; (setq x-select-enable-clipboard t

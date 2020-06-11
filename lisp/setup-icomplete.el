@@ -188,7 +188,7 @@ Bind this function in `icomplete-minibuffer-map'."
 ;; ICOMPLETE-ACTIONS in the minibuffer/completions buffer
 ;;========================================================
 (define-prefix-command 'icomplete-menu-map)
-(define-key icomplete-minibuffer-map (kbd "M-o") icomplete-menu-map)
+;; (define-key icomplete-minibuffer-map (kbd "M-o") icomplete-menu-map)
 (define-key icomplete-menu-map (kbd "w") 'my/icomplete-kill-or-insert-candidate)
 (define-key icomplete-menu-map (kbd "i") 
   (defun my/icomplete-insert-candidate ()

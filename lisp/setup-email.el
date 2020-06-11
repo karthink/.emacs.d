@@ -1,38 +1,38 @@
 ;; -*- lexical-binding: t -*-
 ;;(require 'use-package nil t)
 ;; Outgoing email
-(setq mail-host-address "gmail.com"
-      send-mail-function 'sendmail-send-it
-      message-send-mail-function 'message-send-mail-with-sendmail
-      sendmail-program "/usr/bin/msmtp"
-      mail-specify-envelope-from t
-      message-sendmail-envelope-from 'header
-      mail-envelope-from 'header
-      notmuch-fcc-dirs nil
-      )
+(use-package sendmail
+  :after (message notmuch)
+  :config
+  (setq mail-host-address "gmail.com"
+        send-mail-function 'sendmail-send-it
+        message-send-mail-function 'message-send-mail-with-sendmail
+        sendmail-program "/usr/bin/msmtp"
+        mail-specify-envelope-from t
+        message-sendmail-envelope-from 'header
+        mail-envelope-from 'header)
 
-;; Choose account label to feed msmtp -a option based on From header in Message buffer;
-;; This function must be added to message-send-mail-hook for on-the-fly change of From address
-;; before sending message since message-send-mail-hook is processed right before sending message.
-(defun cg-feed-msmtp ()
-  (if (message-mail-p)
-      (save-excursion
-        (let* ((from
-                (save-restriction
-                  (message-narrow-to-headers)
-                  (message-fetch-field "from")))
-               (account
-                (cond
-                 ;; I use email address as account label in ~/.msmtprc
-                 ((string-match my-email-address from) my-email-dir)
-                 ((seq-some (lambda (x) (string-match x from))
-                            my-alt-email-addresses) my-alt-email-dir))))
-          (setq message-sendmail-extra-arguments (list '"-a" account))))))
-;; the original form of this script did not have the ' before "a" which causes a very difficult to track bug --frozencemetery
-(add-hook 'message-send-mail-hook #'cg-feed-msmtp)
-
-(setq message-sendmail-envelope-from 'header)
-(add-hook 'message-send-mail-hook 'cg-feed-msmtp)
+  ;; Choose account label to feed msmtp -a option based on From header in Message buffer;
+  ;; This function must be added to message-send-mail-hook for on-the-fly change of From address
+  ;; before sending message since message-send-mail-hook is processed right before sending message.
+  (defun cg-feed-msmtp ()
+    (if (message-mail-p)
+        (save-excursion
+          (let* ((from
+                  (save-restriction
+                    (message-narrow-to-headers)
+                    (message-fetch-field "from")))
+                 (account
+                  (cond
+                   ;; I use email address as account label in ~/.msmtprc
+                   ((string-match my-email-address from) my-email-dir)
+                   ((seq-some (lambda (x) (string-match x from))
+                              my-alt-email-addresses) my-alt-email-dir))))
+            (setq message-sendmail-extra-arguments (list '"-a" account))))))
+  ;; the original form of this script did not have the ' before "a" which causes
+  ;; a very difficult to track bug --frozencemetery
+  (add-hook 'message-send-mail-hook #'cg-feed-msmtp)
+  )
 
 ;;----------------------------------------------------------------------
 ;; NOTMUCH
@@ -42,8 +42,9 @@
   :commands notmuch
   :hook (notmuch-message-mode . turn-off-auto-fill)
   :config
-  (setq notmuch-search-oldest-first nil)
   (setq notmuch-show-logo nil
+        notmuch-search-oldest-first nil
+        notmuch-fcc-dirs nil
         notmuch-column-control 0.6
         notmuch-message-headers-visible nil
         notmuch-search-oldest-first nil
@@ -100,7 +101,6 @@
   )
 
 (use-package counsel-notmuch
-  :ensure t
   :commands counsel-notmuch)
 
 (provide 'setup-email)

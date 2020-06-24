@@ -106,6 +106,37 @@
               ("<C-tab>" . dired-subtree-cycle)
               ("<S-iso-lefttab>" . dired-subtree-remove)))
 
+(use-package peep-dired
+  :ensure t
+  :general
+  (:states '(normal visual)
+           :keymaps 'dired-mode-map
+           "z p" 'peep-dired)
+  :config
+  (add-hook 'peep-dired-hook 'evil-normalize-keymaps)
+  (general-def
+    :states '(normal visual)
+    :keymaps 'peep-dired-mode-map
+    :prefix "SPC"
+    "SPC" 'peep-dired-scroll-page-down
+    "S-SPC" 'peep-dired-scroll-page-up)
+  (general-def
+    :states '(normal visual)
+    :keymaps 'peep-dired-mode-map
+    "<backspace>" 'peep-dired-scroll-page-up
+    "j" 'peep-dired-next-file
+    "k" 'peep-dired-prev-file)
+  ;; (evil-define-key 'normal peep-dired-mode-map (kbd "<SPC>") 'peep-dired-scroll-page-down
+  ;;   (kbd "C-<SPC>") 'peep-dired-scroll-page-up
+  ;;   (kbd "<backspace>") 'peep-dired-scroll-page-up
+  ;;   (kbd "j") 'peep-dired-next-file
+  ;;   (kbd "k") 'peep-dired-prev-file)
+(setq peep-dired-cleanup-on-disable t)
+(setq peep-dired-cleanup-eagerly nil)
+(setq peep-dired-enable-on-directories nil)
+(setq peep-dired-ignored-extensions '("mkv" "iso" "mp4" "pdf" "djvu"))
+)
+
 (use-package dired-sidebar
   :after dired
   :ensure t

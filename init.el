@@ -300,7 +300,7 @@
 (setq auto-save-interval 2400)
 (setq auto-save-timeout 300)
 (setq auto-save-list-file-prefix "~/.cache/emacs/auto-save-list/.saves-")
-(setq backup-directory-alist '(("." . "~/.emacs-backup"))
+(setq backup-directory-alist '(("." . "~/cache/emacs/backup"))
       backup-by-copying t ; Use copies
       version-control t ; Use version numbers on backups
       delete-old-versions t ; Automatically delete excess backups
@@ -404,6 +404,9 @@
 (use-package comint
   :general
   ("C-!" 'shell-command-at-line)
+  (:keymaps 'shell-mode-map
+   :states  '(insert emacs)
+   "SPC"    'comint-magic-space)
   :config
   ;; Arrange for Emacs to notice password prompts and turn off echoing for them, as follows:
   (add-hook 'comint-output-filter-functions
@@ -2207,7 +2210,8 @@ _d_: subtree
   (add-hook 'matlab-shell-mode-hook (lambda ()
                                       (make-local-variable 'company-backends)
                                       (setq-local company-idle-delay 0.3)
-                                      (add-to-list 'company-backends 'company-matlab-shell)))
+                                      ;; (add-to-list 'company-backends 'company-matlab-shell)
+                                      ))
 
   (add-hook 'LaTeX-mode-hook (lambda ()
                                (make-local-variable 'company-idle-delay)
@@ -2390,7 +2394,7 @@ _d_: subtree
    '(("P" ivy-bibtex-open-pdf-external "Open PDF file in external viewer (if present)"))))
 
 (use-package ivy-youtube
-  :disabled
+  :ensure
   :after ivy
   :general 
   (:keymaps 'space-menu-map
@@ -2426,9 +2430,9 @@ _d_: subtree
   :defer
   :config
   (setq tramp-persistency-file-name (dir-concat
-                                   (getenv "HOME")
-                                   ".cache/emacs/tramp"))
-)
+                                     (getenv "HOME")
+                                     ".cache/emacs/tramp"))
+  )
 ;;----------------------------------------------------------------------
 ;;;** DIRED
 ;;----------------------------------------------------------------------

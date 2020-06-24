@@ -362,11 +362,11 @@ See `org-capture-templates' for more information."
   :commands (org-re-reveal-export-to-html
              org-re-reveal-export-to-html-and-browse)
   :config
-  (setq org-re-reveal-root "file:///home/karthik/.local/share/git/reveal.js"
+  (setq org-re-reveal-root "/home/karthik/.local/share/git/reveal.js"
         org-re-reveal-subtree-with-title-slide t)
-  (add-to-list 'org-structure-template-alist '("R" "#+REVEAL_HTML: ?\n"))
+  (add-to-list 'org-structure-template-alist '("R" . "#+REVEAL_HTML: ?\n"))
   (use-package org-re-reveal-ref
-    :disabled t
+    :ensure t
     :init (setq org-ref-default-bibliography '("~/Documents/research/control_systems.bib")))
   )
 

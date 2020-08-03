@@ -134,7 +134,8 @@
 (setq peep-dired-cleanup-on-disable t)
 (setq peep-dired-cleanup-eagerly nil)
 (setq peep-dired-enable-on-directories nil)
-(setq peep-dired-ignored-extensions '("mkv" "iso" "mp4" "pdf" "djvu"))
+(setq peep-dired-ignored-extensions '("mkv" "iso" "mp4" "pdf" "djvu" "one" "mat"
+                                      "fig" "nb" "slx" "slxc" "r2016b" "onetoc2"))
 )
 
 (use-package dired-sidebar

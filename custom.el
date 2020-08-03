@@ -11,6 +11,7 @@
  '(compilation-message-face 'default)
  '(counsel-mode t)
  '(cua-global-mark-cursor-color "#2aa198")
+ '(cua-normal-cursor-color "#657b83")
  '(cua-overwrite-cursor-color "#b58900")
  '(cua-read-only-cursor-color "#859900")
  '(custom-safe-themes
@@ -108,7 +109,8 @@
  '(lsp-ui-doc-border "#586e75")
  '(nrepl-message-colors
    '("#dc322f" "#cb4b16" "#b58900" "#5b7300" "#b3c34d" "#0061a8" "#2aa198" "#d33682" "#6c71c4"))
- '(org-agenda-files '("~/do.org"))
+ '(org-agenda-files
+   '("~/Documents/research/writeup/Averaging/averaging_mathieu_equation.org" "~/Documents/org/do.org" "~/Documents/org/posts.org"))
  '(org-babel-load-languages
    '((emacs-lisp . t)
      (matlab . t)
@@ -117,7 +119,7 @@
      (shell . t)
      (scheme . t)))
  '(package-selected-packages
-   '(peep-dired ivy-youtube org-re-reveal-ref geiser general helpful company-org-roam org-roam yasnippet-snippets org-tree-slide org-re-reveal ivy-rich eyebrowse org-gcal ox-hugo magit transient company-prescient embark evil-collection evil-surround visual-fill winum evil-textobj-anyblock evil-textobj-entire evil-textobj-column evil-indent-textobject evil-traces evil-nerd-commenter solarized-theme sicp simple-httpd evil-smartparens smartparens fzf diff-hl nord-theme counsel-spotify company-anaconda which-key ibuffer-vc evil-embrace flx latex-extra latex-preview-pane smart-mode-line-atom-one-dark-theme mixed-pitch-mode iedit presentation ivy-prescient rainbow-delimiters ivy-hydra counsel counsel-notmuch atom-one-dark-theme anki-editor dired-x wgrep-ag wgrep pyvenv matlab-mode eglot elgot dracula-theme dired-sidebar matlab auctex cdlatex fish-completion fish-mode visual-fill-column-mode tao-theme ace-window ibuffer-sidebar embrace company-statistics company-jedi company company-bibtex wrap-region evil-exchange evil-lion evil-numbers evil-rsi evil-snipe evil-visualstar org-bullets smart-mode-line rainbow-mode evil-magit undo-tree evil-tabs org-evil use-package ido-completing-read+ evil-replace-with-register iy-go-to-char smex ido-grid-mode composable evil wolfram-mode julia-repl julia-shell dash deferred request-deferred s dash-functional ein ein-mumamo color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme expand-region multiple-cursors))
+   '(markdown-mode ox-gfm elpy peep-dired ivy-youtube org-re-reveal-ref geiser general helpful company-org-roam org-roam yasnippet-snippets org-tree-slide org-re-reveal ivy-rich eyebrowse org-gcal ox-hugo magit transient company-prescient embark evil-collection evil-surround visual-fill winum evil-textobj-anyblock evil-textobj-entire evil-textobj-column evil-indent-textobject evil-traces evil-nerd-commenter solarized-theme sicp simple-httpd evil-smartparens smartparens fzf diff-hl nord-theme counsel-spotify company-anaconda which-key ibuffer-vc evil-embrace flx latex-extra latex-preview-pane smart-mode-line-atom-one-dark-theme mixed-pitch-mode iedit presentation ivy-prescient rainbow-delimiters ivy-hydra counsel counsel-notmuch atom-one-dark-theme anki-editor dired-x wgrep-ag wgrep pyvenv matlab-mode eglot elgot dracula-theme dired-sidebar matlab auctex cdlatex fish-completion fish-mode visual-fill-column-mode tao-theme ace-window ibuffer-sidebar embrace company-statistics company-jedi company company-bibtex wrap-region evil-exchange evil-lion evil-numbers evil-rsi evil-snipe evil-visualstar org-bullets smart-mode-line rainbow-mode evil-magit undo-tree evil-tabs org-evil use-package ido-completing-read+ evil-replace-with-register iy-go-to-char smex ido-grid-mode composable evil wolfram-mode julia-repl julia-shell dash deferred request-deferred s dash-functional ein ein-mumamo color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme expand-region multiple-cursors))
  '(pdf-view-midnight-colors '("#DCDCCC" . "#383838"))
  '(pos-tip-background-color "#36473A")
  '(pos-tip-foreground-color "#FFFFC8")

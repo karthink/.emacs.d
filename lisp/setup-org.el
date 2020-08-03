@@ -58,6 +58,7 @@
                 org-log-done 'time
                 org-catch-invisible-edits 'smart
                 org-use-speed-commands t
+                org-highlight-latex-and-related '(native)
                 ;; org-eldoc-breadcrumb-separator " → " 
                 ;; org-hide-leading-stars-before-indent-mode t 
                 ;; org-indent-indentation-per-level 2 
@@ -203,7 +204,7 @@
                    ("tp" "Other Projects"
                     entry
                     (file+olp "~/do.org" "Other Projects")
-                    "* %? :projects:\n  %a\n  %x\n"
+                    "* %? :project:\n  %a\n  %x\n"
                     :prepend t
                     :kill-buffer t
                     )
@@ -388,6 +389,67 @@ See `org-capture-templates' for more information."
 
 (provide 'setup-org)
 
+;;----------------------------------------------------------------------
+;; ORG-REF
+;;----------------------------------------------------------------------
+(use-package org-ref
+  :ensure t
+  :defer
+  :config
+  ;; (setq reftex-default-bibliography '("~/Dropbox/bibliography/references.bib"))
+  (setq org-latex-pdf-process
+        '("pdflatex -interaction nonstopmode -output-directory %o %f"
+	"bibtex %b"
+	"pdflatex -interaction nonstopmode -output-directory %o %f"
+	"pdflatex -interaction nonstopmode -output-directory %o %f")
+        )
+  (setq org-latex-pdf-process
+        (list "latexmk -shell-escape -bibtex -f -pdf %f"))
+  (setq org-ref-completion-library 'org-ref-ivy-cite)
+  (setq org-ref-bibliography-notes nil
+        org-ref-default-bibliography reftex-default-bibliography
+        org-ref-pdf-directory "~/Documents/research/lit/")
+  )
+;;----------------------------------------------------------------------
+;; MY ORG PROJECTS
+;;----------------------------------------------------------------------
+(use-package ox-publish
+  :defer
+  :config
+  (setq org-publish-project-alist
+      '(
+        ("dai-wiki"
+         :base-directory "~/Documents/abode/dai/"
+         :base-extension "org"
+         :publishing-directory "~/Documents/abode/dai"
+         :remote-directory "root@abode.karthinks.com:/var/www/abode/dai"
+         :recursive t
+         :publishing-function org-html-publish-to-html
+         :headline-levels 4             ; Just the default for this project.
+         :auto-preamble t
+         :completion-function (list my/org-publish-rsync)
+         )
+        ("dai" :components ("dai-wiki"))
+        )
+      )
+
+  (defun my/org-publish-rsync (project-plist)
+    "Sync output of org project to a remote server using RSYNC. All files and folders except for ORG files will be synced."
+    (if (executable-find "rsync")
+        (let* ((basedir (expand-file-name
+                         (file-name-as-directory
+                          (plist-get project-plist :base-directory))))
+               (destdir (plist-get project-plist :remote-directory)))
+          (start-process "rsync-project-dai" "*project-dai-output*"
+                         "rsync" "-a" "-v" "--exclude=*.org"
+                         basedir destdir))
+
+      (display-warning 'org-publish
+                       "Could not find RSYNC in PATH. Project not uploaded to server."
+                       :warning)))
+  )
+
+(my/abode-rsync-dai) 
 ;;----------------------------------------------------------------------
 ;; ORG-ROAM
 ;;----------------------------------------------------------------------

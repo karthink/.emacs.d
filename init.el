@@ -300,7 +300,7 @@
 (setq auto-save-interval 2400)
 (setq auto-save-timeout 300)
 (setq auto-save-list-file-prefix "~/.cache/emacs/auto-save-list/.saves-")
-(setq backup-directory-alist '(("." . "~/cache/emacs/backup"))
+(setq backup-directory-alist '(("." . "~/.cache/emacs/backup"))
       backup-by-copying t ; Use copies
       version-control t ; Use version numbers on backups
       delete-old-versions t ; Automatically delete excess backups
@@ -1299,8 +1299,8 @@ Essentially a much simplified version of `next-line'."
   (add-hook 'pyvenv-post-activate-hooks 'pyvenv-restart-python))
 
 (use-package elpy
-  :disabled t
-  ;; :ensure t
+  :ensure t
+  :commands elpy
   ;; :init
   ;; (setq python-shell-interpreter "jupyter"
   ;;       python-shell-interpreter-args "console --simple-prompt"
@@ -1309,32 +1309,33 @@ Essentially a much simplified version of `next-line'."
   ;;              "jupyter")
   ;; (advice-add 'python-mode :before 'elpy-enable)
   :config
-  (add-hook
-   'python-mode-hook
-   (lambda ()
-     (mapc (lambda (pair) (push pair prettify-symbols-alist))
-           '(;; Syntax
-             ("def" .      #x2131)
-             ("not" .      #x2757)
-             ("in" .       #x2208)
-             ("not in" .   #x2209)
-             ("return" .   #x27fc)
-             ("yield" .    #x27fb)
-             ("for" .      #x2200)
-             ;; Base Types
-             ("int" .      #x2124)
-             ("float" .    #x211d)
-             ("str" .      #x1d54a)
-             ("True" .     #x1d54b)
-             ("False" .    #x1d53d)
-             ;; Mypy
-             ("Dict" .     #x1d507)
-             ("List" .     #x2112)
-             ("Tuple" .    #x2a02)
-             ("Set" .      #x2126)
-             ("Iterable" . #x1d50a)
-             ("Any" .      #x2754)
-             ("Union" .    #x22c3))))))
+  ;; (add-hook
+  ;;  'python-mode-hook
+  ;;  (lambda ()
+  ;;    (mapc (lambda (pair) (push pair prettify-symbols-alist))
+  ;;          '(;; Syntax
+  ;;            ("def" .      #x2131)
+  ;;            ("not" .      #x2757)
+  ;;            ("in" .       #x2208)
+  ;;            ("not in" .   #x2209)
+  ;;            ("return" .   #x27fc)
+  ;;            ("yield" .    #x27fb)
+  ;;            ("for" .      #x2200)
+  ;;            ;; Base Types
+  ;;            ("int" .      #x2124)
+  ;;            ("float" .    #x211d)
+  ;;            ("str" .      #x1d54a)
+  ;;            ("True" .     #x1d54b)
+  ;;            ("False" .    #x1d53d)
+  ;;            ;; Mypy
+  ;;            ("Dict" .     #x1d507)
+  ;;            ("List" .     #x2112)
+  ;;            ("Tuple" .    #x2a02)
+  ;;            ("Set" .      #x2126)
+  ;;            ("Iterable" . #x1d50a)
+  ;;            ("Any" .      #x2754)
+  ;;            ("Union" .    #x22c3)))))
+  )
 
 ;;----------------------------------------------------------------------
 ;;;** GEISER
@@ -1526,6 +1527,7 @@ _p_rev       _u_pper              _=_: upper/lower       _r_esolve
   ("n" next-error "next error" :color red)
   ("p" previous-error "prev error" :color red)
   ("g" goto-line "goto line" :color blue)
+  ("M-g" goto-line "goto line" :color blue)
   ("TAB" move-to-column "goto col" :color blue)
   ("c" goto-char "goto char" :color blue )
   )

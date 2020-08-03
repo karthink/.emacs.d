@@ -244,6 +244,14 @@ If buffer-or-name is nil return current buffer's mode."
          (window-parameters . ((no-other-window . t)
                                (mode-line-format . (:eval (+helper-window-mode-line-format))))))
 
+        ("\\*Async Shell Command\\*" display-buffer-in-side-window
+         (window-height . 0.20)
+         (side . bottom)
+         (slot . -4)
+         ;; (preserve-size . (nil . t))
+         (window-parameters . ((no-other-window . t)
+                               (mode-line-format . (:eval (+helper-window-mode-line-format))))))
+
         ("\\*\\(Register Preview\\).*" (display-buffer-in-side-window)
          (window-height . 0.20)       ; See the :hook
          (side . bottom)

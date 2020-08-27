@@ -20,6 +20,16 @@
               (defun dired-view-other-buffer-a (orig-fn &rest args)
                 (cl-letf (((symbol-function 'view-file) #'view-file-other-window))
                   (funcall orig-fn))))
+
+  (defun dired-find-file-other-window ()
+  "In Dired, visit this file or directory in another window. If `ace-window' is available, use it to select window for visiting this file.`"
+  (interactive)
+  (let ((window 
+         (if (fboundp 'aw-select)
+             (aw-select "Select Window")
+           (next-window))))
+    (select-window window)
+    (find-file (dired-get-file-for-visit))))
   )
 
 (use-package dired-x
@@ -103,8 +113,9 @@
   (setq dired-subtree-use-backgrounds nil)
   :bind (:map dired-mode-map
               ("<tab>" . dired-subtree-toggle)
-              ("<C-tab>" . dired-subtree-cycle)
-              ("<S-iso-lefttab>" . dired-subtree-remove)))
+              ;; ("<C-tab>" . dired-subtree-cycle)
+              ;; ("<S-iso-lefttab>" . dired-subtree-remove)
+              ))
 
 (use-package peep-dired
   :ensure t
@@ -143,7 +154,11 @@
   :ensure t
   :commands (dired-sidebar-toggle-sidebar)
   :general
-  ("C-x D"  'list-directory)
+  ("C-x D"  'list-directory
+   "C-x C-d" 'dired-sidebar-toggle-sidebar
+   :states '(normal visual)
+   "C-w C-d" 'dired-sidebar-toggle-sidebar)
+  
   (:keymaps 'dired-sidebar-mode-map
    :states  '(normal)
    "gO"     'dired-sidebar-find-file-alt
@@ -164,6 +179,7 @@
   (setq dired-sidebar-use-custom-font t))
 
 (use-package ibuffer-sidebar
+  :disabled
   :ensure t
   :commands +ibuffer-sidebar-toggle
   :general

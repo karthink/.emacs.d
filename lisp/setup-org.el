@@ -342,8 +342,8 @@ See `org-capture-templates' for more information."
 ;; ORG-GCAL
 ;;----------------------------------------------------------------------
 (use-package org-gcal
+  :disabled
   :after org
-  :ensure t
   :commands (org-gcal-sync org-gcal-fetch)
   :init
   (setq org-gcal-client-id my-org-gcal-client-id
@@ -441,7 +441,7 @@ See `org-capture-templates' for more information."
                           (plist-get project-plist :base-directory))))
                (destdir (plist-get project-plist :remote-directory)))
           (start-process "rsync-project-dai" "*project-dai-output*"
-                         "rsync" "-a" "-v" "--exclude=*.org"
+                         "rsync" "-a" "-v" "--exclude=*.org" "--delete"
                          basedir destdir))
 
       (display-warning 'org-publish
@@ -449,11 +449,11 @@ See `org-capture-templates' for more information."
                        :warning)))
   )
 
-(my/abode-rsync-dai) 
 ;;----------------------------------------------------------------------
-;; ORG-ROAM
+;; ORG-ROAM - Disabled for now
 ;;----------------------------------------------------------------------
 (use-package org-roam
+  :disabled
   :after org
   :commands (org-roam-mode org-roam-find-file)
   :init
@@ -475,6 +475,7 @@ See `org-capture-templates' for more information."
                                      :unnarrowed t))))
 
   (use-package company-org-roam
+  :disabled
   :load-path "~/.local/share/git/company-org-roam/"
   :after (company org org-roam)
   :init

@@ -43,7 +43,7 @@
                 org-hidden-keywords nil 
                 org-hide-emphasis-markers nil 
                 org-hide-leading-stars t 
-                org-image-actual-width nil 
+                org-image-actual-width 400 
                 org-pretty-entities-include-sub-superscripts t 
                 org-refile-targets '((nil :maxlevel . 3) (org-agenda-files :maxlevel . 3)) 
                 org-startup-folded t 
@@ -237,6 +237,12 @@
                    ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
   (setq org-export-with-LaTeX-fragments t))
 
+(use-package valign
+  :if (file-exists-p "~/.local/share/git/valign")
+  :load-path "~/.local/share/git/valign/"
+  :hook (org-mode . valign-mode)
+  :after org
+  )
 ;;----------------------------------------------------------------------
 ;; ORG-BABEL
 ;;----------------------------------------------------------------------
@@ -247,6 +253,7 @@
   :after org
   :defer
   :config
+  (setq org-src-window-setup 'split-window-below)
   (setq org-babel-load-languages '((emacs-lisp . t)
                                    (matlab . t)
                                    (python . t)
@@ -417,21 +424,32 @@ See `org-capture-templates' for more information."
   :defer
   :config
   (setq org-publish-project-alist
-      '(
-        ("dai-wiki"
-         :base-directory "~/Documents/abode/dai/"
-         :base-extension "org"
-         :publishing-directory "~/Documents/abode/dai"
-         :remote-directory "root@abode.karthinks.com:/var/www/abode/dai"
-         :recursive t
-         :publishing-function org-html-publish-to-html
-         :headline-levels 4             ; Just the default for this project.
-         :auto-preamble t
-         :completion-function (list my/org-publish-rsync)
-         )
-        ("dai" :components ("dai-wiki"))
+        '(
+          ("dai-wiki"
+           :base-directory "~/Documents/abode/dai/"
+           :base-extension "org"
+           :publishing-directory "~/Documents/abode/dai"
+           :remote-directory "root@abode.karthinks.com:/var/www/abode/dai"
+           :recursive t
+           :publishing-function org-html-publish-to-html
+           :headline-levels 4             ; Just the default for this project.
+           :auto-preamble t
+           :completion-function (list my/org-publish-rsync)
+           )
+          ("dai" :components ("dai-wiki"))
+          ("cyclostationarity"
+           :base-directory "~/Dropbox/KarthikBassam/Cyclostationarity"
+           :base-extension "org"
+           :publishing-directory "~/Dropbox/KarthikBassam/Cyclostationarity"
+           :remote-directory "root@abode.karthinks.com:/var/www/abode/cyclostationarity"
+           :recursive t
+           :publishing-function org-html-publish-to-html
+           :headline-levels 4
+           :auto-preamble t
+           :completion-function (list my/org-publish-rsync-cyclostationarity)
+           )
+          )
         )
-      )
 
   (defun my/org-publish-rsync (project-plist)
     "Sync output of org project to a remote server using RSYNC. All files and folders except for ORG files will be synced."
@@ -442,6 +460,25 @@ See `org-capture-templates' for more information."
                (destdir (plist-get project-plist :remote-directory)))
           (start-process "rsync-project-dai" "*project-dai-output*"
                          "rsync" "-a" "-v" "--exclude=*.org" "--delete"
+                         basedir destdir))
+
+      (display-warning 'org-publish
+                       "Could not find RSYNC in PATH. Project not uploaded to server."
+                       :warning)))
+
+  (defun my/org-publish-rsync-cyclostationarity (project-plist)
+    "Sync output of org project to a remote server using RSYNC. All files and folders except for ORG files will be synced."
+    (if (executable-find "rsync")
+        (let* ((basedir (expand-file-name
+                         (file-name-as-directory
+                          (plist-get project-plist :base-directory))))
+               (destdir (plist-get project-plist :remote-directory)))
+          (start-process "rsync-project-cyclostationarity" "*project-cyclostationarity-output*"
+                         "rsync" "-a" "-v" 
+                         "--include=*.html"
+                         "--include=/figures/***"
+                         "--exclude=*"
+                         "--delete"
                          basedir destdir))
 
       (display-warning 'org-publish

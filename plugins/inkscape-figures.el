@@ -45,7 +45,10 @@ code."
     ;;                              ;; "2>/dev/null"
     ;;                              )
 
-    (insert (funcall transform figname (with-current-buffer "*inkscape-figures-output*" (buffer-substring (point-min) (point-max)))))
+    (insert (funcall transform
+                     figname (with-current-buffer
+                                 "*inkscape-figures-output*"
+                               (buffer-substring (point-min) (point-max)))))
     (kill-buffer "*inkscape-figures-output*")
     ))
 

@@ -276,12 +276,12 @@ If buffer-or-name is nil return current buffer's mode."
 
         ((lambda (buf act) (seq-some (lambda (regex) (string-match-p regex buf))
                                      +repl-names-list))
-         ;;+select-buffer-in-side-window
-         +select-buffer-at-bottom
-         (window-height . .30)
+         +select-buffer-in-side-window
+         ;; +select-buffer-at-bottom
+         (window-height . .35)
          (side . bottom)
-         (slot . 2)
-         ;; (preserve-size . (nil . t))
+         (slot . 1)
+         (preserve-size . (nil . t))
          )
 
         ((lambda (buf act) (member (buffer-mode buf) +help-modes-list))
@@ -291,7 +291,7 @@ If buffer-or-name is nil return current buffer's mode."
          ;; (window-width . (lambda (win) (fit-window-to-buffer win nil nil 85 55)))
          ;; (direction . right)
          (side . bottom)
-         (slot . 1)
+         (slot . 2)
          (window-parameters . ((split-window . #'ignore)
                                ;; (no-other-window . t)
                                (mode-line-format . (:eval (+helper-window-mode-line-format))))))

@@ -453,6 +453,7 @@ This excludes the protocol and querystring."
 ;; OTHER EVIL PACKAGES
 ;;--------------------
 (defvar +evil-addons-enabled-modes (list 'prog-mode-hook
+                                         'matlab-mode-hook
                                          'conf-unix-mode-hook
                                          'conf-windows-mode-hook
                                          'conf-javaprop-mode-hook

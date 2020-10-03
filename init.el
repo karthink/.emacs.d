@@ -978,6 +978,7 @@ Essentially a much simplified version of `next-line'."
   :hook (LaTeX-mode . electric-pair-mode)
   :mode
   ("\\.tex\\'" . latex-mode)
+
   :init (add-hook 'latex-mode-hook
                   (lambda ()  (interactive) (outline-minor-mode)
                     (setq-local page-delimiter "\\\\section\\**{")
@@ -1016,7 +1017,7 @@ Essentially a much simplified version of `next-line'."
     "cn" '(TeX-next-error             :wk "Next Error")
     "cp" '(TeX-previous-error         :wk "Prev Error")
 
-    "p"  '(:ignore t                  :wk "Preview")
+    "p"  '(:ignore t :wk "Preview")
     "pp" '(preview-at-point           :wk "Preview at point")
     "pb" '(preview-buffer             :wk "Preview buffer")
     "pr" '(preview-region             :wk "Preview region")
@@ -1025,7 +1026,11 @@ Essentially a much simplified version of `next-line'."
     "ps" '(preview-section            :wk "Preview section")
     "pw" '(preview-copy-region-as-mml :wk "Copy MathML")
     "pc" '(preview-clearout           :wk "Clearout")
-    ;; "pC" '(preview-clearout-buffer    :wk "!Clearout in buffer")
+    "pS" '(preview-clearout-section   :wk "Clearout section")
+    "pB" '(preview-clearout-buffer    :wk "Clearout buffer")
+    "pP" '(preview-clearout-at-point  :wk "Clearout at point")
+    "pD" '(preview-clearout-document  :wk "Clearout document")
+    ;; "pC" '(preview-clearout-buffer :wk "!Clearout in buffer")
 
     ;; "t" '(:ignore t                   :wk "Toggle")
     ;; "t8" '(prettify-symbols-mode      :wk "!Pretty Symbols mode")
@@ -1189,7 +1194,7 @@ Essentially a much simplified version of `next-line'."
   :defer
   :after latex
   :general (:keymaps 'LaTeX-mode-map
-            "C-c i" '+inkscape-figures-create-at-point
+            "C-c i" '+inkscape-figures-create-at-point-latex
             "C-c e" '+inkscape-figures-edit
             )
   )
@@ -1248,7 +1253,7 @@ Essentially a much simplified version of `next-line'."
   (defun +matlab-shell-no-select-a (&rest _args)
    "Switch back to matlab file buffer after evaluating region"  
    (select-window (get-mru-window)))
-  (advice-add 'matlab-shell-run-region :after #'+matlab-shell-no-select-a)
+  ;;(advice-add 'matlab-shell-run-region :after #'+matlab-shell-no-select-a)
 
 ;;;###autoload
   (defun matlab-select-block ()
@@ -2281,9 +2286,12 @@ _d_: subtree
 ;;;** SMARTPARENS-MODE
 ;;----------------------------------------------------------------------
 (or (use-package elec-pair
-      :disabled
       :defer 3
-      :config (electric-pair-mode +1))
+      :config
+      (setq electric-pair-inhibit-predicate
+      `(lambda (c)
+         (if (char-equal c ?\<) t (,electric-pair-inhibit-predicate c))))
+      (electric-pair-mode +1))
     (use-package smartparens
       :hook ((emacs-lisp-mode lisp-interaction-mode) . smartparens-mode)
       :general

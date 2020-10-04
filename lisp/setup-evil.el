@@ -377,13 +377,13 @@
            (set-face-background 'mode-line dotemacs--original-mode-line-bg))))
 
   ;; Setup text-objects for use in LaTeX. Putting this here because it doesn't make sense to put this in the AucTeX section without enabling evil-mode first.
-  (add-hook 'LaTeX-mode-hook (lambda () (unless (featurep 'evil-latex-textobjects)
-                                     (require 'evil-latex-textobjects nil t))
-                               (turn-on-evil-latex-textobjects-mode)))
+  ;; (add-hook 'LaTeX-mode-hook (lambda () (unless (featurep 'evil-latex-textobjects)
+  ;;                                    (require 'evil-latex-textobjects nil t))
+  ;;                              (turn-on-evil-latex-textobjects-mode)))
   
-  (add-hook 'org-mode-hook (lambda () (unless (featurep 'evil-latex-textobjects)
-                                     (require 'evil-latex-textobjects nil t))
-                               (turn-on-evil-latex-textobjects-mode)))
+  ;; (add-hook 'org-mode-hook (lambda () (unless (featurep 'evil-latex-textobjects)
+  ;;                                    (require 'evil-latex-textobjects nil t))
+  ;;                              (turn-on-evil-latex-textobjects-mode)))
 
   (add-hook 'matlab-mode-hook (lambda () (unless (featurep 'evil-matlab-textobjects)
                                       (require 'evil-matlab-textobjects nil t))
@@ -503,7 +503,7 @@ This excludes the protocol and querystring."
   :defer
   :ensure t
   ;; :after evil-surround
-  :hook (LaTeX-mode . embrace-LaTeX-mode-hook)
+  ;; :hook (LaTeX-mode . embrace-LaTeX-mode-hook)
   :hook (org-mode . embrace-org-mode-hook)
   :hook (emacs-lisp-mode . embrace-emacs-lisp-mode-hook)
   ;; :hook ((ruby-mode enh-ruby-mode) . embrace-ruby-mode-hook)
@@ -516,16 +516,18 @@ This excludes the protocol and querystring."
   :config
   (setq evil-embrace-show-help-p t)
 
-  (defun +evil-embrace-latex-mode-hook-h ()
-    (embrace-add-pair-regexp ?m "\\\\[a-z*]+{" "}" #'+evil--embrace-latex
-                             (embrace-build-help "\\macro{" "}"))
-    (embrace-add-pair-regexp ?e "\\\\begin{[a-z*]+}" "\\\\end{[a-z*]+}"
-                             (lambda ()
-                               (let ((env (read-string "Env: ")))
-                                 (cons (format "\\begin{%s}" env)
-                                       (format "\\end{%s}" env))))
-                             (embrace-build-help "\\begin{.}" "\\end{.}"))
-    (embrace-add-pair-regexp ?$ "\\$" "\\$" nil))
+  (ignore
+   (defun +evil-embrace-latex-mode-hook-h ()
+     (embrace-add-pair-regexp ?m "\\\\[a-z*]+{" "}" #'+evil--embrace-latex
+                              (embrace-build-help "\\macro{" "}"))
+     (embrace-add-pair-regexp ?e "\\\\begin{[a-z*]+}" "\\\\end{[a-z*]+}"
+                              (lambda ()
+                                (let ((env (read-string "Env: ")))
+                                  (cons (format "\\begin{%s}" env)
+                                        (format "\\end{%s}" env))))
+                              (embrace-build-help "\\begin{.}" "\\end{.}"))
+     (embrace-add-pair-regexp ?$ "\\$" "\\$" nil))
+   )
 
   (defun +evil-embrace-lisp-mode-hook-h ()
     (push (cons ?f (make-embrace-pair-struct
@@ -754,6 +756,15 @@ This excludes the protocol and querystring."
   (evil-define-key 'visual evil-smartparens-mode-map (kbd "o") nil)
   ;; (evil-define-key 'normal evil-smartparens-mode-map (kbd "J") #'sp-join-sexp)
   )
+
+;;-----------------
+;; EVIL-TEX
+;;-----------------
+(use-package evil-tex
+  :ensure
+  :after evil
+  :hook ((LaTeX-mode . evil-tex-mode)
+         (org-mode   . evil-tex-mode)))
 
 ;; EVIL-OWL
 ;; (use-package evil-owl

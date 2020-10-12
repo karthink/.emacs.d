@@ -591,32 +591,32 @@ output instead."
 (use-package popup-buffers
   :after setup-windows
   :init
-  (setq popup-buffers-reference-modes-list
+  (setq popup-buffers-reference-buffers
         (append +help-modes-list
                 +repl-modes-list
                 +occur-grep-modes-list
                 +man-modes-list
                 '(Custom-mode
-                  compilation-mode)))
-
-  (setq popup-buffers-reference-buffer-list
-        '("^\\*Warnings\\*"
-          "^\\*Compile-Log\\*"
-          "^\\*Messages\\*"
-          "^\\*Backtrace\\*"
-          "^\\*evil-registers\\*"
-          "^\\*Apropos"
-          "^Calc:"
-          "^\\*ielm\\*"
-          "^\\*TeX Help\\*"
-          "\\*Shell Command Output\\*"
-          "\\*Async Shell Command\\*"
-          "\\*Completions\\*"
-          "[Oo]utput\\*"
-          "\\*scratch\\*"))
+                  compilation-mode
+                  messages-mode)
+                '("^\\*Warnings\\*"
+                  "^\\*Compile-Log\\*"
+                  "^\\*Messages\\*"
+                  "^\\*Backtrace\\*"
+                  "^\\*evil-registers\\*"
+                  "^\\*Apropos"
+                  "^Calc:"
+                  "^\\*ielm\\*"
+                  "^\\*TeX Help\\*"
+                  "\\*Shell Command Output\\*"
+                  "\\*Async Shell Command\\*"
+                  "\\*Completions\\*"
+                  ;; "\\*scratch\\*"
+                  "[Oo]utput\\*")))
 
   (popup-buffers-mode +1)
 
+  :config
   (defun +popup-raise-popup ()
     "Choose a popup-window to raise as a regular window"
     (interactive)
@@ -628,7 +628,7 @@ output instead."
      nil t)))
 
   (defun +popup-lower-to-popup ()
-    "Choose a regular window to make a lower"
+    "Choose a regular window to make a popup"
     (interactive)
     (let ((window-list (cl-set-difference
                         (window-list)
@@ -2285,33 +2285,34 @@ _d_: subtree
 ;;----------------------------------------------------------------------
 ;;;** SMARTPARENS-MODE
 ;;----------------------------------------------------------------------
-(or (use-package elec-pair
-      :defer 3
-      :config
-      (setq electric-pair-inhibit-predicate
-      `(lambda (c)
-         (if (char-equal c ?\<) t (,electric-pair-inhibit-predicate c))))
-      (electric-pair-mode +1))
-    (use-package smartparens
-      :hook ((emacs-lisp-mode lisp-interaction-mode) . smartparens-mode)
-      :general
-      (:keymaps        'smartparens-mode-map
-       "C-M-<up>"      'sp-raise-sexp
-       "C-<right>"     'sp-forward-slurp-sexp
-       "C-<left>"      'sp-backward-slurp-sexp
-       "M-<right>"     'sp-forward-barf-sexp
-       "M-<left>"      'sp-backward-barf-sexp
-       "C-k"           'sp-kill-hybrid-sexp
-       "C-x C-t"       'sp-transpose-hybrid-sexp
-       "C-M-n"         'sp-next-sexp
-       "C-M-p"         'sp-previous-sexp
-       "C-<backspace>" 'sp-backward-kill-word) 
-      :config
-      (sp-with-modes sp-lisp-modes
-        ;; disable ', it's the quote character!
-        (sp-local-pair "'" nil :actions nil))
-      ;; (require 'smartparens-config)
-      ))
+(use-package elec-pair
+       :defer
+       :config
+       (setq electric-pair-inhibit-predicate
+             `(lambda (c)
+                (if (char-equal c ?\<) t (,electric-pair-inhibit-predicate c))))
+       ;; (electric-pair-mode +1)
+       )
+(use-package smartparens
+  :hook ((emacs-lisp-mode lisp-interaction-mode) . smartparens-mode)
+  :general
+  (:keymaps        'smartparens-mode-map
+                   "C-M-<up>"      'sp-raise-sexp
+                   "C-<right>"     'sp-forward-slurp-sexp
+                   "C-<left>"      'sp-backward-slurp-sexp
+                   "M-<right>"     'sp-forward-barf-sexp
+                   "M-<left>"      'sp-backward-barf-sexp
+                   "C-k"           'sp-kill-hybrid-sexp
+                   "C-x C-t"       'sp-transpose-hybrid-sexp
+                   "C-M-n"         'sp-next-sexp
+                   "C-M-p"         'sp-previous-sexp
+                   "C-<backspace>" 'sp-backward-kill-word) 
+  :config
+  (sp-with-modes sp-lisp-modes
+    ;; disable ', it's the quote character!
+    (sp-local-pair "'" nil :actions nil))
+  ;; (require 'smartparens-config)
+  )
 
 ;;----------------------------------------------------------------------
 ;;;** EXPAND-REGION
@@ -2494,16 +2495,16 @@ _d_: subtree
   (setq sml/theme nil)
   (sml/setup)
   :defines sml/fix-mode-line-a
-  :config
-  (defun sml/fix-mode-line-a (_theme &rest _args)
-    "Advice to `load-theme' to fix the mode-line height after activating/deactivating theme"
-    (set-face-attribute 'mode-line nil
-                        :box `(:line-width 3 :color ,(plist-get
-                                                      (custom-face-attributes-get 'mode-line nil)
-                                                      :background))))
+  ;; :config
+  ;; (defun sml/fix-mode-line-a (_theme &rest _args)
+  ;;   "Advice to `load-theme' to fix the mode-line height after activating/deactivating theme"
+  ;;   (set-face-attribute 'mode-line nil
+  ;;                       :box `(:line-width 3 :color ,(plist-get
+  ;;                                                     (custom-face-attributes-get 'mode-line nil)
+  ;;                                                     :background))))
 
-  (advice-add 'disable-theme :after #'sml/fix-mode-line-a)
-  (advice-add 'load-theme :after #'sml/fix-mode-line-a)
+  ;; (advice-add 'disable-theme :after #'sml/fix-mode-line-a)
+  ;; (advice-add 'load-theme :after #'sml/fix-mode-line-a)
 
   ;; (custom-set-faces
   ;;  '(mode-line ((t (:box (:line-width 4 :color ))))))
@@ -2564,6 +2565,8 @@ _d_: subtree
     (matlab-mode . "M")
     (org-mode . " ORG";; "⦿"
               )
+    (valign-mode . "")
+    (eldoc-mode . "")
     (org-cdlatex-mode . "")
     (org-indent-mode . "")
     (org-roam-mode . "")
@@ -2662,6 +2665,24 @@ _d_: subtree
                             '(org-level-2 ((t (:height 1.1 :foreground "#fabd2f" :inherit (bold) ))))
                             '(org-document-title ((t (:inherit (bold) :height 1.5))))
                           ))
+
+  (use-package modus-operandi-theme
+    :ensure t
+    :defer
+    :config
+    (setq modus-operandi-theme-distinct-org-blocks nil
+          modus-operandi-theme-intense-hl-line t
+          modus-operandi-theme-intense-standard-completions t
+          modus-operandi-theme-org-blocks 'greyscale
+          modus-operandi-theme-fringes 'subtle
+          modus-operandi-theme-scale-headings t
+          modus-operandi-theme-section-headings t
+          modus-operandi-theme-variable-pitch-headings t
+          modus-operandi-theme-intense-paren-match t
+          modus-operandi-theme-bold-constructs t
+          modus-operandi-theme-completions 'opinionated
+          ))
+
   (cond (IS-LINUX
          (custom-set-faces
           '(default ((t (:family "Iosevka" :foundry "PfEd" :slant normal :weight normal :height 122 :width normal)

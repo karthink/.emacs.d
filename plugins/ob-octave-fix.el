@@ -21,7 +21,7 @@
 	      #'org-babel-chomp
 	      (list (if matlabp
                         (multi-replace-regexp-in-string
-                         '(("%.*$"                      . "")    ;Remove comments
+                         '(("%[%\s].*$"                      . "")    ;Remove comments without removing format strings
                            (";\\s-*\n+"                 . "; ")  ;Concatenate lines
                            ("\\(\\.\\)\\{3\\}\\s-*\n+"  . " ")   ;Handle continuations
                            (",*\\s-*\n+"                . ", ")) ;Concatenate lines
@@ -82,7 +82,9 @@
 
 (defun multi-replace-regexp-in-string (replacements-list string &optional rest)
   (interactive)
-  "Replace multiple regexps in a string. Order matters."
+  "Replace multiple regexps in a string, in the order of listing.
+`REPLACEMENTS-LIST' is an alist, each cons cell of which is of
+the form (regexp . replacement)."
   (if (null replacements-list)
       string
     (let ((regex (caar replacements-list))

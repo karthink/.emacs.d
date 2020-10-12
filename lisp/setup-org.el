@@ -243,6 +243,10 @@
   :hook (org-mode . valign-mode)
   :after org
   )
+
+(use-package themed-ltximg
+  :after org)
+
 ;;----------------------------------------------------------------------
 ;; ORG-BABEL
 ;;----------------------------------------------------------------------
@@ -253,7 +257,8 @@
   :after org
   :defer
   :config
-  (setq org-src-window-setup 'split-window-below)
+  (setq org-src-window-setup 'split-window-below
+        org-confirm-babel-evaluate nil)
   (setq org-babel-load-languages '((emacs-lisp . t)
                                    (matlab . t)
                                    (python . t)

@@ -1,0 +1,17 @@
+# key: basict
+# group: skeleton
+# name: \documentclass{article} ...
+# --
+\documentclass[11pt]{article}
+
+\usepackage{graphicx,amsmath,amssymb,subfigure,url,xspace}
+
+\title{${1:title}}
+\author{${2:Author Name}}
+
+\begin{document}
+\maketitle
+
+$0
+
+\end{document}

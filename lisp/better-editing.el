@@ -98,6 +98,8 @@
 ;; KEYBINDINGS
 ;;----------------------------------------------------------------------
 
+(global-set-key (kbd "M-=") 'count-words)
+
 ;; Have C-a toggle between beginning of line and indentation
 (global-set-key "\C-a" 'back-to-indentation-or-beginning)
 
@@ -125,7 +127,7 @@
 
 ;;; keybindings for Vi like o and O
 ;; autoindent open-*-lines
-(global-set-key (kbd "M-o") 'open-previous-line)
+(global-set-key (kbd "C-S-O") 'open-previous-line)
 (global-set-key (kbd "C-o") 'open-next-line)
 
 ;; Zapping up to char and Copying to char (intuitive versions)

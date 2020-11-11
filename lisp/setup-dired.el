@@ -159,11 +159,18 @@
    :states '(normal visual)
    "C-w C-d" 'dired-sidebar-toggle-sidebar)
   
+  (:keymaps 'space-menu-map
+   :wk-full-keys nil
+   :prefix "f"
+    "t" '(dired-sidebar-toggle-sidebar :wk "Dired tree"))
+
   (:keymaps 'dired-sidebar-mode-map
    :states  '(normal)
    "gO"     'dired-sidebar-find-file-alt
    "RET"    'dired-sidebar-find-file)
 
+  (:keymaps 'dired-sidebar-mode-map
+   "-" nil)
   :init
   (add-hook 'dired-sidebar-mode-hook
             (lambda ()
@@ -186,6 +193,9 @@
   ("C-x C-d" '+ibuffer-sidebar-toggle)
   (:states '(normal visual)
    "C-x C-d" '+ibuffer-sidebar-toggle)
+  (:keymaps 'space-menu-buffer-map
+            :wk-full-keys nil
+            "t" '(ibuffer-sidebar-toggle-sidebar :wk "Buffer sidebar"))
   :config
   ;; (setq ibuffer-sidebar-use-custom-font t)
   ;; (setq ibuffer-sidebar-face `(:family "Helvetica" :height 140))

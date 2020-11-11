@@ -764,7 +764,11 @@ This excludes the protocol and querystring."
   :ensure
   :after evil
   :hook ((LaTeX-mode . evil-tex-mode)
-         (org-mode   . evil-tex-mode)))
+         (org-mode   . evil-tex-mode)
+         (evil-tex-mode . (lambda () (when (eq major-mode 'org)
+                                    (evil-define-key '(normal motion) evil-tex-mode-map (kbd "[[") nil)
+                                    (evil-define-key '(normal motion) evil-tex-mode-map (kbd "]]") nil)))))
+  )
 
 ;; EVIL-OWL
 ;; (use-package evil-owl

@@ -165,9 +165,9 @@ If buffer-or-name is nil return current buffer's mode."
         ;; Windows on the side
         ;; ----------------------------------------------------------------
 
-        (;; (lambda (buf act) (member (buffer-mode buf) +man-modes-list))
-         "^\\*\\(?:Wo\\)?Man"
-         (display-buffer-in-side-window)
+        ((lambda (buf act) (member (buffer-mode buf) +man-modes-list))
+         ;; "^\\*\\(?:Wo\\)?Man"
+         (+select-buffer-in-side-window)
          (window-width . 76)       ; See the :hook
          (side . left)
          (slot . 9)
@@ -260,8 +260,16 @@ If buffer-or-name is nil return current buffer's mode."
                                (mode-line-format . (:eval (+helper-window-mode-line-format)))
                                )))
 
-        ("\\*\\(?:Completions\\|Apropos\\)\\*" (display-buffer-in-side-window)
+        ("\\*Completions\\*" (display-buffer-in-side-window)
          (window-height . 0.20)
+         (side . bottom)
+         (slot . -2)
+         (window-parameters . ((no-other-window . t)
+                               (mode-line-format . (:eval (+helper-window-mode-line-format)))
+                               )))
+
+        ("\\*Apropos\\*" (display-buffer-in-side-window)
+         (window-height . 0.40)
          (side . bottom)
          (slot . -2)
          (window-parameters . ((no-other-window . t)

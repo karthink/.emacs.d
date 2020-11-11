@@ -1,10 +1,13 @@
 .card {
- font-family: Noto Sans CJK JP Regular;
- font-size: 20px;
- text-align: left;
- color: black;
- background-color: white;
+    font-family: Noto Sans CJK JP Regular;
+    /* font-family: Literata; */
+    font-size: 20px;
+    text-align: left;
+    color: black;
+    background-color: white;
 }
+
+img.latex { zoom: 70% }
 
 /* Generated from (org-html-htmlize-generate-css) with minimum
 packages loaded and default light theme */
@@ -2940,9 +2943,14 @@ img {
     vertical-align: middle;
 }
 
+img[src*="latex"]{
+  vertical-align: middle;
+}
+
 .MathJax_Display {
     margin: 0!important;
     width: $smaller!important;
+    font-size: 80%;
 }
 
 h1,h2,h3,h4,h5,h6 {

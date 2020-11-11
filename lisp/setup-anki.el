@@ -14,7 +14,8 @@
   ;;                              "anki-notes.org"))
 
   (setq anki-editor-create-decks t ;; Allow anki-editor to create a new deck if it doesn't exist
-        anki-editor-org-tags-as-anki-tags t)
+        anki-editor-org-tags-as-anki-tags t
+        anki-editor-break-consecutive-braces-in-latex t)
 
   (defun anki-editor-cloze-region-auto-incr (&optional arg)
     "Cloze region without hint and increase card number."

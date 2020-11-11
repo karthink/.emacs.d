@@ -20,7 +20,7 @@
   (add-hook 'org-load-hook
             '(lambda nil
                (define-key org-mode-map (kbd "C-c C-S-l") 'org-toggle-link-display)
-               (define-key org-mode-map (kbd "<C-tab>") nil)
+               ;; (define-key org-mode-map (kbd "<C-tab>") nil)
                ;; (define-key org-mode-map (kbd "<C-S-tab>") (lambda () (other-window -1)))
                ;; Org-cdlatex options
                (define-key org-cdlatex-mode-map (kbd "$") 'cdlatex-dollar)
@@ -248,6 +248,16 @@
   :after org)
 
 ;;----------------------------------------------------------------------
+;; ORG-DOWNLOAD
+;;----------------------------------------------------------------------
+(use-package org-download
+  :ensure t
+  :hook (dired-mode . org-download-enable)
+  :config
+  ;; (setq org-download-backend (if IS-LINUX "curl" "url-retrieve"))
+  (setq org-download-heading-lvl nil))
+
+;;----------------------------------------------------------------------
 ;; ORG-BABEL
 ;;----------------------------------------------------------------------
 (use-package ob-octave-fix
@@ -264,7 +274,15 @@
                                    (python . t)
                                    (R . t)
                                    (shell . t)
-                                   (scheme . t))))
+                                   (scheme . t)))
+  
+  (defun my/org-babel-goto-tangle-file ()
+    (if-let* ((args (nth 2 (org-babel-get-src-block-info t)))
+              (tangle (alist-get :tangle args)))
+        (when (not (equal "no" tangle))
+          (find-file tangle)
+          t)))
+  (add-hook 'org-open-at-point-functions 'my/org-babel-goto-tangle-file))
 
 
 (use-package org-babel-eval-in-repl

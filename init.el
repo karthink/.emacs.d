@@ -357,16 +357,16 @@
 ;; Save and resume session
 (use-package desktop
   :config
-  (setq desktop-auto-save-timeout 300)
-  (setq desktop-path '("~/.cache/emacsdesktop"))
-  (setq desktop-dirname "~/.cache/emacsdesktop")
-  (setq desktop-base-file-name "desktop")
-  (setq desktop-globals-to-clear nil)
-  (setq desktop-load-locked-desktop t)
-  (setq desktop-missing-file-warning t)
-  (setq desktop-restore-eager 4)
-  (setq desktop-restore-frames t)
-  (setq desktop-save 'ask-if-new)
+  (setq desktop-auto-save-timeout 300
+        desktop-path '("~/.cache/emacsdesktop")
+        desktop-dirname "~/.cache/emacsdesktop"
+        desktop-base-file-name "desktop"
+        desktop-globals-to-clear nil
+        desktop-load-locked-desktop t
+        desktop-missing-file-warning t
+        desktop-restore-eager 4
+        desktop-restore-frames t
+        desktop-save 'ask-if-new)
   (desktop-save-mode 1))
 
 ;;--------------------------
@@ -589,6 +589,7 @@ output instead."
 (require 'better-buffers nil t)
 
 (use-package popup-buffers
+  :load-path "~/.local/share/git/popup-buffers"
   :after setup-windows
   :init
   (setq popup-buffers-reference-buffers
@@ -709,6 +710,7 @@ output instead."
   ;; :bind ("C-x o" . ace-window)
   :general
   ("C-x o" 'ace-window)
+  ("M-o" 'ace-window)
   (:keymaps 'space-menu-map
    "`" 'ace-window)
   :config
@@ -865,6 +867,35 @@ Essentially a much simplified version of `next-line'."
            (outline-back-to-heading))))
   )
 
+(use-package scratch
+  :ensure
+  :config
+  (defun my/scratch-buffer-setup ()
+  "Add contents to `scratch' buffer and name it accordingly.
+If region is active, add its contents to the new buffer."
+  (let* ((mode major-mode)
+         (string (format "Scratch buffer for: %s\n\n" mode))
+         (region (with-current-buffer (current-buffer)
+                     (if (region-active-p)
+                         (buffer-substring-no-properties
+                          (region-beginning)
+                          (region-end)))
+                     ""))
+         (text (concat string region)))
+    (when scratch-buffer
+      (save-excursion
+        (insert text)
+        (goto-char (point-min))
+        (comment-region (point-at-bol) (point-at-eol)))
+      (forward-line 2))
+    (rename-buffer (format "*Scratch for %s*" mode) t)))
+  :hook (scratch-create-buffer . my/scratch-buffer-setup)
+  :bind ("C-c s" . scratch))
+
+(use-package project
+  :config
+  (setq project-list-file "~/.cache/emacs/projects"))
+
 ;;######################################################################
 ;;;* COMPILATION
 ;;######################################################################
@@ -983,7 +1014,7 @@ Essentially a much simplified version of `next-line'."
                   (lambda ()  (interactive) (outline-minor-mode)
                     (setq-local page-delimiter "\\\\section\\**{")
                     (setq-local outline-regexp "\\\\\\(sub\\)*section\\**{")
-                    ;(setq-local prettify-symbols-alist tex--prettify-symbols-alist)
+                    (setq-local prettify-symbols-alist tex--prettify-symbols-alist)
                     (outline-hide-sublevels 3)
                     ))
   :defines (TeX-auto-save
@@ -1003,6 +1034,8 @@ Essentially a much simplified version of `next-line'."
   ;;             ;; ("C-;" . TeX-complete-symbol)
   ;;             )
   :general
+  (:keymaps 'LaTeX-mode-map
+            "M-RET" 'LaTeX-insert-item)
   (leader-define-key :keymaps 'LaTeX-mode-map
    "cn" '(TeX-next-error :wk "Next Error")
    "cp" '(TeX-previous-error :wk "Prev Error"))
@@ -1577,7 +1610,10 @@ _8_: pretty symbols  _v f_: visual fill    _h r_: rainbow    _s p_: smart parens
             (t
              (visual-line-mode 1)
              (visual-fill-column-mode 1)))))
-  ("8" prettify-symbols-mode)
+  ("8" (lambda () (interactive)
+         (if (equal major-mode 'org-mode)
+             (org-toggle-pretty-entities)
+           (prettify-symbols-mode))))
   ("B" presentation-mode)
   ("t" toggle-theme)
   ("M" nil)
@@ -1670,8 +1706,8 @@ _d_: subtree
   :defer
   :general
   ("C-x t 2" 'tab-new
-   "C-<tab>" 'tab-bar-switch-to-next-tab
-   "C-S-<tab>" 'tab-bar-switch-to-prev-tab)
+   "C-M-<tab>" 'tab-bar-switch-to-next-tab
+   "C-M-S-<tab>" 'tab-bar-switch-to-prev-tab)
 
   :config
   (setq  tab-bar-close-last-tab-choice 'tab-bar-mode-disable
@@ -1683,7 +1719,7 @@ _d_: subtree
 
   (custom-set-faces
    '(tab-bar ((t (:inherit nil :height 1.1))))
-   '(tab-bar-tab ((t (:inherit tab-bar :underline t :weight bold))))
+   '(tab-bar-tab ((t (:inherit tab-bar :underline nil :weight bold))))
    '(tab-bar-tab-inactive ((t (:inherit tab-bar :weight normal :height 0.8)))))
 
   (advice-add 'tab-bar-rename-tab

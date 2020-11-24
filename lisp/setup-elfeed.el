@@ -14,6 +14,37 @@
   ;;*** Helper functions
   ;;----------------------------------------------------------------------
 
+  (defun my/elfeed-search-tag-filter ()
+    "Filter `elfeed' by tags using completion.
+
+Arbitrary input is also possible, but you may need to exit the
+minibuffer with `exit-minibuffer' (I bind it to C-j in
+`minibuffer-local-completion-map')."
+    (interactive)
+    (unwind-protect
+        (elfeed-search-clear-filter)
+      ;; NOTE for the `crm-separator' to work with just a space, you
+      ;; need to make SPC self-insert in the minibuffer (the default is
+      ;; to behave like tab-completion).
+      (let* ((crm-separator " ")
+             (elfeed-search-filter-active :live)
+             (db-tags (elfeed-db-get-all-tags))
+             (plus-tags (delete-dups
+                         (mapcar (lambda (x)
+                                   (concat "+" (format "%s" x)))
+                                 db-tags)))
+             (minus-tags (delete-dups
+                          (mapcar (lambda (x)
+                                    (concat "-" (format "%s" x)))
+                                  db-tags)))
+             (all-tags (append plus-tags minus-tags))
+             (tags (completing-read-multiple
+                    "Apply tag: "
+                    all-tags nil t))
+             (input (string-join `(,elfeed-search-filter ,@tags) " ")))
+        (setq elfeed-search-filter input))
+      (elfeed-search-update :force)))
+
   (defun elfeed-search-show-entry-pre (&optional lines) 
   "Returns a function to scroll forward or back in the Elfeed
   search results, displaying entries without switching to them."
@@ -94,13 +125,15 @@ MYTAG"
     "open with eww"
     (interactive "P")
     (let ((browse-url-browser-function #'eww-browse-url))
-      (elfeed-show-visit use-generic-p)))
+      (elfeed-show-visit use-generic-p)
+      (add-hook 'eww-after-render-hook 'eww-readable nil t)))
 
   (defun elfeed-search-eww-open (&optional use-generic-p)
     "open with eww"
     (interactive "P")
     (let ((browse-url-browser-function #'eww-browse-url))
-      (elfeed-search-browse-url use-generic-p)))
+      (elfeed-search-browse-url use-generic-p)
+      (add-hook 'eww-after-render-hook 'eww-readable nil t)))
 
   ;;----------------------------------------------------------------------
   ;; Faces

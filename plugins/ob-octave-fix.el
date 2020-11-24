@@ -4,10 +4,7 @@
 ;;- I replaced a `delq' with `delete', the `eq' test was failing on
 ;; blank strings
 ;;
-;;- For results of type `output', concatenate all statements in the
-;; block with appropriate separators (";", "," etc) and run one long
-;; statment instead. Remove this statement from the raw result. This
-;; produces much cleaner output.
+;;- For the second fix see function. C-s "kludge".
 
 (defun org-babel-octave-evaluate-session
     (session body result-type &optional matlabp)
@@ -19,15 +16,7 @@
 	    (`output
 	     (mapconcat
 	      #'org-babel-chomp
-	      (list (if matlabp
-                        (multi-replace-regexp-in-string
-                         '(("%[%\s].*$"                      . "")    ;Remove comments without removing format strings
-                           (";\\s-*\n+"                 . "; ")  ;Concatenate lines
-                           ("\\(\\.\\)\\{3\\}\\s-*\n+"  . " ")   ;Handle continuations
-                           (",*\\s-*\n+"                . ", ")) ;Concatenate lines
-                         body)
-                      body)
-                    org-babel-octave-eoe-indicator) "\n"))
+	      (list body org-babel-octave-eoe-indicator) "\n"))
 	    (`value
 	     (if (and matlabp org-babel-matlab-with-emacs-link)
 		 (concat
@@ -68,30 +57,29 @@
        (setq results
 	     (if matlabp
 		 (cdr (reverse (delete "" (mapcar #'org-strip-quotes
-						  (mapcar #'org-trim (remove-car-upto-newline raw))))))
+						  (mapcar #'org-trim raw)))))
 	       (cdr (member org-babel-octave-eoe-output
 			    (reverse (mapcar #'org-strip-quotes
 					     (mapcar #'org-trim raw)))))))
-       (mapconcat #'identity (reverse results) "\n")))))
-
-(defun remove-car-upto-newline (raw)
-  "Truncate the first string in a list of strings `RAW' up to the first newline"
-  (cons (mapconcat #'identity
-                   (cdr (split-string-and-unquote (car raw) "\n"))
-                   "\n") (cdr raw)))
-
-(defun multi-replace-regexp-in-string (replacements-list string &optional rest)
-  (interactive)
-  "Replace multiple regexps in a string, in the order of listing.
-`REPLACEMENTS-LIST' is an alist, each cons cell of which is of
-the form (regexp . replacement)."
-  (if (null replacements-list)
-      string
-    (let ((regex (caar replacements-list))
-          (replacement (cdar replacements-list)))
-      (multi-replace-regexp-in-string (cdr replacements-list)
-                                      (replace-regexp-in-string regex replacement
-                                                                string rest)))))
+       ;; This kludge is to remove the input lines from the output. Because of
+       ;; the special way that MATLAB processes bulk comint output (the output
+       ;; of each line follows that line) the macro
+       ;; `org-babel-comint-with-output' cannot remove the echoed commands. The
+       ;; following handles this manually, by splitting both the original input
+       ;; (`BODY') and full output (`RESULTS') on newlines, comparing them line
+       ;; by line and removing all lines in BODY from RESULTS. Note that RESULTS
+       ;; is already a list of strings so additional care is needed.
+       (let* ((body-lines (split-string body "\n+"))
+              (result-lines (flatten-list
+                             (mapcar
+                              (lambda (entry) (reverse (split-string entry "\n")))
+                              results))))
+         (mapconcat
+          #'identity
+          (reverse (cl-remove-if
+                    (lambda (line) (member line body-lines))
+                    result-lines)) "\n")
+         )))))
 
 (provide 'ob-octave-fix)
 
@@ -100,3 +88,12 @@ the form (regexp . replacement)."
 ;; (multi-replace-regexp-in-string '(("\\s-+" . "qq")
 ;;                                   ("w"    . "\n"))
 ;;                                 "this is a wery wery blank line")
+
+;; (with-current-buffer (get-buffer-create "*results*")
+;;   (delete-region (point-min) (point-max))
+;;   (insert "----raw results\n")
+;;   (insert (mapconcat #'identity raw "\n"))
+;;   (insert "----fullbody\n")
+;;   (insert full-body "\n\n")
+;;   (insert "----results\n")
+;;   (insert results-output))

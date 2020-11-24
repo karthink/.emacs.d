@@ -59,6 +59,7 @@
                 org-catch-invisible-edits 'smart
                 org-use-speed-commands t
                 org-highlight-latex-and-related '(native)
+                org-imenu-depth 7
                 ;; org-eldoc-breadcrumb-separator " → " 
                 ;; org-hide-leading-stars-before-indent-mode t 
                 ;; org-indent-indentation-per-level 2 
@@ -255,7 +256,8 @@
   :hook (dired-mode . org-download-enable)
   :config
   ;; (setq org-download-backend (if IS-LINUX "curl" "url-retrieve"))
-  (setq org-download-heading-lvl nil))
+  (setq org-download-heading-lvl nil)
+  (setq org-download-backend 'curl))
 
 ;;----------------------------------------------------------------------
 ;; ORG-BABEL
@@ -543,3 +545,46 @@ See `org-capture-templates' for more information."
                                   (make-local-variable 'company-backends)
                                   (push 'company-org-roam company-backends)
                                   )))
+
+;;----------------------------------------------------------------
+;; ORG-TREE-SLIDE - Presentations from within org-mode
+;;----------------------------------------------------------------
+(use-package org-tree-slide
+  :ensure t
+  :after org
+  :commands my/org-presentation-mode
+  :config
+  (setq org-tree-slide-never-touch-face t
+        org-tree-slide-skip-outline-level 8
+        org-tree-slide-heading-emphasis nil
+        org-tree-slide-cursor-init t
+        org-tree-slide-slide-in-effect nil
+        org-tree-slide-activate-message
+        (propertize "ORG PRESENTATION STARTED" 'face 'success)
+        org-tree-slide-deactivate-message
+        (propertize "ORG PRESENTATIONS STOPPED" 'face 'error))
+
+  (define-minor-mode my/org-presentation-mode
+    "Parameters for plain text presentations with `org-mode'."
+    :init-value nil
+    :global nil
+    (if my/org-presentation-mode
+        (progn
+          (unless (eq major-mode 'org-mode)
+            (user-error "Not in an Org buffer"))
+          (org-tree-slide-mode 1)
+          (my/olivetti-mode 1)
+          ;; (org-indent-mode 1)
+          (text-scale-increase 2))
+      (org-tree-slide-mode -1)
+      (my/olivetti-mode -1)
+      ;; (org-indent-mode)
+      (text-scale-decrease 2)
+      (text-scale-mode -1)))
+
+  :bind (("C-c P"      . my/org-presentation-mode)
+         :map org-tree-slide-mode-map
+         ("<C-down>"  . org-tree-slide-display-header-toggle)
+         ("<C-right>" . org-tree-slide-move-next-tree)
+         ("<C-left>"  . org-tree-slide-move-previous-tree))
+  )

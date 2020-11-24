@@ -197,10 +197,6 @@
 ;; Use M-j to join lines. C-j splits them, so it's all good.
 (global-set-key (kbd "M-j") 'join-line)
 
-;; Search in adjacent windows without leaving this one:
-(global-set-key (kbd "C-M-s") 'isearch-forward-other-buffer)
-(global-set-key (kbd "C-M-r") 'isearch-backward-other-buffer)
-
 ;; Easily comment and uncomment region
 (global-set-key (kbd "C-c ;") 'comment-region)
 
@@ -411,28 +407,6 @@
   (interactive)
   (let ((case-fold-search isearch-case-fold-search))
     (occur (if isearch-regexp isearch-string (regexp-quote isearch-string)))))
-
-;;;###autoload
-(defun isearch-forward-other-buffer (prefix)
-  "Function to isearch-forward in other-window."
-  (interactive "P")
-  (save-excursion
-    (let ((next (if prefix -1 1)))
-    (other-window next)
-    (isearch-forward)
-    (other-window (- next))
-    )))
-  
-;;;###autoload
-(defun isearch-backward-other-buffer (prefix)
-  "Function to isearch-backward in other-window."
-  (interactive "P")
-  (save-excursion
-    (let ((next (if prefix 1 -1)))
-    (other-window next)
-    (isearch-backward)
-    (other-window (- next))
-    )))
 
 ;;;###autoload
 (defun save-buffer-if-visiting-file (&optional args)

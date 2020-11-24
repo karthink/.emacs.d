@@ -57,8 +57,8 @@ If buffer-or-name is nil return current buffer's mode."
                            TeX-special-mode)
   "List of major-modes used in documentation buffers")
 
-(defvar +man-modes-list '(Man-mode Info-mode woman-mode)
-  "List of major-modes used in Info-type buffers")
+(defvar +man-modes-list '(Man-mode woman-mode)
+  "List of major-modes used in Man-type buffers")
 
 (defvar +message-modes-list '(Compilation-mode)
   "List of major-modes used in message buffers")

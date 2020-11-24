@@ -58,6 +58,7 @@
         ;;   ("tags" . "(%s)"))
         ;; notmuch-tag-formats
         ;; '(("unread" (propertize tag 'face 'notmuch-tag-unread)))
+        notmuch-always-prompt-for-sender t
         notmuch-hello-sections
         '(notmuch-hello-insert-saved-searches
           notmuch-hello-insert-alltags))
@@ -101,6 +102,7 @@
   )
 
 (use-package counsel-notmuch
+  :disabled
   :commands counsel-notmuch)
 
 (provide 'setup-email)

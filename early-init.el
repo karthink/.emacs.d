@@ -9,7 +9,7 @@
 ;; In Emacs 27+, package initialization occurs before `user-init-file' is
 ;; loaded, but after `early-init-file'. Doom handles package initialization, so
 ;; we must prevent Emacs from doing it early!
-(setq package-enable-at-startup nil)
+(setq package-enable-at-startup t)
 
 ;; Prevent the glimpse of un-styled Emacs by disabling these UI elements early.
 (push '(menu-bar-lines . 0) default-frame-alist)
@@ -25,4 +25,4 @@
 ;; in this file and can conflict with later config (particularly where the
 ;; cursor color is concerned).
 ;; (advice-add #'x-apply-session-resources :override #'ignore)
-(setq inhibit-x-resources t)
+(setq inhibit-x-resources nil)

@@ -7,7 +7,8 @@
   :general
   ("C-x D" 'list-directory)
   (:keymaps 'space-menu-map "fd" '(dired :wk "Dired"))
-  (:keymaps 'dired-mode-map "e" '(ora-ediff-files :wk "Diff marked files"))
+  (:keymaps 'dired-mode-map "e" '(ora-ediff-files :wk "Diff marked files")
+                            "M-s f" nil)
   (:keymaps 'dired-mode-map :states '(normal visual) "SPC" 'space-menu)
   (:keymaps 'evil-window-map :states '(normal visual) "d" 'dired-sidebar-toggle-sidebar)
   :config
@@ -31,6 +32,53 @@
     (select-window window)
     (find-file (dired-get-file-for-visit))))
   )
+
+(use-package dired-aux
+  :config
+  (defmacro my/dired-fd (name doc prompt &rest flags)
+    "Make commands for selecting 'fd' results with completion.
+NAME is how the function should be named.  DOC is the function's
+documentation string.  PROMPT describes the scope of the query.
+FLAGS are the command-line arguments passed to the 'fd'
+executable, each of which is a string."
+    `(defun ,name (&optional arg)
+       ,doc
+       (interactive "P")
+       (let* ((vc (vc-root-dir))
+              (dir (expand-file-name (or vc default-directory)))
+              (regexp (read-regexp
+                       (format "%s matching REGEXP in %s: " ,prompt
+                               (propertize dir 'face 'bold))))
+              (names (process-lines "fd" ,@flags regexp dir))
+              (buf "*FD Dired*"))
+         (if names
+             (if arg
+                 (dired (cons (generate-new-buffer-name buf) names))
+               (find-file
+                (completing-read (format "Items matching %s (%s): "
+                                         (propertize regexp 'face 'success)
+                                         (length names))
+                                 names nil t))))
+         (user-error (format "No matches for « %s » in %s" regexp dir)))))
+
+  (my/dired-fd
+   my/dired-fd-dirs
+   "Search for directories in VC root or PWD.
+With \\[universal-argument] put the results in a `dired' buffer.
+This relies on the external 'fd' executable."
+   "Subdirectories"
+   "-i" "-H" "-a" "-t" "d" "-c" "never")
+
+  (my/dired-fd
+   my/dired-fd-files-and-dirs
+   "Search for files and directories in VC root or PWD.
+With \\[universal-argument] put the results in a `dired' buffer.
+This relies on the external 'fd' executable."
+   "Files and dirs"
+   "-i" "-H" "-a" "-t" "d" "-t" "f" "-c" "never")
+
+  :bind (("M-s f" . my/dired-fd-files-and-dirs)
+         ("M-s d" . my/dired-fd-dirs)))
 
 (use-package dired-x
   :after dired
@@ -65,6 +113,7 @@
             ("\\.md\\'" ,cmd)))))
 
 (use-package find-dired
+  :disabled
   :defer
   :after dired
   :general
@@ -84,6 +133,13 @@
 (use-package dired-async
   :after (dired async)
   :hook (dired-mode-hook . dired-async-mode))
+
+(use-package wdired
+  :after dired
+  :commands wdired-change-to-wdired-mode
+  :config
+  (setq wdired-allow-to-change-permissions t)
+  (setq wdired-create-parent-directories t))
 
 ;;;###autoload
 (defun ora-ediff-files ()
@@ -113,8 +169,8 @@
   (setq dired-subtree-use-backgrounds nil)
   :bind (:map dired-mode-map
               ("<tab>" . dired-subtree-toggle)
-              ;; ("<C-tab>" . dired-subtree-cycle)
-              ;; ("<S-iso-lefttab>" . dired-subtree-remove)
+              ("<C-tab>" . dired-subtree-cycle)
+              ("<S-iso-lefttab>" . dired-subtree-remove)
               ))
 
 (use-package peep-dired
@@ -123,6 +179,8 @@
   (:states '(normal visual)
            :keymaps 'dired-mode-map
            "z p" 'peep-dired)
+  (:keymaps 'dired-mode-map
+            "P" 'peep-dired)
   :config
   (add-hook 'peep-dired-hook 'evil-normalize-keymaps)
   (general-def
@@ -151,7 +209,7 @@
 
 (use-package dired-sidebar
   :after dired
-  :ensure t
+  :disabled
   :commands (dired-sidebar-toggle-sidebar)
   :general
   ("C-x D"  'list-directory
@@ -187,7 +245,6 @@
 
 (use-package ibuffer-sidebar
   :disabled
-  :ensure t
   :commands +ibuffer-sidebar-toggle
   :general
   ("C-x C-d" '+ibuffer-sidebar-toggle)

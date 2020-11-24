@@ -49,14 +49,40 @@ afterwards exit the search altogether."
     (isearch-forward-symbol-at-point)
     (isearch-query-replace-regexp))
 
-  :bind (("M-s M-o" . multi-occur)
-         ("M-s %" . my/isearch-query-replace-symbol-at-point)
+;;;###autoload
+  (defun my/isearch-forward-other-buffer (prefix)
+    "Function to isearch-forward in other-window."
+    (interactive "P")
+    (unless (one-window-p)
+      (save-excursion
+        (let ((next (if prefix -1 1)))
+          (other-window next)
+          (isearch-forward)
+          (other-window (- next))
+          ))))
+  
+;;;###autoload
+  (defun my/isearch-backward-other-buffer (prefix)
+    "Function to isearch-backward in other-window."
+    (interactive "P")
+    (unless (one-window-p)
+      (save-excursion
+        (let ((next (if prefix 1 -1)))
+          (other-window next)
+          (isearch-backward)
+          (other-window (- next))
+          ))))
+
+  :bind (("M-s M-o"    . multi-occur)
+         ("M-s %"      . my/isearch-query-replace-symbol-at-point)
          :map minibuffer-local-isearch-map
-         ("M-/" . isearch-complete-edit)
+         ("M-/"        . isearch-complete-edit)
          :map isearch-mode-map
-         ("M-/" . isearch-complete)
-         ("C-SPC" . my/isearch-mark-and-exit)
-         ("DEL" . my/isearch-abort)
-         ("<C-return>" . my/isearch-other-end)))
+         ("M-/"        . isearch-complete)
+         ("C-SPC"      . my/isearch-mark-and-exit)
+         ("DEL"        . my/isearch-abort)
+         ("<C-return>" . my/isearch-other-end)
+         ("C-M-s"      . my/isearch-forward-other-buffer)
+         ("C-M-r"      . my/isearch-backward-other-buffer)))
 
 (provide 'setup-isearch)

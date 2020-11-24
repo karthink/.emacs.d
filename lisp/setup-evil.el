@@ -6,6 +6,7 @@
   :init
   (setq evil-want-keybinding nil)
   (global-evil-leader-mode 1)
+  (setq evil-undo-system 'undo-tree)
   (evil-leader/set-leader "<SPC>")
   (evil-leader/set-key-for-mode 'emacs-lisp-mode "cB"
     (defun byte-compile-this-file () "Byte-compile file"
@@ -195,6 +196,7 @@
   (setq evil-vsplit-window-right t)
   (setq evil-split-window-below t)
   (setq evil-mode-line-format '(before . mode-line-front-space))
+  (setq evil-undo-system 'undo-tree)
   ;; (add-hook 'evil-jumps-post-jump-hook #'recenter)
   :general
   (:states '(motion)
@@ -292,6 +294,8 @@
   (setq evil-search-module 'evil-search)
   (add-to-list 'evil-emacs-state-modes 'undo-tree-visualizer-mode)
   (add-to-list 'evil-emacs-state-modes 'eww-mode)
+  (add-to-list 'evil-emacs-state-modes 'sdcv-mode)
+  (add-to-list 'evil-emacs-state-modes 'view-mode)
 
 ;; (fset 'yank-pop #'counsel-yank-pop)
 
@@ -765,9 +769,12 @@ This excludes the protocol and querystring."
   :after evil
   :hook ((LaTeX-mode . evil-tex-mode)
          (org-mode   . evil-tex-mode)
-         (evil-tex-mode . (lambda () (when (eq major-mode 'org)
-                                    (evil-define-key '(normal motion) evil-tex-mode-map (kbd "[[") nil)
-                                    (evil-define-key '(normal motion) evil-tex-mode-map (kbd "]]") nil)))))
+         (evil-tex-mode . my/evil-tex-turn-off-sec-nav-for-org))
+  :config
+  (defun my/evil-tex-turn-off-sec-nav-for-org ()
+    (when (eq major-mode 'org)
+          (evil-define-key '(normal motion) evil-tex-mode-map (kbd "[[") nil)
+          (evil-define-key '(normal motion) evil-tex-mode-map (kbd "]]") nil)))
   )
 
 ;; EVIL-OWL
@@ -782,6 +789,39 @@ This excludes the protocol and querystring."
 ;;                  (window-height . 0.3)))
 ;;   (evil-owl-mode)
 ;;   )
+
+;; Packages that integrate with Evil
+(use-package winum
+  :init
+  (defun +evil-mode-line-faces ()
+    (if (not (fboundp 'evil-mode))
+        'winum-face
+      (cond
+       ((evil-emacs-state-p)    '((bold :background "SkyBlue2" :foreground "black")))
+       ((evil-insert-state-p)   '((bold :background "chartreuse3" :foreground "black")))
+       ((evil-replace-state-p)  '((bold :background "chocolate" :foreground "black")))
+       ((evil-motion-state-p)   '((bold :background "plum3" :foreground "black")))
+       ((evil-visual-state-p)   '((bold :background "gray" :foreground "black")))
+       ((evil-operator-state-p) '((bold :background "sandy brown" :foreground "black")))
+       (t ;;'((bold :background "DarkGoldenrod2" :foreground "black")) 
+        '((bold :inherit mode-line))
+        )
+       )))
+
+  (setq winum--mode-line-segment
+        '(:eval
+          (propertize (format winum-format (int-to-string (winum-get-number)))
+                      'face (+evil-mode-line-faces))))
+  (winum-mode 1))
+
+(use-package view
+  :hook (view-mode . my/view-turn-off-evil)
+  :config
+  (defun my/view-turn-off-evil ()
+      "Toggle evil-mode when turning on view-mode"
+      (if view-mode
+          (evil-emacs-state)
+        (evil-exit-emacs-state))))
 
 ;; EVIL-COLLECTION
 (use-package evil-collection
@@ -838,25 +878,25 @@ This excludes the protocol and querystring."
 
   (with-eval-after-load 'notmuch
 
-    (defun +disable-evil-C-Tab (mode-map)
-      "Disable Control-Tab in evil-mode normal/visual/insert mode-map"
-      (evil-define-key* '(normal visual insert) (symbol-value mode-map) (kbd "C-TAB") nil)
-      (evil-define-key* '(normal visual insert) (symbol-value mode-map) (kbd "C-<tab>") nil)
-      (define-key mode-map (kbd "C-<tab>") nil))
+    ;; (defun +disable-evil-C-Tab (mode-map)
+    ;;   "Disable Control-Tab in evil-mode normal/visual/insert mode-map"
+    ;;   (evil-define-key* '(normal visual insert) (symbol-value mode-map) (kbd "C-TAB") nil)
+    ;;   (evil-define-key* '(normal visual insert) (symbol-value mode-map) (kbd "C-<tab>") nil)
+    ;;   (define-key mode-map (kbd "C-<tab>") nil))
 
-    ;; Disable Control-Tab in all notmuch modes to make it easier to
-    ;; switch buffers
-    (dolist (mode '((notmuch-hello-mode-hook . notmuch-hello-mode-map)
-                    (notmuch-show-mode-hook . notmuch-show-mode-map)
-                    (notmuch-tree-mode-hook . notmuch-tree-mode-map)
-                    (notmuch-search-mode-hook . notmuch-search-mode-map)
-                    ;; (custom-mode-hook . custom-mode-map)
-                    ))
-      (let ((mode-hook (car mode))
-            (mode-map (cdr mode)))
-        (add-hook mode-hook  
-                  (lambda ()
-                    (+disable-evil-C-Tab mode-map)))))
+    ;; ;; Disable Control-Tab in all notmuch modes to make it easier to
+    ;; ;; switch buffers
+    ;; (dolist (mode '((notmuch-hello-mode-hook . notmuch-hello-mode-map)
+    ;;                 (notmuch-show-mode-hook . notmuch-show-mode-map)
+    ;;                 (notmuch-tree-mode-hook . notmuch-tree-mode-map)
+    ;;                 (notmuch-search-mode-hook . notmuch-search-mode-map)
+    ;;                 ;; (custom-mode-hook . custom-mode-map)
+    ;;                 ))
+    ;;   (let ((mode-hook (car mode))
+    ;;         (mode-map (cdr mode)))
+    ;;     (add-hook mode-hook  
+    ;;               (lambda ()
+    ;;                 (+disable-evil-C-Tab mode-map)))))
 
     ;; (dolist (mode-map (list notmuch-hello-mode-map
     ;;                         notmuch-show-mode-map

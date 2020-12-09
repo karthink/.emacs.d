@@ -29,7 +29,8 @@ If buffer-or-name is nil return current buffer's mode."
                                  xref--xref-buffer-mode
                                  ivy-occur-grep-mode
                                  ivy-occur-mode
-                                 locate-mode)
+                                 locate-mode
+                                 rg-mode)
   "List of major-modes used in occur-type buffers")
 
 ;; This does not work at buffer creation since the major-mode for
@@ -183,7 +184,8 @@ If buffer-or-name is nil return current buffer's mode."
 
         ("\\*Custom.*"
          (display-buffer-in-side-window)
-         (window-width . (lambda (win) (fit-window-to-buffer win nil nil 65)))
+         (window-width . 70 ;; (lambda (win) (fit-window-to-buffer win nil nil 65))
+                       )
          (side . right)
          (slot . 5)
          (window-parameters . (;; (no-other-window . t)
@@ -293,7 +295,9 @@ If buffer-or-name is nil return current buffer's mode."
          )
 
         ((lambda (buf act) (member (buffer-mode buf) +help-modes-list))
-         (+select-buffer-in-side-window display-buffer-in-direction)
+         (display-buffer-reuse-window
+          +select-buffer-in-side-window
+          display-buffer-in-direction)
          (direction . below)
          (window-height . (lambda (win) (fit-window-to-buffer win 25 14))) 
          ;; (window-width . (lambda (win) (fit-window-to-buffer win nil nil 85 55)))

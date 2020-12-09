@@ -11,7 +11,7 @@
  '(awesome-tray-mode-line-inactive-color "#d7d7d7")
  '(column-number-mode t)
  '(compilation-message-face 'default)
- '(counsel-mode t)
+ '(counsel-mode nil)
  '(cua-global-mark-cursor-color "#2aa198")
  '(cua-normal-cursor-color "#657b83")
  '(cua-overwrite-cursor-color "#b58900")
@@ -32,6 +32,8 @@
  '(flymake-warning-bitmap '(exclamation-mark modus-theme-fringe-yellow))
  '(fringe-mode '(nil . 0) nil (fringe))
  '(global-undo-tree-mode t)
+ '(helm-completion-style 'emacs)
+ '(helm-mode nil)
  '(highlight-changes-colors '("#d33682" "#6c71c4"))
  '(highlight-symbol-colors
    '("#efe4da49afb1" "#cfc4e1acd08b" "#fe52c9e6b34e" "#dbb6d3c2dcf3" "#e183dee0b053" "#f944cc6dae47" "#d35fdac4e069"))
@@ -153,7 +155,7 @@
      ("docker" modus-theme-nuanced-cyan)
      ("json" modus-theme-nuanced-cyan)))
  '(package-selected-packages
-   '(lua-mode dot-mode dictionary notmuch eyebrowse dired-subtree modus-vivendi-theme olivetti-mode olivetti sdcv rg dired-async easy-kill mixed-pitch scratch org-download keycast gif-screencast doom-themes modus-operandi-theme evil-tex dumb-jump markdown-mode peep-dired ivy-youtube org-re-reveal-ref geiser general helpful yasnippet-snippets org-tree-slide org-re-reveal ivy-rich ox-hugo magit transient company-prescient embark evil-collection evil-surround winum evil-textobj-anyblock evil-textobj-entire evil-textobj-column evil-indent-textobject evil-traces evil-nerd-commenter simple-httpd evil-smartparens smartparens diff-hl nord-theme which-key ibuffer-vc evil-embrace flx latex-extra mixed-pitch-mode iedit presentation ivy-prescient rainbow-delimiters ivy-hydra counsel anki-editor dired-x wgrep-ag wgrep matlab-mode eglot elgot dracula-theme matlab auctex cdlatex fish-completion fish-mode visual-fill-column-mode ace-window embrace company company-bibtex wrap-region evil-exchange evil-lion evil-numbers evil-rsi evil-snipe evil-visualstar org-bullets smart-mode-line rainbow-mode evil-magit undo-tree evil-tabs org-evil use-package ido-completing-read+ evil-replace-with-register iy-go-to-char smex ido-grid-mode composable evil wolfram-mode julia-repl julia-shell dash deferred request-deferred s dash-functional ein ein-mumamo color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme expand-region multiple-cursors))
+   '(imenu-list flimenu orderless icomplete-vertical julia-shell julia-mode golden-ratio lua-mode dot-mode dictionary notmuch eyebrowse dired-subtree modus-vivendi-theme olivetti-mode olivetti sdcv rg dired-async easy-kill mixed-pitch scratch org-download keycast gif-screencast doom-themes modus-operandi-theme evil-tex dumb-jump markdown-mode peep-dired ivy-youtube org-re-reveal-ref geiser general helpful yasnippet-snippets org-tree-slide org-re-reveal ivy-rich ox-hugo magit transient company-prescient embark evil-collection evil-surround winum evil-textobj-anyblock evil-textobj-entire evil-textobj-column evil-indent-textobject evil-traces evil-nerd-commenter simple-httpd evil-smartparens smartparens diff-hl nord-theme which-key ibuffer-vc evil-embrace flx latex-extra mixed-pitch-mode iedit presentation ivy-prescient rainbow-delimiters ivy-hydra counsel anki-editor dired-x wgrep-ag wgrep matlab-mode eglot elgot dracula-theme matlab auctex cdlatex fish-completion fish-mode visual-fill-column-mode ace-window embrace company company-bibtex wrap-region evil-exchange evil-lion evil-numbers evil-rsi evil-snipe evil-visualstar org-bullets smart-mode-line rainbow-mode evil-magit undo-tree evil-tabs org-evil use-package ido-completing-read+ evil-replace-with-register iy-go-to-char smex ido-grid-mode composable evil wolfram-mode dash deferred request-deferred s dash-functional ein ein-mumamo color-theme-modern hc-zenburn-theme labburn-theme zenburn-theme expand-region multiple-cursors))
  '(pdf-view-midnight-colors '("#DCDCCC" . "#383838"))
  '(pos-tip-background-color "#36473A")
  '(pos-tip-foreground-color "#FFFFC8")
@@ -176,7 +178,7 @@
      (org-download-heading-lvl . 0)
      (org-download-image-dir . "~/Pictures/anki/")
      (eval outline-hide-sublevels 5)))
- '(semantic-mode nil)
+ '(semantic-mode t)
  '(send-mail-function 'smtpmail-send-it)
  '(shackle-default-size 0.25)
  '(shackle-rules

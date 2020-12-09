@@ -584,6 +584,9 @@ See `org-capture-templates' for more information."
 
   :bind (("C-c P"      . my/org-presentation-mode)
          :map org-tree-slide-mode-map
+         ("<next>" . org-tree-slide-move-next-tree)
+         ("<prior>" . org-tree-slide-move-previous-tree)
+         ("<home>" . 'org-tree-slide-display-header-toggle)
          ("<C-down>"  . org-tree-slide-display-header-toggle)
          ("<C-right>" . org-tree-slide-move-next-tree)
          ("<C-left>"  . org-tree-slide-move-previous-tree))

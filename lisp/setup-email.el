@@ -63,6 +63,15 @@
         '(notmuch-hello-insert-saved-searches
           notmuch-hello-insert-alltags))
 
+  (define-key notmuch-search-mode-map (kbd "d")
+    (defun my/notmuch-toggle-trash ()
+      (interactive)
+      (let ((taglist (if (member "trash" (notmuch-search-get-tags))
+                         '("+inbox" "-trash")
+                       '("-inbox" "+trash"))))
+        (notmuch-search-tag taglist)
+        (notmuch-search-next-thread))))
+  
   ;; (defun +disable-C-tab (mode-map)
   ;;   "Disable Control-Tab in mode-map"
   ;;   (define-key mode-map (kbd "C-TAB") nil)

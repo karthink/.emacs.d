@@ -563,11 +563,21 @@ output instead."
   :general
   ("M-r" (general-simulate-key "C-x r")))
 
+(use-package easy-kill
+  :ensure t
+  :bind (([remap kill-ring-save] . #'easy-kill)
+         ([remap mark-sexp]      . #'easy-mark)))
+
+(use-package goto-chg
+  :ensure t
+  :bind ("C-;" . goto-last-change))
+
 ;;######################################################################
 ;;;* BUFFER AND WINDOW MANAGEMENT
 ;;######################################################################
 (use-package recentf
   :defer 2
+  :init (recentf-mode 1)
   :config
   (setq recentf-save-file "~/.cache/emacs/recentf")
   )
@@ -581,8 +591,8 @@ output instead."
   ;;        ("<f8>" . +make-frame-floating-with-current-buffer)
   ;;        ("C-M-`" . window-toggle-side-windows))
   :general
-  ("<f8>" '+make-frame-floating-with-current-buffer
-   "C-M-`" 'window-toggle-side-windows)
+  ("<f8>" '+make-frame-floating-with-current-buffer)
+   ;; "C-M-`" 'window-toggle-side-windows
   (:keymaps 'space-menu-window-map
    :wk-full-keys nil
    "w" '(window-toggle-side-windows :wk "toggle side windows"))
@@ -595,6 +605,8 @@ output instead."
   :load-path "~/.local/share/git/popup-buffers"
   :after setup-windows
   :commands popup-buffers-mode
+  :bind (("C-`" . popup-buffers-toggle-latest)
+         ("C-M-`" . popup-buffers-cycle))
   :init
   (setq popup-buffers-reference-buffers
         (append +help-modes-list
@@ -678,7 +690,7 @@ output instead."
   
   ;; If evil-mode is enabled further mode-line customization is needed before
   ;; enabling winum:
-  (if (not (fboundp 'evil-mode))
+  (unless (bound-and-true-p evil-mode)
       (winum-mode 1)))
 
 ;;;** Winner mode
@@ -706,7 +718,7 @@ output instead."
   (setq aw-dispatch-always t
         aw-scope 'global
         aw-background nil
-        aw-keys '(?1 ?2 ?3 ?4 ?5 ?6 ?7 ?8 ?9))
+        aw-keys '(?q ?w ?e ?r ?t ?y ?u ?i ?p))
   (setq aw-dispatch-alist
         '((?k aw-delete-window "Delete Window")
           (?m aw-swap-window "Swap Windows")
@@ -839,7 +851,7 @@ Essentially a much simplified version of `next-line'."
                 (get-char-property (1- (point)) 'invisible))
       (beginning-of-line 2)))
 
-  (defvar outline-cycle-emulate-tab t
+  (defvar outline-cycle-emulate-tab nil
     "Use tab to indent (when not on a heading) in outline-minor-mode")
 
   (defun outline-cycle () (interactive)
@@ -881,9 +893,53 @@ Essentially a much simplified version of `next-line'."
            )
 
           (t
-           ;; Not at a headline: Do indent-relative
-           (outline-back-to-heading))))
+           ;; Not at a headline: Do whatever this key would do otherwise.
+           ;; (outline-back-to-heading)
+           (let ((normal-binding (let ((outline-minor-mode nil))
+                                    (key-binding (this-command-keys-vector)))))
+             (if normal-binding
+                 (call-interactively normal-binding)
+               (indent-according-to-mode)))
+           )))
   )
+
+(use-package imenu
+  :hook (imenu-after-jump . my/imenu-show-entry)
+  :config
+  (setq imenu-use-markers t
+        imenu-auto-rescan t
+        imenu-max-item-length 100
+        imenu-use-popup-menu nil
+        imenu-eager-completion-buffer t
+        imenu-space-replacement " "
+        imenu-level-separator "/")
+  
+  (declare-function org-at-heading-p "org")
+  (declare-function org-show-entry "org")
+  (declare-function org-reveal "org")
+  (declare-function outline-show-entry "outline")
+
+  (defun prot-imenu-show-entry ()
+    "Reveal index at point after successful `imenu' execution.
+To be used with `imenu-after-jump-hook' or equivalent."
+    (cond
+     ((and (eq major-mode 'org-mode)
+           (org-at-heading-p))
+      (org-show-entry)
+      (org-reveal t))
+     ((bound-and-true-p prot-outline-minor-mode)
+      (outline-show-entry)))))
+
+(use-package flimenu
+  :ensure t
+  :after imenu
+  :config
+  (flimenu-global-mode 1))
+
+(use-package imenu-list
+  :ensure t
+  :after imenu
+  :defer)
 
 (use-package scratch
   :ensure
@@ -1268,24 +1324,35 @@ If region is active, add its contents to the new buffer."
 ;;----------------------------------------------------------------------
 (use-package matlab
   :defer
+  :commands (matlab-shell matlab-mode)
   :ensure matlab-mode
   ;; :after 'evil
   ;; :commands (matlab-mode matlab-shell matlab-shell-run-block)
   :hook ((matlab-mode . company-mode-on)
-         (matlab-mode . (lambda ()  (interactive)
+         (matlab-mode . (lambda ()
                           (setq-local buffer-file-coding-system 'us-ascii)
                           (outline-minor-mode)
                           (setq-local page-delimiter "%%+")
                           (setq-local outline-regexp "^\\s-*%%+")
                           (outline-hide-sublevels 3)
+                          (when (require 'matlab-xref nil t)
+                            (make-local-variable 'xref-backend-functions)
+                            (add-hook 'xref-backend-functions #'matlab-shell-xref-activate))
                           ))
+         (org-mode . (lambda ()
+                       (when (require 'matlab-xref nil t)
+                         (make-local-variable 'xref-backend-functions)
+                         (add-hook 'xref-backend-functions #'matlab-shell-xref-activate))))
          (matlab-shell-mode . (lambda ()
                                 (buffer-disable-undo)
                                 (setq comint-process-echoes t)
                                 (setq-local company-idle-delay 0.1)
                                 (company-mode-on))))
   :bind (:map matlab-mode-map
-              ("C-c C-b" . 'matlab-shell-run-block))
+              ("C-c C-b" . 'matlab-shell-run-block)
+              ("C-h ." . '+matlab-shell-help-at-point)
+              :map matlab-shell-mode-map
+              ("C-h ." . '+matlab-shell-help-at-point))
   :config
   ;; (load-library "matlab-load")
   ;; (matlab-cedet-setup)
@@ -1309,16 +1376,23 @@ If region is active, add its contents to the new buffer."
 
   ;; :config
   (setq matlab-shell-command "matlab")
-  (add-to-list 'matlab-shell-command-switches "-nosplash")
+  ;; (add-to-list 'matlab-shell-command-switches "-nosplash")
   (setq matlab-shell-debug-tooltips-p t)
   (setq matlab-shell-echoes nil)
   (setq matlab-shell-run-region-function 'matlab-shell-region->script)
   (add-hook 'matlab-shell-mode-hook (lambda () (interactive)
                                       (define-key matlab-shell-mode-map (kbd "C-<tab>") nil)))
+
+  (defun +matlab-shell-help-at-point (&optional arg)
+    (interactive "P")
+    (let ((fcn (matlab-read-word-at-point)))
+      (if (and fcn (not (equal fcn "")))
+          (matlab-shell-describe-command fcn))))
+
 ;;;###autoload
   (defun +matlab-shell-no-select-a (&rest _args)
-   "Switch back to matlab file buffer after evaluating region"  
-   (select-window (get-mru-window)))
+    "Switch back to matlab file buffer after evaluating region"  
+    (select-window (get-mru-window)))
   (advice-add 'matlab-shell-run-region :after #'+matlab-shell-no-select-a)
 
 ;;;###autoload
@@ -1608,7 +1682,12 @@ _p_rev       _u_pper              _=_: upper/lower       _r_esolve
   ("M-g" goto-line "goto line" :color blue)
   ("TAB" move-to-column "goto col" :color blue)
   ("c" goto-char "goto char" :color blue )
-  )
+  ("M-RET" embark-act "Act on region" :color blue)
+  ("M-;" goto-last-change "Last change" :color blue)
+  (";" goto-last-change "Last change" :color blue)
+  ("o" embark-act "Act on region" :color blue)
+  ("M-o" embark-act "Act on region" :color blue)
+)
 
 ;; (eval
 ;;  `(defhydra hydra-evil-window-map (:columns 2)
@@ -1945,6 +2024,10 @@ _d_: subtree
 (require 'setup-email)
 
 ;;----------------------------------------------------------------------
+;;;** ELFEED
+;;----------------------------------------------------------------------
+(require 'setup-elfeed)
+;;----------------------------------------------------------------------
 ;;;** NAV-FLASH
 ;;----------------------------------------------------------------------
 ;; (use-package nav-flash)
@@ -2134,7 +2217,11 @@ fully before starting comparison."
   :general
   (:keymaps 'help-map
             :wk-full-keys nil
-            "." '(helpful-at-point :wk "help at point"))
+            "." '(helpful-at-point :wk "help at point")
+            "v" '(helpful-variable :wk "Describe variable")
+            "f" '(helpful-callable :wk "Describe function")
+            "k" '(helpful-key :wk "Describe keybind")
+            "C" '(helpful-command :wk "Describe command"))
   ;; (:keymaps 'space-menu-help-map
   ;;           :wk-full-keys nil
   ;;           "f" '(helpful-callable :wk "Describe function")
@@ -2300,6 +2387,47 @@ project, as defined by `vc-root-dir'."
   ;;   (define-key keymap (kbd "C-<tab>") nil))
   )
 
+;; Misc git functions
+(use-package emacs
+  :config
+  ;; From http://xenodium.com/emacs-clone-git-repo-from-clipboard/
+  ;; Auto-git-clone url in clipboard
+  (defun my/git-clone-clipboard-url ()
+    "Clone git URL in clipboard asynchronously and open in dired when finished."
+    (interactive)
+    (cl-assert (string-match-p "^\\(http\\|https\\|ssh\\)://" (current-kill 0)) nil "No URL in clipboard")
+    (let* ((url (current-kill 0))
+           (download-dir (expand-file-name "~/.local/share/git/"))
+           (project-dir (concat (file-name-as-directory download-dir)
+                                (file-name-base url)))
+           (default-directory download-dir)
+           (command (format "git clone %s" url))
+           (buffer (generate-new-buffer (format "*%s*" command)))
+           (proc))
+      (when (file-exists-p project-dir)
+        (if (y-or-n-p (format "%s exists. delete?" (file-name-base url)))
+            (delete-directory project-dir t)
+          (user-error "Bailed")))
+      (switch-to-buffer buffer)
+      (setq proc (start-process-shell-command
+                  (shell-quote-argument (nth 0 (split-string command)))
+                  buffer command))
+      (with-current-buffer buffer
+        (setq default-directory download-dir)
+        (shell-command-save-pos-or-erase)
+        (require 'shell)
+        (shell-mode)
+        (view-mode +1))
+      (set-process-sentinel proc (lambda (process state)
+                                   (let ((output (with-current-buffer (process-buffer process)
+                                                   (buffer-string))))
+                                     (kill-buffer (process-buffer process))
+                                     (if (= (process-exit-status process) 0)
+                                         (progn
+                                           (message "finished: %s" command)
+                                           (dired project-dir))
+                                       (user-error (format "%s\n%s" command output))))))
+      (set-process-filter proc #'comint-output-filter))))
 ;;----------------------------------------------------------------------
 ;;;** WHICH-KEY
 ;;----------------------------------------------------------------------
@@ -2575,10 +2703,9 @@ project, as defined by `vc-root-dir'."
 (use-package icomplete
   :disabled
   :demand
-  :config
+  :init
   (require 'setup-icomplete nil t)
-  (icomplete-mode 1)
-  )
+  (icomplete-mode 1))
 
 ;;----------------------------------------------------------------------
 ;;;*** IVY/COUNSEL/SWIPER
@@ -2588,7 +2715,6 @@ project, as defined by `vc-root-dir'."
 ;;; Bibtex management from ivy. Call ivy-bibtex.
 (use-package ivy-bibtex
   :disabled
-  :ensure t
   :after ivy
   :functions bibtex-completion-open-pdf
   :commands ivy-bibtex
@@ -2618,7 +2744,7 @@ project, as defined by `vc-root-dir'."
    '(("P" ivy-bibtex-open-pdf-external "Open PDF file in external viewer (if present)"))))
 
 (use-package ivy-youtube
-  :ensure
+  :disabled
   :after ivy
   :general 
   (:keymaps 'space-menu-map
@@ -2775,7 +2901,7 @@ DIR must include a .project file to be considered a project."
            ("C-x p DEL" . my/project-remove-project)
            ;; ("M-s p" . my/project-switch-project)
            ;; ("M-s f" . my/project-find-file-vc-or-dir)
-           ("M-s l" . find-library))
+           ("M-s M-l" . find-library))
     )
 
 ;;----------------------------------------------------------------------
@@ -2890,7 +3016,6 @@ becomes a blinking bar. Evil-mode (if bound) is disabled."
                  (evil-emacs-state-p))
         (evil-exit-emacs-state))
       (kill-local-variable 'cursor-type)))
-
 
   (define-minor-mode my/reader-mode
     "Mode to read a buffer in style. Pop it out into a frame,
@@ -3124,7 +3249,7 @@ the mode-line and switches to `variable-pitch-mode'."
     (unless current-prefix-arg
       (mapc #'disable-theme custom-enabled-themes))
     (load-theme theme t))
-  
+
   ;; :init
   ;; (load-theme 'smart-mode-line-atom-one-dark)
   ;; (load-theme 'atom-one-dark t)
@@ -3187,6 +3312,8 @@ the mode-line and switches to `variable-pitch-mode'."
           modus-operandi-theme-intense-paren-match t
           modus-operandi-theme-bold-constructs t
           modus-operandi-theme-completions 'opinionated
+          modus-operandi-theme-diffs 'desaturated
+          modus-operandi-theme-syntax 'faint
           ))
 
 (use-package modus-vivendi-theme
@@ -3204,6 +3331,8 @@ the mode-line and switches to `variable-pitch-mode'."
           modus-vivendi-theme-intense-paren-match t
           modus-vivendi-theme-bold-constructs t
           modus-vivendi-theme-completions 'opinionated
+          modus-vivendi-theme-diffs 'desaturated
+          modus-vivendi-theme-syntax 'faint
           ))
 
   (cond (IS-LINUX
@@ -3254,6 +3383,14 @@ the mode-line and switches to `variable-pitch-mode'."
 (setq request-storage-directory "~/.cache/emacs/request/")
 (setq semanticdb-default-save-directory "~/.cache/emacs/semanticdb/")
 
+(use-package savehist
+  :defer 2
+  :hook (after-init . savehist-mode)
+  :config
+  (setq savehist-file "~/.cache/emacs/savehist")
+  (setq history-length 1000)
+  (setq history-delete-duplicates t)
+  (setq savehist-save-minibuffer-history t))
 ;;;* LOCAL-VARIABLES
 ;; Local Variables:
 ;; outline-regexp: ";;;\\*+"

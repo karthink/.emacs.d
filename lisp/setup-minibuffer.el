@@ -1,7 +1,9 @@
+(use-package minibuffer
+  :config
 ;; Minibuffer completion
 (setq completion-cycle-threshold 3
       completion-flex-nospace nil
-      completion-pcm-complete-word-inserts-delimiters t
+      completion-pcm-complete-word-inserts-delimiters nil
       ;;completion-pcm-word-delimiters "-_./:| "
       completion-show-help nil
       completion-ignore-case t
@@ -16,6 +18,11 @@
       ;; '((file (styles basic flex substring))
       ;;   (buffer (styles basic flex substring)))
 )
+
+(minibuffer-depth-indicate-mode 1)
+(minibuffer-electric-default-mode nil)
+;; (define-key minibuffer-local-completion-map (kbd "-") #'minibuffer-complete-word)
+
 ;; Technically, this is not specific to the minibuffer, but I define
 ;; it here so that you can see how it is also used from inside the
 ;; "Completions" buffer
@@ -38,13 +45,13 @@ instead."
           (select-window (get-mru-window)))))))
 
 ;;;###autoload
-(defun my/completions-kill-save-symbol ()
-  "Add symbol-at-point to the kill ring.
+;; (defun my/completions-kill-save-symbol ()
+;;   "Add symbol-at-point to the kill ring.
 
-Intended for use in the \\*Completions\\* buffer.  Bind this to a
-key in `completion-list-mode-map'."
-  (interactive)
-  (kill-new (thing-at-point 'symbol)))
+;; Intended for use in the \\*Completions\\* buffer.  Bind this to a
+;; key in `completion-list-mode-map'."
+;;   (interactive)
+;;   (kill-new (thing-at-point 'symbol)))
 
 (define-key minibuffer-local-completion-map (kbd "C-,") 'my/minibuffer-toggle-completion-styles)
 (define-key minibuffer-local-completion-map (kbd "?")
@@ -135,6 +142,6 @@ styles are described in `completion-styles-alist'."
         (setq-local completion-styles my/minibuffer-user-completion-styles)
         (message "%s" (propertize "DEFAULT matching" 'face 'highlight))
 	)
-       ))))
+       )))))
 
 (provide 'setup-minibuffer)

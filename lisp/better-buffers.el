@@ -26,6 +26,10 @@
                                (kill-buffer)
                                (delete-window))))))
 
+(global-set-key [remap kill-buffer] 'kill-this-buffer)
+(global-set-key (kbd "M-`") (lambda (&optional _arg)
+                              (interactive)
+                              (switch-to-buffer (other-buffer))))
 
 (use-package ibuffer
   :defer t
@@ -134,6 +138,11 @@ When no VC root is available, use standard `switch-to-buffer'."
 ;;; Toggle window split between horizontal and vertical
 (define-key ctl-x-4-map "t" 'toggle-window-split)
 (define-key ctl-x-4-map "|" 'toggle-window-split)
+
+(advice-add 'split-window-right :after
+            (lambda (_) "Go to newly created window" (other-window 1)))
+(advice-add 'split-window-below :after
+            (lambda (_) "Go to newly created window" (other-window 1)))
 
 ;;----------------------------------------------------------------------
 ;; FUNCTIONS

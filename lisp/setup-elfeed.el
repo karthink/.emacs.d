@@ -1,49 +1,19 @@
 ;;;** ELFEED  -*- lexical-binding: t; -*-
 ;;----------------------------------------------------------------------
 (use-package elfeed
-  :commands elfeed
+  :commands (elfeed elfeed-update elfeed-search-bookmark-handler)
   :load-path ("~/.local/share/git/melpa/elfeed/"
               "~/.local/share/git/melpa/elfeed/web")
-  :init
+  :config
   (setq-default elfeed-db-directory "~/.cache/emacs/elfeed"
                 elfeed-save-multiple-enclosures-without-asking t
                 elfeed-search-clipboard-type 'CLIPBOARD
-                elfeed-search-filter "@1-week-ago #50 +unread "
+                elfeed-search-filter "#50 +unread "
                 elfeed-show-entry-switch #'elfeed-display-buffer)
   ;;----------------------------------------------------------------------
   ;;*** Helper functions
   ;;----------------------------------------------------------------------
 
-  (defun my/elfeed-search-tag-filter ()
-    "Filter `elfeed' by tags using completion.
-
-Arbitrary input is also possible, but you may need to exit the
-minibuffer with `exit-minibuffer' (I bind it to C-j in
-`minibuffer-local-completion-map')."
-    (interactive)
-    (unwind-protect
-        (elfeed-search-clear-filter)
-      ;; NOTE for the `crm-separator' to work with just a space, you
-      ;; need to make SPC self-insert in the minibuffer (the default is
-      ;; to behave like tab-completion).
-      (let* ((crm-separator " ")
-             (elfeed-search-filter-active :live)
-             (db-tags (elfeed-db-get-all-tags))
-             (plus-tags (delete-dups
-                         (mapcar (lambda (x)
-                                   (concat "+" (format "%s" x)))
-                                 db-tags)))
-             (minus-tags (delete-dups
-                          (mapcar (lambda (x)
-                                    (concat "-" (format "%s" x)))
-                                  db-tags)))
-             (all-tags (append plus-tags minus-tags))
-             (tags (completing-read-multiple
-                    "Apply tag: "
-                    all-tags nil t))
-             (input (string-join `(,elfeed-search-filter ,@tags) " ")))
-        (setq elfeed-search-filter input))
-      (elfeed-search-update :force)))
 
   (defun elfeed-search-show-entry-pre (&optional lines) 
   "Returns a function to scroll forward or back in the Elfeed
@@ -66,8 +36,11 @@ minibuffer with `exit-minibuffer' (I bind it to C-j in
                "M-RET" (elfeed-search-show-entry-pre))
 
   (defun elfeed-display-buffer (buf &optional act)
-    (pop-to-buffer buf)
-    (set-window-text-height (get-buffer-window) (round (* 0.7 (frame-height))))) 
+    (pop-to-buffer buf '((display-buffer-reuse-window display-buffer-in-direction)
+                         (direction . above)
+                         (window-height . 0.7)))
+    ;; (set-window-text-height (get-buffer-window) (round (* 0.7 (frame-height))))
+    ) 
   
   (advice-add 'elfeed-kill-buffer :after 'delete-window-if-not-single)
   (advice-add 'elfeed-show-entry :after (defun elfeed-visual-lines-a (_entry)
@@ -118,8 +91,6 @@ MYTAG"
     "d"     (elfeed-show-tag-as 'junk))
 
   (setq elfeed-feeds my-elfeed-feeds)
-  (eval-after-load 'evil-collection
-    (evil-collection-elfeed-setup))
 
   (defun elfeed-show-eww-open (&optional use-generic-p)
     "open with eww"
@@ -135,6 +106,39 @@ MYTAG"
       (elfeed-search-browse-url use-generic-p)
       (add-hook 'eww-after-render-hook 'eww-readable nil t)))
 
+    (defvar elfeed-search-filter-map
+    (let ((map (make-sparse-keymap)))
+      (define-key map (kbd "+") (lambda () (interactive) (my/elfeed-search-tag-filter "+")))
+      (define-key map (kbd "-") (lambda () (interactive) (my/elfeed-search-tag-filter "-")))
+      (define-key map (kbd "@") (lambda () (interactive) (my/elfeed-search-tag-filter "@")))
+      (define-key map (kbd "RET") 'exit-minibuffer)
+      (define-key map (kbd "C-g") 'minibuffer-keyboard-quit)
+      map)
+    "Keymap active when entering filter terms in elfeed")
+
+  (defun elfeed-search-live-filter ()
+    "Filter the elfeed-search buffer as the filter is written."
+    (interactive)
+    (unwind-protect
+        (let ((elfeed-search-filter-active :live))
+          (setq elfeed-search-filter
+                (read-from-minibuffer "Filter: " elfeed-search-filter elfeed-search-filter-map)))
+      (elfeed-search-update :force)))
+
+  (defun my/elfeed-search-tag-filter (plus-minus)
+    "Filter `elfeed' by tags using completion."
+    (let ((elfeed-search-filter-active nil))
+      (if (equal plus-minus "@")
+          (insert (format "@%s "
+                          (replace-regexp-in-string
+                           " +" "-"
+                           (replace-regexp-in-string
+                            " to " "--" 
+                            (read-from-minibuffer "Date range: ")))))
+        (let* ((db-tags (elfeed-db-get-all-tags))
+               (tag (completing-read (format "%s %s" elfeed-search-filter plus-minus) db-tags nil t)))
+          (insert (concat plus-minus tag " ")))))
+    (elfeed-search-update :force))
   ;;----------------------------------------------------------------------
   ;; Faces
   ;;----------------------------------------------------------------------
@@ -147,6 +151,7 @@ MYTAG"
   (:states '(normal visual)
            :keymaps 'elfeed-search-mode-map
            "SPC" 'space-menu
+           "S"   'my/elfeed-search-tag-filter
            "gO"  'elfeed-search-eww-open
            "c"   'elfeed-search-clear-filter
            "gy"  'elfeed-search-yank
@@ -164,7 +169,8 @@ MYTAG"
             "S-SPC" 'elfeed-scroll-down-command
             "B" 'elfeed-show-eww-open)
   (:keymaps 'elfeed-search-mode-map
-            "B" 'elfeed-search-eww-open)
+            "B" 'elfeed-search-eww-open
+            "S" 'my/elfeed-search-tag-filter)
   )
 
 (use-package elfeed-goodies-split-pane

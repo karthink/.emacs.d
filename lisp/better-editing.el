@@ -9,6 +9,7 @@
 (setq save-place-file "~/.cache/emacs/places")
 (setq-default fill-column 80)
 (setq vc-follow-symlinks t)
+(setq scroll-error-top-bottom t)
 
 ;; (and (require 'use-package nil t)
 ;;      (use-package visual-fill-column-mode
@@ -239,25 +240,25 @@
 
 
 ;;;###autoload
-(defun duplicate-line (&optional arg)
-  "Duplicate it. With prefix ARG, duplicate ARG lines following the current one."
-  (interactive "p")
-  (destructuring-bind (beg . end) (if (region-active-p)
-                                      (cons (region-beginning)
-                                            (region-end))
-                                    (cons (line-beginning-position)
-                                          (line-end-position)))
-    (copy-region-as-kill beg end)
-    (if (region-active-p)
-        (progn (dotimes (n arg arg)
-                 (goto-char (region-end))
-                 (yank))
-               (exchange-point-and-mark)) 
-      (save-excursion
-        (dotimes (n arg arg)
-          (open-previous-line 1)
-          (yank)
-          (indent-according-to-mode))))))
+;; (defun duplicate-line (&optional arg)
+;;   "Duplicate it. With prefix ARG, duplicate ARG lines following the current one."
+;;   (interactive "p")
+;;   (destructuring-bind (beg . end) (if (region-active-p)
+;;                                       (cons (region-beginning)
+;;                                             (region-end))
+;;                                     (cons (line-beginning-position)
+;;                                           (line-end-position)))
+;;     (copy-region-as-kill beg end)
+;;     (if (region-active-p)
+;;         (progn (dotimes (n arg arg)
+;;                  (goto-char (region-end))
+;;                  (yank))
+;;                (exchange-point-and-mark)) 
+;;       (save-excursion
+;;         (dotimes (n arg arg)
+;;           (open-previous-line 1)
+;;           (yank)
+;;           (indent-according-to-mode))))))
 
 ;; (defun duplicate-line-many-once (&optional arg)
 ;;   "Duplicate it. With prefix ARG, duplicate ARG lines following the current one. This function is deprecated. Use duplicate-line with a selected region instead"

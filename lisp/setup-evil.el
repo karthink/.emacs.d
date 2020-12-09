@@ -853,6 +853,7 @@ This excludes the protocol and querystring."
       xref
       doc-view
       view
+      elfeed
       )
     "The list of `evil-collection' modules to load. evil-mode bindings will be enabled for these modes. See `evil-collection-mode-list' for the full set of supported modes.")
   :config
@@ -863,7 +864,10 @@ This excludes the protocol and querystring."
   (evil-define-key* 'normal process-menu-mode-map
                     "q" #'kill-current-buffer
                     "d" #'process-menu-delete-process)
-  
+
+  ;; (eval-after-load 'evil-collection
+  ;;   (evil-collection-elfeed-setup))
+
   (with-eval-after-load 'dired
     (evil-collection-define-key '(normal visual) 'dired-mode-map (kbd "SPC") nil))
 

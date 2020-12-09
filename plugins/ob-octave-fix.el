@@ -69,17 +69,18 @@
        ;; (`BODY') and full output (`RESULTS') on newlines, comparing them line
        ;; by line and removing all lines in BODY from RESULTS. Note that RESULTS
        ;; is already a list of strings so additional care is needed.
-       (let* ((body-lines (split-string body "\n+"))
-              (result-lines (flatten-list
-                             (mapcar
-                              (lambda (entry) (reverse (split-string entry "\n")))
-                              results))))
-         (mapconcat
-          #'identity
-          (reverse (cl-remove-if
-                    (lambda (line) (member line body-lines))
-                    result-lines)) "\n")
-         )))))
+       (if matlabp
+           (let* ((body-lines (split-string body "\n+"))
+                  (result-lines (flatten-list
+                                 (mapcar
+                                  (lambda (entry) (reverse (split-string entry "\n")))
+                                  results))))
+             (mapconcat
+              #'identity
+              (reverse (cl-remove-if
+                        (lambda (line) (member line body-lines))
+                        result-lines)) "\n"))
+         results)))))
 
 (provide 'ob-octave-fix)
 

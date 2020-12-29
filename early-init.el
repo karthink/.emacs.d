@@ -7,9 +7,10 @@
 (setq gc-cons-threshold most-positive-fixnum)
 
 ;; In Emacs 27+, package initialization occurs before `user-init-file' is
-;; loaded, but after `early-init-file'. Doom handles package initialization, so
-;; we must prevent Emacs from doing it early!
-(setq package-enable-at-startup t)
+;; loaded, but after `early-init-file'.
+(setq package-enable-at-startup t
+      load-prefer-newer t
+      package-quickstart t)
 
 ;; Prevent the glimpse of un-styled Emacs by disabling these UI elements early.
 (push '(menu-bar-lines . 0) default-frame-alist)

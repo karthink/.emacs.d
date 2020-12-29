@@ -33,7 +33,8 @@
                "]]" (elfeed-search-show-entry-pre 1)
                "[[" (elfeed-search-show-entry-pre -1))
   (general-def :keymaps 'elfeed-search-mode-map
-               "M-RET" (elfeed-search-show-entry-pre))
+               "M-RET" (elfeed-search-show-entry-pre)
+               "w" 'elfeed-search-yank)
 
   (defun elfeed-display-buffer (buf &optional act)
     (pop-to-buffer buf '((display-buffer-reuse-window display-buffer-in-direction)
@@ -74,7 +75,9 @@ MYTAG"
     :states  '(normal visual emacs)
     "f"      (elfeed-search-tag-as 'later)
     "d"      (elfeed-search-tag-as 'junk))
-  
+  (bind-key "f" (elfeed-search-tag-as 'later) elfeed-search-mode-map)
+  (bind-key "u" (elfeed-search-tag-as 'unread) elfeed-search-mode-map)
+
   (defun elfeed-show-tag-as (mytag)
     "Returns a function that tags an elfeed entry or selection as
 MYTAG"

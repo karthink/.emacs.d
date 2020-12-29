@@ -36,14 +36,16 @@
 ;; Better default delete-char
 (global-set-key (kbd "C-d") 'delete-forward-char)
 
-;; Change case with impunity 
-(put 'downcase-region 'disabled nil)
-(put 'upcase-region 'disabled nil)
-
 ;; Better defaults for upcase/downcase
-(global-set-key (kbd "M-u") 'upcase-dwim)
-(global-set-key (kbd "M-l") 'downcase-dwim)
-(global-set-key (kbd "M-c") 'capitalize-dwim)
+(use-package simple
+  :config
+  (global-set-key (kbd "M-u") 'upcase-dwim)
+  (global-set-key (kbd "M-l") 'downcase-dwim)
+  (global-set-key (kbd "M-c") 'capitalize-dwim)
+  
+  ;; Change case with impunity 
+  (put 'downcase-region 'disabled nil)
+  (put 'upcase-region 'disabled nil))
 
 (defvar newline-and-indent t
   "Modify the behavior of the open-*-line functions to cause them to autoindent.")
@@ -95,6 +97,8 @@
 ;; Save clipboard before changing it
 (setq save-interprogram-paste-before-kill t)
 
+(use-package cua-rect
+  :bind ("C-x SPC" . cua-rectangle-mark-mode))
 ;;----------------------------------------------------------------------
 ;; KEYBINDINGS
 ;;----------------------------------------------------------------------

@@ -4,6 +4,10 @@
   :commands dired
   :hook (;; (dired-mode . dired-hide-details-mode)
          (dired-mode . hl-line-mode))
+  :bind
+  (:map dired-mode-map
+        ("M-s f" . nil)
+        ("M-s g" . nil))
   :general
   ("C-x D" 'list-directory)
   (:keymaps 'space-menu-map "fd" '(dired :wk "Dired"))
@@ -203,9 +207,9 @@ This relies on the external 'fd' executable."
 (setq peep-dired-cleanup-on-disable t)
 (setq peep-dired-cleanup-eagerly nil)
 (setq peep-dired-enable-on-directories nil)
-(setq peep-dired-ignored-extensions '("mkv" "iso" "mp4" "pdf" "djvu" "one" "mat"
-                                      "fig" "nb" "slx" "slxc" "r2016b" "onetoc2"))
-)
+(setq peep-dired-ignored-extensions
+      '("mkv" "iso" "mp4" "pdf" "djvu" "one" "mat"
+        "fig" "nb" "slx" "slxc" "r2016b" "onetoc2")))
 
 (use-package dired-sidebar
   :after dired

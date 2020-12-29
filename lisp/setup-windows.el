@@ -147,9 +147,10 @@ If buffer-or-name is nil return current buffer's mode."
          (display-buffer-in-direction display-buffer-in-side-window)
          (side . above)
          (slot . 5)
-         (window-height . (lambda (win) (fit-window-to-buffer win (/ (frame-height) 3))))
+         (window-height . (lambda (win) (fit-window-to-buffer win 20 ;; (/ (frame-height) 3)
+                                                         )))
          (direction . above)
-         (preserve-size . (nil . t))
+         ;; (preserve-size . (nil . t))
          (window-parameters . ((mode-line-format . (:eval (+helper-window-mode-line-format))))))
 
         ("\\*\\(Flycheck\\|Package-Lint\\).*"
@@ -191,6 +192,13 @@ If buffer-or-name is nil return current buffer's mode."
          (window-parameters . (;; (no-other-window . t)
                                (mode-line-format . (:eval (+helper-window-mode-line-format))))))
 
+        ("*undo-tree*" ;; (lambda (buf act) (equal (buffer-mode buf) 'undo-tree-visualizer-mode))
+          (display-buffer-in-direction)
+         (window-width . 35) ;; (lambda (win) (fit-window-to-buffer win nil nil 65 40 t)))
+         (direction . right)
+         (side . right)
+         (slot . -5))
+        
         ;; ----------------------------------------------------------------
         ;; Windows at the bottom
         ;; ----------------------------------------------------------------
@@ -211,12 +219,12 @@ If buffer-or-name is nil return current buffer's mode."
          (window-parameters . ((mode-line-format . (:eval (+helper-window-mode-line-format)))))
          )
 
-        ("\\*scratch\\*"
-         +select-buffer-in-side-window
-         ;; (window-width 35)
-         (window-height . (lambda (win) (fit-window-to-buffer win 20 nil 85)))
-         (side . bottom)
-         (slot . -8))
+        ;; ("\\*scratch\\*"
+        ;;  +select-buffer-in-side-window
+        ;;  ;; (window-width 35)
+        ;;  (window-height . (lambda (win) (fit-window-to-buffer win 20 nil 85)))
+        ;;  (side . bottom)
+        ;;  (slot . -8))
 
         ((lambda (buf act) (member (buffer-mode buf) +message-modes-list))
          (display-buffer-at-bottom display-buffer-in-side-window)
@@ -289,6 +297,7 @@ If buffer-or-name is nil return current buffer's mode."
          +select-buffer-in-side-window
          ;; +select-buffer-at-bottom
          (window-height . .35)
+         (window-width .  .40)
          (side . bottom)
          (slot . 1)
          (preserve-size . (nil . t))
@@ -308,6 +317,22 @@ If buffer-or-name is nil return current buffer's mode."
                                ;; (no-other-window . t)
                                (mode-line-format . (:eval (+helper-window-mode-line-format))))))
 
+        ((lambda (buf act) (member (buffer-mode buf) '(ibuffer-mode)))
+         (display-buffer-reuse-window
+          display-buffer-below-selected
+          +select-buffer-at-bottom)
+         (direction . below)
+         (window-height . (lambda (win) (fit-window-to-buffer win 30 7)))
+         (dedicated . t)
+         ;; (window-width . (lambda (win) (fit-window-to-buffer win nil nil 85 55)))
+         ;; (direction . right)
+         ;; (side . bottom)
+         ;; (slot . 2)
+         ;; (window-parameters . ((split-window . #'ignore)
+         ;;                       ;; (no-other-window . t)
+         ;;                       (mode-line-format . (:eval (+helper-window-mode-line-format)))))
+         )
+        
         ((lambda (buf act) (with-current-buffer buf view-mode))
          (display-buffer-in-side-window)
          (window-height . (/ (frame-height) 3))

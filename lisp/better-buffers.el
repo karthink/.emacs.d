@@ -41,7 +41,7 @@
   ;; (setq ibuffer-display-summary nil)
   ;; (setq ibuffer-use-other-window nil)
   ;; (setq ibuffer-movement-cycle nil)
-  (setq ibuffer-default-shrink-to-minimum-size nil)
+  (setq ibuffer-default-shrink-to-minimum-size t)
   ;; (setq ibuffer-saved-filter-groups nil)
 
   (defun my/buffers-major-mode (&optional arg)
@@ -86,6 +86,8 @@ When no VC root is available, use standard `switch-to-buffer'."
 
   :hook ((ibuffer-mode . hl-line-mode)
          (ibuffer-mode . ibuffer-vc-set-filter-groups-by-vc-root))
+  :bind (:map ibuffer-mode-map
+              ("M-o" . nil))
   :general
   (:keymaps 'space-menu-buffer-map
    :wk-full-keys nil

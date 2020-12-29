@@ -14,8 +14,8 @@
 (defconst IS-WINDOWS (memq system-type '(cygwin windows-nt ms-dos)))
 (defconst IS-BSD     (or IS-MAC (eq system-type 'berkeley-unix)))
 
-(defvar doom--initial-file-name-handler-alist file-name-handler-alist)
-(defvar doom-gc-cons-threshold 16777216 ; 16mb
+(defvar my/initial-file-name-handler-alist file-name-handler-alist)
+(defvar my/gc-cons-threshold 33554432  ;32mb
   "The default value to use for `gc-cons-threshold'. If you experience freezing,
 decrease this. If you experience stuttering, increase this.")
 
@@ -61,29 +61,29 @@ decrease this. If you experience stuttering, increase this.")
 ;; You get a minor speed up by nooping this.
 (setq file-name-handler-alist nil)
 
-(defun doom-restore-file-name-handler-alist-h ()
-  (setq file-name-handler-alist doom--initial-file-name-handler-alist))
+(defun my/restore-file-name-handler-alist-h ()
+  (setq file-name-handler-alist my/initial-file-name-handler-alist))
 
-(add-hook 'emacs-startup-hook #'doom-restore-file-name-handler-alist-h)
+(add-hook 'emacs-startup-hook #'my/restore-file-name-handler-alist-h)
 
 ;; To speed up minibuffer commands (like helm and ivy), we defer garbage
 ;; collection while the minibuffer is active.
-(defun doom-defer-garbage-collection-h ()
+(defun my/defer-garbage-collection-h ()
   "TODO"
   (setq gc-cons-threshold most-positive-fixnum))
 
-(defun doom-restore-garbage-collection-h ()
+(defun my/restore-garbage-collection-h ()
   "TODO"
   ;; Defer it so that commands launched immediately after will enjoy the
   ;; benefits.
   (run-at-time
-   1 nil (lambda () (setq gc-cons-threshold doom-gc-cons-threshold))))
+   1 nil (lambda () (setq gc-cons-threshold my/gc-cons-threshold))))
 
-(add-hook 'minibuffer-setup-hook #'doom-defer-garbage-collection-h)
-(add-hook 'minibuffer-exit-hook #'doom-restore-garbage-collection-h)
+(add-hook 'minibuffer-setup-hook #'my/defer-garbage-collection-h)
+(add-hook 'minibuffer-exit-hook #'my/restore-garbage-collection-h)
 
 ;; Not restoring these to their defaults will cause stuttering/freezes.
-(add-hook 'emacs-startup-hook #'doom-restore-garbage-collection-h)
+(add-hook 'emacs-startup-hook #'my/restore-garbage-collection-h)
 
 ;; When Emacs loses focus seems like a great time to do some garbage collection
 ;; all sneaky breeky like, so we can return a fresh(er) Emacs.

@@ -33,7 +33,7 @@
   :demand
   :after minibuffer
   :config 
-  (setq icomplete-delay-completions-threshold 100
+  (setq icomplete-delay-completions-threshold 50
         icomplete-max-delay-chars 2
         icomplete-compute-delay 0.2
         ;; icomplete-separator " · "
@@ -53,13 +53,68 @@
              ( "C-n" . icomplete-forward-completions)
              ( "C-p" . icomplete-backward-completions)
              ( "RET" . icomplete-fido-ret)
+             ( "C-k" . icomplete-fido-kill)
              ( "C-j" . (lambda () (interactive)
 	        	    (if minibuffer--require-match
 	        		(minibuffer-complete-and-exit)
 	        	      (exit-minibuffer))))
              ( "DEL" . icomplete-fido-backward-updir)
              ;; ( "C-," . my/icomplete-toggle-completion-styles)
-             ))
+             )
+  :config
+  (defun icomplete-fido-kill ()
+    "Kill line or current completion, like `ido-mode'.
+If killing to the end of line make sense, call `kill-line',
+otherwise kill the currently selected completion candidate.
+Exactly what killing entails is dependent on the things being
+completed.  If completing files, it means delete the file.  If
+completing buffers it means kill the buffer.  Both actions
+require user confirmation."
+    (interactive)
+    (let ((end (icomplete--field-end)))
+      (if (< (point) end)
+          (call-interactively 'kill-line)
+        (let* ((all (completion-all-sorted-completions))
+               (thing (car all))
+               (action
+                (pcase (icomplete--category)
+                  (`buffer
+                   (lambda ()
+                     (kill-buffer thing)))
+                  (`virtual-buffer
+                   (lambda ()
+                     (let* ((type (elt thing 0))
+                            (instance (substring thing 1)))
+                       (cond 
+                        ((equal (- type consult--special-char) ?b)
+                         (kill-buffer (get-buffer instance)))
+                        ((equal (- type consult--special-char) ?f)
+                         (let* ((dir (file-name-directory (icomplete--field-string)))
+                                (path (expand-file-name thing dir)))
+                           (when (yes-or-no-p (concat "Delete file " path "? "))
+                             (delete-file path) t)))
+                        ((or (equal (- type consult--special-char) ?m)
+                             (equal (- type consult--special-char) ?v))
+                         (when (yes-or-no-p (concat "Delete bookmark" instance "? "))
+                           (bookmark-delete instance)
+                           (bookmark-save)))))))
+                  (`file
+                   (lambda ()
+                     (let* ((dir (file-name-directory (icomplete--field-string)))
+                            (path (expand-file-name thing dir)))
+                       (when (yes-or-no-p (concat "Delete file " path "? "))
+                         (delete-file path) t)))))))
+          (when (let (;; Allow `yes-or-no-p' to work and don't let it
+                      ;; `icomplete-exhibit' anything.
+                      (enable-recursive-minibuffers t)
+                      (icomplete-mode nil))
+                  (funcall action))
+            (completion--cache-all-sorted-completions
+             (icomplete--field-beg)
+             (icomplete--field-end)
+             (cdr all)))
+          (message nil)))))
+  )
 
 (use-package icomplete-vertical
   :ensure t
@@ -69,11 +124,12 @@
   (setq icomplete-vertical-prospects-height (/ (frame-height) 6))
   (icomplete-vertical-mode -1)
   :bind (:map icomplete-minibuffer-map
-              ("C-v" . icomplete-vertical-toggle)))
+              ("C-v" . icomplete-vertical-toggle)
+              ("M-q" . icomplete-vertical-toggle)))
 
 (use-package consult
-  :load-path "~/.local/share/git/consult"
   :after minibuffer
+  :commands consult-file-externally
   :config
   (setq consult-line-numbers-widen t)
   (setq consult-preview-buffer nil)
@@ -81,18 +137,51 @@
   (setq consult-preview-line nil)
   (setq consult-preview-outline nil)
   (consult-preview-mode -1)
-  :bind (("C-c C-j" . consult-outline)
-         ("C-x r b"   . consult-bookmark)
+  
+  (defun my/consult-file-jump (initial-input initial-directories)
+    "Find any file across INITIAL-DIRECTORIES"
+    (let ((all-files-list nil))
+      (consult--read "Find File: "
+                     (dolist (default-directory
+                               (if (listp initial-directories)
+                                   initial-directories
+                                 (list initial-directories))
+                               all-files-list)
+                       (let* ((localdir (file-local-name (expand-file-name default-directory)))
+                              (command (format "fd -t f -L -0 . %s" localdir)))
+                         (setq all-files-list (append
+                                               ;; (mapcar (lambda (file)
+                                               ;;           (concat
+                                               ;;            (file-name-as-directory default-directory)
+                                               ;;            (file-name-nondirectory file))))
+                                               (split-string (shell-command-to-string command) "\0" t)
+                                               all-files-list))))
+                     :require-match t
+                     :category 'file
+                     :history-type 'input
+                     :sort t
+                     )))
+
+  (use-package org
+    :bind (:map org-mode-map
+                ("C-c C-j" . consult-outline)))
+  
+  :bind (("C-x b"   . consult-buffer)
+         ("C-x 4 b" . consult-buffer-other-window)
+         ("C-x 5 b" . consult-buffer-other-frame)
+         ("C-x r b" . consult-bookmark)
+         ("C-x r x" . consult-register)
+         ("C-x M-:" . consult-complex-command)
+         ("M-s M-o" . consult-multi-occur)
+         ("C-c C-j" . consult-outline)
+         ("C-x r b" . consult-bookmark)
          ("M-s l"   . consult-line)
          ("C-x C-r" . consult-recent-file)
-         :map org-mode-map
-         ("C-c C-j" . consult-outline)
-         )
-  )
+         ("<help> a" . consult-apropos)
+         ("M-i" . consult-imenu)))
 
 ;; Enable richer annotations using the Marginalia package
 (use-package marginalia
-  :load-path "~/.local/share/git/marginalia"
   :after icomplete
   :config
   ;; Must be in the :init section of use-package such that the mode gets
@@ -108,29 +197,52 @@
 
 
 (use-package embark
-  :load-path "~/.local/share/git/embark"
   :demand
   :hook ((embark-pre-action  . completion--flush-all-sorted-completions)
          (embark-post-action . embark-occur--update-linked))
   :after minibuffer
   :bind (("M-s RET" . embark-act)
+         ("M-g o" .   embark-act)
+         ("M-g M-o" . embark-act)
          :map minibuffer-local-completion-map
-              ("C-o" . embark-act)
-              ("C-M-o" . embark-act-noexit)
-              ("C-c C-o" . embark-export)
-              ;; ("M-v" . embark-switch-to-live-occur)
+         ("C-o" . embark-act)
+         ("C-M-o" . embark-act-noexit)
+         ("C-c C-o" . embark-export)
+         ("M-s o" . embark-export)
+         ;; ("M-v" . embark-switch-to-live-occur)
          :map completion-list-mode-map
-              ("C-o" . embark-act)
-              ("C-M-o" . embark-act-noexit)
+         ("C-o" . embark-act)
+         ("C-M-o" . embark-act-noexit)
          :map embark-occur-mode-map
-              ("C-o" . embark-act)
-              ("C-M-o" . embark-act-noexit)
+         ("C-o" . embark-act)
+         ("C-M-o" . embark-act-noexit)
          :map embark-file-map
-              ("j" . dired-jump)
-              ("S" . sudo-find-file))
+         ("x" . consult-file-externally)
+         ("j" . dired-jump)
+         ("S" . sudo-find-file))
   :config
   (setq embark-occur-initial-view-alist
         '((t . list)))
+
+  (add-to-list 'embark-keymap-alist
+               '(project-file . embark-file-map))
+  (add-to-list 'embark-exporters-alist
+               '(project-file . embark-export-dired))
+  (add-to-list 'embark-exporters-alist
+               '(virtual-buffer . embark-buffer-map))
+  (add-to-list 'embark-exporters-alist
+               '(virtual-buffer . embark-export-virtual-ibuffer))
+
+  (defun embark-export-virtual-ibuffer (virtual-buffers)
+    "docstring"
+    (let ((buffers (mapcar (lambda (buf) (substring buf 1))
+                           (cl-remove-if-not
+                            (lambda (buf) (equal (- (elt buf 0)
+                                               consult--special-char)
+                                            ?b))
+                            virtual-buffers))))
+      (ibuffer t "*Embark Export Ibuffer*"
+               `((predicate . (member (buffer-name) ',buffers))))))
   
   (define-key embark-file-map (kbd "`") (lambda (f) (interactive)
                                           (ace-window t)
@@ -139,29 +251,14 @@
                                             (ace-window t)
                                             (switch-to-buffer b)))
   
-(use-package which-key
-  :defer
-  :config
-  (setq embark-action-indicator
-        (defun embark-which-key-setup ()
-          (let (;; (help-char nil)
-                (which-key-show-transient-maps t)
-                (which-key-side-window-location 'bottom)
-                (which-key-replacement-alist
-                 (cons '(("^[0-9-]\\|kp-[0-9]\\|kp-subtract\\|C-u$" . nil) . ignore)
-                       which-key-replacement-alist)))
-            (setq-local which-key-show-prefix nil)
-            (setq-local which-key-persistent-popup t)
-            (which-key--update)))
-        embark-become-indicator embark-action-indicator)
-
-  (add-hook 'embark-pre-action-hook
-            (defun embark-which-key-tear-down ()
-              (kill-local-variable 'which-key-persistent-popup)
-              (kill-local-variable 'which-key-show-prefix)
-              (unless which-key-persistent-popup
-                (which-key--hide-popup-ignore-command)))))
-)
+  (use-package which-key
+    :defer
+    :config
+    (setq embark-action-indicator
+          (lambda (map) (let ((which-key-side-window-location 'bottom))
+                     (which-key--show-keymap "Embark" map nil nil 'no-paging)
+                     #'which-key--hide-popup-ignore-command))
+      embark-become-indicator embark-action-indicator)))
 
 (use-package icomplete-vertical-mini
   :disabled

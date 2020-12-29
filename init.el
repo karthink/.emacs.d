@@ -5,65 +5,10 @@
 
 (setq gc-cons-threshold most-positive-fixnum)
 
-;;;* PATHS
-;;######################################################################
-
-;; (setq user-emacs-directory "~/.emacs.d/")
-
-(defun dir-concat (dir file)
-  "join path DIR with filename FILE correctly"
-  (concat (file-name-as-directory dir) file))
-
-;; Get custom-set-variables out of init.el
-(setq custom-file (dir-concat user-emacs-directory "custom.el"))
-(load custom-file)
-
-;; Set directory
-(setq default-directory
-      (cond ((equal (system-name) "surface")
-             "/cygdrive/c/Users/karth/OneDrive/Documents/")
-            ((equal (system-name) "cube")
-             "/cygdrive/c/Users/karth/OneDrive/Documents/")
-            ((equal (system-name) "thinkpad") "~/")
-            (t "~/")))
-
-;; Adds ~/.emacs.d to the load-path
-(push (dir-concat user-emacs-directory "plugins/") load-path)
-(push (dir-concat user-emacs-directory "lisp/") load-path)
-
-;; (eval-after-load "setup-org"
-;;   (setq initial-buffer-choice (concat (file-name-as-directory (getenv "HOME"))
-;;                                       "do.org")))
-
-;;########################################################################
-;;;* CORE
-;;########################################################################
-(require 'setup-core)
-
-;;########################################################################
-;;;* PERSONAL INFO
-;;########################################################################
-(and (load-library (concat user-emacs-directory "lisp/personal.el.gpg"))
-     ;; (require 'personal nil t)
-     (setq user-full-name my-full-name)
-     (setq user-mail-address my-email-address))
-
-;;########################################################################
-;;;* UI FIXES
-;;########################################################################
-(require 'setup-ui)
-
-;;########################################################################
-;;;* AUTOLOADS
-;;######################################################################
-(require 'setup-autoloads nil t)
-(require 'plugin-autoloads nil t)
-
-;;######################################################################
 ;;;* PACKAGE MANAGEMENT
 ;;######################################################################
   ;;; Set load paths for ELPA packages
-(package-initialize)
+(package-activate-all)
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
 ;(add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/"))
 ;(add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
@@ -87,7 +32,72 @@
 
 (require 'bind-key)
 
-(add-hook 'package-menu-mode-hook 'hl-line-mode)
+(use-package package
+  :hook (package-menu-mode . hl-line-mode))
+
+;;######################################################################
+;;;* PATHS
+;;######################################################################
+
+(use-package emacs
+  :config
+;; (setq user-emacs-directory "~/.emacs.d/")
+  (defun dir-concat (dir file)
+    "join path DIR with filename FILE correctly"
+    (concat (file-name-as-directory dir) file))
+
+  ;; Set directory
+  (setq default-directory
+        (cond ((equal (system-name) "surface")
+               "/cygdrive/c/Users/karth/OneDrive/Documents/")
+              ((equal (system-name) "cube")
+               "/cygdrive/c/Users/karth/OneDrive/Documents/")
+              ((equal (system-name) "thinkpad") "~/")
+              (t "~/")))
+
+  ;; Adds ~/.emacs.d to the load-path
+  (push (dir-concat user-emacs-directory "plugins/") load-path)
+  (push (dir-concat user-emacs-directory "lisp/") load-path))
+
+;;########################################################################
+;;;* CORE
+;;########################################################################
+(require 'setup-core)
+
+;;########################################################################
+;;;* PERSONAL INFO
+;;########################################################################
+(and (load-library (concat user-emacs-directory "lisp/personal.el.gpg"))
+     ;; (require 'personal nil t)
+     (setq user-full-name my-full-name)
+     (setq user-mail-address my-email-address))
+
+;;########################################################################
+;;;* UI FIXES
+;;########################################################################
+(require 'setup-ui)
+
+;;########################################################################
+;;;* AUTOLOADS
+;;######################################################################
+;; (require 'setup-autoloads nil t)
+;; (require 'plugin-autoloads nil t)
+
+;;######################################################################
+;;;* CUSTOM FILE
+;;######################################################################
+(use-package cus-edit
+  :config
+  ;; Get custom-set-variables out of init.el
+  (defvar my/custom-file (dir-concat user-emacs-directory "custom.el"))
+  (setq custom-file my/custom-file)
+
+  (defun my/cus-edit ()
+    (let ((file my/custom-file))
+      (unless (file-exists-p file)
+        (make-empty-file file))
+      (load-file file)))
+  :hook (after-init . my/cus-edit))
 
 ;;######################################################################
 ;;;* KEYBIND SETUP
@@ -160,11 +170,11 @@
     "S-SPC" 'scroll-other-window-down
     "z" '(repeat-complex-command :wk "M-x again")
     "x" '(execute-extended-command :wk "M-x")
-    "f" '(:ignore t :wk "file")
+    "f" '(:ignore t) ;; :wk "file")
     "q" '(:ignore t :wk "quit")
     "b" '(:ignore t :wk "buffer")
     "g" '(vc-prefix-map :wk "git/VC")
-    "c" '(:ignore t :wk "code")
+    "c" '(:ignore t) ;; :wk "code")
     "k" '(kill-this-buffer :wk "Kill buffer")
     "/" '(:prefix-command space-menu-search
                           :prefix-map space-menu-search-map
@@ -363,25 +373,12 @@
         desktop-save 'ask-if-new)
   (desktop-save-mode 1))
 
-;;--------------------------
-;;;** MINIBUFFER PREFERENCES
-;;--------------------------
-;; Enable recursive minibuffer edits
-(setq enable-recursive-minibuffers 1)
-
 ;;######################################################################
 ;;;* INTERFACING WITH THE OS
 ;;######################################################################
 
 (if IS-WINDOWS
     (setq shell-file-name "C:/cygwin/cygwin.bat"))
-
-;; Set default www browser
-(if IS-LINUX
-    (setq
-                                        ;browse-url-browser-function 'browse-url-generic
-     browse-url-generic-program "/usr/bin/qutebrowser"
-     ))
 
 (use-package auth-source-pass
   :init (auth-source-pass-enable))
@@ -391,13 +388,14 @@
 
 (use-package select
   :config
-  (setq select-enable-clipboard t)
-  )
-
+  (setq select-enable-clipboard t))
 
 (use-package comint
+  :commands (comint-mode shell-command-at-line)
+  :bind
+  ("C-!" . shell-command-at-line)
+  
   :general
-  ("C-!" 'shell-command-at-line)
   (:keymaps 'shell-mode-map
             :states  '(insert emacs)
             "SPC"    'comint-magic-space)
@@ -416,7 +414,6 @@
                   ;; (set-process-query-on-exit-flag (get-buffer-process (current-buffer)) nil)
                   (ignore-errors (kill-buffer-and-window)))))
 
-;;;###autoload
   (defun shell-command-at-line (&optional prefix)
     "Run contents of line around point as a shell command and
 replace the line with output. With a prefix argument, append the
@@ -441,6 +438,7 @@ output instead."
     ))
 
 (use-package explain-pause-mode
+  :disabled
   :load-path "~/.local/share/git/melpa/explain-pause-mode/")
 
 ;;----------------------------------------------------------------------
@@ -516,7 +514,7 @@ output instead."
 (use-package iedit
   :commands iedit-dwim
   :ensure t
-  :general ("C-M-;" 'iedit-dwim)
+  :bind ("C-M-;" . iedit-dwim)
   :config
   (defun iedit-dwim (arg)
     "Starts iedit but uses \\[narrow-to-defun] to limit its scope."
@@ -537,6 +535,8 @@ output instead."
 
 (use-package replace
   :defer
+  :bind (:map occur-mode-map
+              ("C-x C-q" . occur-edit-mode))
   :general
    (:keymaps 'occur-mode-map
     :states '(normal motion)
@@ -549,19 +549,16 @@ output instead."
 (use-package emacs
   :config
    (setq set-mark-command-repeat-pop t)
-  :general
-  ("M-z"  'zap-up-to-char
-   "<C-M-backspace>" 'backward-kill-sexp))
+   (global-set-key (kbd "M-r") ctl-x-r-map)
+:bind
+  (("M-z" . zap-to-char-save)
+   ("<C-M-backspace>" . backward-kill-sexp)))
 
 (use-package view
   :general
   (:keymaps 'view-mode-map
    :states '(normal motion visual)
    "M-SPC" 'space-menu))
-
-(use-package register
-  :general
-  ("M-r" (general-simulate-key "C-x r")))
 
 (use-package easy-kill
   :ensure t
@@ -570,7 +567,9 @@ output instead."
 
 (use-package goto-chg
   :ensure t
-  :bind ("C-;" . goto-last-change))
+  :bind (("C-;" . goto-last-change)
+         ("M-g ;" . goto-last-change)
+         ("M-g M-;" . goto-last-change)))
 
 ;;######################################################################
 ;;;* BUFFER AND WINDOW MANAGEMENT
@@ -590,9 +589,10 @@ output instead."
   ;; :bind (;; ("C-x +" . balance-windows-area)
   ;;        ("<f8>" . +make-frame-floating-with-current-buffer)
   ;;        ("C-M-`" . window-toggle-side-windows))
-  :general
-  ("<f8>" '+make-frame-floating-with-current-buffer)
+  :bind
+  ("<f9>" . +make-frame-floating-with-current-buffer)
    ;; "C-M-`" 'window-toggle-side-windows
+  :general
   (:keymaps 'space-menu-window-map
    :wk-full-keys nil
    "w" '(window-toggle-side-windows :wk "toggle side windows"))
@@ -696,7 +696,8 @@ output instead."
 ;;;** Winner mode
 (use-package winner
   :commands winner-undo
-  ;; :bind ("C-c <left>" . winner-undo)
+  :bind (("C-c <left>" . winner-undo)
+         ("C-x C-/" . winner-undo))
   :general
   (:keymaps 'space-menu-window-map
    :wk-full-keys nil
@@ -709,9 +710,10 @@ output instead."
 (use-package ace-window
   :ensure t
   ;; :bind ("C-x o" . ace-window)
+  :bind
+  (("C-x o" . ace-window)
+   ("M-o" . other-window))
   :general
-  ("C-x o" 'ace-window)
-  ("M-o" 'other-window)
   (:keymaps 'space-menu-map
    "`" 'ace-window)
   :config
@@ -734,7 +736,6 @@ output instead."
           (?? aw-show-dispatch-help))))
 
 (use-package emacs
-  :after window
   :config
   (defun my/enlarge-window-horizontally (&optional repeat)
     "Enlarge window horizontally by 8% of the frame width."
@@ -905,6 +906,7 @@ Essentially a much simplified version of `next-line'."
 
 (use-package imenu
   :hook (imenu-after-jump . my/imenu-show-entry)
+  :bind ("M-i" . imenu)
   :config
   (setq imenu-use-markers t
         imenu-auto-rescan t
@@ -919,7 +921,7 @@ Essentially a much simplified version of `next-line'."
   (declare-function org-reveal "org")
   (declare-function outline-show-entry "outline")
 
-  (defun prot-imenu-show-entry ()
+  (defun my/imenu-show-entry ()
     "Reveal index at point after successful `imenu' execution.
 To be used with `imenu-after-jump-hook' or equivalent."
     (cond
@@ -1084,6 +1086,7 @@ If region is active, add its contents to the new buffer."
   :bind (:map eglot-mode-map
               ("C-h ." . eglot-help-at-point))
   :config
+  (setq eglot-put-doc-in-help-buffer nil)
   (add-to-list 'eglot-server-programs '(matlab-mode . ("~/.local/share/git/matlab-langserver/matlab-langserver.sh" "")))
   )
 ;;----------------------------------------------------------------------
@@ -1120,9 +1123,10 @@ If region is active, add its contents to the new buffer."
   ;;             ("C-M-]" . TeX-insert-bmatrix)
   ;;             ;; ("C-;" . TeX-complete-symbol)
   ;;             )
+  :bind
+  (:map LaTeX-mode-map
+        ("M-RET" . LaTeX-insert-item))
   :general
-  (:keymaps 'LaTeX-mode-map
-            "M-RET" 'LaTeX-insert-item)
   (leader-define-key :keymaps 'LaTeX-mode-map
    "cn" '(TeX-next-error :wk "Next Error")
    "cp" '(TeX-previous-error :wk "Prev Error"))
@@ -1221,6 +1225,13 @@ If region is active, add its contents to the new buffer."
     (TeX-fold-mode 1)
     ))
 
+(use-package tex-fold
+  :after latex
+  :defer
+  :config
+  (setq TeX-fold-folded-face '((t (:height 1.15 :foreground "SlateBlue1")))
+        TeX-fold-auto t))
+
 (use-package latex-extra
   :after latex
   :defines (latex-extra-mode)
@@ -1252,6 +1263,7 @@ If region is active, add its contents to the new buffer."
   :init
   (setq preview-scale-function '+preview-scale-larger)
   :config
+  (define-key LaTeX-mode-map (kbd "C-c C-x") preview-map)
   (defun +preview-scale-larger ()
     "Increase the size of `preview-latex' images"
     (lambda nil (* 1.25 (funcall (preview-scale-from-face))))))
@@ -1262,9 +1274,10 @@ If region is active, add its contents to the new buffer."
   :commands turn-on-reftex
   :hook ((latex-mode LaTeX-mode) . turn-on-reftex)
   :config
+  (setq reftex-default-bibliography '("~/Documents/research/control_systems.bib"))
+  (setq reftex-insert-label-flags '("sf" "sfte"))
   (setq reftex-plug-into-AUCTeX t)
-  (setq reftex-use-multiple-selection-buffers t)
-  )
+  (setq reftex-use-multiple-selection-buffers t))
 
 ;; (setq-default TeX-master nil)
 (use-package cdlatex
@@ -1273,7 +1286,7 @@ If region is active, add its contents to the new buffer."
   :defer 2
   ;; :commands turn-on-cdlatex
   :hook (LaTeX-mode . turn-on-cdlatex)
-  :general (:keymaps 'cdlatex-mode-map "[" nil "(" nil "{" nil)
+  :bind (:map cdlatex-mode-map ("[" . nil) ("(" . nil) ("{" . nil))
   :config
   (progn
     (setq cdlatex-command-alist
@@ -1313,10 +1326,9 @@ If region is active, add its contents to the new buffer."
 (use-package inkscape-figures
   :defer
   :after latex
-  :general (:keymaps 'LaTeX-mode-map
-            "C-c i" '+inkscape-figures-create-at-point-latex
-            "C-c e" '+inkscape-figures-edit
-            )
+  :bind (:map LaTeX-mode-map
+            ("C-c i" . +inkscape-figures-create-at-point-latex)
+            ("C-c e" . +inkscape-figures-edit))
   )
 
 ;;----------------------------------------------------------------------
@@ -1334,7 +1346,7 @@ If region is active, add its contents to the new buffer."
                           (outline-minor-mode)
                           (setq-local page-delimiter "%%+")
                           (setq-local outline-regexp "^\\s-*%%+")
-                          (outline-hide-sublevels 3)
+                          ;; (outline-hide-sublevels 3)
                           (when (require 'matlab-xref nil t)
                             (make-local-variable 'xref-backend-functions)
                             (add-hook 'xref-backend-functions #'matlab-shell-xref-activate))
@@ -1347,12 +1359,17 @@ If region is active, add its contents to the new buffer."
                                 (buffer-disable-undo)
                                 (setq comint-process-echoes t)
                                 (setq-local company-idle-delay 0.1)
-                                (company-mode-on))))
+                                (company-mode-on)
+                                (define-key matlab-shell-mode-map (kbd "C-h .") '+matlab-shell-help-at-point)
+                                )))
   :bind (:map matlab-mode-map
+              ("C-c C-n" . 'outline-next-heading)
+              ("C-c C-p" . 'outline-previous-heading)
               ("C-c C-b" . 'matlab-shell-run-block)
               ("C-h ." . '+matlab-shell-help-at-point)
-              :map matlab-shell-mode-map
-              ("C-h ." . '+matlab-shell-help-at-point))
+              ("M-s" . nil)
+              ("C-c C-z" . 'matlab-show-matlab-shell-buffer)
+              )
   :config
   ;; (load-library "matlab-load")
   ;; (matlab-cedet-setup)
@@ -1534,11 +1551,39 @@ and Interpretation of Classical Mechanics) - The book."
 ;;######################################################################
 
 ;;----------------------------------------------------------------------
+;; ERRORS
+;;----------------------------------------------------------------------
+(use-package simple
+  :bind (("M-g n" . my/next-error)
+         ("M-g p" . my/next-error))
+  :config
+  (defun my/next-error (&optional arg reset)
+  "`next-error' with easier cycling through errors."
+  (interactive "P")
+  (let* ((ev last-command-event)
+         (echo-keystrokes nil)
+         (num (pcase ev
+                (?p -1)
+                (_  1))))
+    (next-error (if arg (* arg num) num)
+                reset)
+    (set-transient-map
+     (let ((map (make-sparse-keymap)))
+       (define-key map (kbd "n") 'my/next-error)
+       (define-key map (kbd "p") 'my/next-error)
+       map)))))
+;;----------------------------------------------------------------------
 ;; DUMB-JUMP
 ;;----------------------------------------------------------------------
 (use-package dumb-jump
   :ensure t
-  :init (add-hook 'xref-backend-functions #'dumb-jump-xref-activate))
+  :after xref
+  :init (add-hook 'xref-backend-functions #'dumb-jump-xref-activate 90))
+
+;; Even dumber jump
+(use-package buffer-local-xref
+  :after xref
+  :init (add-hook 'xref-backend-functions #'buffer-local-xref-activate 99))
 
 ;;----------------------------------------------------------------------
 ;; UNDO-TREE
@@ -1674,29 +1719,6 @@ _p_rev       _u_pper              _=_: upper/lower       _r_esolve
        "Save and bury buffer" :color blue)
       ("q" nil "cancel" :color blue)))
 
-(defhydra go-menu ()
-  "Occur mode"
-  ("n" next-error "next error" :color red)
-  ("p" previous-error "prev error" :color red)
-  ("g" goto-line "goto line" :color blue)
-  ("M-g" goto-line "goto line" :color blue)
-  ("TAB" move-to-column "goto col" :color blue)
-  ("c" goto-char "goto char" :color blue )
-  ("M-RET" embark-act "Act on region" :color blue)
-  ("M-;" goto-last-change "Last change" :color blue)
-  (";" goto-last-change "Last change" :color blue)
-  ("o" embark-act "Act on region" :color blue)
-  ("M-o" embark-act "Act on region" :color blue)
-)
-
-;; (eval
-;;  `(defhydra hydra-evil-window-map (:columns 2)
-;;     ,@(mapcar (lambda (x)
-;;                 (list (car x) (intern (cdr x)) (cdr x)))
-;;               (which-key--get-keymap-bindings evil-window-map t))
-;;     ("q" nil "quit")))
-;; (hydra-evil-window-map/body)
-
 (defhydra hydra-toggle-menu (:color blue :hint nil)
   "
 ^Toggle!^ [_Q_]uit
@@ -1727,7 +1749,7 @@ _8_: pretty symbols  _v f_: visual fill    _h r_: rainbow    _s p_: smart parens
              (org-toggle-pretty-entities)
            (prettify-symbols-mode))))
   ("B" presentation-mode)
-  ("t" toggle-theme)
+  ("t" my/toggle-theme)
   ("M" nil)
   ("r" read-only-mode)
   ("q" auto-fill-mode)
@@ -1788,9 +1810,8 @@ _d_: subtree
     ("z" nil "leave")))
 
   :general
-  ("M-g" 'go-menu/body)
   (:keymaps 'smerge-mode-map
-   "C-c s" 'hydra-smerge/body)
+            "C-c s" 'hydra-smerge/body)
   (:keymaps 'space-menu-window-map
     "u" '(hydra-winner/body 
           :wk "winner-mode"))
@@ -1816,10 +1837,10 @@ _d_: subtree
             '(27 0 1 0)))
   :after cus-face
   :defer
-  :general
-  ("C-x t 2" 'tab-new
-   "C-M-<tab>" 'tab-bar-switch-to-next-tab
-   "C-M-S-<tab>" 'tab-bar-switch-to-prev-tab)
+  :bind
+  (("C-x t 2" . tab-new)
+   ("C-M-<tab>" . tab-bar-switch-to-next-tab)
+   ("C-M-S-<tab>" . tab-bar-switch-to-prev-tab))
 
   :config
   (setq  tab-bar-close-last-tab-choice 'tab-bar-mode-disable
@@ -1965,17 +1986,18 @@ _d_: subtree
   (setq diff-hl-draw-borders t)
   (dolist (mode-hook +addons-enabled-modes)
     (add-hook mode-hook #'diff-hl-mode)) 
+  :bind
+  (:map diff-hl-mode-map
+   ("C-x v n" . nil)
+   :map vc-prefix-map
+   ("SPC" . diff-hl-mark-hunk)
+   ("n"   . diff-hl-next-hunk)
+   ("p"   . diff-hl-previous-hunk)
+   ("["   . nil)
+   ("]"   . nil)
+   ("DEL"   . diff-hl-revert-hunk)
+   ("<delete>" . diff-hl-revert-hunk))
   :general
-  (:keymaps 'diff-hl-mode-map
-            "C-x v n" nil)
-  (:keymaps 'vc-prefix-map
-            "SPC" 'diff-hl-mark-hunk
-            "n"   'diff-hl-next-hunk
-            "p"   'diff-hl-previous-hunk
-            "["   'nil
-            "]"   'nil
-            "DEL"   'diff-hl-revert-hunk
-            "<delete>" 'diff-hl-revert-hunk)
   (:states '(normal visual)
            "]d"   'diff-hl-next-hunk
            "[d"   'diff-hl-previous-hunk)
@@ -2028,6 +2050,12 @@ _d_: subtree
 ;;----------------------------------------------------------------------
 (require 'setup-elfeed)
 ;;----------------------------------------------------------------------
+;;;** EWW
+;;----------------------------------------------------------------------
+(use-package eww
+  :bind ("M-s W" . eww-search-words))
+;;----------------------------------------------------------------------
+
 ;;;** NAV-FLASH
 ;;----------------------------------------------------------------------
 ;; (use-package nav-flash)
@@ -2168,13 +2196,6 @@ _d_: subtree
                         "<!--" sgml-skip-tag-forward nil))
            hs-special-modes-alist
            '((t))))))
-
-;;----------------------------------------------------------------------
-;;;** VIMISH-FOLD
-;;----------------------------------------------------------------------
-;;(use-package vimish-fold
-;;   :ensure t
-;;   )
 
 ;;----------------------------------------------------------------------
 ;;;** EDIFF (built-in)
@@ -2629,18 +2650,18 @@ project, as defined by `vc-root-dir'."
        )
 (use-package smartparens
   :hook ((emacs-lisp-mode lisp-interaction-mode) . smartparens-mode)
-  :general
-  (:keymaps        'smartparens-mode-map
-                   "C-M-<up>"      'sp-raise-sexp
-                   "C-<right>"     'sp-forward-slurp-sexp
-                   "C-<left>"      'sp-backward-slurp-sexp
-                   "M-<right>"     'sp-forward-barf-sexp
-                   "M-<left>"      'sp-backward-barf-sexp
-                   "C-k"           'sp-kill-hybrid-sexp
-                   "C-x C-t"       'sp-transpose-hybrid-sexp
-                   "C-M-n"         'sp-next-sexp
-                   "C-M-p"         'sp-previous-sexp
-                   "C-<backspace>" 'sp-backward-kill-word) 
+  :bind
+  (:map smartparens-mode-map
+        ("C-M-<up>"      . sp-raise-sexp)
+        ("C-<right>"     . sp-forward-slurp-sexp)
+        ("C-<left>"      . sp-backward-slurp-sexp)
+        ("M-<right>"     . sp-forward-barf-sexp)
+        ("M-<left>"      . sp-backward-barf-sexp)
+        ("C-k"           . sp-kill-hybrid-sexp)
+        ("C-x C-t"       . sp-transpose-hybrid-sexp)
+        ("C-M-n"         . sp-next-sexp)
+        ("C-M-p"         . sp-previous-sexp)
+        ("C-<backspace>" . sp-backward-kill-word)) 
   :config
   (sp-with-modes sp-lisp-modes
     ;; disable ', it's the quote character!
@@ -2654,7 +2675,14 @@ project, as defined by `vc-root-dir'."
 (use-package expand-region
   :ensure t
   :commands expand-region
-  :bind ("C-," . 'er/expand-region))
+  :bind ("C-," . 'er/expand-region)
+  :config
+  (use-package outline
+    :hook (outline-minor-mode . er/add-outline-mode-expansions)
+    :config
+    (defun er/add-outline-mode-expansions ()
+      (make-variable-buffer-local 'er/try-expand-list)
+      (add-to-list 'er/try-expand-list 'outline-mark-subtree))))
 
 ;;----------------------------------------------------------------------
 ;;;** AVY-MODE
@@ -2662,12 +2690,53 @@ project, as defined by `vc-root-dir'."
 (use-package avy
   :ensure t
   :commands (avy-goto-word-1 avy-goto-char-2 avy-goto-char-timer)
+  :config
+  (setq avy-timeout-seconds 0.35)
+  (defun my/avy-next-char-2 (char1 char2 &optional arg)
+    "Go to the next occurrence of two characters"
+    (interactive (list (let ((c1 (read-char "char 1: " t)))
+                         (if (memq c1 '(? ?\b))
+                             (keyboard-quit)
+                           c1))
+                       (let ((c2 (read-char "char 2: " t)))
+                         (cond ((eq c2 ?)
+                                (keyboard-quit))
+                               ((memq c2 '(8 127))
+                                (keyboard-escape-quit)
+                                (call-interactively 'my/avy-next-char-2))
+                               (t
+                                c2)))
+                       current-prefix-arg))
+    (when (eq char1 ?)
+      (setq char1 ?\n))
+    (when (eq char2 ?)
+      (setq char2 ?\n))
+    (push-mark (point) t)
+    (let* ((str2 (string char1 char2))
+           (num  (if (looking-at (regexp-quote str2))
+                     2 1)))
+      (if (search-forward str2 nil t num)
+          (backward-char 2)
+        (pop-mark))))
+
   :general
-  ("C-'" '(avy-goto-word-or-subword-1 :wk "Goto word")
-   "M-j" '(avy-goto-char-2 :wk "Goto char"))
-  (:states '(normal visual)
-   :prefix "g"
-   "s" 'avy-goto-char-timer)
+  ("C-'"        '(avy-goto-word-or-subword-1 :wk "Avy goto word")
+   "M-j"        '(avy-goto-char-2            :wk "Avy goto char")
+   "M-s y"      '(avy-copy-line              :wk "Avy copy line above")
+   "M-s M-y"    '(avy-copy-region            :wk "Avy copy region above")
+   "M-s M-k"    '(avy-kill-whole-line        :wk "Avy copy line as kill")
+   "M-s j"      '(avy-goto-char-timer        :wk "Avy goto char timer")
+   "M-s C-w"    '(avy-kill-region            :wk "Avy kill region")
+   "M-s M-w"    '(avy-kill-ring-save-region  :wk "Avy copy as kill")
+   "M-s t"      '(avy-move-line              :wk "Avy move line")
+   "M-s M-t"    '(avy-move-region            :wk "Avy move region")
+   "M-s s"      '(my/avy-next-char-2         :wk "Avy snipe")
+   "M-g l"      '(avy-goto-line              :wk "Avy goto line"))
+  ;; (:states '(normal visual)
+  ;;  :prefix "g"
+  ;;  "s" 'avy-goto-char-timer)
+  :bind (:map isearch-mode-map
+         ("M-j" . avy-isearch))
   )
 
 ;;----------------------------------------------------------------------
@@ -2698,10 +2767,9 @@ project, as defined by `vc-root-dir'."
 ;;######################################################################
 ;;;** COMPLETION FRAMEWORKS:
 ;;----------------------------------------------------------------------
-;;;*** ICOMPLETE
+;;;*** ICOMPLETE/CONSULT/EMBARK
 ;;----------------------------------------------------------------------
 (use-package icomplete
-  :disabled
   :demand
   :init
   (require 'setup-icomplete nil t)
@@ -2710,7 +2778,7 @@ project, as defined by `vc-root-dir'."
 ;;----------------------------------------------------------------------
 ;;;*** IVY/COUNSEL/SWIPER
 ;;----------------------------------------------------------------------
-(require 'setup-ivy)
+;; (require 'setup-ivy)
 
 ;;; Bibtex management from ivy. Call ivy-bibtex.
 (use-package ivy-bibtex
@@ -2852,12 +2920,12 @@ argument, query for word to search."
       (cdr project))
 
     (defun my/project-try-local (dir)
-      "Determine if DIR is a non-Git project.
+      "Determine if DIR is a non-VC project.
 DIR must include a .project file to be considered a project."
       (let ((root (locate-dominating-file dir ".project")))
         (and root (cons 'local root))))
 
-    (add-to-list 'project-find-functions 'my/project-try-local)
+    (add-hook 'project-find-functions 'my/project-try-local 90)
     
     ;; Use =fd= instead of =find= in non-VC projects (if available)
     (when (executable-find "fd")
@@ -2901,7 +2969,7 @@ DIR must include a .project file to be considered a project."
            ("C-x p DEL" . my/project-remove-project)
            ;; ("M-s p" . my/project-switch-project)
            ;; ("M-s f" . my/project-find-file-vc-or-dir)
-           ("M-s M-l" . find-library))
+           ("M-s L" . find-library))
     )
 
 ;;----------------------------------------------------------------------
@@ -2945,7 +3013,7 @@ This function is meant to be mapped to a key in `rg-mode-map'."
       (rg-save-search-as-name (concat "«" pattern "»"))))
 
   :bind (("M-s g" . my/rg-vc-or-dir)
-         ("M-s r" . my/rg-ref-in-dir)
+         ("M-s a" . my/rg-ref-in-dir)
          :map rg-mode-map
          ("s" . my/rg-save-search-as-name)
          ("C-n" . next-line)
@@ -3070,7 +3138,7 @@ the mode-line and switches to `variable-pitch-mode'."
     :init-value nil
     (if my/screencast-mode
         (progn
-          (presentation-mode 1)
+          ;; (presentation-mode 1)
           (keycast-mode 1)
           (gif-screencast))
       (gif-screencast-stop)
@@ -3234,11 +3302,11 @@ the mode-line and switches to `variable-pitch-mode'."
 
 (use-package custom
   ;; :general
-  :commands toggle-theme
+  :commands my/toggle-theme
   :config
   (setq custom-theme-directory (expand-file-name "lisp" user-emacs-directory))
 
-  (defun toggle-theme (theme)
+  (defun my/toggle-theme (theme)
     "Swap color themes. With prefix arg, don't disable the currently loaded theme first."
     (interactive
      (list
@@ -3337,7 +3405,7 @@ the mode-line and switches to `variable-pitch-mode'."
 
   (cond (IS-LINUX
          (custom-set-faces
-          '(default ((t (:family "Ubuntu Mono" :foundry "PfEd" :slant normal :weight normal :height 125 :width normal)
+          '(default ((t (:family "Ubuntu Mono" :foundry "PfEd" :slant normal :weight normal :height 132 :width normal)
                       ;; (:family "Iosevka" :foundry "PfEd" :slant normal :weight normal :height 122 :width normal)
                         ;; (:family "FantasqueSansMono Nerd Font" :foundry "PfEd" :slant normal :weight normal :height 120 :width normal)
                         )))))
@@ -3372,16 +3440,31 @@ the mode-line and switches to `variable-pitch-mode'."
 ;;######################################################################
 ;;;* EVIL-MODE
 ;;######################################################################
-(require 'setup-evil)
+;;(require 'setup-evil)
 
 ;;######################################################################
 ;;;* MISC SETTINGS
 ;;######################################################################
 ;; Settings that I'm not sure where to put:
-(setq srecode-map-save-file "~/.cache/emacs/srecode-map.el" )
-(setq url-configuration-directory "~/.cache/emacs/url/")
-(setq request-storage-directory "~/.cache/emacs/request/")
-(setq semanticdb-default-save-directory "~/.cache/emacs/semanticdb/")
+(use-package url
+  :defer
+  :config
+  (setq url-configuration-directory "~/.cache/emacs/url/"))
+
+(use-package request
+  :defer
+  :config
+  (setq request-storage-directory "~/.cache/emacs/request/"))
+
+(use-package semantic
+  :defer
+  :config
+  (setq semanticdb-default-save-directory "~/.cache/emacs/semanticdb/"))
+
+(use-package srecode
+  :defer
+  :config
+  (setq srecode-map-save-file "~/.cache/emacs/srecode-map.el"))
 
 (use-package savehist
   :defer 2

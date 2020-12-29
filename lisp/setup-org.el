@@ -151,8 +151,7 @@
   :after org
   :commands org-agenda
   :config
-  (setq org-agenda-files '("~/Documents/org/do.org" "~/Documents/org/posts.org"))
-  )
+  (setq org-agenda-files '("~/Documents/org/do.org" "~/Documents/org/posts.org")))
 
 (use-package org-agenda
   :after org
@@ -269,7 +268,7 @@
   :after org
   :defer
   :config
-  (setq org-src-window-setup 'split-window-below
+  (setq org-src-window-setup 'other-window
         org-confirm-babel-evaluate nil)
   (setq org-babel-load-languages '((emacs-lisp . t)
                                    (matlab . t)

@@ -1,7 +1,7 @@
 (use-package minibuffer
   :config
 ;; Minibuffer completion
-(setq completion-cycle-threshold 3
+(setq completion-cycle-threshold 20
       completion-flex-nospace nil
       completion-pcm-complete-word-inserts-delimiters nil
       ;;completion-pcm-word-delimiters "-_./:| "
@@ -81,6 +81,13 @@ instead."
     (if (eq category 'file)
 	(find-file-other-window candidate)
       )))
+
+(defun my/minibuffer-focus-mini ()
+  "Focus the active minibuffer."
+  (interactive)
+  (let ((mini (active-minibuffer-window)))
+    (when mini
+      (select-window mini))))
 
 ;;;###autoload
 (defun my/focus-minibuffer ()

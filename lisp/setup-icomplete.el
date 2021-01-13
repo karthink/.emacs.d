@@ -121,11 +121,10 @@ require user confirmation."
   :demand
   :after (minibuffer icomplete)
   :config
-  (setq icomplete-vertical-prospects-height (/ (frame-height) 6))
+  (setq icomplete-vertical-prospects-height (/ (frame-height) 5))
   (icomplete-vertical-mode -1)
   :bind (:map icomplete-minibuffer-map
-              ("C-v" . icomplete-vertical-toggle)
-              ("M-q" . icomplete-vertical-toggle)))
+              ("C-v" . icomplete-vertical-toggle)))
 
 (use-package consult
   :after minibuffer
@@ -136,8 +135,9 @@ require user confirmation."
   (setq consult-preview-mark nil)
   (setq consult-preview-line nil)
   (setq consult-preview-outline nil)
-  (consult-preview-mode -1)
+  (setq consult-preview-key nil)
   
+  ;; TODO: Change this to be asynchronous (like consult-grep)
   (defun my/consult-file-jump (initial-input initial-directories)
     "Find any file across INITIAL-DIRECTORIES"
     (let ((all-files-list nil))
@@ -178,7 +178,7 @@ require user confirmation."
          ("M-s l"   . consult-line)
          ("C-x C-r" . consult-recent-file)
          ("<help> a" . consult-apropos)
-         ("M-i" . consult-imenu)))
+         ("M-s i" . consult-imenu)))
 
 ;; Enable richer annotations using the Marginalia package
 (use-package marginalia
@@ -198,38 +198,50 @@ require user confirmation."
 
 (use-package embark
   :demand
-  :hook ((embark-pre-action  . completion--flush-all-sorted-completions)
-         (embark-post-action . embark-occur--update-linked))
   :after minibuffer
-  :bind (("M-s RET" . embark-act)
-         ("M-g o" .   embark-act)
-         ("M-g M-o" . embark-act)
+  :bind (("M-s RET"  . embark-act)
+         ("M-g RET"  . embark-act)
+         ("M-g o"    . embark-act)
+         ("M-g M-o"  . embark-act)
          :map minibuffer-local-completion-map
-         ("C-o" . embark-act)
-         ("C-M-o" . embark-act-noexit)
-         ("C-c C-o" . embark-export)
-         ("M-s o" . embark-export)
-         ;; ("M-v" . embark-switch-to-live-occur)
+         ("C-o"      . embark-act)
+         ("C-M-o"    . embark-act-noexit)
+         ("C-c C-o"  . embark-export)
+         ("M-s o"    . embark-export)
+         ("M-q"      . embark-collect-toggle-view)
          :map completion-list-mode-map
-         ("C-o" . embark-act)
-         ("C-M-o" . embark-act-noexit)
-         :map embark-occur-mode-map
-         ("C-o" . embark-act)
-         ("C-M-o" . embark-act-noexit)
+         ("C-o"      . embark-act)
+         ("C-M-o"    . embark-act-noexit)
+         :map embark-collect-mode-map
+         ("M-s o"    . embark-export)
+         ("o"        . embark-act)
+         ("O"        . embark-act-noexit)
+         ("C-o"      . embark-act)
+         ("M-g o"    . embark-act)
+         ("C-M-o"    . embark-act-noexit)
+         ("M-g M-o"  . embark-act-noexit)
+         ("M-t"      . toggle-truncate-lines)
+         ("M-q"      . embark-collect-toggle-view)
          :map embark-file-map
-         ("x" . consult-file-externally)
-         ("j" . dired-jump)
-         ("S" . sudo-find-file))
+         ("x"        . consult-file-externally)
+         ("j"        . dired-jump)
+         ("S"        . sudo-find-file)
+         :map embark-buffer-map
+         ("d"        . diff-buffer-with-file) ;FIXME
+         ("l"        . eval-buffer)
+         :map embark-url-map
+         ("f"        . browse-url-firefox))
   :config
-  (setq embark-occur-initial-view-alist
-        '((t . list)))
+  
+  ;; (setq embark-occur-initial-view-alist
+  ;;       '((t . list)))
 
   (add-to-list 'embark-keymap-alist
                '(project-file . embark-file-map))
+  ;; (add-to-list 'embark-keymap-alist
+  ;;              '(virtual-buffer . embark-buffer-map))
   (add-to-list 'embark-exporters-alist
                '(project-file . embark-export-dired))
-  (add-to-list 'embark-exporters-alist
-               '(virtual-buffer . embark-buffer-map))
   (add-to-list 'embark-exporters-alist
                '(virtual-buffer . embark-export-virtual-ibuffer))
 
@@ -259,6 +271,186 @@ require user confirmation."
                      (which-key--show-keymap "Embark" map nil nil 'no-paging)
                      #'which-key--hide-popup-ignore-command))
       embark-become-indicator embark-action-indicator)))
+
+(use-package avy-embark-occur
+  :disabled
+  :after (avy embark)
+  :bind (:map minibuffer-local-completion-map
+              ("M-j" . avy-embark-occur-choose)
+              ("M-RET" . avy-embark-occur-choose)
+              ("C-o" . avy-embark-occur-act)))
+
+(use-package embark
+  ;; Customizations to use embark's live-occur as a completion system for Emacs.
+  ;; (Presently disabled while some bugs are fixed.) Most of this code is copied
+  ;; from or inspired by the work of Protesilaos Stavrou:
+  ;; https://protesilaos.com/dotemacs/
+  :disabled
+  :hook ((embark-post-action . embark-collect--update-linked)
+         (embark-occur-post-revert . my/embark--collect-fit-window)
+         (minibuffer-setup . embark-collect-completions-after-input)
+         ;; (embark-collect-mode . hl-line-mode)
+         ;; (embark-pre-action  . completion--flush-all-sorted-completions)
+         )
+  :bind (:map embark-collect-mode-map
+              ("C-M-n" . my/embark-completions-act-next)
+              ("C-M-p" . my/embark-completions-act-previous)
+              ("C-M-m" . my/embark-completions-act-current)
+              ("C-n" . my/embark-next-line-or-mini)
+              ("C-p" . my/embark-previous-line-or-mini)
+              ("C-g" . my/embark-keyboard-quit)
+              :map minibuffer-local-completion-map
+              ("C-n" . my/embark-switch-to-completions-top)
+              ("C-p" . my/embark-switch-to-completions-bottom)
+              ("C-l" . my/embark-completions-toggle))
+  :config
+
+  (defun my/embark-keyboard-quit ()
+    "If in an Embark live collect/completions buffer, run
+`abort-recursive-edit'. Otherwise run `keyboard-quit'."
+    (interactive)
+    (if (string-match-p my/embark-collect-window-regexp (buffer-name))
+        (abort-recursive-edit)
+      (keyboard-quit)))
+  
+  (setq embark-occur-initial-view-alist
+        '((file           . list)
+          (project-file   . list)
+          (virtual-buffer . list)
+          (buffer         . list)
+          (symbol         . list)
+          (line           . list)
+          (xref-location  . list)
+          (kill-ring      . zebra)
+          (t              . grid)))
+  
+  (defvar my/embark-collect-window-regexp
+    "\\*Embark Collect \\(Live\\|Completions\\).*"
+    "Regexp to match window names with Embark collections.")
+
+  (defun my/embark--collect-fit-window (&rest _)
+    "Fit Embark's live occur window to its buffer.
+To be added to `embark-occur-post-revert-hook'."
+    (when (string-match-p my/embark-collect-window-regexp
+                          (buffer-name))
+      (fit-window-to-buffer (get-buffer-window)
+                            (floor (frame-height) 5) 1)))
+
+  (defun my/embark--live-buffer-p ()
+  "Determine presence of a linked live occur buffer."
+  (let* ((buf-link embark-collect-linked-buffer)
+         (buf-name (buffer-name buf-link)))
+    (when buf-name
+      (string-match-p my/embark-collect-window-regexp buf-name))))
+  
+  (defvar my/embark-live-collect-hook nil
+    "Hook that runs after `my/embark-live-collect-toggle'.")
+  
+  (defun my/embark-completions-toggle ()
+    "Toggle `embark-collect-completions'."
+    (interactive)
+    (if (my/embark--live-buffer-p)
+        (kill-buffer embark-collect-linked-buffer)
+      (embark-collect-completions)))
+
+  ;; (defun my/embark-live-occur-toggle ()
+
+  ;;   "Toggle `embark-live-occur', call `my/embark-live-occur-hook'."
+  ;;   (interactive)
+  ;;   (if (my/embark--live-buffer-p)
+  ;;       (kill-buffer embark-occur-linked-buffer)
+  ;;     (embark-live-occur))
+  ;;   (run-hooks 'my/embark-live-occur-hook))
+
+  (add-to-list 'display-buffer-alist '("\\*Embark Collect.*\\*"
+                                       (display-buffer-in-side-window)
+                                       (window-height . 0.20)
+                                       (side . bottom)
+                                       (slot . 0)
+                                       (window-parameters . ((no-other-window . t)))))
+  (setq embark-live-collect-update-delay 0.30)
+  (setq embark-live-collect-initial-delay 0.30)
+
+  (setq embark-candidate-collectors
+        (delete 'embark-minibuffer-candidates embark-candidate-collectors))
+  (add-to-list 'embark-candidate-collectors 'my/embark-minibuffer-candidates)
+  (defun my/embark-minibuffer-candidates ()
+    (seq-take (embark-minibuffer-candidates) 40))
+  
+  ;; Move from minibuffer to embark-collect and back
+  (defun my/embark-next-line-or-mini (&optional arg)
+    "Move to the next line or switch to the minibuffer.
+This performs a regular motion for optional ARG lines, but when
+point can no longer move in that direction, then it switches to
+the minibuffer."
+    (interactive "p")
+    (if (or (eobp) (eq (point-max)
+                       (1+ (line-end-position))
+                       ;; (save-excursion (forward-line 1) (point))
+                       ))
+        (my/minibuffer-focus-mini)    ; from `setup-minibuffer.el'
+      (forward-line (or arg 1)))
+    (setq this-command 'next-line))
+
+  (defun my/embark-previous-line-or-mini (&optional arg)
+    "Move to the previous line or switch to the minibuffer.
+This performs a regular motion for optional ARG lines, but when
+point can no longer move in that direction, then it switches to
+the minibuffer."
+    (interactive "p")
+    (let ((num (if arg (- arg)))) ; from `my/common.el'
+      (if (bobp)
+          (my/minibuffer-focus-mini)    ; from `my/minibuffer.el'
+        (forward-line (or num -1)))))
+
+  (defun my/embark--switch-to-completions ()
+    "Subroutine for switching to the Embark completions buffer."
+    (unless (my/embark--live-buffer-p)
+      (my/embark-completions-toggle))
+    (pop-to-buffer embark-collect-linked-buffer))
+
+  (defun my/embark-switch-to-completions-top ()
+    "Switch to the top of Embark's completions buffer.
+Meant to be bound in `minibuffer-local-completion-map'."
+    (interactive)
+    (my/embark--switch-to-completions)
+    (goto-char (point-min)))
+
+  (defun my/embark-switch-to-completions-bottom ()
+    "Switch to the bottom of Embark's completions buffer.
+Meant to be bound in `minibuffer-local-completion-map'."
+    (interactive)
+    (my/embark--switch-to-completions)
+    (goto-char (point-max))
+    (forward-line -1)
+    (goto-char (point-at-bol)))
+
+  ;; Better embark action movements
+  (defun my/embark--completions-act (arg)
+    "Move ARG lines and perform `embark-default-action'."
+    (forward-line arg)
+    (embark--act #'embark-default-action (cdr (embark--target))))
+
+  (defun my/embark-completions-act-next (&optional arg)
+    "Run default action on next or ARGth Embark target.
+This calls `my/embark--completions-act' and is meant to be
+assigned to a key in `embark-collect-mode-map'."
+    (interactive "p")
+    (my/embark--completions-act (or arg 1)))
+
+  (defun my/embark-completions-act-previous (&optional arg)
+    "Run default action on previous or ARGth Embark target.
+This calls `my/embark--completions-act' and is meant to be
+assigned to a key in `embark-collect-mode-map'."
+    (interactive "p")
+    (let ((num (if arg (- arg))))
+      (my/embark--completions-act (or num -1))))
+
+  (defun my/embark-completions-act-current ()
+    "Run default action on Embark target without exiting.
+Meant to be assigned to a key in `embark-collect-mode-map'."
+    (interactive)
+    (embark--act #'embark-default-action (cdr (embark--target)))))
 
 (use-package icomplete-vertical-mini
   :disabled
@@ -476,35 +668,4 @@ Bind this function in `icomplete-minibuffer-map'."
                (with-minibuffer-selected-window (insert candidate-full))
                (top-level)))))))
 
-;;=================================
-;; END OF CUSTOMIZATION 
-;;=================================
 (provide 'setup-icomplete)
-
-
-;; (defun my/icomplete-show-vertical (&optional str)
-;;     "Allow `icomplete' to present results vertically.
-
-;; This is meant to be used by other functions that need to show
-;; their results as a vertical list, with an optional string marking
-;; the demarcation line.
-
-;; For an interactive version see `my/icomplete-toggle-vertical'."
-;;     (when (bound-and-true-p icomplete-mode)
-;;       (setq icomplete-prospects-height 10)
-;;       (if str
-;;           (setq icomplete-separator
-;;                 (concat "\n" (propertize str 'face 'shadow) "\n "))
-;;         (setq icomplete-separator "\n "))))
-
-;;   (defun my/icomplete-restore-horizontal ()
-;;     "Restore `icomplete' to its horizontal layout.
-
-;; This is meant to be run by the `minibuffer-exit-hook'."
-;;     (unless (string= icomplete-separator " ┆ ")
-;;       (setq icomplete-prospects-height 3)
-;;       (setq icomplete-separator " ┆ ")))
-
-;; (add-hook 'icomplete-minibuffer-setup-hook
-;;                   #'icomplete-vertical-minibuffer-setup
-;;                   5)

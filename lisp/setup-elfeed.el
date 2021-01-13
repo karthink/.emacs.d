@@ -34,8 +34,10 @@
                "[[" (elfeed-search-show-entry-pre -1))
   (general-def :keymaps 'elfeed-search-mode-map
                "M-RET" (elfeed-search-show-entry-pre)
-               "w" 'elfeed-search-yank)
-
+               "w" 'elfeed-search-yank
+               "M-n" (elfeed-search-show-entry-pre 1)
+               "M-p" (elfeed-search-show-entry-pre -1))
+  
   (defun elfeed-display-buffer (buf &optional act)
     (pop-to-buffer buf '((display-buffer-reuse-window display-buffer-in-direction)
                          (direction . above)
@@ -109,6 +111,30 @@ MYTAG"
       (elfeed-search-browse-url use-generic-p)
       (add-hook 'eww-after-render-hook 'eww-readable nil t)))
 
+  (use-package wallabag
+    :config 
+    (defun elfeed-post-to-wallabag ()
+      "Post current entry (or entry at point) to Wallabag"
+      (interactive)
+      (let ((entries (elfeed-search-selected))
+            (links (pcase major-mode
+                     ('elfeed-show-mode
+                      (list (elfeed-entry-link elfeed-show-entry)))
+                     ('elfeed-search-mode
+                      (mapcar #'elfeed-entry-link (elfeed-search-selected))))))
+        (dolist (link links nil)
+          (wallabag-post-entry link)
+          (when (eq major-mode 'elfeed-search-mode)
+            (elfeed-untag entries 'unread)
+            (mapc #'elfeed-search-update-entry entries)
+            (unless (or elfeed-search-remain-on-entry
+                        (use-region-p))
+              (forward-line))))))
+    :bind (:map elfeed-show-mode-map
+                ("R" . elfeed-post-to-wallabag)
+           :map elfeed-search-mode-map
+                ("R" . elfeed-post-to-wallabag)))
+  
     (defvar elfeed-search-filter-map
     (let ((map (make-sparse-keymap)))
       (define-key map (kbd "+") (lambda () (interactive) (my/elfeed-search-tag-filter "+")))
@@ -154,7 +180,6 @@ MYTAG"
   (:states '(normal visual)
            :keymaps 'elfeed-search-mode-map
            "SPC" 'space-menu
-           "S"   'my/elfeed-search-tag-filter
            "gO"  'elfeed-search-eww-open
            "c"   'elfeed-search-clear-filter
            "gy"  'elfeed-search-yank
@@ -172,20 +197,21 @@ MYTAG"
             "S-SPC" 'elfeed-scroll-down-command
             "B" 'elfeed-show-eww-open)
   (:keymaps 'elfeed-search-mode-map
-            "B" 'elfeed-search-eww-open
-            "S" 'my/elfeed-search-tag-filter)
+            "B" 'elfeed-search-eww-open)
   )
 
-(use-package elfeed-goodies-split-pane
-  :disabled
-  :commands elfeed-goodies/split-search-show-entry
-  :general
-  (:states '(motion)
-           :keymaps 'elfeed-search-mode-map
-           "RET" 'elfeed-goodies/split-search-show-entry
-           "gj" 'elfeed-goodies/split-show-next
-           "gk" 'elfeed-goodies/split-show-prev)
-)
+(use-package wallabag
+  :load-path "~/.local/share/git/wallabag"
+  :commands wallabag-post-entry
+  :config
+  (setq wallabag-data-dir "~/.cache/wallabag")
+  (let ((creds (split-string (shell-command-to-string
+                              "pass show api/wallabag/qutescript"))))
+    (setq wallabag-credentials
+          `((client-secret  . ,(nth 0 creds))
+            (client-id      . ,(nth 2 creds))
+            (host           . ,(nth 4 creds))))))
+
 ;;----------------------------------------------------------------------
 ;;*** Autotagging setup
 ;;----------------------------------------------------------------------

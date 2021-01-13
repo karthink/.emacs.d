@@ -60,6 +60,7 @@
                 org-use-speed-commands t
                 org-highlight-latex-and-related '(native)
                 org-imenu-depth 7
+                org-id-link-to-org-use-id 'create-if-interactive
                 ;; org-eldoc-breadcrumb-separator " → " 
                 ;; org-hide-leading-stars-before-indent-mode t 
                 ;; org-indent-indentation-per-level 2 
@@ -151,7 +152,7 @@
   :after org
   :commands org-agenda
   :config
-  (setq org-agenda-files '("~/Documents/org/do.org" "~/Documents/org/posts.org")))
+  (setq org-agenda-files '("~/Documents/org/do.org" "~/Documents/org/schedule.org")))
 
 (use-package org-agenda
   :after org
@@ -181,14 +182,23 @@
                    ("tr" "TODO research"
                     entry
                     (file+olp "~/do.org" "Research")
-                    "* TODO %? :research: \n  DEADLINE: %^{Do by}t\n  %a\n  %x\n"
+                    "* TODO %? :research:
+SCHEDULED: %^{Do by}t
+:PROPERTIES:
+:ID:       %(shell-command-to-string \"uuidgen\"):CREATED:  %U
+:END:
+  %a\n  %x\n"
                     :prepend t
                     )
 
                    ("tg" "TODO general"
                     entry
                     (file+olp "~/do.org" "Tasks")
-                    "* TODO %?\n  %a\n"
+                    "* TODO %?
+:PROPERTIES:
+:ID:       %(shell-command-to-string \"uuidgen\"):CREATED:  %U
+:END:
+  %a\n"
                     :kill-buffer t
                     :prepend t
                     )
@@ -196,7 +206,11 @@
                    ("tc" "Config projects"
                     entry
                     (file+olp "~/do.org" "Configuration")
-                    "* TODO %? :config:\n  %a\n  %x\n"
+                    "* TODO %? :config:
+:PROPERTIES:
+:ID:       %(shell-command-to-string \"uuidgen\"):CREATED:  %U
+:END:
+  %a\n  %x\n"
                     :kill-buffer t
                     :prepend t
                     )
@@ -204,7 +218,11 @@
                    ("tp" "Other Projects"
                     entry
                     (file+olp "~/do.org" "Other Projects")
-                    "* %? :project:\n  %a\n  %x\n"
+                    "* %? :project:
+:PROPERTIES:
+:ID:       %(shell-command-to-string \"uuidgen\"):CREATED:  %U
+:END:
+  %a\n  %x\n"
                     :prepend t
                     :kill-buffer t
                     )
@@ -238,6 +256,7 @@
   (setq org-export-with-LaTeX-fragments t))
 
 (use-package valign
+  :disabled
   :if (file-exists-p "~/.local/share/git/valign")
   :load-path "~/.local/share/git/valign/"
   :hook (org-mode . valign-mode)
@@ -252,11 +271,16 @@
 ;;----------------------------------------------------------------------
 (use-package org-download
   :ensure t
-  :hook (dired-mode . org-download-enable)
+  :hook ((dired-mode . org-download-enable)
+         (org-mode . org-download-enable))
   :config
   ;; (setq org-download-backend (if IS-LINUX "curl" "url-retrieve"))
   (setq org-download-heading-lvl nil)
-  (setq org-download-backend 'curl))
+  (setq org-download-backend 'curl)
+  (setq org-download-image-attr-list
+        '("#+attr_html: :width 70% :align center"
+         "#+attr_org: :width 100px"
+         "#+attr_latex: :width 0.6\textwidth")))
 
 ;;----------------------------------------------------------------------
 ;; ORG-BABEL
@@ -275,8 +299,9 @@
                                    (python . t)
                                    (R . t)
                                    (shell . t)
-                                   (scheme . t)))
-  
+                                   (scheme . t)
+                                   (ditaa . t)))
+  (setq org-ditaa-jar-path "/usr/bin/ditaa")
   (defun my/org-babel-goto-tangle-file ()
     (if-let* ((args (nth 2 (org-babel-get-src-block-info t)))
               (tangle (alist-get :tangle args)))
@@ -347,11 +372,13 @@ See `org-capture-templates' for more information."
       (mapconcat #'identity
                  `(
                    ,(concat "* TODO " title)
-                   ":PROPERTIES:"
-                   ,(concat ":EXPORT_FILE_NAME: " fname)
+                   "\n:PROPERTIES:"
+                   ,(concat "\n:EXPORT_FILE_NAME: " fname)
+                   "\n:ID: "
+                   ,(shell-command-to-string "uuidgen")
                    ":END:"
-                   "%?\n")          ;Place the cursor here finally
-                 "\n")))
+                   "\n%?\n")          ;Place the cursor here finally
+                 "")))
 
   (add-to-list 'org-capture-templates
                '("h"                ;`org-capture' binding + h
@@ -373,16 +400,18 @@ See `org-capture-templates' for more information."
 ;; ORG-GCAL
 ;;----------------------------------------------------------------------
 (use-package org-gcal
-  :disabled
+  :ensure
   :after org
   :commands (org-gcal-sync org-gcal-fetch)
-  :init
+  :hook (org-agenda-mode . org-gcal-sync)
+  :config
+  (setq org-gcal-dir "~/.cache/emacs/org-gcal/")
+  ;; (add-hook 'org-capture-after-finalize-hook (lambda () (org-gcal-sync)))
   (setq org-gcal-client-id my-org-gcal-client-id
         org-gcal-client-secret my-org-gcal-client-secret
         org-gcal-file-alist `((,my-email-address . ,(concat
                                                     (file-name-as-directory org-directory)
-                                                    "schedule.org"))))
-  )
+                                                    "schedule.org")))))
 
 ;;----------------------------------------------------------------------
 ;; ORG-REVEAL
@@ -417,8 +446,6 @@ See `org-capture-templates' for more information."
   :bind (:map org-mode-map
               ("C-c i" . #'+inkscape-figures-create-at-point-org)
               ("C-c e" . #'+inkscape-figures-edit)))
-
-(provide 'setup-org)
 
 ;;----------------------------------------------------------------------
 ;; ORG-REF
@@ -590,3 +617,6 @@ See `org-capture-templates' for more information."
          ("<C-right>" . org-tree-slide-move-next-tree)
          ("<C-left>"  . org-tree-slide-move-previous-tree))
   )
+
+(provide 'setup-org)
+

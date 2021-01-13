@@ -172,7 +172,7 @@
     "x" '(execute-extended-command :wk "M-x")
     "f" '(:ignore t) ;; :wk "file")
     "q" '(:ignore t :wk "quit")
-    "b" '(:ignore t :wk "buffer")
+    "b" '(:ignore t)
     "g" '(vc-prefix-map :wk "git/VC")
     "c" '(:ignore t) ;; :wk "code")
     "k" '(kill-this-buffer :wk "Kill buffer")
@@ -906,7 +906,7 @@ Essentially a much simplified version of `next-line'."
 
 (use-package imenu
   :hook (imenu-after-jump . my/imenu-show-entry)
-  :bind ("M-i" . imenu)
+  :bind ("M-s i" . imenu)
   :config
   (setq imenu-use-markers t
         imenu-auto-rescan t
@@ -1270,7 +1270,7 @@ If region is active, add its contents to the new buffer."
 
 (use-package reftex
   :after latex
-  :defer 20
+  :defer 2
   :commands turn-on-reftex
   :hook ((latex-mode LaTeX-mode) . turn-on-reftex)
   :config
@@ -1551,6 +1551,15 @@ and Interpretation of Classical Mechanics) - The book."
 ;;######################################################################
 
 ;;----------------------------------------------------------------------
+;; STROKES
+;;----------------------------------------------------------------------
+(use-package strokes
+  :bind ("<down-mouse-3>" . strokes-do-stroke)
+  :config
+  (setq strokes-file "~/.cache/emacs/strokes")
+  (setq strokes-use-strokes-buffer t))
+
+;;----------------------------------------------------------------------
 ;; ERRORS
 ;;----------------------------------------------------------------------
 (use-package simple
@@ -1578,7 +1587,7 @@ and Interpretation of Classical Mechanics) - The book."
 (use-package dumb-jump
   :ensure t
   :after xref
-  :init (add-hook 'xref-backend-functions #'dumb-jump-xref-activate 90))
+  :init (add-hook 'xref-backend-functions #'dumb-jump-xref-activate))
 
 ;; Even dumber jump
 (use-package buffer-local-xref
@@ -1645,6 +1654,7 @@ is not visible. Otherwise delegates to regular Emacs next-error."
                  #'browse-url-mpv)))
         (browse-url-at-point)))
 
+    (setq browse-url-generic-program "/usr/bin/qutebrowser")
     (setq browse-url-browser-function
           '(("https:\\/\\/www\\.youtu\\.*be." . browse-url-mpv)
             ("." . browse-url-generic)))))
@@ -2066,7 +2076,7 @@ _d_: subtree
 
 (use-package yasnippet
   :ensure t
-  :defer 5
+  ;; :defer 5
   :after warnings
   :hook ((prog-mode LaTeX-mode org-mode) . yas-minor-mode)
   :config
@@ -2085,35 +2095,35 @@ _d_: subtree
   (setq yas-wrap-around-region t
         yas-triggers-in-field t)
 
-  (defun my-yas-try-expanding-auto-snippets ()
+  (defun my/yas-try-expanding-auto-snippets ()
     (when (and (boundp 'yas-minor-mode) yas-minor-mode)
       (let ((yas-buffer-local-condition ''(require-snippet-condition . auto)))
         (yas-expand))))
-  (add-hook 'post-self-insert-hook #'my-yas-try-expanding-auto-snippets)
+  (add-hook 'post-self-insert-hook #'my/yas-try-expanding-auto-snippets)
 
   (with-eval-after-load 'cdlatex
     (add-hook 'cdlatex-tab-hook #'yas-expand))
 
   (with-eval-after-load 'company
 ;;;###autoload
-    (defun my-yas-company-next-field ()
+    (defun my/yas-company-next-field ()
       "company-complete-common or yas-next-field-or-maybe-expand."
       (interactive)
       (if company-candidates (company-complete-common)
         (yas-next-field-or-maybe-expand)))
 
-    (define-key yas-keymap [tab] #'my-yas-company-next-field)
-    (define-key yas-keymap (kbd "TAB") #'my-yas-company-next-field)
+    (define-key yas-keymap [tab] #'my/yas-company-next-field)
+    (define-key yas-keymap (kbd "TAB") #'my/yas-company-next-field)
 
 ;;;###autoload
-    (defun my-yas-company-cancel ()
+    (defun my/yas-company-cancel ()
       "company-abort or yas-abort-snippet."
       (interactive)
       (if company-candidates
           (company-abort)
         (yas-abort-snippet)))
 
-    (define-key yas-keymap (kbd "C-g") #'my-yas-company-cancel))
+    (define-key yas-keymap (kbd "C-g") #'my/yas-company-cancel))
 
 
   ;; (when (fboundp 'smartparens)
@@ -2510,6 +2520,10 @@ project, as defined by `vc-root-dir'."
 ;;----------------------------------------------------------------------
 ;;;** ABBREV MODE
 ;;----------------------------------------------------------------------
+(use-package abbrev
+  :defer
+  :config
+  (setq abbrev-file-name "~/.cache/emacs/abbvev-defs"))
 ;; (setq save-abbrevs t)
 ;; (if (file-exists-p abbrev-file-name)
 ;;     (quietly-read-abbrev-file))
@@ -2773,7 +2787,8 @@ project, as defined by `vc-root-dir'."
   :demand
   :init
   (require 'setup-icomplete nil t)
-  (icomplete-mode 1))
+  ;; (icomplete-mode 1)
+  )
 
 ;;----------------------------------------------------------------------
 ;;;*** IVY/COUNSEL/SWIPER
@@ -2897,6 +2912,19 @@ argument, query for word to search."
 (use-package bookmark
   :config
   (setq bookmark-file "~/.cache/emacs/bookmarks"))
+;;;** NOV.EL
+(use-package nov
+  :init
+  (add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode))
+  :hook (nov-mode . my/nov-font-setup)
+  :config
+  (setq nov-text-width 80
+        nov-save-place-file "~/.cache/emacs/nov-places")
+  (defun my/nov-font-setup ()
+    (face-remap-add-relative 'variable-pitch
+                             :family "Noto Serif"
+                             :height 1.0)))
+
 ;;;* PROJECTS
 (use-package project
     :init
@@ -3413,7 +3441,7 @@ the mode-line and switches to `variable-pitch-mode'."
          (custom-set-faces
           '(default ((t (:family "Consolas" :foundry "outline" :slant normal :weight normal :height 120 :width normal)))))))
 
-(custom-set-faces '(variable-pitch ((t (:family "Ubuntu" :height 110))))))
+(custom-set-faces '(variable-pitch ((t (:family "Ubuntu" :height 125))))))
 
 ;; '(org-document-title ((t (:weight bold :height 1.4))))
 ;; '(org-level-1 ((t (:inherit outline-1 :weight bold :height 1.3))))

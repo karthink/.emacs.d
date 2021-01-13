@@ -144,10 +144,12 @@ If buffer-or-name is nil return current buffer's mode."
          )
 
         ((lambda (buf act) (member (buffer-mode buf) +occur-grep-modes-list))
-         (display-buffer-in-direction display-buffer-in-side-window)
+         (display-buffer-reuse-mode-window
+          display-buffer-in-direction
+          display-buffer-in-side-window)
          (side . above)
          (slot . 5)
-         (window-height . (lambda (win) (fit-window-to-buffer win 20 ;; (/ (frame-height) 3)
+         (window-height . (lambda (win) (fit-window-to-buffer win 20 10 ;; (/ (frame-height) 3)
                                                          )))
          (direction . above)
          ;; (preserve-size . (nil . t))
@@ -307,11 +309,11 @@ If buffer-or-name is nil return current buffer's mode."
          (display-buffer-reuse-window
           +select-buffer-in-side-window
           display-buffer-in-direction)
-         (direction . below)
-         (window-height . (lambda (win) (fit-window-to-buffer win 25 14))) 
-         ;; (window-width . (lambda (win) (fit-window-to-buffer win nil nil 85 55)))
-         ;; (direction . right)
-         (side . bottom)
+         ;; (direction . bottom)
+         ;; (window-height . (lambda (win) (fit-window-to-buffer win 25 14)))
+         (window-width . (lambda (win) (fit-window-to-buffer win nil nil 85 55)))
+         (direction . right)
+         (side . right)
          (slot . 2)
          (window-parameters . ((split-window . #'ignore)
                                ;; (no-other-window . t)
@@ -319,15 +321,17 @@ If buffer-or-name is nil return current buffer's mode."
 
         ((lambda (buf act) (member (buffer-mode buf) '(ibuffer-mode)))
          (display-buffer-reuse-window
-          display-buffer-below-selected
-          +select-buffer-at-bottom)
+          display-buffer-in-side-window
+          ;; display-buffer-below-selected
+          ;;+select-buffer-at-bottom
+          )
          (direction . below)
          (window-height . (lambda (win) (fit-window-to-buffer win 30 7)))
-         (dedicated . t)
+         ;; (dedicated . t)
          ;; (window-width . (lambda (win) (fit-window-to-buffer win nil nil 85 55)))
          ;; (direction . right)
-         ;; (side . bottom)
-         ;; (slot . 2)
+         (side . bottom)
+         (slot . 2)
          ;; (window-parameters . ((split-window . #'ignore)
          ;;                       ;; (no-other-window . t)
          ;;                       (mode-line-format . (:eval (+helper-window-mode-line-format)))))

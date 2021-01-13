@@ -110,6 +110,12 @@
   ;;           (throw 'break t))))))
   )
 
+(use-package notmuch-bookmarks
+:ensure
+:after notmuch
+:config
+(notmuch-bookmarks-mode))
+
 (use-package counsel-notmuch
   :disabled
   :commands counsel-notmuch)

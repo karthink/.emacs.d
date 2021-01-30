@@ -1,5 +1,6 @@
 (use-package anki-editor
-  :after org
+  :ensure t
+  :after org-capture
   :init 
   (setq org-my-anki-file (concat (file-name-as-directory org-directory)
                                "anki-notes.org"))

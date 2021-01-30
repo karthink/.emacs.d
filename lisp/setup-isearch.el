@@ -78,6 +78,10 @@ afterwards exit the search altogether."
          :map minibuffer-local-isearch-map
          ("M-/"        . isearch-complete-edit)
          :map isearch-mode-map
+         ("M-<"        . isearch-beginning-of-buffer)
+         ("M->"        . isearch-end-of-buffer)
+         ("M-s >"      . isearch-end-of-buffer)
+         ("M-s <"      . isearch-beginning-of-buffer)
          ("M-/"        . isearch-complete)
          ("C-SPC"      . my/isearch-mark-and-exit)
          ("DEL"        . my/isearch-abort)

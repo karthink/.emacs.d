@@ -367,11 +367,20 @@
         desktop-base-file-name "desktop"
         desktop-globals-to-clear nil
         desktop-load-locked-desktop t
-        desktop-missing-file-warning t
+        desktop-missing-file-warning nil
         desktop-restore-eager 4
         desktop-restore-frames t
         desktop-save 'ask-if-new)
   (desktop-save-mode 1))
+
+(use-package emacs
+;; Hyper bindings for emacs. Why use a pinky when you can use a thumb?
+  :bind-keymap ("H-x" . ctl-x-map)
+  :bind (:map ctl-x-map
+         ("H-s" . save-buffer)
+         ("H-e" . eval-last-sexp)
+         ("H-c" . save-buffers-kill-terminal)
+         ("H-f" . find-file)))
 
 ;;######################################################################
 ;;;* INTERFACING WITH THE OS
@@ -490,6 +499,7 @@ output instead."
   (setq dabbrev-upcase-means-case-search t))
 
 (use-package visual-fill-column-mode
+  :disabled
   :commands visual-fill-column-mode
   )
 
@@ -569,6 +579,7 @@ output instead."
   :ensure t
   :bind (("C-;" . goto-last-change)
          ("M-g ;" . goto-last-change)
+         ("M-i" . goto-last-change)
          ("M-g M-;" . goto-last-change)))
 
 ;;######################################################################
@@ -576,9 +587,10 @@ output instead."
 ;;######################################################################
 (use-package recentf
   :defer 2
-  :init (recentf-mode 1)
-  :config
-  (setq recentf-save-file "~/.cache/emacs/recentf")
+  :init
+  (setq recentf-save-file "~/.cache/emacs/recentf"
+        recentf-max-saved-items 200)
+  (recentf-mode 1)
   )
 
 (use-package setup-windows
@@ -697,7 +709,10 @@ output instead."
 (use-package winner
   :commands winner-undo
   :bind (("C-c <left>" . winner-undo)
-         ("C-x C-/" . winner-undo))
+         ("C-x C-/" . winner-undo)
+         ("H-u" . winner-undo)
+         ("H-/" . winner-undo)
+         ("s-u" . winner-undo))
   :general
   (:keymaps 'space-menu-window-map
    :wk-full-keys nil
@@ -763,6 +778,13 @@ output instead."
    ("<C-S-up>"    . my/enlarge-window)
    ("<C-S-down>"  . my/shrink-window)))
 
+;;;** Windmove
+(use-package windmove
+  :bind
+  (("H-<right>" . windmove-swap-states-right)
+   ("H-<down>" . windmove-swap-states-down)
+   ("H-<up>" . windmove-swap-states-up)
+   ("H-<left>" . windmove-swap-states-left)))
 ;;######################################################################
 ;;;* UTILITY
 ;;######################################################################
@@ -1101,7 +1123,8 @@ If region is active, add its contents to the new buffer."
   ("\\.tex\\'" . latex-mode)
 
   :init (add-hook 'LaTeX-mode-hook
-                  (lambda ()  (interactive) (outline-minor-mode)
+                  (lambda ()  (interactive)
+                    (outline-minor-mode)
                     (setq-local page-delimiter "\\\\section\\**{")
                     (setq-local outline-regexp "\\\\\\(sub\\)*section\\**{")
                     (setq-local prettify-symbols-alist tex--prettify-symbols-alist)
@@ -1197,7 +1220,8 @@ If region is active, add its contents to the new buffer."
      TeX-electric-escape nil
      ;; Setting this to t messes up previews
      ;; If previews still don't show disable the hyperref package
-     TeX-PDF-mode nil)
+     TeX-PDF-mode nil
+     TeX-error-overview-open-after-TeX-run t)
     (setq-default TeX-source-correlate-mode t)
     (setq TeX-source-correlate-method 'synctex)
     (setq-default TeX-source-correlate-start-server t)
@@ -1234,6 +1258,7 @@ If region is active, add its contents to the new buffer."
 
 (use-package latex-extra
   :after latex
+  :ensure
   :defines (latex-extra-mode)
   :hook (LaTeX-mode . latex-extra-mode)
   :general
@@ -1283,7 +1308,6 @@ If region is active, add its contents to the new buffer."
 (use-package cdlatex
   :after latex
   :ensure t
-  :defer 2
   ;; :commands turn-on-cdlatex
   :hook (LaTeX-mode . turn-on-cdlatex)
   :bind (:map cdlatex-mode-map ("[" . nil) ("(" . nil) ("{" . nil))
@@ -1335,9 +1359,9 @@ If region is active, add its contents to the new buffer."
 ;;;** MATLAB
 ;;----------------------------------------------------------------------
 (use-package matlab
-  :defer
+  :load-path "~/.local/share/git/matlab-emacs-src/"
   :commands (matlab-shell matlab-mode)
-  :ensure matlab-mode
+  ;; :ensure matlab-mode
   ;; :after 'evil
   ;; :commands (matlab-mode matlab-shell matlab-shell-run-block)
   :hook ((matlab-mode . company-mode-on)
@@ -1347,22 +1371,21 @@ If region is active, add its contents to the new buffer."
                           (setq-local page-delimiter "%%+")
                           (setq-local outline-regexp "^\\s-*%%+")
                           ;; (outline-hide-sublevels 3)
-                          (when (require 'matlab-xref nil t)
-                            (make-local-variable 'xref-backend-functions)
-                            (add-hook 'xref-backend-functions #'matlab-shell-xref-activate))
+                          ;; (when (require 'matlab-xref nil t)
+                          ;;   (make-local-variable 'xref-backend-functions)
+                          ;;   (add-hook 'xref-backend-functions #'matlab-shell-xref-activate))
                           ))
          (org-mode . (lambda ()
                        (when (require 'matlab-xref nil t)
-                         (make-local-variable 'xref-backend-functions)
-                         (add-hook 'xref-backend-functions #'matlab-shell-xref-activate))))
+                         (add-hook 'xref-backend-functions #'matlab-shell-xref-activate 10 t))))
          (matlab-shell-mode . (lambda ()
                                 (buffer-disable-undo)
                                 (setq comint-process-echoes t)
                                 (setq-local company-idle-delay 0.1)
                                 (company-mode-on)
-                                (define-key matlab-shell-mode-map (kbd "C-h .") '+matlab-shell-help-at-point)
-                                )))
+                                (define-key matlab-shell-mode-map (kbd "C-h .") '+matlab-shell-help-at-point))))
   :bind (:map matlab-mode-map
+              ("M-j" . nil)
               ("C-c C-n" . 'outline-next-heading)
               ("C-c C-p" . 'outline-previous-heading)
               ("C-c C-b" . 'matlab-shell-run-block)
@@ -1392,10 +1415,13 @@ If region is active, add its contents to the new buffer."
   ;;                                     (company-mode-on) ))
 
   ;; :config
-  (setq matlab-shell-command "matlab")
+  ;; (setq matlab-shell-command "matlab")
   ;; (add-to-list 'matlab-shell-command-switches "-nosplash")
+  (with-demoted-errors "Error loading Matlab autoloads"
+    (load-library "matlab-autoloads")
+    (load-library "matlab-shell"))
   (setq matlab-shell-debug-tooltips-p t)
-  (setq matlab-shell-echoes nil)
+  ;; (setq matlab-shell-echoes nil)
   (setq matlab-shell-run-region-function 'matlab-shell-region->script)
   (add-hook 'matlab-shell-mode-hook (lambda () (interactive)
                                       (define-key matlab-shell-mode-map (kbd "C-<tab>") nil)))
@@ -1433,20 +1459,20 @@ If region is active, add its contents to the new buffer."
           (matlab-shell-run-region beg end prefix)
         (matlab-shell-run-region beg end))))
 
-;;;###autoload
-  (defun matlab-forward-section ()
-    "Move forward section in matlab mode"
-    (interactive)
-    (beginning-of-line 2)
-    (re-search-forward "^\\s-*%%" nil t)
-    (match-end 0))
+  ;; These are obviated by outline-next-heading and co:
+  ;; 
+  ;; (defun matlab-forward-section ()
+  ;;   "Move forward section in matlab mode"
+  ;;   (interactive)
+  ;;   (beginning-of-line 2)
+  ;;   (re-search-forward "^\\s-*%%" nil t)
+  ;;   (match-end 0))
 
-;;;###autoload
-  (defun matlab-backward-section ()
-    "Move forward section in matlab mode"
-    (interactive)
-    (re-search-backward "^\\s-*%%" nil t)
-    (match-beginning 0))
+  ;; (defun matlab-backward-section ()
+  ;;   "Move forward section in matlab mode"
+  ;;   (interactive)
+  ;;   (re-search-backward "^\\s-*%%" nil t)
+  ;;   (match-beginning 0))
 
   )
 
@@ -1551,6 +1577,88 @@ and Interpretation of Classical Mechanics) - The book."
 ;;######################################################################
 
 ;;----------------------------------------------------------------------
+;;;* EMBRACE
+;;----------------------------------------------------------------------
+(use-package embrace
+  :disabled
+  :ensure t
+  :hook ((org-mode . embrace-org-mode-hook)
+         (org-mode . my/embrace-latex-mode-hook-extra)
+         (LaTeX-mode . embrace-LaTeX-mode-hook)
+         (LaTeX-mode . my/embrace-latex-mode-hook-extra))
+  :bind (:map prog-mode-map
+              ("M-s a" . embrace-add)
+              ("M-s c" . embrace-change)
+              ("M-s d" . embrace-delete)
+         :map org-mode-map
+              ("M-s a" . embrace-add)
+              ("M-s c" . embrace-change)
+              ("M-s d" . embrace-delete)
+         :map text-mode-map
+              ("M-s a" . embrace-add)
+              ("M-s c" . embrace-change)
+              ("M-s d" . embrace-delete))
+  :config
+  (defun my/embrace-latex-mode-hook-extra ()
+    (add-to-list 'embrace-semantic-units-alist '(?E . er/mark-LaTeX-inside-environment))
+    (add-to-list 'embrace-semantic-units-alist '(?e . LaTeX-mark-environment))
+    (add-to-list 'embrace-semantic-units-alist '(?$ . er/mark-LaTeX-math))
+    (embrace-add-pair-regexp ?m "\\\\[a-z*]+{" "}" #'my/embrace-latex-read-function
+                              (embrace-build-help "\\macro{" "}"))
+    (embrace-add-pair-regexp ?e "\\\\begin{[a-z*]+}" "\\\\end{[a-z*]+}"
+                              (lambda ()
+                                (let ((env (read-string "Env: ")))
+                                  (cons (format "\\begin{%s}" env)
+                                        (format "\\end{%s}" env))))
+                              (embrace-build-help "\\begin{.}" "\\end{.}"))
+     (embrace-add-pair-regexp 36 "\\$" "\\$" nil)
+     (embrace-add-pair-regexp ?d "\\\\left\\\\*[{([|<]" "\\\\right\\\\*[}([|>]"
+                              (lambda ()
+                                (let* ((env (read-char "Delim type: "))
+                                       (env-pair (pcase env
+                                                   ((or 40 41) '("(" . ")"))
+                                                   ((or 91 93) '("[" . "]"))
+                                                   ((or 123 125) '("\\{" . "\\}"))
+                                                   ((or 60 62) '("<" . ">"))
+                                                   (124 '("|" . "|")))))
+                                  (cons (format "\\left%s " (car env-pair))
+                                        (format " \\right%s" (cdr env-pair)))))
+                              (embrace-build-help "\\left." "\\right.")
+                              ))
+  
+  (defun my/embrace-latex-macro-read-function ()
+    "LaTeX command support for embrace."
+    (cons (format "\\%s{" (read-string "\\")) "}"))
+
+  ;; Add escaped-sequence support to embrace
+  (setf (alist-get ?\\ (default-value 'embrace--pairs-list))
+        (make-embrace-pair-struct
+         :key ?\\
+         :read-function #'+evil--embrace-escaped
+         :left-regexp "\\[[{(]|"
+         :right-regexp "\\[]})]|"))
+
+  (defun +evil--embrace-get-pair (char)
+    (if-let* ((pair (cdr-safe (assoc (string-to-char char) evil-surround-pairs-alist))))
+        pair
+      (if-let* ((pair (assoc-default char embrace--pairs-list)))
+          (if-let* ((real-pair (and (functionp (embrace-pair-struct-read-function pair))
+                                    (funcall (embrace-pair-struct-read-function pair)))))
+              real-pair
+            (cons (embrace-pair-struct-left pair) (embrace-pair-struct-right pair)))
+        (cons char char))))
+
+  (defun +evil--embrace-escaped ()
+    "Backslash-escaped surround character support for embrace."
+    (let ((char (read-char "\\")))
+      (if (eq char 27)
+          (cons "" "")
+        (let ((pair (+evil--embrace-get-pair (string char)))
+              (text (if (sp-point-in-string) "\\\\%s" "\\%s")))
+          (cons (format text (car pair))
+                (format text (cdr pair)))))))
+  )
+;;----------------------------------------------------------------------
 ;; STROKES
 ;;----------------------------------------------------------------------
 (use-package strokes
@@ -1584,23 +1692,35 @@ and Interpretation of Classical Mechanics) - The book."
 ;;----------------------------------------------------------------------
 ;; DUMB-JUMP
 ;;----------------------------------------------------------------------
-(use-package dumb-jump
-  :ensure t
-  :after xref
-  :init (add-hook 'xref-backend-functions #'dumb-jump-xref-activate))
-
 ;; Even dumber jump
 (use-package buffer-local-xref
-  :after xref
-  :init (add-hook 'xref-backend-functions #'buffer-local-xref-activate 99))
+  ;; :after xref
+  :init (add-hook 'xref-backend-functions #'buffer-local-xref-activate 95)
+  ;; :hook (org-mode . (lambda ()
+  ;;                     (add-hook 'xref-backend-functions
+  ;;                               #'buffer-local-xref-activate
+  ;;                               30 t)))
+  )
+
+(use-package dumb-jump
+  :ensure t
+  ;; :after xref
+  :init (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
+  :config
+  (add-to-list 'dumb-jump-project-denoters ".project")
+  ;; :hook (org-mode . (lambda ()
+  ;;                     (add-hook 'xref-backend-functions
+  ;;                               #'dumb-jump-xref-activate
+  ;;                               20 t)))
+  )
 
 ;;----------------------------------------------------------------------
 ;; UNDO-TREE
 ;;----------------------------------------------------------------------
 (use-package undo-tree
   :defer
-  :config (setq undo-tree-enable-undo-in-region  t)
-  )
+  :ensure t
+  :config (setq undo-tree-enable-undo-in-region  t))
 
 ;;----------------------------------------------------------------------
 ;; FLYMAKE
@@ -1674,6 +1794,7 @@ is not visible. Otherwise delegates to regular Emacs next-error."
 ;;----------------------------------------------------------------------
 (use-package hydra
   :defer
+  :ensure t
   :config
   (with-eval-after-load 'ediff
     (defhydra hydra-ediff (:color blue :hint nil)
@@ -1873,7 +1994,8 @@ _d_: subtree
                        (tab-name (alist-get 'name tab)))
                   (setf (alist-get 'name tab) (upcase tab-name)
                         (alist-get 'explicit-name tab) t))
-                )))
+                ))
+  )
 ;;----------------------------------------------------------------------
 ;;;*** EYEBROWSE
 ;;----------------------------------------------------------------------
@@ -2077,7 +2199,7 @@ _d_: subtree
 (use-package yasnippet
   :ensure t
   ;; :defer 5
-  :after warnings
+  ;; :after warnings
   :hook ((prog-mode LaTeX-mode org-mode) . yas-minor-mode)
   :config
   ;; (use-package yasnippet-snippets
@@ -2089,22 +2211,29 @@ _d_: subtree
 
   ;; Don't throw a warning if lisp code in a snippet modifies the
   ;; buffer. We need this for auto expanded snippets in latex/org.
-  (cl-pushnew '(yasnippet backquote-change) warning-suppress-types
-              :test 'equal)
 
-  (setq yas-wrap-around-region t
-        yas-triggers-in-field t)
+  (let ((ydus yas--default-user-snippets-dir))
+    (and (member ydus yas-snippet-dirs)
+         (yas-load-directory ydus)))
 
-  (defun my/yas-try-expanding-auto-snippets ()
-    (when (and (boundp 'yas-minor-mode) yas-minor-mode)
-      (let ((yas-buffer-local-condition ''(require-snippet-condition . auto)))
-        (yas-expand))))
-  (add-hook 'post-self-insert-hook #'my/yas-try-expanding-auto-snippets)
+  (use-package warnings
+    :config
+    (cl-pushnew '(yasnippet backquote-change) warning-suppress-types
+                :test 'equal))
 
   (with-eval-after-load 'cdlatex
     (add-hook 'cdlatex-tab-hook #'yas-expand))
 
-  (with-eval-after-load 'company
+  (setq yas-wrap-around-region t
+        yas-triggers-in-field t)
+  
+  (defun my/yas-try-expanding-auto-snippets ()
+    (when (and (boundp 'yas-minor-mode) yas-minor-mode)
+      (let ((yas-buffer-local-condition ''(require-snippet-condition . auto)))
+        (yas-expand))))
+  (add-hook 'post-self-insert-hook #'my/yas-try-expanding-auto-snippets) 
+
+(with-eval-after-load 'company
 ;;;###autoload
     (defun my/yas-company-next-field ()
       "company-complete-common or yas-next-field-or-maybe-expand."
@@ -2213,9 +2342,9 @@ _d_: subtree
 (use-package ediff
   :defer t
   :functions ediff-setup-windows-plain
-  :hook ((ediff-prepare-buffer       . #'my/ediff-expand-outlines)
-         (ediff-before-setup         . #'my/ediff-save-wconf-h)
-         ((ediff-quit ediff-suspend) . #'my/ediff-restore-wconf-h))
+  :hook ((ediff-prepare-buffer       . my/ediff-expand-outlines)
+         (ediff-before-setup         . my/ediff-save-wconf-h)
+         ((ediff-quit ediff-suspend) . my/ediff-restore-wconf-h))
   :init
   (setq ediff-diff-options "-w" ; turn off whitespace checking
         ediff-split-window-function #'split-window-horizontally
@@ -2500,6 +2629,8 @@ project, as defined by `vc-root-dir'."
 ;;;** CALC
 ;;----------------------------------------------------------------------
 ;;;###autoload
+(global-set-key (kbd "H-*") 'calc-dispatch)
+(global-set-key (kbd "H-C") 'calc)
 (defun calc-on-line ()
  "Evaluate `calc' on the contents of line at point." 
   (interactive)
@@ -2663,6 +2794,7 @@ project, as defined by `vc-root-dir'."
        ;; (electric-pair-mode +1)
        )
 (use-package smartparens
+  :ensure t
   :hook ((emacs-lisp-mode lisp-interaction-mode) . smartparens-mode)
   :bind
   (:map smartparens-mode-map
@@ -2676,12 +2808,20 @@ project, as defined by `vc-root-dir'."
         ("C-M-n"         . sp-next-sexp)
         ("C-M-p"         . sp-previous-sexp)
         ("C-<backspace>" . sp-backward-kill-word)) 
+  :init
+  (add-hook 'smartparens-enabled-hook
+            (lambda ()
+              "Disable \\[electric-pair-mode] when \[[smartparens-mode]] is enabled."
+              (electric-pair-local-mode -1)))
+  (add-hook 'smartparens-disabled-hook
+            (lambda ()
+              "Enable \\[electric-pair-mode] when \[[smartparens-mode]] is disabled."
+              (electric-pair-local-mode +1)))
   :config
+  ;; (require 'smartparens-config)
   (sp-with-modes sp-lisp-modes
     ;; disable ', it's the quote character!
-    (sp-local-pair "'" nil :actions nil))
-  ;; (require 'smartparens-config)
-  )
+    (sp-local-pair "'" nil :actions nil)))
 
 ;;----------------------------------------------------------------------
 ;;;** EXPAND-REGION
@@ -2706,8 +2846,8 @@ project, as defined by `vc-root-dir'."
   :commands (avy-goto-word-1 avy-goto-char-2 avy-goto-char-timer)
   :config
   (setq avy-timeout-seconds 0.35)
-  (defun my/avy-next-char-2 (char1 char2 &optional arg)
-    "Go to the next occurrence of two characters"
+  (defun my/avy--read-char-2 (char1 char2)
+    "Read two characters from the minibuffer."
     (interactive (list (let ((c1 (read-char "char 1: " t)))
                          (if (memq c1 '(? ?\b))
                              (keyboard-quit)
@@ -2719,23 +2859,56 @@ project, as defined by `vc-root-dir'."
                                 (keyboard-escape-quit)
                                 (call-interactively 'my/avy-next-char-2))
                                (t
-                                c2)))
-                       current-prefix-arg))
-    (when (eq char1 ?)
-      (setq char1 ?\n))
-    (when (eq char2 ?)
-      (setq char2 ?\n))
-    (push-mark (point) t)
-    (let* ((str2 (string char1 char2))
-           (num  (if (looking-at (regexp-quote str2))
-                     2 1)))
-      (if (search-forward str2 nil t num)
-          (backward-char 2)
-        (pop-mark))))
+                                c2)))))
+    
+    (when (eq char1 ?) (setq char1 ?\n))
+    (when (eq char2 ?) (setq char2 ?\n))
+    (string char1 char2))
 
+  (defun my/avy-next-char-2 (&optional str2 arg)
+    "Go to the next occurrence of two characters"
+    (interactive (list
+                  (call-interactively 'my/avy--read-char-2)
+                  current-prefix-arg))
+    (let* ((ev last-command-event)
+           (echo-keystrokes nil))
+      (push-mark (point) t)
+      (if (search-forward str2 nil t
+                           (+ (if (looking-at (regexp-quote str2))
+                                  1 0)
+                              (or arg 1)))
+           (backward-char 2)
+        (pop-mark)))
+
+    (set-transient-map
+     (let ((map (make-sparse-keymap)))
+       (define-key map (kbd ";") (lambda (&optional arg) (interactive)
+                                   (my/avy-next-char-2 str2 arg)))
+       (define-key map (kbd ",") (lambda (&optional arg) (interactive)
+                                   (my/avy-previous-char-2 str2 arg)))
+       map)))
+
+  (defun my/avy-previous-char-2 (&optional str2 arg)
+    "Go to the next occurrence of two characters"
+       (interactive (list
+                  (call-interactively 'my/avy--read-char-2)
+                  current-prefix-arg))
+       (let* ((ev last-command-event)
+              (echo-keystrokes nil))
+         (push-mark (point) t)
+         (unless (search-backward str2 nil t (or arg 1))
+           (pop-mark)))
+
+    (set-transient-map
+     (let ((map (make-sparse-keymap)))
+       (define-key map (kbd ";") (lambda (&optional arg) (interactive)
+                                   (my/avy-next-char-2 str2 arg)))
+       (define-key map (kbd ",") (lambda (&optional arg) (interactive)
+                                   (my/avy-previous-char-2 str2 arg)))
+       map)))
+  
   :general
-  ("C-'"        '(avy-goto-word-or-subword-1 :wk "Avy goto word")
-   "M-j"        '(avy-goto-char-2            :wk "Avy goto char")
+  ("M-j"        '(avy-goto-char-2            :wk "Avy goto char")
    "M-s y"      '(avy-copy-line              :wk "Avy copy line above")
    "M-s M-y"    '(avy-copy-region            :wk "Avy copy region above")
    "M-s M-k"    '(avy-kill-whole-line        :wk "Avy copy line as kill")
@@ -2744,7 +2917,8 @@ project, as defined by `vc-root-dir'."
    "M-s M-w"    '(avy-kill-ring-save-region  :wk "Avy copy as kill")
    "M-s t"      '(avy-move-line              :wk "Avy move line")
    "M-s M-t"    '(avy-move-region            :wk "Avy move region")
-   "M-s s"      '(my/avy-next-char-2         :wk "Avy snipe")
+   "M-s s"      '(my/avy-next-char-2         :wk "Avy snipe forward")
+   "M-s r"      '(my/avy-previous-char-2     :wk "Avy snipe backward")
    "M-g l"      '(avy-goto-line              :wk "Avy goto line"))
   ;; (:states '(normal visual)
   ;;  :prefix "g"
@@ -2905,9 +3079,14 @@ argument, query for word to search."
 ;;;** DOT MODE
 (use-package dot-mode
   :commands dot-mode
-  :bind ("C-." . (lambda () (interactive)
-                   (dot-mode 1)
-                   (message "Dot mode activated."))))
+  :bind (:map dot-mode-map
+         ("C-c ." . nil)
+         ("C-M-." . nil))
+  :hook ((prog-mode conf-mode text-mode tex-mode) . 'dot-mode-on)
+  ;; :bind ("C-." . (lambda () (interactive)
+  ;;                  (dot-mode 1)
+  ;;                  (message "Dot mode activated.")))
+  )
 ;;;** BOOKMARKS
 (use-package bookmark
   :config
@@ -2926,80 +3105,7 @@ argument, query for word to search."
                              :height 1.0)))
 
 ;;;* PROJECTS
-(use-package project
-    :init
-    (fset 'project-prefix-map project-prefix-map)
-    (setq project-switch-commands
-          '((?f "Find file" project-find-file)
-            (?g "Find regexp" project-find-regexp)
-            (?d "Dired" project-dired)
-            (?b "Buffer" project-switch-to-buffer)
-            (?q "Query replace" project-query-replace-regexp)
-            (?v "VC-Dir" project-vc-dir)
-            (?k "Kill buffers" project-kill-buffers)
-            (?! "Shell command" project-shell-command)
-            ;; (?e "Eshell" project-eshell)
-            ))
-    :config
-    (setq project-list-file "~/.cache/emacs/projects")
-
-    ;; Declare directories with ".project" as a project
-    (cl-defmethod project-root ((project (head local)))
-      (cdr project))
-
-    (defun my/project-try-local (dir)
-      "Determine if DIR is a non-VC project.
-DIR must include a .project file to be considered a project."
-      (let ((root (locate-dominating-file dir ".project")))
-        (and root (cons 'local root))))
-
-    (add-hook 'project-find-functions 'my/project-try-local 90)
-    
-    ;; Use =fd= instead of =find= in non-VC projects (if available)
-    (when (executable-find "fd")
-      (defun my/project-files-in-directory (dir)
-        "Use `fd' to list files in DIR`"
-        (let* ((default-directory dir)
-               (localdir (file-local-name (expand-file-name dir)))
-               (command (format "fd -t f -0 . %s" localdir)))
-          (project--remote-file-names
-           (sort (split-string (shell-command-to-string command) "\0" t)
-                 #'string<))))
-
-      (cl-defmethod project-files ((project (head vc)) &optional dirs)
-        (mapcan
-         (lambda (dir)
-           (let (backend)
-             (if (and (file-equal-p dir (cdr project))
-                      (setq backend (vc-responsible-backend dir))
-                      (cond
-                       ((eq backend 'Hg))
-                       ((and (eq backend 'Git)
-                             (or
-                              (not project-vc-ignores)
-                              (version<= "1.9" (vc-git--program-version)))))))
-                 (project--vc-list-files dir backend project-vc-ignores)
-               (my/project-files-in-directory dir)
-               )))
-         (or dirs
-             (list (project-root project))))))
-    
-    (defun my/project-remove-project ()
-      "Remove project from `project--list' using completion."
-      (interactive)
-      (project--ensure-read-project-list)
-      (let* ((projects project--list)
-             (dir (completing-read "REMOVE project from list: " projects nil t)))
-        (setq project--list (delete (assoc dir projects) projects))))
-
-    :bind (("C-x p q" . project-query-replace-regexp) ; C-x p is `project-prefix-map'
-           ("C-x p <delete>" . my/project-remove-project)
-           ("C-x p DEL" . my/project-remove-project)
-           ;; ("M-s p" . my/project-switch-project)
-           ;; ("M-s f" . my/project-find-file-vc-or-dir)
-           ("M-s L" . find-library))
-    )
-
+(require 'setup-project)
 ;;----------------------------------------------------------------------
 ;;;** RG, GREP AND WGREP
 (use-package rg
@@ -3040,8 +3146,8 @@ This function is meant to be mapped to a key in `rg-mode-map'."
     (let ((pattern (car rg-pattern-history)))
       (rg-save-search-as-name (concat "«" pattern "»"))))
 
-  :bind (("M-s g" . my/rg-vc-or-dir)
-         ("M-s a" . my/rg-ref-in-dir)
+  :bind (("M-s M-g" . my/rg-vc-or-dir)
+         ("M-s M-." . my/rg-ref-in-dir)
          :map rg-mode-map
          ("s" . my/rg-save-search-as-name)
          ("C-n" . next-line)
@@ -3302,8 +3408,12 @@ the mode-line and switches to `variable-pitch-mode'."
     ;; (projectile-mode . " ϸ")
     (outline-minor-mode . " [o]";; " ֍"
                         )
+    (matlab-functions-have-end-minor-mode . "")
     ;; Evil modes
     (evil-traces-mode . "")
+    (latex-extra-mode . "")
+    (strokes-mode . "")
+    (flymake-mode . "fly")
     )
   "Alist for `clean-mode-line'.
 
@@ -3382,7 +3492,8 @@ the mode-line and switches to `variable-pitch-mode'."
                             '(org-level-2 ((t (:foreground "#d55e00" :inherit bold :height 1.1))))
                             '(org-document-title ((t (:inherit bold :height 1.5))))
                             ))
-  (use-package gruvbox-dark-hard-theme
+  (use-package gruvbox-theme
+    :ensure t
     :defer
     :config
     (custom-theme-set-faces 'gruvbox-dark-hard
@@ -3397,13 +3508,11 @@ the mode-line and switches to `variable-pitch-mode'."
     :ensure t
     :defer
     :config
-    (setq modus-operandi-theme-distinct-org-blocks nil
-          modus-operandi-theme-intense-hl-line t
-          modus-operandi-theme-intense-standard-completions t
+    (setq modus-operandi-theme-intense-hl-line t
           modus-operandi-theme-org-blocks 'greyscale
           modus-operandi-theme-fringes 'subtle
-          modus-operandi-theme-scale-headings t
-          modus-operandi-theme-section-headings t
+          modus-operandi-theme-scale-headings nil
+          modus-operandi-theme-section-headings nil
           modus-operandi-theme-variable-pitch-headings t
           modus-operandi-theme-intense-paren-match t
           modus-operandi-theme-bold-constructs t
@@ -3416,13 +3525,13 @@ the mode-line and switches to `variable-pitch-mode'."
     :ensure t
     :defer
     :config
-    (setq modus-vivendi-theme-distinct-org-blocks nil
+    (setq modus-vivendi-theme-org-blocks nil
           modus-vivendi-theme-intense-hl-line t
-          modus-vivendi-theme-intense-standard-completions t
+          modus-vivendi-theme-completions t
           modus-vivendi-theme-org-blocks 'greyscale
           modus-vivendi-theme-fringes 'subtle
-          modus-vivendi-theme-scale-headings t
-          modus-vivendi-theme-section-headings t
+          modus-vivendi-theme-scale-headings nil
+          modus-vivendi-theme-section-headings nil
           modus-vivendi-theme-variable-pitch-headings t
           modus-vivendi-theme-intense-paren-match t
           modus-vivendi-theme-bold-constructs t

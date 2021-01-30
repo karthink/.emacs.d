@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: stackrel
+# key: stackrel
+# condition: (and (texmathp) 'auto)
+# --
+\\stackrel{$1}{$0}

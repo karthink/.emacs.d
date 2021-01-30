@@ -127,6 +127,7 @@ require user confirmation."
               ("C-v" . icomplete-vertical-toggle)))
 
 (use-package consult
+  :ensure t
   :after minibuffer
   :commands consult-file-externally
   :config
@@ -136,36 +137,28 @@ require user confirmation."
   (setq consult-preview-line nil)
   (setq consult-preview-outline nil)
   (setq consult-preview-key nil)
+  (setq consult-project-root-function (lambda () "Return current project root"
+                                        (project-root (project-current))))
+  (setq consult-find-command "fd --hidden -t f -t d -t l --follow ARG OPTS")
+                           ;; "find . -not ( -wholename */.* -prune ) -ipath *ARG* OPTS"
   
-  ;; TODO: Change this to be asynchronous (like consult-grep)
-  (defun my/consult-file-jump (initial-input initial-directories)
-    "Find any file across INITIAL-DIRECTORIES"
-    (let ((all-files-list nil))
-      (consult--read "Find File: "
-                     (dolist (default-directory
-                               (if (listp initial-directories)
-                                   initial-directories
-                                 (list initial-directories))
-                               all-files-list)
-                       (let* ((localdir (file-local-name (expand-file-name default-directory)))
-                              (command (format "fd -t f -L -0 . %s" localdir)))
-                         (setq all-files-list (append
-                                               ;; (mapcar (lambda (file)
-                                               ;;           (concat
-                                               ;;            (file-name-as-directory default-directory)
-                                               ;;            (file-name-nondirectory file))))
-                                               (split-string (shell-command-to-string command) "\0" t)
-                                               all-files-list))))
-                     :require-match t
-                     :category 'file
-                     :history-type 'input
-                     :sort t
-                     )))
+  (defun my/consult-find-multi-dir (dirlist &optional prompt initial)
+    "Search for regexp with find in directories in DIRLIST with INITIAL input.
+
+The find process is started asynchronously, similar to `consult-find'."
+    (interactive "P")
+    (let ((consult-find-command (concat "fd --hidden -t f -t d -t l --follow "
+                                        (mapconcat (lambda (dir)
+                                                     (concat "--search-path "
+                                                             (file-name-as-directory dir)))
+                                                   '("~/Documents" "~/Dropbox") " ")
+                                        " ARG")))
+      (consult--find (or prompt "Find: ") consult-find-command initial)))
 
   (use-package org
     :bind (:map org-mode-map
                 ("C-c C-j" . consult-outline)))
-  
+  (fset 'man 'consult-man)
   :bind (("C-x b"   . consult-buffer)
          ("C-x 4 b" . consult-buffer-other-window)
          ("C-x 5 b" . consult-buffer-other-frame)
@@ -176,12 +169,29 @@ require user confirmation."
          ("C-c C-j" . consult-outline)
          ("C-x r b" . consult-bookmark)
          ("M-s l"   . consult-line)
+         ("M-s M-f" . consult-locate)
+         ("M-s g"   . consult-ripgrep)
+         ("M-s G"   . consult-git-grep)
          ("C-x C-r" . consult-recent-file)
          ("<help> a" . consult-apropos)
-         ("M-s i" . consult-imenu)))
+         ("M-s i" . consult-imenu)
+         ("s-b" . consult-buffer)
+         ("M-m" . consult-register-store)
+         ("M-'" . consult-register-load)))
+
+(use-package embark-consult
+  :ensure t
+  :after (embark consult)
+  ;; :demand t ; only necessary if you have the hook below
+  ;; ;; if you want to have consult previews as you move around an
+  ;; ;; auto-updating embark collect buffer
+  ;; :hook
+  ;; (embark-collect-mode . embark-consult-preview-minor-mode)
+  )
 
 ;; Enable richer annotations using the Marginalia package
 (use-package marginalia
+  :ensure t
   :after icomplete
   :config
   ;; Must be in the :init section of use-package such that the mode gets
@@ -198,12 +208,15 @@ require user confirmation."
 
 (use-package embark
   :demand
+  :ensure t
   :after minibuffer
   :bind (("M-s RET"  . embark-act)
          ("M-g RET"  . embark-act)
          ("M-g o"    . embark-act)
          ("M-g M-o"  . embark-act)
+         ("s-o"      . embark-act)
          :map minibuffer-local-completion-map
+         ("s-o"      . embark-act)
          ("C-o"      . embark-act)
          ("C-M-o"    . embark-act-noexit)
          ("C-c C-o"  . embark-export)
@@ -235,6 +248,15 @@ require user confirmation."
   
   ;; (setq embark-occur-initial-view-alist
   ;;       '((t . list)))
+  (add-to-list 'display-buffer-alist '("\\*Embark Collect.*\\*"
+                                       (display-buffer-in-side-window)
+                                       (window-height . (lambda (win) (fit-window-to-buffer
+                                                                  win
+                                                                  (floor (frame-height) 2)
+                                                                  (floor (frame-height) 5))))
+                                       (side . bottom)
+                                       (slot . 0)
+                                       (window-parameters . ((no-other-window . t)))))
 
   (add-to-list 'embark-keymap-alist
                '(project-file . embark-file-map))
@@ -242,19 +264,19 @@ require user confirmation."
   ;;              '(virtual-buffer . embark-buffer-map))
   (add-to-list 'embark-exporters-alist
                '(project-file . embark-export-dired))
-  (add-to-list 'embark-exporters-alist
-               '(virtual-buffer . embark-export-virtual-ibuffer))
+  ;; (add-to-list 'embark-exporters-alist
+  ;;              '(virtual-buffer . embark-export-virtual-ibuffer))
 
-  (defun embark-export-virtual-ibuffer (virtual-buffers)
-    "docstring"
-    (let ((buffers (mapcar (lambda (buf) (substring buf 1))
-                           (cl-remove-if-not
-                            (lambda (buf) (equal (- (elt buf 0)
-                                               consult--special-char)
-                                            ?b))
-                            virtual-buffers))))
-      (ibuffer t "*Embark Export Ibuffer*"
-               `((predicate . (member (buffer-name) ',buffers))))))
+  ;; (defun embark-export-virtual-ibuffer (virtual-buffers)
+  ;;   "docstring"
+  ;;   (let ((buffers (mapcar (lambda (buf) (substring buf 1))
+  ;;                          (cl-remove-if-not
+  ;;                           (lambda (buf) (equal (- (elt buf 0)
+  ;;                                              consult--special-char)
+  ;;                                           ?b))
+  ;;                           virtual-buffers))))
+  ;;     (ibuffer t "*Embark Export Ibuffer*"
+  ;;              `((predicate . (member (buffer-name) ',buffers))))))
   
   (define-key embark-file-map (kbd "`") (lambda (f) (interactive)
                                           (ace-window t)
@@ -362,12 +384,6 @@ To be added to `embark-occur-post-revert-hook'."
   ;;     (embark-live-occur))
   ;;   (run-hooks 'my/embark-live-occur-hook))
 
-  (add-to-list 'display-buffer-alist '("\\*Embark Collect.*\\*"
-                                       (display-buffer-in-side-window)
-                                       (window-height . 0.20)
-                                       (side . bottom)
-                                       (slot . 0)
-                                       (window-parameters . ((no-other-window . t)))))
   (setq embark-live-collect-update-delay 0.30)
   (setq embark-live-collect-initial-delay 0.30)
 

@@ -41,7 +41,7 @@
   ;; (setq ibuffer-display-summary nil)
   ;; (setq ibuffer-use-other-window nil)
   ;; (setq ibuffer-movement-cycle nil)
-  (setq ibuffer-default-shrink-to-minimum-size t)
+  ;; (setq ibuffer-default-shrink-to-minimum-size t)
   ;; (setq ibuffer-saved-filter-groups nil)
 
   (defun my/buffers-major-mode (&optional arg)
@@ -141,10 +141,42 @@ When no VC root is available, use standard `switch-to-buffer'."
 (define-key ctl-x-4-map "t" 'toggle-window-split)
 (define-key ctl-x-4-map "|" 'toggle-window-split)
 
-(advice-add 'split-window-right :after
-            (lambda (_) "Go to newly created window" (other-window 1)))
-(advice-add 'split-window-below :after
-            (lambda (_) "Go to newly created window" (other-window 1)))
+(defun my/split-window-right (&optional size)
+  "Split the selected window into two windows, one above the other.
+The selected window is below.  The newly split-off window is
+below and displays the same buffer.  Return the new window."
+  (interactive "P")
+  (split-window-right size)
+  (other-window 1))
+
+(defun my/split-window-below (&optional size)
+  "Split the selected window into two side-by-side windows.
+The selected window is on the left.  The newly split-off window
+is on the right and displays the same buffer.  Return the new
+window."
+  (interactive "P")
+  (split-window-below size)
+  (other-window 1))
+
+(defun my/delete-window-or-delete-frame (&optional window)
+      "Delete WINDOW using `delete-window'.
+If this is the sole window run `delete-frame' instead. WINDOW
+must be a valid window and defaults to the selected one. Return
+nil."
+      (interactive)
+      (condition-case nil
+          (delete-window window)
+        (error (delete-frame))))
+
+(global-set-key (kbd "C-x 2") 'my/split-window-below)
+(global-set-key (kbd "C-x 3") 'my/split-window-right)
+(global-set-key (kbd "H-0") 'my/delete-window-or-delete-frame)
+(global-set-key (kbd "H-1") 'delete-other-windows)
+(global-set-key (kbd "H-2") 'my/split-window-below)
+(global-set-key (kbd "H-3") 'my/split-window-right)
+(global-set-key (kbd "H-4") ctl-x-4-map)
+(global-set-key (kbd "H-5") ctl-x-5-map)
+(global-set-key (kbd "H-k") 'kill-this-buffer)
 
 ;;----------------------------------------------------------------------
 ;; FUNCTIONS
@@ -235,6 +267,8 @@ User buffers are those not starting with *."
                 (< i 50))
       (setq i (1+ i)) (previous-buffer) )))
 
+(global-set-key (kbd "s-n") 'next-buffer)
+(global-set-key (kbd "s-p") 'previous-buffer)
 ;;; scroll-buffer: Functions to do exactly that.
 
 ;;;###autoload

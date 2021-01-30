@@ -320,7 +320,7 @@ If buffer-or-name is nil return current buffer's mode."
                                (mode-line-format . (:eval (+helper-window-mode-line-format))))))
 
         ((lambda (buf act) (member (buffer-mode buf) '(ibuffer-mode)))
-         (display-buffer-reuse-window
+         (;; display-buffer-reuse-window
           display-buffer-in-side-window
           ;; display-buffer-below-selected
           ;;+select-buffer-at-bottom

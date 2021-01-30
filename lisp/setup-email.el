@@ -42,12 +42,11 @@
   :commands notmuch
   :hook (notmuch-message-mode . turn-off-auto-fill)
   :config
+  (setq-default notmuch-search-oldest-first nil)
   (setq notmuch-show-logo nil
-        notmuch-search-oldest-first nil
         notmuch-fcc-dirs nil
         notmuch-column-control 0.6
         notmuch-message-headers-visible nil
-        notmuch-search-oldest-first nil
         notmuch-saved-searches my-notmuch-saved-searches
         message-kill-buffer-on-exit t
         ;; notmuch-search-result-format

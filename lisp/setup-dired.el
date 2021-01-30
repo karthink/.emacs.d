@@ -82,7 +82,7 @@ This relies on the external 'fd' executable."
    "-i" "-H" "-a" "-t" "d" "-t" "f" "-c" "never")
 
   :bind (("M-s f" . my/dired-fd-files-and-dirs)
-         ("M-s d" . my/dired-fd-dirs)))
+         ("M-s D" . my/dired-fd-dirs)))
 
 (use-package dired-x
   :after dired

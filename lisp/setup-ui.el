@@ -44,7 +44,7 @@
   ;;; Fringes
 ;; Reduce the clutter in the fringes; we'd like to reserve that space for more
 ;; useful information, like git-gutter and flycheck.
-(setq indicate-buffer-boundaries nil
+(setq indicate-buffer-boundaries t
       indicate-empty-lines nil
       scroll-conservatively 101
       auto-window-vscroll nil)
@@ -59,8 +59,8 @@
 ;; The native border "consumes" a pixel of the fringe on righter-most splits,
 ;; `window-divider' does not. Available since Emacs 25.1.
 (setq window-divider-default-places t
-      window-divider-default-bottom-width 1
-      window-divider-default-right-width 1)
+      window-divider-default-bottom-width 2
+      window-divider-default-right-width 2)
 (add-hook 'after-init-hook #'window-divider-mode)
 
 ;; No popup dialogs
@@ -68,7 +68,7 @@
 ;; (if (bound-and-true-p tooltip-mode) (tooltip-mode -1))
 ;; native linux tooltips are ugly
 (when IS-LINUX
-  (setq x-gtk-use-system-tooltips nil))
+  (setq x-gtk-use-system-tooltips t))
 
 ;; WINDOW SPLITTING
 ;; Set horizontal splits as the default

@@ -216,6 +216,11 @@
 
 ;; Unfill-region 
 (define-key global-map "\M-Q" 'unfill-paragraph)
+
+;; Register commands
+(define-key global-map (kbd "M-m") 'store-register-dwim)
+(define-key global-map (kbd "M-'") 'use-register-dwim)
+
 ;;----------------------------------------------------------------------
 
 ;; FUNCTIONS
@@ -515,5 +520,38 @@
     )
   )
 ;;----------------------------------------------------------------------
+
+;;;###autoload
+(defun store-register-dwim (arg register)
+  "Store what I mean in a register.
+With an active region, store or append (with \\[universal-argument]) the
+contents, optionally deleting the region (with a negative
+argument). With a numeric prefix, store the number. With \\[universal-argument]
+store the frame configuration. Otherwise, store the point."
+  (interactive
+   (list current-prefix-arg
+         (register-read-with-preview "Store in register: ")))
+  (cond
+   ((use-region-p)
+    (let ((begin (region-beginning))
+          (end (region-end))
+          (delete-flag (or (equal arg '-)  (equal arg '(-4)))))
+      (if (consp arg)
+          (append-to-register register begin end delete-flag)
+        (copy-to-register register begin end delete-flag t))))
+   ((numberp arg) (number-to-register arg register))
+   (t (point-to-register register arg))))
+
+;;;###autoload
+(defun use-register-dwim (register &optional arg)
+  "Do what I mean with a register.
+For a window configuration, restore it. For a number or text, insert it.
+For a location, jump to it."
+  (interactive
+   (list (register-read-with-preview "Use register: ")
+         current-prefix-arg))
+  (condition-case nil
+      (jump-to-register register arg)
+    (user-error (insert-register register arg))))
 
 (provide 'better-editing)

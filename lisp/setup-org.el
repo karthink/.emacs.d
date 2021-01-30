@@ -11,7 +11,9 @@
          ("<f5>"  . org-capture)
          ("<f6>"  . org-agenda)
          :map org-mode-map
-         ("C-,"   . nil))
+         ("C-c C-x +" . my/org-strike-through-heading)
+         ("C-,"   . nil)
+         ("C-'"   . nil))
 
   :hook ((org-mode . org-toggle-pretty-entities)
          (org-mode . turn-on-org-cdlatex)
@@ -45,11 +47,17 @@
                 org-hide-leading-stars t 
                 org-image-actual-width 400 
                 org-pretty-entities-include-sub-superscripts t 
-                org-refile-targets '((nil :maxlevel . 3) (org-agenda-files :maxlevel . 3)) 
+                ;; org-refile-targets '((nil :maxlevel . 2) (org-agenda-files :maxlevel . 3)) 
+                org-refile-targets '((nil :level . 1) (org-agenda-files :todo . "PROJECT"))
+                org-refile-target-verify-function nil
+                org-refile-use-outline-path nil
+                org-refile-use-cache nil
+                org-refile-allow-creating-parent-nodes t
                 org-startup-folded t 
                 org-startup-indented t 
                 org-startup-with-inline-images nil 
-                org-tags-column 0
+                org-use-tag-inheritance nil
+                org-tags-column -80
                 org-use-sub-superscripts t
                 org-pretty-entities-include-sub-superscripts t
                 org-latex-listings t
@@ -61,6 +69,11 @@
                 org-highlight-latex-and-related '(native)
                 org-imenu-depth 7
                 org-id-link-to-org-use-id 'create-if-interactive
+                org-extend-today-until 3
+                org-id-locations-file "~/.cache/emacs/org-id-locations"
+                org-default-notes-file "~/org/do.org"
+                org-M-RET-may-split-line '((headline) (default . t))
+                org-fast-tag-selection-single-key 'expert
                 ;; org-eldoc-breadcrumb-separator " → " 
                 ;; org-hide-leading-stars-before-indent-mode t 
                 ;; org-indent-indentation-per-level 2 
@@ -73,6 +86,21 @@
                 ;; org-todo-keyword-faces '(("[-]" :inherit (font-lock-constant-face bold)) ("[?]" :inherit (warning bold)) ("WAITING" :inherit bold) ("LATER" :inherit (warning bold))) 
                 ;; org-use-sub-superscripts '{}
                 )
+
+  (defun save-org-mode-files ()
+    (dolist (buf (buffer-list))
+      (with-current-buffer buf
+        (when (eq major-mode 'org-mode)
+          (if (and (buffer-modified-p) (buffer-file-name))
+              (save-buffer))))))
+
+  (run-with-idle-timer 120 t 'save-org-mode-files)
+
+  (setq org-todo-keyword-faces
+        '(("TODO"    :foreground "#6e90c8" :weight bold)
+          ("WAITING" :foreground "red" :weight bold)
+          ("MAYBE"   :foreground "#6e8996" :weight bold)
+          ("PROJECT" :foreground "#088e8e" :weight bold)))
 
   ;; My defaults
   (setq org-file-apps '((auto-mode . emacs)
@@ -140,6 +168,18 @@
           )
         t)))
 
+  (defun my/org-strike-through-heading (&optional arg)
+    "Strike through heading text of current Org item."
+    (interactive "P")
+    (save-excursion
+      (unless (org-at-heading-p)
+        (org-previous-visible-heading 1))
+      (when (org-at-heading-p)
+        (let ((org-special-ctrl-a/e t))
+          (org-beginning-of-line)
+          (insert "+")
+          (org-end-of-line)
+          (insert "+")))))
 ;; (add-hook 'org-mode-hook '(lambda ()
 ;;			   (define-key org-mode-map (kbd "C-;") 'org-complete))
 
@@ -148,19 +188,182 @@
   
   )
 
-(use-package org-agenda
+
+(use-package org-src
   :after org
-  :commands org-agenda
   :config
-  (setq org-agenda-files '("~/Documents/org/do.org" "~/Documents/org/schedule.org")))
+  (setq-default
+   org-src-tab-acts-natively t))
+
+(use-package org-clock
+  :defer
+  :after org
+  :config
+  (setq-default org-clock-idle-time 60
+                org-clock-out-remove-zero-time-clocks t
+                org-clock-mode-line-total 'today))
+
+(use-package org-habit
+  :after org-agenda
+  :config
+  (setq org-habit-preceding-days 42)
+  
+  (defvar my/org-habit-show-graphs-everywhere nil
+    "If non-nil, show habit graphs in all types of agenda buffers.
+
+Normally, habits display consistency graphs only in
+\"agenda\"-type agenda buffers, not in other types of agenda
+buffers.  Set this variable to any non-nil variable to show
+consistency graphs in all Org mode agendas.")
+
+  (defun my/org-agenda-mark-habits ()
+    "Mark all habits in current agenda for graph display.
+
+This function enforces `my/org-habit-show-graphs-everywhere' by
+marking all habits in the current agenda as such.  When run just
+before `org-agenda-finalize' (such as by advice; unfortunately,
+`org-agenda-finalize-hook' is run too late), this has the effect
+of displaying consistency graphs for these habits.
+
+When `my/org-habit-show-graphs-everywhere' is nil, this function
+has no effect."
+    (when (and my/org-habit-show-graphs-everywhere
+               (not (get-text-property (point) 'org-series)))
+      (let ((cursor (point))
+            item data) 
+        (while (setq cursor (next-single-property-change cursor 'org-marker))
+          (setq item (get-text-property cursor 'org-marker))
+          (when (and item (org-is-habit-p item)) 
+            (with-current-buffer (marker-buffer item)
+              (setq data (org-habit-parse-todo item))) 
+            (put-text-property cursor
+                               (next-single-property-change cursor 'org-marker)
+                               'org-habit-p data))))))
+
+  (advice-add #'org-agenda-finalize :before #'my/org-agenda-mark-habits))
+
 
 (use-package org-agenda
   :after org
-  :defer
-  :commands (org-agenda)
+  :commands org-agenda
+  :hook (org-agenda-finalize . hl-line-mode)
   :config
-  (setq org-agenda-restore-windows-after-quit t
-        org-agenda-window-setup 'current-window))
+  (setq org-agenda-files '("~/Documents/org/do.org"
+                           "~/Documents/org/gmail-cal.org"
+                           "~/Documents/org/ucsb-cal.org"
+                           "~/karthinks/posts.org"))
+  (setq-default
+   org-agenda-span 2
+   org-agenda-restore-windows-after-quit t
+   org-agenda-window-setup 'current-window
+   org-stuck-projects '("TODO=\"PROJECT\"" ("TODO" "DEFERRED") nil "")
+   org-agenda-use-time-grid nil
+   org-agenda-todo-ignore-scheduled nil
+   org-agenda-text-search-extra-files '(agenda-archives)
+   org-agenda-tags-column 'auto
+   org-agenda-skip-scheduled-if-done t
+   org-agenda-skip-scheduled-if-deadline-is-shown t
+   org-agenda-show-all-dates nil
+   org-agenda-inhibit-startup t
+   org-agenda-include-diary t
+   org-agenda-default-appointment-duration 60)
+
+  (defun org-todo-age (&optional pos)
+    (if-let* ((entry-age (org-todo-age-time pos))
+              (days (time-to-number-of-days entry-age)))
+        (cond
+         ((< days 1)   "today")
+         ((< days 7)   (format "%dd" days))
+         ((< days 30)  (format "%.1fw" (/ days 7.0)))
+         ((< days 358) (format "%.1fM" (/ days 30.0)))
+         (t            (format "%.1fY" (/ days 365.0))))
+      ""))
+
+  (defun org-todo-age-time (&optional pos)
+    (let ((stamp (org-entry-get (or pos (point)) "CREATED" t)))
+      (when stamp
+        (time-subtract (current-time)
+                       (org-time-string-to-time stamp)))))
+
+  (defun org-current-is-todo ()
+    (member (org-get-todo-state) '("TODO" "STARTED")))
+  
+  (defun my/org-agenda-should-skip-p ()
+  "Skip all but the first non-done entry."
+  (let (should-skip-entry)
+    (unless (org-current-is-todo)
+      (setq should-skip-entry t))
+    (when (or (org-get-scheduled-time (point))
+              (org-get-deadline-time (point)))
+      (setq should-skip-entry t))
+    (when (/= (point)
+              (save-excursion
+                (org-goto-first-child)
+                (point)))
+      (setq should-skip-entry t))
+    (save-excursion
+      (while (and (not should-skip-entry) (org-goto-sibling t))
+        (when (and (org-current-is-todo)
+                   (not (org-get-scheduled-time (point)))
+                   (not (org-get-deadline-time (point))))
+          (setq should-skip-entry t))))
+    should-skip-entry))
+  
+  (defun my/org-agenda-skip-all-siblings-but-first ()
+  "Skip all but the first non-done entry."
+  (when (my/org-agenda-should-skip-p)
+    (or (outline-next-heading)
+        (goto-char (point-max)))))
+  
+  (setq org-agenda-custom-commands
+
+        '(("n" "Project Next Actions" alltodo ""
+           ((org-agenda-overriding-header "Project Next Actions")
+            (org-agenda-skip-function #'my/org-agenda-skip-all-siblings-but-first)))
+
+          ("P" "All Projects" tags "TODO=\"PROJECT\"&LEVEL>1"
+           ((org-agenda-overriding-header "All Projects")))
+
+          ("r" "Uncategorized items" tags "CATEGORY=\"Inbox\"&LEVEL=2"
+           ((org-agenda-overriding-header "Uncategorized items")))
+
+          ("W" "Waiting tasks" tags "W-TODO=\"DONE\"|TODO={WAITING\\|DELEGATED}"
+           ((org-agenda-overriding-header "Waiting/delegated tasks:")
+            (org-agenda-skip-function '(org-agenda-skip-entry-if 'scheduled))
+            (org-agenda-sorting-strategy '(todo-state-up priority-down category-up))))
+
+          ("D" "Deadlined tasks" tags "TODO<>\"\"&TODO<>{DONE\\|CANCELED\\|NOTE\\|PROJECT}"
+           ((org-agenda-overriding-header "Deadlined tasks: ")
+            (org-agenda-skip-function '(org-agenda-skip-entry-if 'notdeadline))
+            (org-agenda-sorting-strategy '(category-up))))
+
+          ("S" "Scheduled tasks" tags "TODO<>\"\"&TODO<>{APPT\\|DONE\\|CANCELED\\|NOTE\\|PROJECT}&STYLE<>\"habit\""
+           ((org-agenda-overriding-header "Scheduled tasks: ")
+            (org-agenda-skip-function '(org-agenda-skip-entry-if 'notscheduled))
+            (org-agenda-sorting-strategy '(category-up))
+            (org-agenda-prefix-format "%-11c%s ")))
+          
+          ("u" "Unscheduled tasks" tags "TODO<>\"\"&TODO<>{DONE\\|CANCELED\\|NOTE\\|PROJECT\\|DEFERRED\\|MAYBE}"
+           ((org-agenda-overriding-header "Unscheduled tasks: ")
+            (org-agenda-skip-function
+             '(org-agenda-skip-entry-if 'scheduled 'deadline 'timestamp))
+            (org-agenda-sorting-strategy '(user-defined-up))
+            (org-agenda-prefix-format "%-11c%5(org-todo-age) ")
+            (org-agenda-files '("~/org/do.org"))))
+
+          ("~" "Maybe tasks" tags "TODO=\"MAYBE\""
+           ((org-agenda-overriding-header "Maybe tasks:")
+            (org-agenda-sorting-strategy '(user-defined-up))
+            (org-agenda-prefix-format "%-11c%5(org-todo-age) ")
+            ;; (org-agenda-prefix-format "%-11c%5(org-todo-age) ")
+            ))
+
+          ("K" "Habits" tags "STYLE=\"habit\""
+           ((my/org-habit-show-graphs-everywhere t)
+            (org-agenda-overriding-header "Habits:")
+            (org-habit-show-all-today t)))
+          
+          )))
 
 (use-package org-capture
   :after org
@@ -175,58 +378,59 @@
                         (not (eq this-command 'org-capture-refile)))
                    (delete-frame))))
 
- (setq org-capture-templates
-        (append org-capture-templates 
-                 `(("t" "TODO items")
-                   
-                   ("tr" "TODO research"
+ (add-to-list 'org-capture-templates `("t" "Add task"
                     entry
-                    (file+olp "~/do.org" "Research")
-                    "* TODO %? :research:
-SCHEDULED: %^{Do by}t
-:PROPERTIES:
-:ID:       %(shell-command-to-string \"uuidgen\"):CREATED:  %U
-:END:
-  %a\n  %x\n"
-                    :prepend t
-                    )
-
-                   ("tg" "TODO general"
-                    entry
-                    (file+olp "~/do.org" "Tasks")
-                    "* TODO %?
-:PROPERTIES:
-:ID:       %(shell-command-to-string \"uuidgen\"):CREATED:  %U
-:END:
-  %a\n"
-                    :kill-buffer t
-                    :prepend t
-                    )
-
-                   ("tc" "Config projects"
-                    entry
-                    (file+olp "~/do.org" "Configuration")
+                    (file+headline "~/do.org" "Configuration")
                     "* TODO %? :config:
 :PROPERTIES:
 :ID:       %(shell-command-to-string \"uuidgen\"):CREATED:  %U
 :END:
-  %a\n  %x\n"
-                    :kill-buffer t
-                    :prepend t
-                    )
+%a\n%x\n"
+                    :kill-buffer t :prepend t))
 
-                   ("tp" "Other Projects"
-                    entry
-                    (file+olp "~/do.org" "Other Projects")
-                    "* %? :project:
-:PROPERTIES:
-:ID:       %(shell-command-to-string \"uuidgen\"):CREATED:  %U
-:END:
-  %a\n  %x\n"
-                    :prepend t
-                    :kill-buffer t
-                    )
-                   )))
+ ;; (setq org-capture-templates
+;;         (append org-capture-templates 
+;;                  `(("t" "TODO items")
+                   
+;;                    ("tr" "TODO research"
+;;                     entry
+;;                     (file+olp "~/do.org" "Research")
+;;                     "* TODO %? :research:
+;; SCHEDULED: %^{Do by}t
+;; :PROPERTIES:
+;; :ID:       %(shell-command-to-string \"uuidgen\"):CREATED:  %U
+;; :END:
+;; %a\n%x\n"
+;;                     :prepend t)
+
+;;                    ("tg" "Add task" entry
+;;                     (file+headline "~/do.org" "Tasks")
+;;                     "* TODO %?
+;; :PROPERTIES:
+;; :ID:       %(shell-command-to-string \"uuidgen\"):CREATED:  %U
+;; :END:
+;; %a
+;; %x\n" :kill-buffer t :prepend t)
+
+;;                    ("tc" "Config projects"
+;;                     entry
+;;                     (file+headline "~/do.org" "Configuration")
+;;                     "* TODO %? :config:
+;; :PROPERTIES:
+;; :ID:       %(shell-command-to-string \"uuidgen\"):CREATED:  %U
+;; :END:
+;; %a\n%x\n"
+;;                     :kill-buffer t :prepend t)
+
+;;                    ("tp" "Other Projects"
+;;                     entry
+;;                     (file+headline "~/do.org" "Other Projects")
+;;                     "* %? :project:
+;; :PROPERTIES:
+;; :ID:       %(shell-command-to-string \"uuidgen\"):CREATED:  %U
+;; :END:
+;; %a\n%x\n"
+;;                     :prepend t :kill-buffer t))))
 ;;;###autoload
   (defun make-orgcapture-frame ()
     "Create a new frame and run org-capture."
@@ -292,8 +496,9 @@ SCHEDULED: %^{Do by}t
   :after org
   :defer
   :config
-  (setq org-src-window-setup 'other-window
-        org-confirm-babel-evaluate nil)
+  (setq org-src-window-setup 'split-window-below
+        org-confirm-babel-evaluate nil
+        org-export-use-babel nil)
   (setq org-babel-load-languages '((emacs-lisp . t)
                                    (matlab . t)
                                    (python . t)
@@ -305,7 +510,7 @@ SCHEDULED: %^{Do by}t
   (defun my/org-babel-goto-tangle-file ()
     (if-let* ((args (nth 2 (org-babel-get-src-block-info t)))
               (tangle (alist-get :tangle args)))
-        (when (not (equal "no" tangle))
+        (unless (equal "no" tangle)
           (find-file tangle)
           t)))
   (add-hook 'org-open-at-point-functions 'my/org-babel-goto-tangle-file))
@@ -351,7 +556,6 @@ SCHEDULED: %^{Do by}t
 (use-package org-bullets
   :ensure t
   :after org
-  :defer 5
   :hook (org-mode . org-bullets-mode))
 
 ;;----------------------------------------------------------------------
@@ -402,16 +606,43 @@ See `org-capture-templates' for more information."
 (use-package org-gcal
   :ensure
   :after org
-  :commands (org-gcal-sync org-gcal-fetch)
-  :hook (org-agenda-mode . org-gcal-sync)
+  :commands (org-gcal-sync org-gcal-fetch my/org-gcal-sync-maybe)
+  :hook (org-agenda-mode . my/org-gcal-sync-maybe)
   :config
   (setq org-gcal-dir "~/.cache/emacs/org-gcal/")
   ;; (add-hook 'org-capture-after-finalize-hook (lambda () (org-gcal-sync)))
   (setq org-gcal-client-id my-org-gcal-client-id
         org-gcal-client-secret my-org-gcal-client-secret
-        org-gcal-file-alist `((,my-email-address . ,(concat
-                                                    (file-name-as-directory org-directory)
-                                                    "schedule.org")))))
+        org-gcal-file-alist
+        `((,my-email-address . ,(concat
+                                 (file-name-as-directory org-directory)
+                                 "gmail-cal.org"))
+          (,(car my-alt-email-addresses) . ,(concat
+                                             (file-name-as-directory org-directory)
+                                             "ucsb-cal.org")))
+        org-gcal-recurring-events-mode 'nested)
+
+  (defvar my/org-gcal--last-sync-time 0
+    "Last time `org-gcal-sync' was run.")
+  (defun my/org-gcal-sync-maybe (&optional skip-export silent)
+  "Import events from calendars if more than 30 minutes have
+  passed since last import.
+Export the ones to the calendar if unless
+SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
+  (interactive)
+  (if-let ((now (float-time (current-time)))
+           (sync-p (or (< (- now my/org-gcal--last-sync-time)
+                          1800)
+                       ;; (seq-some (lambda (cal-file-pair)
+                       ;;             (< (- now
+                       ;;                   (float-time (file-attribute-modification-time
+                       ;;                                (file-attributes (cdr cal-file-pair)))))
+                       ;;                1800))
+                       ;;    org-gcal-file-alist)
+                       )))
+      (message "Did not check for calendar updates. `M-x org-gcal-sync' to force check.")
+    (org-gcal-sync skip-export silent)
+    (setq my/org-gcal--last-sync-time now))))
 
 ;;----------------------------------------------------------------------
 ;; ORG-REVEAL

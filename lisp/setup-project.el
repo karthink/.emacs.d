@@ -1,6 +1,5 @@
 (use-package project
     :init
-    (fset 'project-prefix-map project-prefix-map)
     (setq project-switch-commands
           '((?f "Find file" project-find-file)
             (?g "Find regexp" project-find-regexp)
@@ -13,6 +12,7 @@
             ;; (?e "Eshell" project-eshell)
             ))
     :config
+    ;; (fset 'project-prefix-map project-prefix-map)
     (setq project-list-file "~/.cache/emacs/projects")
 
     ;; Declare directories with ".project" as a project

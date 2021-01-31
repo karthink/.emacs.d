@@ -50,7 +50,7 @@
   (setq default-directory
         (cond ((equal (system-name) "surface")
                "/cygdrive/c/Users/karth/OneDrive/Documents/")
-              ((equal (system-name) "cube")
+              ((equal system-type 'nt)
                "/cygdrive/c/Users/karth/OneDrive/Documents/")
               ((equal (system-name) "thinkpad") "~/")
               (t "~/")))
@@ -67,7 +67,10 @@
 ;;########################################################################
 ;;;* PERSONAL INFO
 ;;########################################################################
-(and (load-library (concat user-emacs-directory "lisp/personal.el.gpg"))
+(and (load-library
+      (if (file-exists-p (concat user-emacs-directory "lisp/personal.el"))
+	   (concat user-emacs-directory "lisp/personal.el")
+	(concat user-emacs-directory "lisp/personal.el.gpg")))
      ;; (require 'personal nil t)
      (setq user-full-name my-full-name)
      (setq user-mail-address my-email-address))
@@ -3078,6 +3081,7 @@ argument, query for word to search."
          ("C-d" . dictionary-search-dwim)))
 ;;;** DOT MODE
 (use-package dot-mode
+  :ensure t
   :commands dot-mode
   :bind (:map dot-mode-map
          ("C-c ." . nil)
@@ -3324,10 +3328,11 @@ the mode-line and switches to `variable-pitch-mode'."
 
 (use-package smart-mode-line
   :ensure t
+  :defines sml/fix-mode-line-a
+  :commands sml/setup
   :init
   (setq sml/theme nil)
   (sml/setup)
-  :defines sml/fix-mode-line-a
   ;; :config
   ;; (defun sml/fix-mode-line-a (_theme &rest _args)
   ;;   "Advice to `load-theme' to fix the mode-line height after activating/deactivating theme"
@@ -3542,9 +3547,9 @@ the mode-line and switches to `variable-pitch-mode'."
 
   (cond (IS-LINUX
          (custom-set-faces
-          '(default ((t (:family "Ubuntu Mono" :foundry "PfEd" :slant normal :weight normal :height 132 :width normal)
+          '(default ((t (:family "Ubuntu Mono" :foundry "PfEd" :slant normal :weight normal :height 128 :width normal)
                       ;; (:family "Iosevka" :foundry "PfEd" :slant normal :weight normal :height 122 :width normal)
-                        ;; (:family "FantasqueSansMono Nerd Font" :foundry "PfEd" :slant normal :weight normal :height 120 :width normal)
+                        ;; (:family "FantasqueSansMono Nerd Font" :foundry "PfEd" :slant normal :weight normal :height 125 :width normal)
                         )))))
         (IS-WINDOWS
          (custom-set-faces

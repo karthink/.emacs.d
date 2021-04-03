@@ -58,10 +58,18 @@
         ;; notmuch-tag-formats
         ;; '(("unread" (propertize tag 'face 'notmuch-tag-unread)))
         notmuch-always-prompt-for-sender t
+        notmuch-archive-tags '("-inbox" "-unread")
         notmuch-hello-sections
         '(notmuch-hello-insert-saved-searches
           notmuch-hello-insert-alltags))
 
+  (setq notmuch-search-line-faces '(("flagged"   . (:inherit notmuch-search-flagged-face
+                                                    :foreground "IndianRed"))
+                                    ("ucsb"      . (:foreground "MediumPurple"))
+				    ("important" . (:foreground "CornflowerBlue"))
+                                    ("unread"    . (:inherit notmuch-search-unread-face
+                                                    :background "gray16"))))
+  
   (define-key notmuch-search-mode-map (kbd "d")
     (defun my/notmuch-toggle-trash ()
       (interactive)
@@ -70,6 +78,50 @@
                        '("-inbox" "+trash"))))
         (notmuch-search-tag taglist)
         (notmuch-search-next-thread))))
+
+  (defun notmuch-search-make-tagger (tag)
+    (lambda () (interactive)
+      (let ((taglist (if (member tag (notmuch-search-get-tags))
+                         (list (concat "-" tag))
+                       (list (concat "+" tag)))))
+        (notmuch-search-tag taglist)
+        (notmuch-search-next-thread))))
+  
+  (defun notmuch-show-make-tagger (tag)
+    (lambda () (interactive)
+      (let ((taglist (if (member tag (notmuch-show-get-tags))
+                         (list (concat "-" tag))
+                       (list (concat "+" tag)))))
+        (notmuch-show-tag taglist)
+        (notmuch-show-next-message))))
+  
+  (defun notmuch-tree-make-tagger (tag)
+    (lambda (&optional all) (interactive "P")
+      (let ((taglist (if (member tag (notmuch-tree-get-tags))
+                         (list (concat "-" tag))
+                       (list (concat "+" tag)))))
+        (if all
+            (notmuch-tree-tag-thread taglist)
+          (notmuch-tree-tag taglist))
+        (notmuch-tree-next-thread))))
+
+  (define-key notmuch-search-mode-map (kbd "f") (notmuch-search-make-tagger "flagged"))
+  (define-key notmuch-show-mode-map (kbd "f") (notmuch-show-make-tagger "flagged"))
+  (define-key notmuch-tree-mode-map (kbd "f") (notmuch-tree-make-tagger "flagged"))
+
+  
+  ;; (define-key notmuch-show-mode-map "`" 'notmuch-show-apply-tag-macro)
+  ;; (define-key notmuch-search-mode-map "`" 'notmuch-show-apply-tag-macro)
+
+  ;; (define-prefix-command notmuch-tagger-map)
+  ;; (let ((map notmuch-tagger-map))
+  ;;   (define-key map "")
+  ;;   )
+
+  ;; (defun notmuch-show-apply-tag-macro (key)
+  ;;   (interactive "k")
+  ;;   (let ((macro (assoc key notmuch-show-tag-macro-alist)))
+  ;;     (apply 'notmuch-show-tag-message (cdr macro))))
   
   ;; (defun +disable-C-tab (mode-map)
   ;;   "Disable Control-Tab in mode-map"

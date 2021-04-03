@@ -24,3 +24,4 @@ request/*
 srecode-map.el
 .org-id-locations
 *~
+package-quickstart.el

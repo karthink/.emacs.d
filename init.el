@@ -173,7 +173,9 @@
     "S-SPC" 'scroll-other-window-down
     "z" '(repeat-complex-command :wk "M-x again")
     "x" '(execute-extended-command :wk "M-x")
-    "f" '(:ignore t) ;; :wk "file")
+    "f" '(:prefix-command space-menu-file
+                          :prefix-map space-menu-file-map
+                          :wk "files") ;; :wk "file")
     "q" '(:ignore t :wk "quit")
     "b" '(:ignore t)
     "g" '(vc-prefix-map :wk "git/VC")
@@ -203,7 +205,7 @@
   (general-def
     :keymaps 'space-menu-buffer-map
     :wk-full-keys nil
-    "r" '(revert-buffer         :wk "revert buffer")
+    "g" '(revert-buffer         :wk "revert buffer")
     "b" '(switch-to-buffer      :wk "switch to buffer")
     "d" '(kill-buffer           :wk "delete buffers")
     "k" '(kill-this-buffer      :wk "kill buffer")
@@ -258,9 +260,8 @@
     "d" '(server-edit                :wk "done with buffer"))
 
   (general-def
-    :keymaps 'space-menu-map
+    :keymaps 'space-menu-file-map
     :wk-full-keys nil
-    :prefix "f"
     "s" '(save-buffer       :wk "Save file")
     "w" '(write-file        :wk "Save as?")
     "S" '(save-some-buffers :wk "Save bufferS")
@@ -299,6 +300,22 @@
           :wk "Load this file"))
   (general-def :keymaps 'space-menu-help-map
     "m" '(describe-mode :wk "describe mode"))
+  )
+
+(use-package god-mode
+  :ensure t
+  :disabled
+  :init
+  (setq which-key--god-mode-support-enabled t)
+  (setq god-mode-enable-function-key-translation nil)
+  (defun my-god-mode-update-cursor ()
+    (setq cursor-type (if (or god-local-mode)
+                          'hollow
+                        'box)))
+  (global-set-key (kbd "<escape>") #'god-local-mode)
+  ;; (global-set-key (kbd "S-SPC") #'god-local-mode)
+  (add-hook 'god-mode-enabled-hook #'my-god-mode-update-cursor)
+  (add-hook 'god-mode-disabled-hook #'my-god-mode-update-cursor)
   )
 ;;######################################################################
 ;;;* SAVE AND BACKUP
@@ -355,14 +372,17 @@
   buffer file, then recompile the file."
   (interactive)
   (when (and (eq major-mode 'emacs-lisp-mode)
+             (not (string= user-init-file (buffer-file-name)))
              (file-exists-p (byte-compile-dest-file buffer-file-name)))
-    (byte-compile-file buffer-file-name)))
+    (byte-recompile-file buffer-file-name)))
 (add-hook 'after-save-hook 'auto-byte-recompile)
+(add-hook 'kill-emacs-hook (lambda () (byte-recompile-file user-init-file)))
 (add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p)
 (global-prettify-symbols-mode 1)
 
 ;; Save and resume session
 (use-package desktop
+  :disabled
   :config
   (setq desktop-auto-save-timeout 300
         desktop-path '("~/.cache/emacsdesktop")
@@ -378,12 +398,24 @@
 
 (use-package emacs
 ;; Hyper bindings for emacs. Why use a pinky when you can use a thumb?
-  :bind-keymap ("H-x" . ctl-x-map)
-  :bind (:map ctl-x-map
+  :bind-keymap (("H-x" . ctl-x-map)
+                ("H-f" . space-menu-file-map)
+                ("H-b" . space-menu-buffer-map)
+                ("H-r" . ctl-x-r-map))
+  :bind (("H-=" . text-scale-increase)
+         ("H--" . text-scale-decrease)
+         ("H-M--" . shrink-window-if-larger-than-buffer)
+         ("H-h" . mark-whole-buffer)
+         ("H-M-x" . eval-defun)
+         :map ctl-x-map
          ("H-s" . save-buffer)
          ("H-e" . eval-last-sexp)
          ("H-c" . save-buffers-kill-terminal)
-         ("H-f" . find-file)))
+         ("H-f" . find-file)
+         ("H-q" . read-only-mode))
+  :config
+  (define-key key-translation-map (kbd "H-x") (kbd "C-x"))
+  (define-key key-translation-map (kbd "H-c") (kbd "C-c")))
 
 ;;######################################################################
 ;;;* INTERFACING WITH THE OS
@@ -406,7 +438,7 @@
   :commands (comint-mode shell-command-at-line)
   :bind
   ("C-!" . shell-command-at-line)
-  
+
   :general
   (:keymaps 'shell-mode-map
             :states  '(insert emacs)
@@ -453,6 +485,48 @@ output instead."
   :disabled
   :load-path "~/.local/share/git/melpa/explain-pause-mode/")
 
+(use-package emacs
+  :config
+  (defvar google-search-history nil
+    "List of queries to google-search-string.")
+  (defun google-search-string (search-string)
+    "Read SEARCH-STRING from the minibuffer and call the shell
+command tuxi on it."
+    (interactive (list (read-string "Google: " nil
+                                    google-search-history
+                                    (thing-at-point 'sexp))))
+    (unless (executable-find "tuxi")
+      (user-error "Cannot find shell command: tuxi"))
+    (let ((search-output (string-trim-right
+                          (shell-command-to-string
+                           (concat
+                            "tuxi -r "
+                            (shell-quote-argument search-string))))))
+      (with-current-buffer (get-buffer-create "*Tuxi Output*")
+        (erase-buffer)
+        (insert search-output)
+        ;; (fill-region (point-min) (point-max))
+        (if (<= (count-lines (point-min) (point-max)) 1)
+            (message search-output)
+          (goto-char (point-min))
+          (display-buffer (current-buffer))))))
+  (defun google-search-at-point (&optional beg end)
+    "Call the shell command tuxi on the symbol at point. With an
+active region use it instead."
+    (interactive "r")
+    (if-let ((search-string (if (use-region-p)
+                                (buffer-substring-no-properties beg end)
+                              (thing-at-point 'symbol))))
+        (google-search-string search-string)
+      ;; (message "No symbol to search for at point!")
+      (call-interactively #'google-search-string)))
+  :bind (:map help-map
+         ("g" . google-search-string)
+         ("C-=" . google-search-at-point)))
+
+(use-package vterm
+  :ensure t
+  :defer)
 ;;----------------------------------------------------------------------
 ;;;** ESHELL PREFERENCES
 ;;----------------------------------------------------------------------
@@ -576,7 +650,11 @@ output instead."
 (use-package easy-kill
   :ensure t
   :bind (([remap kill-ring-save] . #'easy-kill)
-         ([remap mark-sexp]      . #'easy-mark)))
+         ([remap mark-sexp]      . #'easy-mark)
+         :map easy-kill-base-map
+         ("," . easy-kill-expand))
+  :config
+  (add-to-list 'easy-kill-alist '(62 page "\n")))
 
 (use-package goto-chg
   :ensure t
@@ -613,31 +691,41 @@ output instead."
    "w" '(window-toggle-side-windows :wk "toggle side windows"))
   )
 
+(use-package window
+  :bind ("H-+" . balance-windows))
+
 (require 'better-buffers nil t)
 
 ;;;** Popup Buffers
-(use-package popup-buffers
-  :load-path "~/.local/share/git/popup-buffers"
-  :after setup-windows
-  :commands popup-buffers-mode
-  :bind (("C-`" . popup-buffers-toggle-latest)
-         ("C-M-`" . popup-buffers-cycle))
+(use-package popper
+  :load-path "~/.local/share/git/popper"
+  :after (setup-windows setup-project)
+  :commands popper-mode
+  :bind (("C-`" . popper-toggle-latest)
+         ("C-M-`" . popper-cycle)
+         ("H-`" . popper-toggle-latest)
+         ("H-M-`" . popper-cycle)
+         ("H-6" . popper-toggle-type)
+         ("H-M-k" . popper-kill-latest-popup))
   :init
-  (setq popup-buffers-reference-buffers
+  (setq popper-group-function #'popper-group-by-project)
+  (setq popper-reference-buffers
         (append +help-modes-list
                 +repl-modes-list
                 +occur-grep-modes-list
-                +man-modes-list
+                ;; +man-modes-list
                 '(Custom-mode
                   compilation-mode
                   messages-mode)
                 '("^\\*Warnings\\*"
                   "^\\*Compile-Log\\*"
+                  "^\\*Matlab Help\\*"
                   "^\\*Messages\\*"
                   "^\\*Backtrace\\*"
                   "^\\*evil-registers\\*"
                   "^\\*Apropos"
                   "^Calc:"
+                  "^\\*TeX errors\\*"
                   "^\\*ielm\\*"
                   "^\\*TeX Help\\*"
                   "\\*Shell Command Output\\*"
@@ -646,17 +734,18 @@ output instead."
                   ;; "\\*scratch\\*"
                   "[Oo]utput\\*")))
 
-  (popup-buffers-mode +1)
+  (popper-mode +1)
 
   :config
+  (setq popper-display-control 'user)
   (defun +popup-raise-popup ()
     "Choose a popup-window to raise as a regular window"
     (interactive)
-    (popup-buffers-raise-popup
+    (popper-raise-popup
      (completing-read "Raise popup: "
                       (mapcar (lambda (win-and-buf) (buffer-name (cdr win-and-buf)))
-                              (append popup-buffers-open-buffer-window-alist
-                                      popup-buffers-buried-buffer-window-alist))
+                              (append popper-open-buffer-window-alist
+                                      popper-buried-buffer-window-alist))
      nil t)))
 
   (defun +popup-lower-to-popup ()
@@ -664,10 +753,10 @@ output instead."
     (interactive)
     (let ((window-list (cl-set-difference
                         (window-list)
-                        (mapcar 'car popup-buffers-open-buffer-window-alist))))
+                        (mapcar 'car popper-open-popup-alist))))
       (if (< (length window-list) 2)
           (message "Only one main window!")
-        (popup-buffers-lower-to-popup
+        (popper-lower-to-popup
          (get-buffer
           (completing-read "Lower to popup: "
                            (mapcar (lambda (win) (buffer-name (window-buffer win)))
@@ -675,21 +764,20 @@ output instead."
                            nil t))))))
   :general
   (:states 'motion
-   "C-w ^" '(popup-buffers-raise-popup :wk "raise popup")
-   "C-w _" '(popup-buffers-lower-to-popup :wk "lower to popup"))
+   "C-w ^" '(popper-raise-popup :wk "raise popup")
+   "C-w _" '(popper-lower-to-popup :wk "lower to popup"))
   (:keymaps 'space-menu-window-map
    "^" '(+popup-raise-popup :wk "raise popup")
-   "_" '(+popup-lower-to-popup :wk "lower to popup"))
-  )
+   "_" '(+popup-lower-to-popup :wk "lower to popup")))
 
 ;;;** Winum - window numbers
 (use-package winum
   :ensure
   :init
-  (eval-when-compile 
+  (eval-when-compile
     (defmacro +winum-select (num)
       `(lambda (&optional arg) (interactive "P")
-         (if arg 
+         (if arg
              (winum-select-window-by-number (- 0 ,num))
            (if (equal ,num (winum-get-number))
                (winum-select-window-by-number (winum-get-number (get-mru-window t)))
@@ -702,7 +790,7 @@ output instead."
         (define-key map (kbd (concat "M-" (int-to-string num)))
           (+winum-select num)))
       map))
-  
+
   ;; If evil-mode is enabled further mode-line customization is needed before
   ;; enabling winum:
   (unless (bound-and-true-p evil-mode)
@@ -724,16 +812,18 @@ output instead."
   :config
   (winner-mode +1))
 
-;;;** Ace-window 
+;;;** Ace-window
 (use-package ace-window
   :ensure t
-  ;; :bind ("C-x o" . ace-window)
   :bind
   (("C-x o" . ace-window)
+   ("H-o"   . ace-window)
    ("M-o" . other-window))
   :general
   (:keymaps 'space-menu-map
    "`" 'ace-window)
+  ;; :custom-face
+  ;; (aw-leading-char-face ((t (:height 2.5 :weight normal))))
   :config
   (setq aw-dispatch-always t
         aw-scope 'global
@@ -759,22 +849,22 @@ output instead."
     "Enlarge window horizontally by 8% of the frame width."
     (interactive "p")
     (enlarge-window-horizontally (* (or repeat 1)
-                                    (/ (frame-width) 12))))
+                                    (/ (frame-width) 16))))
   (defun my/shrink-window-horizontally (&optional repeat)
     "Enlarge window horizontally by 8% of the frame width."
     (interactive "p")
     (shrink-window-horizontally (* (or repeat 1)
-                                   (/ (frame-width) 12))))
+                                   (/ (frame-width) 16))))
   (defun my/shrink-window (&optional repeat)
     "Enlarge window horizontally by 8% of the frame height."
     (interactive "p")
     (shrink-window (* (or repeat 1)
-                      (/ (frame-height) 12))))
+                      (/ (frame-height) 16))))
   (defun my/enlarge-window (&optional repeat)
     "Enlarge window horizontally by 8% of the frame height."
     (interactive "p")
     (enlarge-window (* (or repeat 1)
-                       (/ (frame-height) 12))))
+                       (/ (frame-height) 16))))
   :bind
   (("<C-S-right>" . my/enlarge-window-horizontally)
    ("<C-S-left>"  . my/shrink-window-horizontally)
@@ -788,7 +878,21 @@ output instead."
    ("H-<down>" . windmove-swap-states-down)
    ("H-<up>" . windmove-swap-states-up)
    ("H-<left>" . windmove-swap-states-left)))
+;;;** Transpose-frame
+(use-package transpose-frame
+  :ensure t
+  :bind (("H-\\" . rotate-frame-anticlockwise)
+         :map ctl-x-4-map
+         ("|" . flip-frame)
+         ("\\" . rotate-frame-anticlockwise)))
 ;;######################################################################
+;;;** Auto-revert
+(use-package autorevert
+  :hook ((prog-mode
+          text-mode
+          tex-mode
+          org-mode
+          conf-mode) . auto-revert-mode))
 ;;;* UTILITY
 ;;######################################################################
 ;; Count words, print ASCII table, etc
@@ -940,7 +1044,7 @@ Essentially a much simplified version of `next-line'."
         imenu-eager-completion-buffer t
         imenu-space-replacement " "
         imenu-level-separator "/")
-  
+
   (declare-function org-at-heading-p "org")
   (declare-function org-show-entry "org")
   (declare-function org-reveal "org")
@@ -966,7 +1070,9 @@ To be used with `imenu-after-jump-hook' or equivalent."
 (use-package imenu-list
   :ensure t
   :after imenu
-  :defer)
+  :defer
+  :bind ("M-s M-i" . imenu-list)
+  )
 
 (use-package scratch
   :ensure
@@ -1109,7 +1215,7 @@ If region is active, add its contents to the new buffer."
   :ensure t
   :commands eglot
   :bind (:map eglot-mode-map
-              ("C-h ." . eglot-help-at-point))
+              ("C-h ." . eldoc))
   :config
   (setq eglot-put-doc-in-help-buffer nil)
   (add-to-list 'eglot-server-programs '(matlab-mode . ("~/.local/share/git/matlab-langserver/matlab-langserver.sh" "")))
@@ -1122,17 +1228,15 @@ If region is active, add its contents to the new buffer."
   :after tex
   :ensure auctex
   :hook (LaTeX-mode . electric-pair-mode)
-  :mode
-  ("\\.tex\\'" . latex-mode)
-
-  :init (add-hook 'LaTeX-mode-hook
-                  (lambda ()  (interactive)
-                    (outline-minor-mode)
-                    (setq-local page-delimiter "\\\\section\\**{")
-                    (setq-local outline-regexp "\\\\\\(sub\\)*section\\**{")
-                    (setq-local prettify-symbols-alist tex--prettify-symbols-alist)
-                    (outline-hide-sublevels 3)
-                    ))
+  :mode ("\\.tex\\'" . latex-mode)
+  ;; :init (add-hook 'LaTeX-mode-hook
+  ;;                 (lambda ()  (interactive)
+  ;;                   (outline-minor-mode)
+  ;;                   (setq-local page-delimiter "\\\\section\\**{")
+  ;;                   (setq-local outline-regexp "\\\\\\(sub\\)*section\\**{")
+  ;;                   (setq-local prettify-symbols-alist tex--prettify-symbols-alist)
+  ;;                   (outline-hide-sublevels 3)
+  ;;                   ))
   :defines (TeX-auto-save
             TeX-parse-self
             TeX-electric-escape
@@ -1204,6 +1308,12 @@ If region is active, add its contents to the new buffer."
     ;; "{" 'cdlatex-environment)
 
   :config
+  (use-package embrace
+      :bind (:map TeX-mode-map
+             ("M-s a" . embrace-add)
+             ("M-s c" . embrace-change)
+             ("M-s d" . embrace-delete)))
+
   (progn
     (defvar my-preamble-file (concat (expand-file-name
                                       (file-name-as-directory "~/Documents/"))
@@ -1225,6 +1335,7 @@ If region is active, add its contents to the new buffer."
      ;; If previews still don't show disable the hyperref package
      TeX-PDF-mode nil
      TeX-error-overview-open-after-TeX-run t)
+    (setq LaTeX-command "latex")
     (setq-default TeX-source-correlate-mode t)
     (setq TeX-source-correlate-method 'synctex)
     (setq-default TeX-source-correlate-start-server t)
@@ -1346,17 +1457,22 @@ If region is active, add its contents to the new buffer."
                                       (?6 ("\\partial"))
                                       (?v ("\\vee" "\\forall"))))
     (setq cdlatex-math-modify-alist '((?b "\\mathbb" "\\textbf" t nil nil)
-                                      (?B "\\mathbf" "\\textbf" t nil nil)))
+                                      (?B "\\mathbf" "\\textbf" t nil nil)
+                                      (?t "\\text" nil t nil nil)))
     (setq cdlatex-paired-parens "$[{("))
   )
 
 (use-package inkscape-figures
-  :defer
+  :disabled
   :after latex
   :bind (:map LaTeX-mode-map
             ("C-c i" . +inkscape-figures-create-at-point-latex)
-            ("C-c e" . +inkscape-figures-edit))
-  )
+            ("C-c e" . +inkscape-figures-edit)))
+
+(use-package ink
+  :load-path "~/.local/share/git/ink/"
+  :after latex
+  :commands (ink-make-figure ink-edit-figure))
 
 ;;----------------------------------------------------------------------
 ;;;** MATLAB
@@ -1367,6 +1483,7 @@ If region is active, add its contents to the new buffer."
   ;; :ensure matlab-mode
   ;; :after 'evil
   ;; :commands (matlab-mode matlab-shell matlab-shell-run-block)
+  :mode ("\\.m\\'" . matlab-mode)
   :hook ((matlab-mode . company-mode-on)
          (matlab-mode . (lambda ()
                           (setq-local buffer-file-coding-system 'us-ascii)
@@ -1424,6 +1541,7 @@ If region is active, add its contents to the new buffer."
     (load-library "matlab-autoloads")
     (load-library "matlab-shell"))
   (setq matlab-shell-debug-tooltips-p t)
+  (setq matlab-shell-command-switches '("-nodesktop" "-nosplash"))
   ;; (setq matlab-shell-echoes nil)
   (setq matlab-shell-run-region-function 'matlab-shell-region->script)
   (add-hook 'matlab-shell-mode-hook (lambda () (interactive)
@@ -1437,7 +1555,7 @@ If region is active, add its contents to the new buffer."
 
 ;;;###autoload
   (defun +matlab-shell-no-select-a (&rest _args)
-    "Switch back to matlab file buffer after evaluating region"  
+    "Switch back to matlab file buffer after evaluating region"
     (select-window (get-mru-window)))
   (advice-add 'matlab-shell-run-region :after #'+matlab-shell-no-select-a)
 
@@ -1446,7 +1564,9 @@ If region is active, add its contents to the new buffer."
     (save-excursion
       (let ((block-beg (search-backward-regexp "^%%" nil t))
             (block-end (search-forward-regexp "^%%" nil t 2)))
-        (cons block-beg block-end))))
+        (cons (or block-beg (point-min)) (if block-end
+                                             (- block-end 2)
+                                           (point-max))))))
 
 ;;;###autoload
   (defun matlab-shell-run-block (&optional prefix)
@@ -1463,7 +1583,7 @@ If region is active, add its contents to the new buffer."
         (matlab-shell-run-region beg end))))
 
   ;; These are obviated by outline-next-heading and co:
-  ;; 
+  ;;
   ;; (defun matlab-forward-section ()
   ;;   "Move forward section in matlab mode"
   ;;   (interactive)
@@ -1551,7 +1671,7 @@ If region is active, add its contents to the new buffer."
 ;;;** EVAL-IN-REPL
 ;;----------------------------------------------------------------------
 (use-package eval-in-repl
-  :disabled 
+  :disabled
   :ensure t
   :init
   ;; (require 'eval-in-repl-geiser)
@@ -1576,6 +1696,19 @@ and Interpretation of Classical Mechanics) - The book."
   )
 
 ;;######################################################################
+;;;** JULIA
+(use-package julia-repl
+  :ensure t
+  :hook (julia-mode . julia-repl-mode)
+  :config
+  (julia-repl-set-terminal-backend 'vterm))
+
+(use-package eglot-jl
+  :ensure t
+  :commands eglot-jl-init
+  :config
+  (cl-defmethod project-root ((project (head julia)))
+    (cdr project)))
 ;;;* PLUGINS
 ;;######################################################################
 
@@ -1583,7 +1716,6 @@ and Interpretation of Classical Mechanics) - The book."
 ;;;* EMBRACE
 ;;----------------------------------------------------------------------
 (use-package embrace
-  :disabled
   :ensure t
   :hook ((org-mode . embrace-org-mode-hook)
          (org-mode . my/embrace-latex-mode-hook-extra)
@@ -1606,7 +1738,7 @@ and Interpretation of Classical Mechanics) - The book."
     (add-to-list 'embrace-semantic-units-alist '(?E . er/mark-LaTeX-inside-environment))
     (add-to-list 'embrace-semantic-units-alist '(?e . LaTeX-mark-environment))
     (add-to-list 'embrace-semantic-units-alist '(?$ . er/mark-LaTeX-math))
-    (embrace-add-pair-regexp ?m "\\\\[a-z*]+{" "}" #'my/embrace-latex-read-function
+    (embrace-add-pair-regexp ?m "\\\\[a-z*]+{" "}" #'my/embrace-latex-macro-read-function
                               (embrace-build-help "\\macro{" "}"))
     (embrace-add-pair-regexp ?e "\\\\begin{[a-z*]+}" "\\\\end{[a-z*]+}"
                               (lambda ()
@@ -1614,8 +1746,8 @@ and Interpretation of Classical Mechanics) - The book."
                                   (cons (format "\\begin{%s}" env)
                                         (format "\\end{%s}" env))))
                               (embrace-build-help "\\begin{.}" "\\end{.}"))
-     (embrace-add-pair-regexp 36 "\\$" "\\$" nil)
-     (embrace-add-pair-regexp ?d "\\\\left\\\\*[{([|<]" "\\\\right\\\\*[}([|>]"
+    (embrace-add-pair-regexp 36 "\\$" "\\$" nil)
+    (embrace-add-pair-regexp ?d "\\\\left\\\\*[{([|<]" "\\\\right\\\\*[}([|>]"
                               (lambda ()
                                 (let* ((env (read-char "Delim type: "))
                                        (env-pair (pcase env
@@ -1628,7 +1760,7 @@ and Interpretation of Classical Mechanics) - The book."
                                         (format " \\right%s" (cdr env-pair)))))
                               (embrace-build-help "\\left." "\\right.")
                               ))
-  
+
   (defun my/embrace-latex-macro-read-function ()
     "LaTeX command support for embrace."
     (cons (format "\\%s{" (read-string "\\")) "}"))
@@ -1642,30 +1774,27 @@ and Interpretation of Classical Mechanics) - The book."
          :right-regexp "\\[]})]|"))
 
   (defun +evil--embrace-get-pair (char)
-    (if-let* ((pair (cdr-safe (assoc (string-to-char char) evil-surround-pairs-alist))))
-        pair
-      (if-let* ((pair (assoc-default char embrace--pairs-list)))
-          (if-let* ((real-pair (and (functionp (embrace-pair-struct-read-function pair))
-                                    (funcall (embrace-pair-struct-read-function pair)))))
-              real-pair
-            (cons (embrace-pair-struct-left pair) (embrace-pair-struct-right pair)))
-        (cons char char))))
+    (if-let* ((pair (assoc-default char embrace--pairs-list)))
+        (if-let* ((real-pair (and (functionp (embrace-pair-struct-read-function pair))
+                                  (funcall (embrace-pair-struct-read-function pair)))))
+            real-pair
+          (cons (embrace-pair-struct-left pair) (embrace-pair-struct-right pair)))
+      (cons char char)))
 
   (defun +evil--embrace-escaped ()
     "Backslash-escaped surround character support for embrace."
     (let ((char (read-char "\\")))
       (if (eq char 27)
           (cons "" "")
-        (let ((pair (+evil--embrace-get-pair (string char)))
-              (text (if (sp-point-in-string) "\\\\%s" "\\%s")))
+        (let ((pair (+evil--embrace-get-pair char))
+              (text "\\%s")) ;; (if (sp-point-in-string) "\\\\%s" "\\%s")
           (cons (format text (car pair))
-                (format text (cdr pair)))))))
-  )
+                (format text (cdr pair))))))))
 ;;----------------------------------------------------------------------
 ;; STROKES
 ;;----------------------------------------------------------------------
 (use-package strokes
-  :bind ("<down-mouse-3>" . strokes-do-stroke)
+  :bind ("<down-mouse-2>" . strokes-do-stroke)
   :config
   (setq strokes-file "~/.cache/emacs/strokes")
   (setq strokes-use-strokes-buffer t))
@@ -1675,23 +1804,26 @@ and Interpretation of Classical Mechanics) - The book."
 ;;----------------------------------------------------------------------
 (use-package simple
   :bind (("M-g n" . my/next-error)
-         ("M-g p" . my/next-error))
+         ("M-g p" . my/next-error)
+         ;; ("M-n" . next-error)
+         ;; ("M-p" . next-error)
+         )
   :config
   (defun my/next-error (&optional arg reset)
-  "`next-error' with easier cycling through errors."
-  (interactive "P")
-  (let* ((ev last-command-event)
-         (echo-keystrokes nil)
-         (num (pcase ev
-                (?p -1)
-                (_  1))))
-    (next-error (if arg (* arg num) num)
-                reset)
-    (set-transient-map
-     (let ((map (make-sparse-keymap)))
-       (define-key map (kbd "n") 'my/next-error)
-       (define-key map (kbd "p") 'my/next-error)
-       map)))))
+    "`next-error' with easier cycling through errors."
+    (interactive "P")
+    (let* ((ev last-command-event)
+           (echo-keystrokes nil)
+           (num (pcase ev
+                  (?p -1)
+                  (_  1))))
+      (next-error (if arg (* arg num) num)
+                  reset)
+      (set-transient-map
+       (let ((map (make-sparse-keymap)))
+         (define-key map (kbd "n") 'my/next-error)
+         (define-key map (kbd "p") 'my/next-error)
+         map)))))
 ;;----------------------------------------------------------------------
 ;; DUMB-JUMP
 ;;----------------------------------------------------------------------
@@ -1734,14 +1866,14 @@ and Interpretation of Classical Mechanics) - The book."
   (defun flymake--take-over-error-a (orig-fn &optional arg reset)
     "If there is no `next-error' locus use `next-error' to go to
     flymake errors instead"
-   (interactive "P")
-   (let ((sys (+error-delegate)))
-     (cond
-      ((eq 'flymake sys) (funcall 'flymake-goto-next-error arg
-                                  (if current-prefix-arg
-                                      '(:error :warning))
-                                  t))
-      ((eq 'emacs sys) (funcall orig-fn arg reset)))))
+    (interactive "P")
+    (let ((sys (+error-delegate)))
+      (cond
+       ((eq 'flymake sys) (funcall 'flymake-goto-next-error arg
+                                   (if current-prefix-arg
+                                       '(:error :warning))
+                                   t))
+       ((eq 'emacs sys) (funcall orig-fn arg reset)))))
 
 ;;;###autoload
   (defun +error-delegate ()
@@ -1756,12 +1888,30 @@ is not visible. Otherwise delegates to regular Emacs next-error."
       'emacs))
 
   (advice-add 'next-error :around #'flymake--take-over-error-a))
-    
+
+(use-package flymake-diagnostic-at-point
+  :ensure t
+  :after flymake
+  :hook (flymake-mode . flymake-diagnostic-at-point-mode)
+  :config (setq flymake-diagnostic-at-point-display-diagnostic-function
+                'flymake-diagnostic-at-point-display-minibuffer))
+
+(use-package package-lint-flymake
+  :ensure t
+  :after flymake
+  :config
+  (add-hook 'flymake-diagnostic-functions #'package-lint-flymake))
+
+(use-package flymake-proselint
+  :ensure t
+  :after flymake
+  :hook ((markdown-mode org-mode text-mode) . flymake-proselint-setup))
+
 ;;----------------------------------------------------------------------
 ;; BROWSE-URL
 ;;----------------------------------------------------------------------
 (use-package browse-url
-  :commands (browse-url-at-point-mpv browse-url-mpv) 
+  :commands (browse-url-at-point-mpv browse-url-mpv)
   :config
   (when IS-LINUX
     (defun browse-url-mpv (url &optional single)
@@ -1769,12 +1919,12 @@ is not visible. Otherwise delegates to regular Emacs next-error."
                      (shell-quote-wildcard-pattern url)))
 
     (defun browse-url-at-point-mpv (&optional single)
-        "Open link in mpv"
-        (interactive "P")
-        (let ((browse-url-browser-function
-               (if single
-                   (lambda (url &optional _new-window) (browse-url-mpv url t))
-                 #'browse-url-mpv)))
+      "Open link in mpv"
+      (interactive "P")
+      (let ((browse-url-browser-function
+             (if single
+                 (lambda (url &optional _new-window) (browse-url-mpv url t))
+               #'browse-url-mpv)))
         (browse-url-at-point)))
 
     (setq browse-url-generic-program "/usr/bin/qutebrowser")
@@ -1788,6 +1938,7 @@ is not visible. Otherwise delegates to regular Emacs next-error."
 (use-package transient
   :defer
   :config
+  (setq transient-display-buffer-action '(display-buffer-below-selected))
   (setq transient-history-file "~/.cache/emacs/transient/history.el"
         transient-levels-file "~/.cache/emacs/transient/levels.el"
         transient-values-file "~/.cache/emacs/transient/values.el"))
@@ -1853,65 +2004,67 @@ _p_rev       _u_pper              _=_: upper/lower       _r_esolve
        "Save and bury buffer" :color blue)
       ("q" nil "cancel" :color blue)))
 
-(defhydra hydra-toggle-menu (:color blue :hint nil)
-  "
+  (defhydra hydra-toggle-menu (:color blue :hint nil)
+    "
 ^Toggle!^ [_Q_]uit
-^Appearance^          ^Editing^             ^Highlight^        ^Code^
-^^^^^^^-------------------------------------------------------------------------------
-_t_: color theme       _r_: read only      _h l_: line         _g_: vc gutter
-_B_: BIG mode          _n_: line numbers   _h p_: paren        _f_: flymake
-_M_: smart mode line   _q_: auto fill      _h w_: whitespace   _o_: outline/folding
-                   _v l_: visual lines   _h d_: delimiters   _e_: electric pair 
-_8_: pretty symbols  _v f_: visual fill    _h r_: rainbow    _s p_: smart parens
+^Appearance^           ^Editing^          ^Highlight^         ^Code^
+^^^^^^^---------------------------------------------------------------------------
+_t_: color theme       _r_: read only     _h l_: line         _g_: vc gutter
+_B_: BIG mode          _n_: line numbers  _h p_: paren        _f_: flymake
+_M_: smart mode line   _q_: auto fill     _h w_: whitespace   _o_: outline/folding
+                   _v l_: visual lines  _h d_: delimiters   _e_: electric pair
+_8_: pretty symbols  _v t_: trunc lines   _h r_: rainbow    _s p_: smart parens
                      _V_: view mode
-" 
- 
-  ("e" electric-pair-mode)
-  ("s p" smartparens-mode)
-  ("n" display-line-numbers-mode)
-  ("v l" visual-line-mode)
-  ("v f" (lambda () (interactive)
-           (cond
-            (visual-fill-column-mode
-             (visual-line-mode -1)
-             (visual-fill-column-mode -1))
-            (t
-             (visual-line-mode 1)
-             (visual-fill-column-mode 1)))))
-  ("8" (lambda () (interactive)
-         (if (equal major-mode 'org-mode)
-             (org-toggle-pretty-entities)
-           (prettify-symbols-mode))))
-  ("B" presentation-mode)
-  ("t" my/toggle-theme)
-  ("M" nil)
-  ("r" read-only-mode)
-  ("q" auto-fill-mode)
-  ("V" view-mode)
-  ("h l" hl-line-mode)
-  ("h p" show-paren-mode)
-  ("h w" whitespace-mode)
-  ("h d" rainbow-delimiters-mode)
-  ("h r" rainbow-mode)
-  ("g" diff-hl-mode)
-  ("f" flymake-mode)
-  ("o" outline-minor-mode)
-  ("Q" nil "quit" :color blue))
+"
 
-(defhydra hydra-winner (:body-pre (funcall 'winner-undo))
-  "winner"
-  ("u" winner-undo "undo")
-  ("r" winner-redo "redo")
-  ("q" nil "quit" :color blue)
-  )
+    ("e" electric-pair-mode)
+    ("s p" smartparens-mode)
+    ("n" display-line-numbers-mode)
+    ("v l" visual-line-mode)
+    ;; ("v f" (lambda () (interactive)
+    ;;          (cond
+    ;;           (visual-fill-column-mode
+    ;;            (visual-line-mode -1)
+    ;;            (visual-fill-column-mode -1))
+    ;;           (t
+    ;;            (visual-line-mode 1)
+    ;;            (visual-fill-column-mode 1)))))
+    ("v t" toggle-truncate-lines)
+    ("8" (lambda () (interactive)
+           (if (derived-mode-p 'org-mode)
+               (org-toggle-pretty-entities)
+             (prettify-symbols-mode))))
+    ("B" presentation-mode)
+    ("t" my/toggle-theme)
+    ("M" nil)
+    ("r" read-only-mode)
+    ("q" auto-fill-mode)
+    ("V" view-mode)
+    ("h l" hl-line-mode)
+    ("h p" show-paren-mode)
+    ("h w" whitespace-mode)
+    ("h d" rainbow-delimiters-mode)
+    ("h r" rainbow-mode)
+    ("g" diff-hl-mode)
+    ("f" flymake-mode)
+    ("o" outline-minor-mode)
+    ("Q" nil)
+    ("<f8>" nil))
+
+  (defhydra hydra-winner (:body-pre (funcall 'winner-undo))
+    "winner"
+    ("u" winner-undo "undo")
+    ("r" winner-redo "redo")
+    ("q" nil "quit" :color blue)
+    )
   ;; (:states 'emacs
   ;;  "C-n" (hydra-move hydra-move-down  'next-line)
   ;;  "C-p" (hydra-move hydra-move-up    'previous-line)
   ;;  )
-  
-(with-eval-after-load 'outline
-  (defhydra hydra-outline (:color pink :hint nil)
-    "
+
+  (with-eval-after-load 'outline
+    (defhydra hydra-outline (:color pink :hint nil)
+      "
 ^Hide^             ^Show^           ^Move
 ^^^^^^------------------------------------------------------
 _q_: sublevels     _a_: all         _u_: up
@@ -1922,43 +2075,43 @@ _l_: leaves        _s_: subtree     _b_: backward same level
 _d_: subtree
 
 "
-    ;; Hide
-    ("q" outline-hide-sublevels)    ; Hide everything but the top-level headings
-    ("t" outline-hide-body)         ; Hide everything but headings (all body lines)
-    ("o" outline-hide-other)        ; Hide other branches
-    ("c" outline-hide-entry)        ; Hide this entry's body
-    ("l" outline-hide-leaves)       ; Hide body lines in this entry and sub-entries
-    ("d" outline-hide-subtree)      ; Hide everything in this entry and sub-entries
-    ;; Show
-    ("a" outline-show-all)          ; Show (expand) everything
-    ("e" outline-show-entry)        ; Show this heading's body
-    ("i" outline-show-children)     ; Show this heading's immediate child sub-headings
-    ("k" outline-show-branches)     ; Show all sub-headings under this heading
-    ("s" outline-show-subtree)      ; Show (expand) everything in this heading & below
-    ;; Move
-    ("u" outline-up-heading)                ; Up
-    ("n" outline-next-visible-heading)      ; Next
-    ("p" outline-previous-visible-heading)  ; Previous
-    ("f" outline-forward-same-level)        ; Forward - same level
-    ("b" outline-backward-same-level)       ; Backward - same level
-    ("z" nil "leave")))
+      ;; Hide
+      ("q" outline-hide-sublevels)    ; Hide everything but the top-level headings
+      ("t" outline-hide-body)         ; Hide everything but headings (all body lines)
+      ("o" outline-hide-other)        ; Hide other branches
+      ("c" outline-hide-entry)        ; Hide this entry's body
+      ("l" outline-hide-leaves)       ; Hide body lines in this entry and sub-entries
+      ("d" outline-hide-subtree)      ; Hide everything in this entry and sub-entries
+      ;; Show
+      ("a" outline-show-all)          ; Show (expand) everything
+      ("e" outline-show-entry)        ; Show this heading's body
+      ("i" outline-show-children)     ; Show this heading's immediate child sub-headings
+      ("k" outline-show-branches)     ; Show all sub-headings under this heading
+      ("s" outline-show-subtree)      ; Show (expand) everything in this heading & below
+      ;; Move
+      ("u" outline-up-heading)                ; Up
+      ("n" outline-next-visible-heading)      ; Next
+      ("p" outline-previous-visible-heading)  ; Previous
+      ("f" outline-forward-same-level)        ; Forward - same level
+      ("b" outline-backward-same-level)       ; Backward - same level
+      ("z" nil "leave")))
 
   :general
   (:keymaps 'smerge-mode-map
             "C-c s" 'hydra-smerge/body)
   (:keymaps 'space-menu-window-map
-    "u" '(hydra-winner/body 
-          :wk "winner-mode"))
+            "u" '(hydra-winner/body
+                  :wk "winner-mode"))
   (:states '(motion)
-    "C-w u" 'hydra-winner/body)
+           "C-w u" 'hydra-winner/body)
   ("<f8>"  'hydra-toggle-menu/body
    "C-c <tab>" 'hydra-outline/body
    )
-   (:keymaps 'space-menu-map
-             "t" 'hydra-toggle-menu/body)
-   (:keymaps 'space-menu-map
-    :prefix "f"
-    "=" 'hydra-ediff/body)
+  (:keymaps 'space-menu-map
+            "t" 'hydra-toggle-menu/body)
+  (:keymaps 'space-menu-map
+            :prefix "f"
+            "=" 'hydra-ediff/body)
   )
 
 ;;----------------------------------------------------------------------
@@ -1971,33 +2124,52 @@ _d_: subtree
             '(27 0 1 0)))
   :after cus-face
   :defer
+  :bind-keymap ("H-t" . tab-prefix-map)
   :bind
-  (("C-x t 2" . tab-new)
-   ("C-M-<tab>" . tab-bar-switch-to-next-tab)
-   ("C-M-S-<tab>" . tab-bar-switch-to-prev-tab))
+  (("C-M-<tab>" . tab-bar-switch-to-next-tab)
+   ("C-M-S-<tab>" . tab-bar-switch-to-prev-tab)
+   ("H-<tab>" . tab-bar-switch-to-next-tab)
+   ("H-<iso-lefttab>" . tab-bar-switch-to-prev-tab)
+   :map tab-prefix-map
+   ("h" . my/tab-bar-show-hide-tabs)
+   ("H-t" . tab-bar-select-tab-by-name))
 
   :config
   (setq  tab-bar-close-last-tab-choice 'tab-bar-mode-disable
-         tab-bar-show                  1
+         tab-bar-show                   nil
          tab-bar-tab-name-truncated-max 14
          tab-bar-new-tab-choice        'ibuffer
+         tab-bar-tab-name-function '(lambda nil
+                                      "Use directory as tab name."
+                                      (let ((dir (expand-file-name
+                                                  (or (if (fboundp 'project-root)
+                                                          (project-root (project-current)))
+                                                      default-directory))))
+                                        (substring dir (1+ (string-match "/[^/]+/$" dir)) -1 )))
          ;; tab-bar-select-tab-modifiers  '(meta)
-         tab-bar-tab-name-function     '(lambda nil (upcase (buffer-name))))
+         ;; tab-bar-tab-name-function 'tab-bar-tab-name-truncated
+         ;; tab-bar-tab-name-function '(lambda nil (upcase (tab-bar-tab-name-truncated)))
+         )
 
-  (custom-set-faces
-   '(tab-bar ((t (:inherit nil :height 1.1))))
-   '(tab-bar-tab ((t (:inherit tab-bar :underline nil :weight bold))))
-   '(tab-bar-tab-inactive ((t (:inherit tab-bar :weight normal :height 0.8)))))
+  (defun my/tab-bar-show-hide-tabs ()
+    "Show or hide tabs."
+    (interactive)
+    (setq tab-bar-show 1))
+   ;; (custom-set-faces
+   ;; '(tab-bar ((t (:inherit nil :height 1.1))))
+   ;; '(tab-bar-tab-inactive ((t (:inherit tab-bar :weight normal :height 0.9))))
+   ;; '(tab-bar-tab ((t (:inherit tab-bar :underline t :weight bold))))
+   ;; )
 
-  (advice-add 'tab-bar-rename-tab
-              :after
-              (defun +tab-bar-name-upcase (_name &optional _arg)
-                "Upcase current tab name"
-                (let* ((tab (assq 'current-tab (frame-parameter nil 'tabs)))
-                       (tab-name (alist-get 'name tab)))
-                  (setf (alist-get 'name tab) (upcase tab-name)
-                        (alist-get 'explicit-name tab) t))
-                ))
+  ;; (advice-add 'tab-bar-rename-tab
+  ;;             :after
+  ;;             (defun +tab-bar-name-upcase (_name &optional _arg)
+  ;;               "Upcase current tab name"
+  ;;               (let* ((tab (assq 'current-tab (frame-parameter nil 'tabs)))
+  ;;                      (tab-name (alist-get 'name tab)))
+  ;;                 (setf (alist-get 'name tab) (upcase tab-name)
+  ;;                       (alist-get 'explicit-name tab) t))
+  ;;               ))
   )
 ;;----------------------------------------------------------------------
 ;;;*** EYEBROWSE
@@ -2078,22 +2250,22 @@ _d_: subtree
       "Recenter and pulse the current line."
       (recenter)
       (my/pulse-momentary-line))
-    
+
     (defun my/pulse-momentary-upper-bound (&rest _)
       "Pulse the upper scrolling bound of the screen."
       (save-excursion
         (move-to-window-line next-screen-context-lines)
         (my/pulse-momentary-line)))
-    
+
     (defun my/pulse-momentary-lower-bound (&rest _)
       "Pulse the lower scrolling bound of the screen."
       (save-excursion
         (move-to-window-line (- next-screen-context-lines))
         (my/pulse-momentary-line)))
-    
+
     (advice-add 'scroll-up-command   :after #'my/pulse-momentary-upper-bound)
     (advice-add 'scroll-down-command :after #'my/pulse-momentary-lower-bound)
-                                                                             
+
     (dolist (cmd '(recenter-top-bottom
                    other-window windmove-do-window-select
                    ace-window aw--select-window
@@ -2112,15 +2284,15 @@ _d_: subtree
 (use-package diff-hl
   :ensure
   :defer
-  :custom-face
-  (diff-hl-change ((t (:foreground ,(face-background 'highlight) :background nil))))
-  (diff-hl-insert ((t (:background nil))))
-  (diff-hl-delete ((t (:background nil))))
+  ;; :custom-face
+  ;; (diff-hl-change ((t (:foreground ,(face-background 'highlight) :background nil))))
+  ;; (diff-hl-insert ((t (:background nil))))
+  ;; (diff-hl-delete ((t (:background nil))))
   :hook ((dired-mode . diff-hl-dired-mode))
   :init
   (setq diff-hl-draw-borders t)
   (dolist (mode-hook +addons-enabled-modes)
-    (add-hook mode-hook #'diff-hl-mode)) 
+    (add-hook mode-hook #'diff-hl-mode))
   :bind
   (:map diff-hl-mode-map
    ("C-x v n" . nil)
@@ -2142,7 +2314,7 @@ _d_: subtree
 
   ;; Recenter to location of diff
   (advice-add 'diff-hl-next-hunk :after (lambda (&optional _) (recenter)))
-  
+
   ;; Set fringe style
   (setq-default fringes-outside-margins t)
 
@@ -2229,12 +2401,12 @@ _d_: subtree
 
   (setq yas-wrap-around-region t
         yas-triggers-in-field t)
-  
+
   (defun my/yas-try-expanding-auto-snippets ()
     (when (and (boundp 'yas-minor-mode) yas-minor-mode)
       (let ((yas-buffer-local-condition ''(require-snippet-condition . auto)))
         (yas-expand))))
-  (add-hook 'post-self-insert-hook #'my/yas-try-expanding-auto-snippets) 
+  (add-hook 'post-self-insert-hook #'my/yas-try-expanding-auto-snippets)
 
 (with-eval-after-load 'company
 ;;;###autoload
@@ -2380,11 +2552,12 @@ fully before starting comparison."
   :general
   (:keymaps 'help-map
             :wk-full-keys nil
+            "C-f" 'describe-face
             "." '(helpful-at-point :wk "help at point")
-            "v" '(helpful-variable :wk "Describe variable")
-            "f" '(helpful-callable :wk "Describe function")
-            "k" '(helpful-key :wk "Describe keybind")
-            "C" '(helpful-command :wk "Describe command"))
+            "v" '(helpful-variable :wk "describe variable")
+            "f" '(helpful-callable :wk "describe function")
+            "k" '(helpful-key :wk "describe keybind")
+            "C" '(helpful-command :wk "describe command"))
   ;; (:keymaps 'space-menu-help-map
   ;;           :wk-full-keys nil
   ;;           "f" '(helpful-callable :wk "Describe function")
@@ -2406,6 +2579,7 @@ fully before starting comparison."
 ;;;** VERSION CONTROL
 ;;----------------------------------------------------------------------
 (use-package vc
+  :defer
   :config
   (setq vc-follow-symlinks t)
   (setq vc-find-revision-no-save t)
@@ -2446,6 +2620,23 @@ a log that covers all files in the present directory."
              (backend (vc-backend set)))
         (vc-print-log-internal backend set nil nil lim 'with-diff)))
 
+    (defun my/vc-git-expanded-log-entry (revision)
+      "Expand git commit message for REVISION."
+      (with-temp-buffer
+        (apply 'vc-git-command t nil nil (list "log" revision "--stat" "-1" "--"))
+        (goto-char (point-min))
+        (unless (eobp)
+          (while (re-search-forward "^" nil t)
+            (replace-match "  ")
+            (forward-line))
+          (concat "\n" (buffer-string)))))
+
+    (add-hook 'vc-git-log-view-mode-hook
+              (defun my/vc-git-expand-function ()
+                "Set `log-view-expanded-log-entry-function' for `vc-git'"
+                (setq-local log-view-expanded-log-entry-function
+                            #'my/vc-git-expanded-log-entry)))
+
     ;; (defun my/log-view-extract-commit ()
     ;;   "Kill commit from around point in `vc-print-log'."
     ;;   (interactive)
@@ -2471,6 +2662,7 @@ a log that covers all files in the present directory."
     ;;              (propertize commit 'face 'bold)
     ;;              (propertize out-dir 'face 'success))))
 
+    :bind-keymap ("H-v" . vc-prefix-map)
     :bind (("C-x v C-l" . my/vc-print-log)
            :map log-view-mode-map
            ("<tab>" . log-view-toggle-entry-display)
@@ -2485,6 +2677,7 @@ a log that covers all files in the present directory."
            ("P" . vc-push))))
 
 (use-package vc-dir
+  :after vc
   :config
   (defun my/vc-dir (&optional arg)
     "Run `vc-dir' for the current project or directory.
@@ -2502,12 +2695,13 @@ project, as defined by `vc-root-dir'."
 
   (add-hook 'vc-dir-mode-hook #'my/vc-dir-hide-unregistered 90)
   :bind
-  (("C-x v p" . my/vc-dir)
+  (("C-x v d" . my/vc-dir)
    :map vc-dir-mode-map
    ("F" . vc-update)
    ("k" . vc-dir-clean-files)))
 
 (use-package vc-git
+  :after vc
   :config
   (setq vc-git-diff-switches '("--patch-with-stat" "--histogram"))
   (setq vc-git-print-log-follow t)
@@ -2528,6 +2722,7 @@ project, as defined by `vc-root-dir'."
            (4 'change-log-date)))))
 
 (use-package vc-annotate
+  :after vc
   :config
   (setq vc-annotate-display-mode 'scale)
   :bind (:map vc-annotate-mode-map
@@ -2558,7 +2753,10 @@ project, as defined by `vc-root-dir'."
   (defun my/git-clone-clipboard-url ()
     "Clone git URL in clipboard asynchronously and open in dired when finished."
     (interactive)
-    (cl-assert (string-match-p "^\\(http\\|https\\|ssh\\)://" (current-kill 0)) nil "No URL in clipboard")
+    (cl-assert (or (string-match-p "^git@github.com" (current-kill 0)) 
+                   (string-match-p "^\\(http\\|https\\|ssh\\)://" (current-kill 0)))
+               nil
+               "No URL in clipboard")
     (let* ((url (current-kill 0))
            (download-dir (expand-file-name "~/.local/share/git/"))
            (project-dir (concat (file-name-as-directory download-dir)
@@ -2599,7 +2797,8 @@ project, as defined by `vc-root-dir'."
   :defer 1
   :general
   (:keymaps 'help-map
-   "h" 'which-key-show-major-mode)
+   "h" 'which-key-show-major-mode
+   "C-k" 'which-key-show-major-mode)
   :init
   (setq which-key-sort-order #'which-key-description-order
         ;; which-key-sort-order #'which-key-prefix-then-key-order
@@ -2635,7 +2834,7 @@ project, as defined by `vc-root-dir'."
 (global-set-key (kbd "H-*") 'calc-dispatch)
 (global-set-key (kbd "H-C") 'calc)
 (defun calc-on-line ()
- "Evaluate `calc' on the contents of line at point." 
+ "Evaluate `calc' on the contents of line at point."
   (interactive)
        (cond ((region-active-p)
               (let* ((beg (region-beginning))
@@ -2712,7 +2911,7 @@ project, as defined by `vc-root-dir'."
         ;; company-transformers '(company-sort-by-statistics)
         company-global-modes '(latex-mode matlab-mode emacs-lisp-mode lisp-interaction-mode
                                python-mode sh-mode fish-mode conf-mode text-mode org-mode)
-        company-backends '((company-files company-capf company-keywords) company-dabbrev))
+        company-backends '((company-files company-capf company-keywords company-yasnippet) company-dabbrev))
 
   (add-hook 'matlab-mode-hook (lambda ()
                                 ;; (unless (featurep 'company-matlab)
@@ -2779,7 +2978,7 @@ project, as defined by `vc-root-dir'."
   :defer 5
   :ensure t
   ;; :hook (after-init . company-statistics-mode)
-  :init  (company-statistics-mode) 
+  :init  (company-statistics-mode)
   :config
   (setq company-statistics-file (concat (expand-file-name
                                          (file-name-as-directory "~/.cache"))
@@ -2810,7 +3009,7 @@ project, as defined by `vc-root-dir'."
         ("C-x C-t"       . sp-transpose-hybrid-sexp)
         ("C-M-n"         . sp-next-sexp)
         ("C-M-p"         . sp-previous-sexp)
-        ("C-<backspace>" . sp-backward-kill-word)) 
+        ("C-<backspace>" . sp-backward-kill-word))
   :init
   (add-hook 'smartparens-enabled-hook
             (lambda ()
@@ -2842,7 +3041,7 @@ project, as defined by `vc-root-dir'."
       (add-to-list 'er/try-expand-list 'outline-mark-subtree))))
 
 ;;----------------------------------------------------------------------
-;;;** AVY-MODE
+;;;** AVY
 ;;----------------------------------------------------------------------
 (use-package avy
   :ensure t
@@ -2863,7 +3062,7 @@ project, as defined by `vc-root-dir'."
                                 (call-interactively 'my/avy-next-char-2))
                                (t
                                 c2)))))
-    
+
     (when (eq char1 ?) (setq char1 ?\n))
     (when (eq char2 ?) (setq char2 ?\n))
     (string char1 char2))
@@ -2909,7 +3108,7 @@ project, as defined by `vc-root-dir'."
        (define-key map (kbd ",") (lambda (&optional arg) (interactive)
                                    (my/avy-previous-char-2 str2 arg)))
        map)))
-  
+
   :general
   ("M-j"        '(avy-goto-char-2            :wk "Avy goto char")
    "M-s y"      '(avy-copy-line              :wk "Avy copy line above")
@@ -2922,7 +3121,7 @@ project, as defined by `vc-root-dir'."
    "M-s M-t"    '(avy-move-region            :wk "Avy move region")
    "M-s s"      '(my/avy-next-char-2         :wk "Avy snipe forward")
    "M-s r"      '(my/avy-previous-char-2     :wk "Avy snipe backward")
-   "M-g l"      '(avy-goto-line              :wk "Avy goto line"))
+   "M-g l"      '(avy-goto-end-of-line       :wk "Avy goto line"))
   ;; (:states '(normal visual)
   ;;  :prefix "g"
   ;;  "s" 'avy-goto-char-timer)
@@ -2964,7 +3163,7 @@ project, as defined by `vc-root-dir'."
   :demand
   :init
   (require 'setup-icomplete nil t)
-  ;; (icomplete-mode 1)
+  (icomplete-mode -1)
   )
 
 ;;----------------------------------------------------------------------
@@ -3006,7 +3205,7 @@ project, as defined by `vc-root-dir'."
 (use-package ivy-youtube
   :disabled
   :after ivy
-  :general 
+  :general
   (:keymaps 'space-menu-map
     "Y" '(ivy-youtube :wk "Youtube search"))
   :config
@@ -3060,6 +3259,7 @@ project, as defined by `vc-root-dir'."
   :ensure t
   :commands (dictionary-lookup-definition dictionary-search)
   :config
+  (define-key help-map (kbd "C-d") 'apropos-documentation)
   (setq dictionary-use-single-buffer t)
   (defun dictionary-search-dwim (&optional arg)
     "Search for definition of word at point. If region is active,
@@ -3078,7 +3278,7 @@ argument, query for word to search."
   :bind (("C-M-=" . dictionary-search-dwim)
          :map help-map
          ("=" . dictionary-search-dwim)
-         ("C-d" . dictionary-search-dwim)))
+         ("d" . dictionary-search)))
 ;;;** DOT MODE
 (use-package dot-mode
   :ensure t
@@ -3174,13 +3374,36 @@ This function is meant to be mapped to a key in `rg-mode-map'."
            "i" 'wgrep-change-to-wgrep-mode))
 
 ;;;* VISUALS AND PRESENTATION
+;;;*** MONOCLE-MODE
+(use-package emacs
+  :bind (("H-m" . my/monocle-mode)
+         ("C-x m" . my/monocle-mode))
+  :config 
+  (defvar my/window-configuration nil
+    "Current window configuration.
+Intended for use by `my/window-single-toggle'.")
+
+  (define-minor-mode my/monocle-mode
+    "Toggle between multiple windows and single window.
+This is the equivalent of maximising a window.  Tiling window
+managers such as DWM, BSPWM refer to this state as 'monocle'."
+    :lighter " [M]"
+    :global nil
+    (let ((win my/window-configuration))
+      (if (one-window-p)
+          (when win
+            (set-window-configuration win))
+        (setq my/window-configuration (current-window-configuration))
+        (when (window-parameter nil 'window-slot)
+            (let ((buf (current-buffer)))
+              (other-window 1)
+              (switch-to-buffer buf)))
+        (delete-other-windows)))))
 ;;;*** MIXED-PITCH-MODE
 ;;----------------------------------------------------------------------
 (use-package mixed-pitch
-  :disabled
-  :defer 5
+  :defer
   :ensure t
-  :hook (text-mode . mixed-pitch-mode)
   :config (add-to-list 'mixed-pitch-fixed-pitch-faces 'line-number))
 
 ;;----------------------------------------------------------------------
@@ -3192,7 +3415,7 @@ This function is meant to be mapped to a key in `rg-mode-map'."
   (setq olivetti-body-width 0.7
         olivetti-minimum-body-width 80
         olivetti-recall-visual-line-mode-entry-state t)
-  
+
   (define-minor-mode my/olivetti-mode
     "Toggle buffer-local `olivetti-mode' with additional parameters.
 
@@ -3209,13 +3432,13 @@ becomes a blinking bar. Evil-mode (if bound) is disabled."
           (set-window-fringes (selected-window) 0 0)
           (unless (derived-mode-p 'prog-mode)
             (my/mode-line-hidden-mode 1)
-            (variable-pitch-mode 1))
+            (mixed-pitch-mode 1))
           (if (bound-and-true-p evil-mode)
               (evil-emacs-state))
           (setq-local cusor-type '(bar . 2)))
       (olivetti-mode -1)
       (set-window-fringes (selected-window) nil) ; Use default width
-      (variable-pitch-mode -1)
+      (mixed-pitch-mode -1)
       (unless (derived-mode-p 'prog-mode)
         (my/mode-line-hidden-mode -1))
       (when (and (bound-and-true-p evil-mode)
@@ -3239,7 +3462,7 @@ the mode-line and switches to `variable-pitch-mode'."
       (view-mode -1)
       (my/olivetti-mode -1)
       (delete-frame)))
-  
+
   :bind
   ("C-c O" . my/olivetti-mode)
   ("C-c R" . my/reader-mode))
@@ -3251,7 +3474,7 @@ the mode-line and switches to `variable-pitch-mode'."
   :commands presentation-mode
   :config
   (setq presentation-default-text-scale 1.5
-        presentation-mode-lighter "BIG"
+        presentation-mode-lighter " BIG"
         presentation-keep-last-text-scale nil))
 ;;;*** SCREENCAST
 ;; Presentation-mode will embiggen everything. Keycast-mode shows the keys being
@@ -3272,15 +3495,17 @@ the mode-line and switches to `variable-pitch-mode'."
   :config
   (define-minor-mode my/screencast-mode
     "Minor mode to record screencasts from emacs."
-    :global nil
+    :global t
     :init-value nil
     (if my/screencast-mode
         (progn
-          ;; (presentation-mode 1)
+          (menu-bar-mode -1)
+          (presentation-mode 1)
           (keycast-mode 1)
           (gif-screencast))
       (gif-screencast-stop)
       (keycast-mode -1)
+      ;; (menu-bar-mode +1)
       (presentation-mode -1)))
   :bind
   ("C-c S" . my/screencast-mode))
@@ -3419,7 +3644,7 @@ the mode-line and switches to `variable-pitch-mode'."
     (latex-extra-mode . "")
     (strokes-mode . "")
     (flymake-mode . "fly")
-    )
+    (god-mode . ,(propertize "God" 'face 'success)))
   "Alist for `clean-mode-line'.
 
   ; ;; When you add a new element to the alist, keep in mind that you
@@ -3427,7 +3652,6 @@ the mode-line and switches to `variable-pitch-mode'."
   ; ;; want to use in the modeline *in lieu of* the original.")
 
 (defun clean-mode-line ()
-  (interactive)
   (cl-loop for cleaner in mode-line-cleaner-alist
            do (let* ((mode (car cleaner))
                      (mode-str (cdr cleaner))
@@ -3477,7 +3701,32 @@ the mode-line and switches to `variable-pitch-mode'."
 ;;######################################################################
 (use-package cus-face
   :config
+  (cond (IS-LINUX
+         (set-fontset-font t 'unicode "Symbola" nil 'prepend)
+         (custom-set-faces
+          '(variable-pitch ((t (:family "Ubuntu" :height 125))))
+          ;; '(default ((t (:family "Ubuntu Mono" :foundry "PfEd"
+          ;;                        :slant normal :weight normal
+          ;;                        :height 125 :width normal))))
+          '(default ((t (:family "Iosevka" :foundry "PfEd"
+                                 :slant normal :weight normal
+                                 :height 130 :width normal))))
+          ;; '(default ((t (:family "FantasqueSansMono Nerd Font" :foundry "PfEd"
+          ;;                        :slant normal :weight normal
+          ;;                        :height 130 :width normal))))
+          ))
+        (IS-WINDOWS
+         (custom-set-faces
+          '(default ((t (:family "Consolas" :foundry "outline"
+                                 :slant normal :weight normal
+                                 :height 120 :width normal)))))))
+
+  ;; (custom-set-faces  '(region ((t (:inverse-video t))))
+  ;;                    '(font-lock-comment-face ((t (:foreground "IndianRed3")))))
+  (add-to-list 'default-frame-alist '(alpha 96 90))
+
   (use-package dracula-theme
+    :disabled
     :defer
     :config
     (custom-theme-set-faces 'dracula
@@ -3486,6 +3735,7 @@ the mode-line and switches to `variable-pitch-mode'."
                             '(aw-leading-char-face
                               ((t (:foreground "#bd93f9" :height 2.5 :weight normal))))))
   (use-package dichromacy-theme
+    :disabled
     :defer
     :config
     (custom-theme-set-faces 'dichromacy
@@ -3497,11 +3747,12 @@ the mode-line and switches to `variable-pitch-mode'."
                             '(org-level-2 ((t (:foreground "#d55e00" :inherit bold :height 1.1))))
                             '(org-document-title ((t (:inherit bold :height 1.5))))
                             ))
+
   (use-package gruvbox-theme
     :ensure t
     :defer
     :config
-    (custom-theme-set-faces 'gruvbox-dark-hard
+    (custom-theme-set-faces 'gruvbox
                             '(aw-leading-char-face
                               ((t (:height 2.5 :weight normal))))
                             '(org-level-1 ((t (:height 1.3 :foreground "#83a598" :inherit (bold) ))))
@@ -3513,10 +3764,12 @@ the mode-line and switches to `variable-pitch-mode'."
     :ensure t
     :defer
     :config
-    (setq modus-operandi-theme-intense-hl-line t
-          modus-operandi-theme-org-blocks 'greyscale
+    (setq modus-operandi-theme-org-blocks nil
+          modus-operandi-theme-intense-hl-line t
+          ;; modus-operandi-theme-completions t
+          ;; modus-operandi-theme-org-blocks 'grayscale
           modus-operandi-theme-fringes 'subtle
-          modus-operandi-theme-scale-headings nil
+          modus-operandi-theme-scale-headings t
           modus-operandi-theme-section-headings nil
           modus-operandi-theme-variable-pitch-headings t
           modus-operandi-theme-intense-paren-match t
@@ -3524,7 +3777,21 @@ the mode-line and switches to `variable-pitch-mode'."
           modus-operandi-theme-completions 'opinionated
           modus-operandi-theme-diffs 'desaturated
           modus-operandi-theme-syntax 'faint
-          ))
+          modus-operandi-theme-links 'faint
+          modus-operandi-theme-prompts 'subtle)
+    (setq modus-operandi-theme-override-colors-alist
+          '(("bg-main" . "#fefcf4")
+            ("bg-dim" . "#faf6ef")
+            ("bg-alt" . "#f7efe5")
+            ("bg-hl-line" . "#f4f0e3")
+            ("bg-active" . "#e8dfd1")
+            ("bg-inactive" . "#f6ece5")
+            ("bg-region" . "#c6bab1")
+            ("bg-header" . "#ede3e0")
+            ("bg-tab-bar" . "#dcd3d3")
+            ("bg-tab-active" . "#fdf6eb")
+            ("bg-tab-inactive" . "#c8bab8")
+            ("fg-unfocused" . "#55556f"))))
 
 (use-package modus-vivendi-theme
     :ensure t
@@ -3532,10 +3799,10 @@ the mode-line and switches to `variable-pitch-mode'."
     :config
     (setq modus-vivendi-theme-org-blocks nil
           modus-vivendi-theme-intense-hl-line t
-          modus-vivendi-theme-completions t
-          modus-vivendi-theme-org-blocks 'greyscale
+          ;; modus-vivendi-theme-completions t
+          ;; modus-vivendi-theme-org-blocks 'grayscale
           modus-vivendi-theme-fringes 'subtle
-          modus-vivendi-theme-scale-headings nil
+          modus-vivendi-theme-scale-headings t
           modus-vivendi-theme-section-headings nil
           modus-vivendi-theme-variable-pitch-headings t
           modus-vivendi-theme-intense-paren-match t
@@ -3543,41 +3810,49 @@ the mode-line and switches to `variable-pitch-mode'."
           modus-vivendi-theme-completions 'opinionated
           modus-vivendi-theme-diffs 'desaturated
           modus-vivendi-theme-syntax 'faint
-          ))
+          modus-vivendi-theme-links 'faint
+          modus-vivendi-theme-prompts 'subtle)
+    (setq modus-vivendi-theme-override-colors-alist
+          '(("bg-main" . "#1c1c1c")
+            ("bg-alt" .  "#282c34")
+            ("bg-dim" . "#161129")
+            ("bg-hl-line" . "#191628")
+            ("bg-active" . "#282e46")
+            ("bg-inactive" . "#1a1e39")
+            ("bg-region" . "#393a53")
+            ("bg-header" . "#202037")
+            ("bg-tab-bar" . "#262b41")
+            ("bg-tab-active" . "#120f18")
+            ("bg-tab-inactive" . "#3a3a5a")
+            ("fg-unfocused" . "#9a9aab"))))
 
-  (cond (IS-LINUX
-         (custom-set-faces
-          '(default ((t (:family "Ubuntu Mono" :foundry "PfEd" :slant normal :weight normal :height 128 :width normal)
-                      ;; (:family "Iosevka" :foundry "PfEd" :slant normal :weight normal :height 122 :width normal)
-                        ;; (:family "FantasqueSansMono Nerd Font" :foundry "PfEd" :slant normal :weight normal :height 125 :width normal)
-                        )))))
-        (IS-WINDOWS
-         (custom-set-faces
-          '(default ((t (:family "Consolas" :foundry "outline" :slant normal :weight normal :height 120 :width normal)))))))
+(use-package doom-themes
+  :ensure t
+  :defer
+  :config
+  (progn
+    (setq doom-Iosvkem-brighter-comments nil
+          doom-Iosvkem-comment-bg nil
+          doom-Iosvkem-brighter-modeline nil)
+    ;; (custom-theme-set-faces
+    ;;  'doom-Iosvkem
+    ;;  '(default ((t (:background "#061229")))))
+    (custom-theme-set-faces 'user
+     '(aw-background-face ((t (:background "#061229" :inverse-video nil :weight normal))))
+     '(aw-leading-char-face ((t (:foreground "#bd93f9" :height 2.0 :weight normal))))))
 
-(custom-set-faces '(variable-pitch ((t (:family "Ubuntu" :height 125))))))
+  ;; (custom-theme-set-faces
+  ;;  'user
+  ;;  '(aw-background-face ((t (:background "#061229" :inverse-video nil :weight normal))))
+  ;;  '(aw-leading-char-face ((t (:foreground "#bd93f9" :height 2.0 :weight normal)))))
 
-;; '(org-document-title ((t (:weight bold :height 1.4))))
-;; '(org-level-1 ((t (:inherit outline-1 :weight bold :height 1.3))))
-;; '(org-level-2 ((t (:inherit outline-2 :weight bold :height 1.1))))
-
-;; Unicode symbols
-(when IS-LINUX (set-fontset-font t 'unicode "Symbola" nil 'prepend))
-
-;; (add-to-list 'default-frame-alist '(alpha 100 100))
-
-;; (custom-theme-set-faces 'dichromancy
-;;                         ;; tab-bar & tab-line (since Emacs 27.1)
-;;                         '(tab-bar ((t ( :foreground ,dracula-pink :background ,bg2
-;;                                                     :inherit variable-pitch))))
-;;                         '(tab-bar-tab ((t (:background ,dracula-current :inherit tab-bar))))
-;;                         '(tab-bar-tab-inactive ((t (:foreground ,dracula-purple :background ,bg3
-;;                                                                 :inherit tab-bar-tab))))
-;;                         '(tab-line ((t (:height 0.9 :foreground ,dracula-pink
-;;                                                 :background ,bg2 :inherit variable-pitch))))
-;;                         '(tab-line-tab ((t (:background ,dracula-current :inherit tab-line))))
-;;                         '(tab-line-tab-inactive ((t (:foreground ,dracula-purple :background ,bg3
-;;                                                                  :inherit tab-line-tab)))))
+  ;; (setq doom-one-brighter-comments t
+  ;;       doom-one-brighter-modeline t
+  ;;       doom-one-comment-bg nil)
+  ;; (setq doom-one-light-brighter-comments t
+  ;;       doom-one-light-brighter-modeline t
+  ;;       doom-one-light-comment-bg t)
+  ))
 
 ;;######################################################################
 ;;;* EVIL-MODE
@@ -3588,6 +3863,10 @@ the mode-line and switches to `variable-pitch-mode'."
 ;;;* MISC SETTINGS
 ;;######################################################################
 ;; Settings that I'm not sure where to put:
+(use-package shr
+  :defer
+  :config (setq shr-image-animate nil))
+
 (use-package url
   :defer
   :config

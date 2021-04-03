@@ -85,7 +85,9 @@ When no VC root is available, use standard `switch-to-buffer'."
         (call-interactively 'switch-to-buffer))))
 
   :hook ((ibuffer-mode . hl-line-mode)
-         (ibuffer-mode . ibuffer-vc-set-filter-groups-by-vc-root))
+         (ibuffer-mode . my/ibuffer-project-generate-filter-groups)
+         ;; (ibuffer-mode . ibuffer-vc-set-filter-groups-by-vc-root)
+         )
   :bind (:map ibuffer-mode-map
               ("M-o" . nil))
   :general
@@ -104,8 +106,21 @@ When no VC root is available, use standard `switch-to-buffer'."
          ;; ("/ g" . ibuffer-filter-by-content)
          )
 
-(use-package ibuffer-vc
+(use-package ibuffer-project
   :ensure t
+  :after (ibuffer project)
+  ;; :hook (ibuffer-mode . my/ibuffer-project-generate-filter-groups)
+  :config
+  (setq ibuffer-project-use-cache t
+        ibuffer-project-root-functions
+        '(((lambda (dir)
+             (project-root (project-current nil dir))) . "Project")))
+  (defun my/ibuffer-project-generate-filter-groups ()
+    (setq ibuffer-filter-groups
+          (ibuffer-project-generate-filter-groups))))
+
+(use-package ibuffer-vc
+  :disabled
   :after (ibuffer vc)
   :general
   (:keymaps 'ibuffer-mode-map
@@ -138,8 +153,8 @@ When no VC root is available, use standard `switch-to-buffer'."
 (global-set-key "\M-[" 'scroll-buffer-up)
 
 ;;; Toggle window split between horizontal and vertical
-(define-key ctl-x-4-map "t" 'toggle-window-split)
-(define-key ctl-x-4-map "|" 'toggle-window-split)
+;; (define-key ctl-x-4-map "t" 'toggle-window-split)
+;; (define-key ctl-x-4-map "|" 'toggle-window-split)
 
 (defun my/split-window-right (&optional size)
   "Split the selected window into two windows, one above the other.
@@ -177,7 +192,7 @@ nil."
 (global-set-key (kbd "H-4") ctl-x-4-map)
 (global-set-key (kbd "H-5") ctl-x-5-map)
 (global-set-key (kbd "H-k") 'kill-this-buffer)
-
+(global-set-key (kbd "<f7>") '+make-frame-floating-with-current-buffer)
 ;;----------------------------------------------------------------------
 ;; FUNCTIONS
 ;;----------------------------------------------------------------------
@@ -316,6 +331,28 @@ User buffers are those not starting with *."
              (delete-file filename)
              (set-visited-file-name newname)
              (set-buffer-modified-p nil) t))))
+
+;;;###autoload
+(defun +make-frame-floating-with-current-buffer ()
+  "Display the current buffer in a new floating frame.
+
+This passes certain parameters to the newly created frame:
+
+- use a different name than the default;
+- use a graphical frame;
+- do not display the minibuffer.
+
+The name is meant to be used by the external rules of a tiling
+window manager to present the frame in a floating state."
+  (interactive)
+  (let ((buf (current-buffer)))
+    (if (not (one-window-p t))
+        (delete-window))
+    (make-frame '((name . "dropdown_emacs-buffer")
+                  (window-system . x)
+                  (minibuffer . nil)))
+    (with-selected-frame (get-other-frame)
+      (switch-to-buffer buf))))
 
 ;;----------------------------------------------------------------------
 ;; DISMISS-WINDOW 

@@ -179,6 +179,8 @@
 ;; Easy regex replace
 (defalias 'rr 'replace-regexp)
 (defalias 'qrr 'query-replace-regexp)
+(global-set-key (kbd "H-%") 'replace-string)
+(global-set-key (kbd "H-M-%") 'replace-regexp)
 (global-set-key (kbd "C-x / s") 'replace-regexp)
 (global-set-key (kbd "C-x / q") 'query-replace-regexp)
 (global-set-key (kbd "C-x / r") 'query-replace)
@@ -237,8 +239,8 @@
 
 
 (defun back-to-indentation-or-beginning () (interactive)
-   (if (= (point) (progn (back-to-indentation) (point)))
-       (beginning-of-line)))
+   (if (= (point) (progn (beginning-of-line) (point)))
+       (beginning-of-line-text)))
 
 ;; (defun beginning-of-line-or-indentation ()
 ;;   "move to beginning of line, or indentation"
@@ -249,25 +251,25 @@
 
 
 ;;;###autoload
-;; (defun duplicate-line (&optional arg)
-;;   "Duplicate it. With prefix ARG, duplicate ARG lines following the current one."
-;;   (interactive "p")
-;;   (destructuring-bind (beg . end) (if (region-active-p)
-;;                                       (cons (region-beginning)
-;;                                             (region-end))
-;;                                     (cons (line-beginning-position)
-;;                                           (line-end-position)))
-;;     (copy-region-as-kill beg end)
-;;     (if (region-active-p)
-;;         (progn (dotimes (n arg arg)
-;;                  (goto-char (region-end))
-;;                  (yank))
-;;                (exchange-point-and-mark)) 
-;;       (save-excursion
-;;         (dotimes (n arg arg)
-;;           (open-previous-line 1)
-;;           (yank)
-;;           (indent-according-to-mode))))))
+(defun duplicate-line (&optional arg)
+  "Duplicate it. With prefix ARG, duplicate ARG lines following the current one."
+  (interactive "p")
+  (cl-destructuring-bind (beg . end) (if (region-active-p)
+                                      (cons (region-beginning)
+                                            (region-end))
+                                    (cons (line-beginning-position)
+                                          (line-end-position)))
+    (copy-region-as-kill beg end)
+    (if (region-active-p)
+        (progn (dotimes (n arg)
+                 (goto-char (region-end))
+                 (yank))
+               (exchange-point-and-mark)) 
+      (save-excursion
+        (dotimes (n arg)
+          (open-previous-line 1)
+          (yank)
+          (indent-according-to-mode))))))
 
 ;; (defun duplicate-line-many-once (&optional arg)
 ;;   "Duplicate it. With prefix ARG, duplicate ARG lines following the current one. This function is deprecated. Use duplicate-line with a selected region instead"
@@ -290,7 +292,7 @@
   (interactive "p")
   (end-of-line)
   (open-line arg)
-  (next-line 1)
+  (forward-line 1)
   (when newline-and-indent
     (indent-according-to-mode)))
 

@@ -11,10 +11,12 @@
         orderless-style-dispatchers
         '(my/orderless-flex-dispatcher
           my/orderless-literal-dispatcher
-          my/orderless-initialism-dispatcher))
+          my/orderless-initialism-dispatcher
+          my/orderless-exclude-dispatcher))
 
   (defun my/orderless-flex-dispatcher (pattern _index _total)
-    (when (string-suffix-p "~" pattern)
+    (when (or (string-suffix-p "`" pattern)
+              (string-suffix-p "~" pattern))
       `(orderless-flex . ,(substring pattern 0 -1))))
 
   (defun my/orderless-literal-dispatcher (pattern _index _total)
@@ -23,14 +25,18 @@
 
   (defun my/orderless-initialism-dispatcher (pattern _index _total)
     (when (string-suffix-p "," pattern)
-      `(orderless-strict-leading-initialism . ,(substring pattern 0 -1))))
-  
+      `(orderless-strict-full-initialism . ,(substring pattern 0 -1))))
+
+  (defun my/orderless-exclude-dispatcher (pattern _index _total)
+    (when (string-prefix-p "!" pattern)
+      `(orderless-without-literal . ,(substring pattern 1))))
+
   :bind (:map minibuffer-local-completion-map
-              ("SPC" . self-insert-command))
-)
+              ("SPC" . self-insert-command)))
 
 (use-package icomplete
-  :demand
+  ;; :demand
+  :disabled
   :after minibuffer
   :config 
   (setq icomplete-delay-completions-threshold 50
@@ -40,12 +46,11 @@
         ;; icomplete-separator " ┆ "
         ;; icomplete-in-buffer t
         icomplete-separator (propertize " . " 'face 'shadow)
-        icomplete-show-matches-on-no-input t
+        icomplete-show-matches-on-no-input nil
         icomplete-hide-common-prefix nil
         icomplete-with-completion-tables t
         icomplete-prospects-height 1
-        icomplete-tidy-shadowed-file-names t
-        )
+        icomplete-tidy-shadowed-file-names t)
 
   ;; (define-key icomplete-minibuffer-map (kbd "TAB") 'icomplete-force-complete)
   ;; (define-key icomplete-minibuffer-map (kbd "TAB") 'minibuffer-complete)
@@ -113,10 +118,10 @@ require user confirmation."
              (icomplete--field-beg)
              (icomplete--field-end)
              (cdr all)))
-          (message nil)))))
-  )
+          (message nil))))))
 
 (use-package icomplete-vertical
+  :disabled
   :ensure t
   :demand
   :after (minibuffer icomplete)
@@ -131,6 +136,7 @@ require user confirmation."
   :after minibuffer
   :commands consult-file-externally
   :config
+  (setq consult-narrow-key "<")
   (setq consult-line-numbers-widen t)
   (setq consult-preview-buffer nil)
   (setq consult-preview-mark nil)
@@ -141,34 +147,38 @@ require user confirmation."
                                         (project-root (project-current))))
   (setq consult-find-command "fd --hidden -t f -t d -t l --follow ARG OPTS")
                            ;; "find . -not ( -wholename */.* -prune ) -ipath *ARG* OPTS"
+  (defun consult-buffer-other-tab ()
+  "Variant of `consult-buffer' which opens in other frame."
+  (interactive)
+  (let ((consult--buffer-display #'switch-to-buffer-other-tab))
+    (consult-buffer)))
   
-  (defun my/consult-find-multi-dir (dirlist &optional prompt initial)
-    "Search for regexp with find in directories in DIRLIST with INITIAL input.
+;;   (defun my/consult-find-multi-dir (dirlist &optional prompt initial)
+;;     "Search for regexp with find in directories in DIRLIST with INITIAL input.
 
-The find process is started asynchronously, similar to `consult-find'."
-    (interactive "P")
-    (let ((consult-find-command (concat "fd --hidden -t f -t d -t l --follow "
-                                        (mapconcat (lambda (dir)
-                                                     (concat "--search-path "
-                                                             (file-name-as-directory dir)))
-                                                   '("~/Documents" "~/Dropbox") " ")
-                                        " ARG")))
-      (consult--find (or prompt "Find: ") consult-find-command initial)))
+;; The find process is started asynchronously, similar to `consult-find'."
+;;     (interactive "P")
+;;     (let ((consult-find-command (concat "fd --hidden -t f -t d -t l --follow "
+;;                                         (mapconcat (lambda (dir)
+;;                                                      (concat "--search-path "
+;;                                                              (file-name-as-directory dir)))
+;;                                                    '("~/Documents" "~/Dropbox") " ")
+;;                                         " ARG")))
+;;       (consult--find (or prompt "Find: ") consult-find-command initial)))
 
   (use-package org
     :bind (:map org-mode-map
                 ("C-c C-j" . consult-outline)))
-  (fset 'man 'consult-man)
+
   :bind (("C-x b"   . consult-buffer)
-         ("C-x 4 b" . consult-buffer-other-window)
-         ("C-x 5 b" . consult-buffer-other-frame)
-         ("C-x r b" . consult-bookmark)
-         ("C-x r x" . consult-register)
+         ("C-x H-r" . consult-recent-file)
          ("C-x M-:" . consult-complex-command)
          ("M-s M-o" . consult-multi-occur)
+         ("M-X" . consult-mode-command)
          ("C-c C-j" . consult-outline)
-         ("C-x r b" . consult-bookmark)
+         ("M-s M-j" . consult-outline)
          ("M-s l"   . consult-line)
+         ("M-s f"   . consult-find)
          ("M-s M-f" . consult-locate)
          ("M-s g"   . consult-ripgrep)
          ("M-s G"   . consult-git-grep)
@@ -176,12 +186,50 @@ The find process is started asynchronously, similar to `consult-find'."
          ("<help> a" . consult-apropos)
          ("M-s i" . consult-imenu)
          ("s-b" . consult-buffer)
+         ;; ("H-b" . consult-buffer)
          ("M-m" . consult-register-store)
-         ("M-'" . consult-register-load)))
+         ("M-s k l" . consult-focus-lines)
+         ("M-'" . consult-register-load)
+         :map ctl-x-r-map
+         ("b" . consult-bookmark)
+         ("x" . consult-register)
+         :map ctl-x-4-map
+         ("b" . consult-buffer-other-window)
+         :map ctl-x-5-map
+         ("b" . consult-buffer-other-frame)
+         :map tab-prefix-map
+         ("b" . consult-buffer-other-tab)
+         :map space-menu-file-map
+         ("l" . consult-locate)))
 
 (use-package embark-consult
   :ensure t
   :after (embark consult)
+  :bind (:map embark-collect-mode-map
+         ("C-c C-f" . my/embark-consult-preview-toggle))
+  :config
+  (setf (alist-get 'consult-location
+                   embark-collect-initial-view-alist)
+        'list
+        (alist-get ?b
+                   embark-become-file+buffer-map)
+        'consult-buffer)
+  
+  (defun my/embark-consult-preview-toggle ()
+  "Toggle preview mode for Embark's Consult collections."
+  (interactive)
+  (when (featurep 'embark-consult)
+    (require 'embark-consult)
+    (if (and (bound-and-true-p embark-consult-preview-minor-mode)
+             (derived-mode-p 'embark-collect-mode))
+        (progn
+          (remove-hook 'embark-collect-mode-hook #'embark-consult-preview-minor-mode)
+          (embark-consult-preview-minor-mode -1))
+      (add-hook 'embark-collect-mode-hook #'embark-consult-preview-minor-mode)
+      (embark-consult-preview-minor-mode 1))))
+
+  :bind (:map embark-file-map
+        ("x" . consult-file-externally))
   ;; :demand t ; only necessary if you have the hook below
   ;; ;; if you want to have consult previews as you move around an
   ;; ;; auto-updating embark collect buffer
@@ -192,7 +240,8 @@ The find process is started asynchronously, similar to `consult-find'."
 ;; Enable richer annotations using the Marginalia package
 (use-package marginalia
   :ensure t
-  :after icomplete
+  :after embark
+  :init (marginalia-mode 1)
   :config
   ;; Must be in the :init section of use-package such that the mode gets
   ;; enabled right away. Note that this forces loading the package.
@@ -203,7 +252,9 @@ The find process is started asynchronously, similar to `consult-find'."
   ;; By default only the keybinding is shown as annotation.
   ;; Note that there is the command `marginalia-cycle-annotators` to 
   ;; switch between the annotators.
-  (setq marginalia-annotators '(marginalia-annotators-heavy marginalia-annotators-light)))
+  (add-to-list 'marginalia-prompt-categories '("\\burl\\b" . url))
+  (setq marginalia-annotators
+        '(marginalia-annotators-heavy marginalia-annotators-light)))
 
 
 (use-package embark
@@ -215,18 +266,23 @@ The find process is started asynchronously, similar to `consult-find'."
          ("M-g o"    . embark-act)
          ("M-g M-o"  . embark-act)
          ("s-o"      . embark-act)
+         ("H-SPC" . embark-act)
          :map minibuffer-local-completion-map
          ("s-o"      . embark-act)
          ("C-o"      . embark-act)
          ("C-M-o"    . embark-act-noexit)
          ("C-c C-o"  . embark-export)
          ("M-s o"    . embark-export)
+         ("H-o"      . embark-export)
          ("M-q"      . embark-collect-toggle-view)
+         ("H-SPC"    . embark-act)
+         ("C->"      . embark-become)
          :map completion-list-mode-map
          ("C-o"      . embark-act)
          ("C-M-o"    . embark-act-noexit)
          :map embark-collect-mode-map
          ("M-s o"    . embark-export)
+         ("H-SPC" . embark-act)
          ("o"        . embark-act)
          ("O"        . embark-act-noexit)
          ("C-o"      . embark-act)
@@ -236,7 +292,6 @@ The find process is started asynchronously, similar to `consult-find'."
          ("M-t"      . toggle-truncate-lines)
          ("M-q"      . embark-collect-toggle-view)
          :map embark-file-map
-         ("x"        . consult-file-externally)
          ("j"        . dired-jump)
          ("S"        . sudo-find-file)
          :map embark-buffer-map
@@ -246,18 +301,8 @@ The find process is started asynchronously, similar to `consult-find'."
          ("f"        . browse-url-firefox))
   :config
   
-  ;; (setq embark-occur-initial-view-alist
+  ;; (setq embark-collect-initial-view-alist
   ;;       '((t . list)))
-  (add-to-list 'display-buffer-alist '("\\*Embark Collect.*\\*"
-                                       (display-buffer-in-side-window)
-                                       (window-height . (lambda (win) (fit-window-to-buffer
-                                                                  win
-                                                                  (floor (frame-height) 2)
-                                                                  (floor (frame-height) 5))))
-                                       (side . bottom)
-                                       (slot . 0)
-                                       (window-parameters . ((no-other-window . t)))))
-
   (add-to-list 'embark-keymap-alist
                '(project-file . embark-file-map))
   ;; (add-to-list 'embark-keymap-alist
@@ -289,7 +334,7 @@ The find process is started asynchronously, similar to `consult-find'."
     :defer
     :config
     (setq embark-action-indicator
-          (lambda (map) (let ((which-key-side-window-location 'bottom))
+          (lambda (map &optional target) (let ((which-key-side-window-location '(right bottom)))
                      (which-key--show-keymap "Embark" map nil nil 'no-paging)
                      #'which-key--hide-popup-ignore-command))
       embark-become-indicator embark-action-indicator)))
@@ -300,20 +345,19 @@ The find process is started asynchronously, similar to `consult-find'."
   :bind (:map minibuffer-local-completion-map
               ("M-j" . avy-embark-occur-choose)
               ("M-RET" . avy-embark-occur-choose)
-              ("C-o" . avy-embark-occur-act)))
+              ("C-M-o" . avy-embark-occur-act)))
 
 (use-package embark
   ;; Customizations to use embark's live-occur as a completion system for Emacs.
-  ;; (Presently disabled while some bugs are fixed.) Most of this code is copied
-  ;; from or inspired by the work of Protesilaos Stavrou:
-  ;; https://protesilaos.com/dotemacs/
-  :disabled
+  ;;  Most of this code is copied from or inspired by the work of Protesilaos
+  ;;  Stavrou: https://protesilaos.com/dotemacs/
+  ;;  :disabled
   :hook ((embark-post-action . embark-collect--update-linked)
-         (embark-occur-post-revert . my/embark--collect-fit-window)
-         (minibuffer-setup . embark-collect-completions-after-input)
-         ;; (embark-collect-mode . hl-line-mode)
          ;; (embark-pre-action  . completion--flush-all-sorted-completions)
-         )
+         (embark-collect-post-revert . my/embark--collect-fit-window)
+         (minibuffer-setup . embark-collect-completions-after-input)
+         (embark-collect-mode . my/embark-collect--live-setup)
+         (minibuffer-exit . my/embark-clear-live-buffers))
   :bind (:map embark-collect-mode-map
               ("C-M-n" . my/embark-completions-act-next)
               ("C-M-p" . my/embark-completions-act-previous)
@@ -324,46 +368,102 @@ The find process is started asynchronously, similar to `consult-find'."
               :map minibuffer-local-completion-map
               ("C-n" . my/embark-switch-to-completions-top)
               ("C-p" . my/embark-switch-to-completions-bottom)
-              ("C-l" . my/embark-completions-toggle))
+              ("C-l" . my/embark-completions-toggle)
+              ("RET" . minibuffer-complete-and-exit)
+              ("C-k" . icomplete-fido-kill)
+              ("C-j" . (lambda () (interactive)
+	        	  (if minibuffer--require-match
+	        	      (minibuffer-complete-and-exit)
+	        	    (exit-minibuffer))))
+              ("DEL" . icomplete-fido-backward-updir)
+              :map minibuffer-local-must-match-map
+              ("RET" . minibuffer-force-complete-and-exit))
   :config
+
+  (setf  (alist-get "\\*Embark Collect .*\\*" display-buffer-alist nil nil 'equal)
+         '((display-buffer-in-side-window)
+           (window-height .  (lambda (win) (fit-window-to-buffer
+                                      win
+                                      (floor (frame-height) 3))))
+           (side . bottom)
+           (slot . 0)
+           (window-parameters . ((no-other-window . t)))))
+
+  (setf   (alist-get "\\*Embark Collect\\*" display-buffer-alist nil nil 'equal)
+          '((display-buffer-in-direction)
+            (window-height . (lambda (win) (fit-window-to-buffer
+                                      win
+                                      (floor (frame-height) 3))))
+            (direction . below)
+            (window-parameters . ((split-window . #'ignore)))))
 
   (defun my/embark-keyboard-quit ()
     "If in an Embark live collect/completions buffer, run
 `abort-recursive-edit'. Otherwise run `keyboard-quit'."
     (interactive)
-    (if (string-match-p my/embark-collect-window-regexp (buffer-name))
-        (abort-recursive-edit)
+    (if (my/embark--live-completions-p)
+        (if (use-region-p)
+            (keyboard-quit)
+          (kill-buffer)
+          (abort-recursive-edit))
       (keyboard-quit)))
-  
-  (setq embark-occur-initial-view-alist
+
+  (defun my/embark-clear-live-buffers ()
+  "Remove lingering Embark Collect Completions' buffers.
+Add this to `minibuffer-exit-hook'."
+  (let* ((buffers (buffer-list))
+         (case-fold-search nil)
+         (completions
+          (cl-remove-if-not (lambda (buf)
+                              (string-match "\\*Embark.*Completions.*"
+                                            (format "%s" buf)))
+                            buffers)))
+    (mapc #'kill-buffer completions)))
+
+  (setq embark-collect-initial-view-alist
         '((file           . list)
           (project-file   . list)
           (virtual-buffer . list)
           (buffer         . list)
-          (symbol         . list)
+          (consult-multi  . list)
+          (consult-location . list)
+          (symbol         . grid)
+          (command        . grid)
+          (imenu          . grid)
           (line           . list)
           (xref-location  . list)
           (kill-ring      . zebra)
+          (face           . list)
           (t              . grid)))
   
-  (defvar my/embark-collect-window-regexp
-    "\\*Embark Collect \\(Live\\|Completions\\).*"
-    "Regexp to match window names with Embark collections.")
-
   (defun my/embark--collect-fit-window (&rest _)
     "Fit Embark's live occur window to its buffer.
-To be added to `embark-occur-post-revert-hook'."
-    (when (string-match-p my/embark-collect-window-regexp
-                          (buffer-name))
+To be added to `embark-collect-post-revert-hook'."
+    (when (derived-mode-p 'embark-collect-mode)
       (fit-window-to-buffer (get-buffer-window)
-                            (floor (frame-height) 5) 1)))
+                            (floor (frame-height) 3) 1)))
 
   (defun my/embark--live-buffer-p ()
-  "Determine presence of a linked live occur buffer."
-  (let* ((buf-link embark-collect-linked-buffer)
-         (buf-name (buffer-name buf-link)))
-    (when buf-name
-      (string-match-p my/embark-collect-window-regexp buf-name))))
+    "Determine presence of a linked live occur buffer."
+    (let ((buf embark-collect-linked-buffer))
+      (when buf
+        (window-live-p (get-buffer-window buf)))))
+
+  ;; (defun my/embark--live-buffer-p ()
+  ;; "Determine presence of a linked live occur buffer."
+  ;; (let* ((buf-link embark-collect-linked-buffer)
+  ;;        (buf-name (buffer-name buf-link)))
+  ;;   (when buf-name
+  ;;     (string-match-p my/embark-collect-window-regexp buf-name))))
+
+  ;;   (defvar my/embark-collect-window-regexp
+  ;;   "\\*Embark Collect \\(Live\\|Completions\\).*"
+  ;;   "Regexp to match window names with Embark collections.")
+    
+  (defun my/embark--live-completions-p ()
+  "Determine whether current collection is for live completions."
+  (and (derived-mode-p 'embark-collect-mode)
+       (eq embark-collect--kind :completions)))
   
   (defvar my/embark-live-collect-hook nil
     "Hook that runs after `my/embark-live-collect-toggle'.")
@@ -375,6 +475,14 @@ To be added to `embark-occur-post-revert-hook'."
         (kill-buffer embark-collect-linked-buffer)
       (embark-collect-completions)))
 
+  ;; TODO
+  (defun my/embark-collect-toggle-view ()
+      (when (eq embark-collect-view 'list)
+        (hl-line-mode -1)
+        (embark-collect--toggle 'embark-collect-view 'list 'grid)
+        
+        )
+      )
   ;; (defun my/embark-live-occur-toggle ()
 
   ;;   "Toggle `embark-live-occur', call `my/embark-live-occur-hook'."
@@ -389,10 +497,10 @@ To be added to `embark-occur-post-revert-hook'."
 
   (setq embark-candidate-collectors
         (delete 'embark-minibuffer-candidates embark-candidate-collectors))
-  (add-to-list 'embark-candidate-collectors 'my/embark-minibuffer-candidates)
-  (defun my/embark-minibuffer-candidates ()
-    (seq-take (embark-minibuffer-candidates) 40))
-  
+  (add-to-list 'embark-candidate-collectors 'embark-sorted-minibuffer-candidates)
+  ;; (defun my/embark-minibuffer-candidates ()
+  ;;   (seq-take (embark-minibuffer-candidates) 40))
+
   ;; Move from minibuffer to embark-collect and back
   (defun my/embark-next-line-or-mini (&optional arg)
     "Move to the next line or switch to the minibuffer.
@@ -466,7 +574,34 @@ assigned to a key in `embark-collect-mode-map'."
     "Run default action on Embark target without exiting.
 Meant to be assigned to a key in `embark-collect-mode-map'."
     (interactive)
-    (embark--act #'embark-default-action (cdr (embark--target)))))
+    (embark--act #'embark-default-action (cdr (embark--target))))
+
+  ;; Highlighting selections in embark-collect buffers
+  (defvar-local my/embark-collect--overlay nil
+    "Text overlay for embark-collect buffers.")
+
+  (defun my/embark-collect--live-setup ()
+    "Remove mode-line from live embark-collect buffers and set up
+highlighting."
+    (when (my/embark--live-completions-p)
+      (my/mode-line-hidden-mode 1))
+    (setq my/embark-collect--overlay (make-overlay 1 1))
+    (overlay-put my/embark-collect--overlay 'face 'highlight)
+    (add-hook 'post-command-hook 'my/embark-collect--live-overlay-update nil t))
+
+  (defun my/embark-collect--live-overlay-update ()
+    "Update the overlay in the embark-collect buffer."
+    (pcase embark-collect-view
+      ('list (hl-line-mode 1))
+      ('grid (when (and (overlayp my/embark-collect--overlay)
+                        (get-text-property (point) 'mouse-face))
+               (hl-line-mode 0)
+               (let ((beg (previous-single-property-change
+                           (if (eobp) (point-max) (1+ (point)))
+                           'mouse-face nil (point-min)))
+                     (end (next-single-property-change (point) 'mouse-face nil (point-max))))
+                 (move-overlay my/embark-collect--overlay beg end)))))))
+  
 
 (use-package icomplete-vertical-mini
   :disabled

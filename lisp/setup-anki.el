@@ -5,10 +5,10 @@
   (setq org-my-anki-file (concat (file-name-as-directory org-directory)
                                "anki-notes.org"))
   :bind (:map org-mode-map
-              ("<f12>" . anki-editor-cloze-region-auto-incr)
-              ("<f11>" . anki-editor-cloze-region-dont-incr)
-              ("<f10>" . anki-editor-reset-cloze-number)
-              ("<f9>"  . anki-editor-push-tree))
+              ("C-c C-+"  . anki-editor-cloze-region-auto-incr)
+              ("C-c C--"  . anki-editor-cloze-region-dont-incr)
+              ("C-c C-="  . anki-editor-reset-cloze-number)
+              ("C-c p"    . anki-editor-push-tree))
   :hook (org-capture-after-finalize . anki-editor-reset-cloze-number) ; Reset cloze-number after each capture.
   :config
   ;; (setq org-my-anki-file (concat (file-name-as-directory org-directory)

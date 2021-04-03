@@ -18,6 +18,10 @@
   :hook ((org-mode . org-toggle-pretty-entities)
          (org-mode . turn-on-org-cdlatex)
          (org-mode . visual-line-mode))
+  ;; :custom-face 
+  ;; (org-level-1 ((t (:height 1.2 :inherit (outline-1 variable-pitch)))))
+  ;; (org-level-2 ((t (:height 1.1 :inherit (outline-2 variable-pitch)))))
+  ;; (org-document-title ((t (:height 1.5))))
   :init
   (add-hook 'org-load-hook
             '(lambda nil
@@ -66,6 +70,7 @@
                 org-log-done 'time
                 org-catch-invisible-edits 'smart
                 org-use-speed-commands t
+                org-speed-commands-user '(("z" . org-add-note))
                 org-highlight-latex-and-related '(native)
                 org-imenu-depth 7
                 org-id-link-to-org-use-id 'create-if-interactive
@@ -74,6 +79,7 @@
                 org-default-notes-file "~/org/do.org"
                 org-M-RET-may-split-line '((headline) (default . t))
                 org-fast-tag-selection-single-key 'expert
+                org-return-follows-link t
                 ;; org-eldoc-breadcrumb-separator " → " 
                 ;; org-hide-leading-stars-before-indent-mode t 
                 ;; org-indent-indentation-per-level 2 
@@ -86,7 +92,7 @@
                 ;; org-todo-keyword-faces '(("[-]" :inherit (font-lock-constant-face bold)) ("[?]" :inherit (warning bold)) ("WAITING" :inherit bold) ("LATER" :inherit (warning bold))) 
                 ;; org-use-sub-superscripts '{}
                 )
-
+  
   (defun save-org-mode-files ()
     (dolist (buf (buffer-list))
       (with-current-buffer buf
@@ -97,7 +103,7 @@
   (run-with-idle-timer 120 t 'save-org-mode-files)
 
   (setq org-todo-keyword-faces
-        '(("TODO"    :foreground "#6e90c8" :weight bold)
+        '(;; ("TODO"    :foreground "#6e90c8" :weight bold)
           ("WAITING" :foreground "red" :weight bold)
           ("MAYBE"   :foreground "#6e8996" :weight bold)
           ("PROJECT" :foreground "#088e8e" :weight bold)))
@@ -108,7 +114,7 @@
                         ("\\.x?html?\\'" . default)
                         ("\\.pdf\\'" . "zathura %s"))
         ;; Larger equations
-        org-format-latex-options (plist-put org-format-latex-options :scale 1.5))
+        org-format-latex-options (plist-put org-format-latex-options :scale 1.65))
 
   ;; Make org use `display-buffer' like every other Emacs citizen.
   (advice-add #'org-switch-to-buffer-other-window :override #'switch-to-buffer-other-window)
@@ -247,6 +253,10 @@ has no effect."
   :after org
   :commands org-agenda
   :hook (org-agenda-finalize . hl-line-mode)
+  :bind (:map org-agenda-mode-map
+              ("D" . org-agenda-day-view)
+              ("W" . org-agenda-week-view)
+              ("w" . org-agenda-refile))
   :config
   (setq org-agenda-files '("~/Documents/org/do.org"
                            "~/Documents/org/gmail-cal.org"
@@ -259,13 +269,14 @@ has no effect."
    org-stuck-projects '("TODO=\"PROJECT\"" ("TODO" "DEFERRED") nil "")
    org-agenda-use-time-grid nil
    org-agenda-todo-ignore-scheduled nil
-   org-agenda-text-search-extra-files '(agenda-archives)
+   org-agenda-text-search-extra-files nil ;'(agenda-archives)
    org-agenda-tags-column 'auto
    org-agenda-skip-scheduled-if-done t
    org-agenda-skip-scheduled-if-deadline-is-shown t
    org-agenda-show-all-dates nil
    org-agenda-inhibit-startup t
-   org-agenda-include-diary t
+   org-agenda-include-diary nil
+   org-agenda-follow-indirect t
    org-agenda-default-appointment-duration 60)
 
   (defun org-todo-age (&optional pos)
@@ -380,13 +391,13 @@ has no effect."
 
  (add-to-list 'org-capture-templates `("t" "Add task"
                     entry
-                    (file+headline "~/do.org" "Configuration")
-                    "* TODO %? :config:
+                    (file+headline "~/do.org" "Tasks")
+                    "* TODO %?
 :PROPERTIES:
 :ID:       %(shell-command-to-string \"uuidgen\"):CREATED:  %U
 :END:
 %a\n%x\n"
-                    :kill-buffer t :prepend t))
+                    :prepend t))
 
  ;; (setq org-capture-templates
 ;;         (append org-capture-templates 
@@ -501,6 +512,7 @@ has no effect."
         org-export-use-babel nil)
   (setq org-babel-load-languages '((emacs-lisp . t)
                                    (matlab . t)
+                                   (octave . t)
                                    (python . t)
                                    (R . t)
                                    (shell . t)
@@ -613,6 +625,9 @@ See `org-capture-templates' for more information."
   ;; (add-hook 'org-capture-after-finalize-hook (lambda () (org-gcal-sync)))
   (setq org-gcal-client-id my-org-gcal-client-id
         org-gcal-client-secret my-org-gcal-client-secret
+        org-gcal-up-days 180
+        org-gcal-remove-api-cancelled-events t
+        org-gcal-notify-p nil
         org-gcal-file-alist
         `((,my-email-address . ,(concat
                                  (file-name-as-directory org-directory)
@@ -620,19 +635,19 @@ See `org-capture-templates' for more information."
           (,(car my-alt-email-addresses) . ,(concat
                                              (file-name-as-directory org-directory)
                                              "ucsb-cal.org")))
-        org-gcal-recurring-events-mode 'nested)
+        org-gcal-recurring-events-mode 'top-level)
 
   (defvar my/org-gcal--last-sync-time 0
     "Last time `org-gcal-sync' was run.")
   (defun my/org-gcal-sync-maybe (&optional skip-export silent)
   "Import events from calendars if more than 30 minutes have
-  passed since last import.
+ passed since last import.
 Export the ones to the calendar if unless
 SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
   (interactive)
   (if-let ((now (float-time (current-time)))
            (sync-p (or (< (- now my/org-gcal--last-sync-time)
-                          1800)
+                          3600)
                        ;; (seq-some (lambda (cal-file-pair)
                        ;;             (< (- now
                        ;;                   (float-time (file-attribute-modification-time
@@ -642,6 +657,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
                        )))
       (message "Did not check for calendar updates. `M-x org-gcal-sync' to force check.")
     (org-gcal-sync skip-export silent)
+    (message "Updated gcal.")
     (setq my/org-gcal--last-sync-time now))))
 
 ;;----------------------------------------------------------------------
@@ -658,7 +674,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
         org-re-reveal-subtree-with-title-slide t)
   (add-to-list 'org-structure-template-alist '("R" . "#+REVEAL_HTML: ?\n"))
   (use-package org-re-reveal-ref
-    :ensure t
+    :disabled
     :init (setq org-ref-default-bibliography '("~/Documents/research/control_systems.bib")))
   )
 
@@ -682,7 +698,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
 ;; ORG-REF
 ;;----------------------------------------------------------------------
 (use-package org-ref
-  :ensure t
+  :disabled
   :defer
   :config
   ;; (setq reftex-default-bibliography '("~/Dropbox/bibliography/references.bib"))
@@ -811,7 +827,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
   :after org
   :commands my/org-presentation-mode
   :config
-  (setq org-tree-slide-never-touch-face t
+  (setq org-tree-slide-never-touch-face nil
         org-tree-slide-skip-outline-level 8
         org-tree-slide-heading-emphasis nil
         org-tree-slide-cursor-init t
@@ -832,11 +848,11 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
           (org-tree-slide-mode 1)
           (my/olivetti-mode 1)
           ;; (org-indent-mode 1)
-          (text-scale-increase 2))
+          (text-scale-increase 3))
       (org-tree-slide-mode -1)
       (my/olivetti-mode -1)
       ;; (org-indent-mode)
-      (text-scale-decrease 2)
+      (text-scale-decrease 3)
       (text-scale-mode -1)))
 
   :bind (("C-c P"      . my/org-presentation-mode)
@@ -848,6 +864,90 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
          ("<C-right>" . org-tree-slide-move-next-tree)
          ("<C-left>"  . org-tree-slide-move-previous-tree))
   )
+
+;;----------------------------------------------------------------
+;; ORG-MIME - Compose HTML emails in org-mode
+;;----------------------------------------------------------------
+(use-package org-mime
+  :ensure t
+  :after (notmuch org)
+  :defer 2
+  :config
+  (setq org-mime-export-options '(:section-numbers nil
+                                  :with-author nil
+                                  :with-toc nil))
+  
+  ;; (add-hook 'message-send-hook 'org-mime-confirm-when-no-multipart)
+  ;; (setq org-mime-export-ascii 'latin1)
+  (setq org-mime-export-ascii 'utf-8)
+  (add-hook 'org-mime-html-hook
+          (lambda ()
+            (org-mime-change-element-style
+             "pre" (format "color: %s; background-color: %s; padding: 0.5em;"
+                           "#E6E1DC" "#232323"))))
+  (add-hook 'org-mime-html-hook
+          (lambda ()
+            (org-mime-change-element-style
+             "blockquote" "border-left: 2px solid gray; padding-left: 4px;"))))
+
+;;----------------------------------------------------------------
+;; ORG-LINK-CUSTOMIZE - Store customize links with org
+;;----------------------------------------------------------------
+(use-package ol
+  :after org
+  :config
+  (org-link-set-parameters "customize-option"
+                           :follow #'org-store-link:customize-open-option
+                           :store #'org-store-link:customize-store-link-option)
+
+  (org-link-set-parameters "customize-group"
+                           :follow #'org-store-link:customize-open-group
+                           :store #'org-store-link:customize-store-link-group)
+
+  (defun org-store-link:customize-open-option (path)
+    "Visit the customize option at PATH."
+    (customize-option (intern path)))
+
+  (defun org-store-link:customize-open-group (path)
+    "Visit the customize group at PATH."
+    (customize-group (intern path)))
+
+  (defun org-store-link:customize-store-link-option ()
+    "Store a link to a customize option."
+    (org-store-link:customize--store-link 'option))
+
+  (defun org-store-link:customize-store-link-group ()
+    "Store a link to a customize group."
+    (org-store-link:customize--store-link 'group))
+
+  (defun org-store-link:customize--store-link (type)
+    "Store a link to a customize TYPE window."
+    (when (memq major-mode '(Custom-mode))
+      (let* ((page (org-store-link:customize-get-page-name))
+             (page-type (org-store-link:customize-get-page-type))
+             (link-type (symbol-name page-type))
+             (link (format "customize-%s:%s" link-type page))
+             (description (format "Customize %s for %s" link-type page)))
+        (when (eq page-type type)
+          (org-store-link-props
+           :type (format "customize-%s" link-type)
+           :link link
+           :description description)))))
+
+  (defun org-store-link:customize-get-page-type ()
+    "Extract the page type (group or option) from the buffer name."
+    (if (string-match "Customize \\(\\S-+\\):" (buffer-name))
+        (pcase (match-string 1 (buffer-name))
+          ("Group" 'group)
+          ("Option" 'option))
+      (error "Cannot create link to this customize page")))
+
+  (defun org-store-link:customize-get-page-name ()
+    "Extract the page name from the buffer name."
+    (if (string-match ": \\(.+\\)\\*" (buffer-name))
+        (let* ((str (downcase (match-string 1 (buffer-name)))))
+          (replace-regexp-in-string " " "-" str))
+      (error "Cannot create link to this customize page"))))
 
 (provide 'setup-org)
 

@@ -1,7 +1,6 @@
 # -*- mode: snippet -*-
-# name: set
-# key: set
+# name: equiv
+# key: eqv
 # condition: (and (texmathp) 'auto)
-# group: math
 # --
-\\left\\{ $1 \\right\\}$0
+\\equiv$0

@@ -86,6 +86,7 @@ This relies on the external 'fd' executable."
 
 (use-package dired-x
   :after dired
+  :bind ("H-d" . dired-jump)
   :config
   (setq dired-omit-mode 1)
   (setq ls-lisp-use-insert-directory-program nil)
@@ -266,5 +267,13 @@ This relies on the external 'fd' executable."
     (when (featurep 'ibuffer)
       (ibuffer-sidebar-toggle-sidebar))
     (dired-sidebar-toggle-sidebar)))
+
+(use-package dired-rsync
+  :ensure t
+  :bind (:map dired-mode-map
+         ("r" . dired-rsync))
+  :hook (dired-rsync-failed . dired-rsync--pop-to-rsync-failed-buf)
+  :config
+  (setq dired-rsync-unmark-on-completion nil))
 
 (provide 'setup-dired)

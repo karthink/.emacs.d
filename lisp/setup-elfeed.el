@@ -111,6 +111,39 @@ MYTAG"
       (elfeed-search-browse-url use-generic-p)
       (add-hook 'eww-after-render-hook 'eww-readable nil t)))
 
+  (defun elfeed-mpv-url (&optional use-single-p)
+    "Visit the current entry in umpv or (with prefix arg
+USE-SINGLE-P) with mpv."
+    (interactive "P")
+    (let ((browse-url-browser-function (if use-single-p
+                                           (lambda (url &optional _) (browse-url-mpv url t))
+                                           #'browse-url-mpv)))
+      (pcase major-mode
+        ('elfeed-search-mode (elfeed-search-browse-url))
+        ('elfeed-show-mode (elfeed-show-visit)))))
+
+  (bind-key "m" #'elfeed-mpv-url elfeed-search-mode-map)
+  (bind-key "m" #'elfeed-mpv-url elfeed-show-mode-map)
+
+  (add-hook 'elfeed-new-entry-hook
+            (elfeed-make-tagger :feed-title "The Linux Experiment"
+                                :entry-title "Linux News"
+                                :add 'news))
+  
+  (add-hook 'elfeed-new-entry-hook
+            (elfeed-make-tagger :feed-title "Skill Up"
+                                :entry-title "This Week"
+                                :add 'news))
+
+  (add-hook 'elfeed-new-entry-hook
+            (elfeed-make-tagger :feed-title "TechLinked"
+                                :add 'news))
+
+  (add-hook 'elfeed-new-entry-hook
+            (elfeed-make-tagger :feed-title "ACG"
+                                :entry-title "\\(?:Roundup\\|Gaming News\\)"
+                                :add 'news))
+  
   (use-package wallabag
     :config 
     (defun elfeed-post-to-wallabag ()
@@ -141,7 +174,8 @@ MYTAG"
       (define-key map (kbd "-") (lambda () (interactive) (my/elfeed-search-tag-filter "-")))
       (define-key map (kbd "@") (lambda () (interactive) (my/elfeed-search-tag-filter "@")))
       (define-key map (kbd "RET") 'exit-minibuffer)
-      (define-key map (kbd "C-g") 'minibuffer-keyboard-quit)
+      (define-key map (kbd "<tab>") 'minibuffer-force-complete-and-exit)
+      (define-key map (kbd "C-g") 'abort-recursive-edit)
       map)
     "Keymap active when entering filter terms in elfeed")
 
@@ -211,6 +245,36 @@ MYTAG"
           `((client-secret  . ,(nth 0 creds))
             (client-id      . ,(nth 2 creds))
             (host           . ,(nth 4 creds))))))
+
+;; Org-Link handling for Elfeed buffers
+(use-package ol
+  :after (elfeed org)
+  :config
+  (org-link-set-parameters "elfeed"
+                           :follow #'org-elfeed-open
+                           :store  #'org-elfeed-store-link)
+  
+  (defun org-elfeed-store-link ()
+    "Store a link to an Elfeed entry."
+    (when-let* ((entry (pcase major-mode 
+                         ('elfeed-show-mode elfeed-show-entry)
+                         ('elfeed-search-mode (elfeed-search-selected :ignore-region))))
+           (entry-id (elfeed-entry-id entry))
+           (title (elfeed-entry-title entry)))
+      (let ((link))
+        (org-link-store-props :type "elfeed")
+        (setq link (concat "elfeed:id:" (car entry-id) "@@" (cdr entry-id)))
+        (org-add-link-props :link link :description title)
+        link)))
+
+  (defun org-elfeed-open (link)
+    "Follow an elfeed entry specified by LINK."
+    (require 'elfeed)
+    (let* ((url+title (split-string (substring link 3) "@@"))
+                (url (nth 0 url+title))
+                (title (nth 1 url+title))
+                (entry (elfeed-db-get-entry (cons url title))))
+      (elfeed-show-entry entry))))
 
 ;;----------------------------------------------------------------------
 ;;*** Autotagging setup

@@ -53,7 +53,7 @@ instead."
 ;;   (interactive)
 ;;   (kill-new (thing-at-point 'symbol)))
 
-(define-key minibuffer-local-completion-map (kbd "C-,") 'my/minibuffer-toggle-completion-styles)
+;; (define-key minibuffer-local-completion-map (kbd "C-,") 'my/minibuffer-toggle-completion-styles)
 (define-key minibuffer-local-completion-map (kbd "?")
   (lambda () (interactive)
     (minibuffer-completion-help)
@@ -124,31 +124,32 @@ succession."
                          completions)))
            (select-window completions nil)))))
 
-(defvar my/minibuffer-user-completion-styles completion-styles
-  "Default style of completion used by the minibuffer, inherited from `completion-styles'")
+;; (defvar my/minibuffer-user-completion-styles completion-styles
+;;   "Default style of completion used by the minibuffer, inherited from `completion-styles'")
 
-(defun my/minibuffer-toggle-completion-styles (&optional arg)
-  "Toggle between flex and default completion styles.
+;; (defun my/minibuffer-toggle-completion-styles (&optional arg)
+;;   "Toggle between flex and default completion styles.
 
-With \\[universal-argument] use basic completion instead.  These
-styles are described in `completion-styles-alist'."
-  (interactive "*P")
-  (when (minibufferp)
-    (let* ((basic '(emacs22 basic))
-           (flex '(flex initials substring partial-completion))
-           (user completion-styles)) ; use my defaults
-      (cond
-       ((equal completion-styles my/minibuffer-user-completion-styles)
-        (setq-local completion-styles flex)
-        (message "%s" (propertize "FLEX first" 'face 'highlight)))
-       ((equal completion-styles flex)
-	(setq-local completion-styles basic)
-        (message "%s" (propertize "BASIC matching" 'face 'highlight))
-	)
-       (t
-        (setq-local completion-styles my/minibuffer-user-completion-styles)
-        (message "%s" (propertize "DEFAULT matching" 'face 'highlight))
-	)
-       )))))
+;; With \\[universal-argument] use basic completion instead.  These
+;; styles are described in `completion-styles-alist'."
+;;   (interactive "*P")
+;;   (when (minibufferp)
+;;     (let* ((basic '(emacs22 basic))
+;;            (flex '(flex initials substring partial-completion))
+;;            (user completion-styles)) ; use my defaults
+;;       (cond
+;;        ((equal completion-styles my/minibuffer-user-completion-styles)
+;;         (setq-local completion-styles flex)
+;;         (message "%s" (propertize "FLEX first" 'face 'highlight)))
+;;        ((equal completion-styles flex)
+;; 	(setq-local completion-styles basic)
+;;         (message "%s" (propertize "BASIC matching" 'face 'highlight))
+;; 	)
+;;        (t
+;;         (setq-local completion-styles my/minibuffer-user-completion-styles)
+;;         (message "%s" (propertize "DEFAULT matching" 'face 'highlight))
+;; 	)
+;;        ))))
+)
 
 (provide 'setup-minibuffer)

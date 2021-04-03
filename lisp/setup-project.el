@@ -11,21 +11,29 @@
             (?! "Shell command" project-shell-command)
             ;; (?e "Eshell" project-eshell)
             ))
+    ;; Declare directories with ".project" as a project
+    (cl-defgeneric project-root (project)
+      "Return root directory of the current project.
+
+It usually contains the main build file, dependencies
+configuration file, etc. Though neither is mandatory.
+
+The directory name must be absolute."
+      (car project))
+    
     :config
     ;; (fset 'project-prefix-map project-prefix-map)
     (setq project-list-file "~/.cache/emacs/projects")
 
     ;; Declare directories with ".project" as a project
-    (cl-defmethod project-root ((project (head local)))
-      (cdr project))
+    (cl-defgeneric project-root (project)
+      "Return root directory of the current project.
 
-    (defun my/project-try-local (dir)
-      "Determine if DIR is a non-VC project.
-DIR must include a .project file to be considered a project."
-      (let ((root (locate-dominating-file dir ".project")))
-        (cons 'local (or root nil))))
+It usually contains the main build file, dependencies
+configuration file, etc. Though neither is mandatory.
 
-    (add-hook 'project-find-functions 'my/project-try-local 90)
+The directory name must be absolute."
+      (car project))
     
     ;; Use =fd= instead of =find= in non-VC projects (if available)
     (when (executable-find "fd")
@@ -64,12 +72,21 @@ DIR must include a .project file to be considered a project."
              (dir (completing-read "REMOVE project from list: " projects nil t)))
         (setq project--list (delete (assoc dir projects) projects))))
 
+    (setq project-window-list-file "~/.cache/emacs/project-window-list")
+
+    :bind-keymap ("H-p" . project-prefix-map)
     :bind (("C-x p q" . project-query-replace-regexp) ; C-x p is `project-prefix-map'
            ("C-x p <delete>" . my/project-remove-project)
            ("C-x p DEL" . my/project-remove-project)
            ;; ("M-s p" . my/project-switch-project)
            ;; ("M-s f" . my/project-find-file-vc-or-dir)
-           ("M-s L" . find-library))
-    )
+           ("M-s L" . find-library)))
+
+(use-package project-x
+  :load-path "~/.local/share/git/project-x/"
+  :after project
+  :config
+  (setq project-x-window-list-file "~/.cache/emacs/project-window-list")
+  (project-x-mode 1))
 
 (provide 'setup-project)

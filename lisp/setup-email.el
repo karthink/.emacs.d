@@ -68,7 +68,8 @@
                                     ("ucsb"      . (:foreground "MediumPurple"))
 				    ("important" . (:foreground "CornflowerBlue"))
                                     ("unread"    . (:inherit notmuch-search-unread-face
-                                                    :background "gray16"))))
+                                                    ;; :background "gray16"
+                                                    ))))
   
   (define-key notmuch-search-mode-map (kbd "d")
     (defun my/notmuch-toggle-trash ()

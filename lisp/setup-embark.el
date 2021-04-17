@@ -1,6 +1,6 @@
 (use-package embark
+  :ensure t
   :after minibuffer
-  :load-path "~/.local/share/git/melpa/embark/"
   :bind (:map minibuffer-local-completion-map
               ("M-o" . embark-exit-and-act)
               ("C-M-o" . embark-act)
@@ -45,6 +45,7 @@
   )
 
 (use-package live-completions
+  :disabled
   :after minibuffer
   :commands live-completions-mode
   :load-path "~/.local/share/git/melpa/live-completions/"

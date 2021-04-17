@@ -187,7 +187,7 @@ This relies on the external 'fd' executable."
   (:keymaps 'dired-mode-map
             "P" 'peep-dired)
   :config
-  (add-hook 'peep-dired-hook 'evil-normalize-keymaps)
+  ;; (add-hook 'peep-dired-hook 'evil-normalize-keymaps)
   (general-def
     :states '(normal visual)
     :keymaps 'peep-dired-mode-map

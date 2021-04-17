@@ -369,7 +369,7 @@ require user confirmation."
               ("C-n" . my/embark-switch-to-completions-top)
               ("C-p" . my/embark-switch-to-completions-bottom)
               ("C-l" . my/embark-completions-toggle)
-              ("RET" . minibuffer-complete-and-exit)
+              ("RET" . minibuffer-force-complete-and-exit)
               ("C-k" . icomplete-fido-kill)
               ("C-j" . (lambda () (interactive)
 	        	  (if minibuffer--require-match

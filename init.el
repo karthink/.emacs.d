@@ -303,7 +303,6 @@
   )
 
 (use-package god-mode
-  :ensure t
   :disabled
   :init
   (setq which-key--god-mode-support-enabled t)
@@ -315,8 +314,7 @@
   (global-set-key (kbd "<escape>") #'god-local-mode)
   ;; (global-set-key (kbd "S-SPC") #'god-local-mode)
   (add-hook 'god-mode-enabled-hook #'my-god-mode-update-cursor)
-  (add-hook 'god-mode-disabled-hook #'my-god-mode-update-cursor)
-  )
+  (add-hook 'god-mode-disabled-hook #'my-god-mode-update-cursor))
 ;;######################################################################
 ;;;* SAVE AND BACKUP
 ;;########################################################################
@@ -472,6 +470,7 @@ output instead."
       (exchange-point-and-mark))))
 
 (use-package piper
+  :disabled
   :load-path "~/.local/share/git/melpa/emacs-piper/"
   :bind ("C-x |" . piper)
   :config
@@ -637,6 +636,7 @@ active region use it instead."
   :config
    (setq set-mark-command-repeat-pop t)
    (global-set-key (kbd "M-r") ctl-x-r-map)
+   (setq undo-limit 800000)
 :bind
   (("M-z" . zap-to-char-save)
    ("<C-M-backspace>" . backward-kill-sexp)))
@@ -1556,7 +1556,7 @@ If region is active, add its contents to the new buffer."
 ;;;###autoload
   (defun +matlab-shell-no-select-a (&rest _args)
     "Switch back to matlab file buffer after evaluating region"
-    (select-window (get-mru-window)))
+    (other-window -1))
   (advice-add 'matlab-shell-run-region :after #'+matlab-shell-no-select-a)
 
 ;;;###autoload
@@ -2357,6 +2357,23 @@ _d_: subtree
 ;;----------------------------------------------------------------------
 (require 'setup-elfeed)
 ;;----------------------------------------------------------------------
+;;;** WALLABAG
+;;----------------------------------------------------------------------
+(use-package wallabag
+  :disabled
+  :defer t
+  :load-path "~/.local/share/git/wallabag.el/"
+  :commands wallabag
+  :config
+  (setq wallabag-host "https://read.karthinks.com") ;; wallabag server host name
+  (setq wallabag-username "karthink") ;; username
+  (setq wallabag-password "Dreghed88wal") ;; password
+  ;;(setq wallabag-clientid "3_1nte20im2xgk4gg84ogwcs8g0gskckk8s8css0sosgs08swk8s") ;; created with API clients management
+  ;;(setq wallabag-secret "4jgjg1lcdlkwocc8owks88wggccwg8k08gcwso80s4cckk44sc") ;; created with API clients management
+  ;;(setq wallabag-db-file "~/.cache/emacs/wallabag.sqlite") ;; optional, default is saved to ~/.emacs.d/.cache/wallabag.sqlite
+  ;; (run-with-timer 0 3540 'wallabag-request-token) ;; optional, auto refresh token, token should refresh every hour
+  )
+
 ;;;** EWW
 ;;----------------------------------------------------------------------
 (use-package eww
@@ -2844,6 +2861,37 @@ project, as defined by `vc-root-dir'."
                 (insert (calc-eval string))))
              (t (end-of-line) (insert " = " (calc-eval (thing-at-point 'line))))))
 (global-set-key (kbd "C-S-e") 'calc-on-line)
+
+(use-package calctex
+  :disabled
+  :load-path "~/.local/share/git/calctex/calctex"
+  :load-path "~/.local/share/git/calctex/calctex-contrib"
+  :after calc
+  :config
+  (setq calctex-additional-latex-packages "
+\\usepackage[usenames]{xcolor}
+\\usepackage{soul}
+\\usepackage{adjustbox}
+\\usepackage{amsmath}
+\\usepackage{amssymb}
+\\usepackage{siunitx}
+\\usepackage{cancel}
+\\usepackage{mathtools}
+\\usepackage{mathalpha}
+\\usepackage{xparse}
+\\usepackage{arevmath}"
+        calctex-additional-latex-macros
+        (concat calctex-additional-latex-macros
+                "\n\\let\\evalto\\Rightarrow"))
+  (let ((vendor-folder (concat (file-name-as-directory (getenv "HOME"))
+                               ".local/share/git/calctex/vendor/")))
+    (setq calctex-dvichop-bin (concat vendor-folder "texd/dvichop")
+          calctex-dvichop-sty (concat vendor-folder "texd/dvichop")
+          calctex-imagemagick-enabled-p nil))
+  (unless (file-exists-p calctex-dvichop-bin)
+    (message "CalcTeX: Building dvichop binary")
+    (let ((default-directory (file-name-directory calctex-dvichop-bin)))
+      (call-process "make" nil nil nil))))
 
 ;;----------------------------------------------------------------------
 ;;;** ISEARCH
@@ -3710,7 +3758,7 @@ the mode-line and switches to `variable-pitch-mode'."
           ;;                        :height 125 :width normal))))
           '(default ((t (:family "Iosevka" :foundry "PfEd"
                                  :slant normal :weight normal
-                                 :height 130 :width normal))))
+                                 :height 125 :width normal))))
           ;; '(default ((t (:family "FantasqueSansMono Nerd Font" :foundry "PfEd"
           ;;                        :slant normal :weight normal
           ;;                        :height 130 :width normal))))
@@ -3749,7 +3797,7 @@ the mode-line and switches to `variable-pitch-mode'."
                             ))
 
   (use-package gruvbox-theme
-    :ensure t
+    :disabled
     :defer
     :config
     (custom-theme-set-faces 'gruvbox
@@ -3760,72 +3808,54 @@ the mode-line and switches to `variable-pitch-mode'."
                             '(org-document-title ((t (:inherit (bold) :height 1.5))))
                           ))
 
-  (use-package modus-operandi-theme
-    :ensure t
+  (use-package modus-themes
+    :ensure
     :defer
     :config
-    (setq modus-operandi-theme-org-blocks nil
-          modus-operandi-theme-intense-hl-line t
-          ;; modus-operandi-theme-completions t
-          ;; modus-operandi-theme-org-blocks 'grayscale
-          modus-operandi-theme-fringes 'subtle
-          modus-operandi-theme-scale-headings t
-          modus-operandi-theme-section-headings nil
-          modus-operandi-theme-variable-pitch-headings t
-          modus-operandi-theme-intense-paren-match t
-          modus-operandi-theme-bold-constructs t
-          modus-operandi-theme-completions 'opinionated
-          modus-operandi-theme-diffs 'desaturated
-          modus-operandi-theme-syntax 'faint
-          modus-operandi-theme-links 'faint
-          modus-operandi-theme-prompts 'subtle)
-    (setq modus-operandi-theme-override-colors-alist
-          '(("bg-main" . "#fefcf4")
-            ("bg-dim" . "#faf6ef")
-            ("bg-alt" . "#f7efe5")
-            ("bg-hl-line" . "#f4f0e3")
-            ("bg-active" . "#e8dfd1")
-            ("bg-inactive" . "#f6ece5")
-            ("bg-region" . "#c6bab1")
-            ("bg-header" . "#ede3e0")
-            ("bg-tab-bar" . "#dcd3d3")
-            ("bg-tab-active" . "#fdf6eb")
-            ("bg-tab-inactive" . "#c8bab8")
-            ("fg-unfocused" . "#55556f"))))
-
-(use-package modus-vivendi-theme
-    :ensure t
-    :defer
-    :config
-    (setq modus-vivendi-theme-org-blocks nil
-          modus-vivendi-theme-intense-hl-line t
-          ;; modus-vivendi-theme-completions t
-          ;; modus-vivendi-theme-org-blocks 'grayscale
-          modus-vivendi-theme-fringes 'subtle
-          modus-vivendi-theme-scale-headings t
-          modus-vivendi-theme-section-headings nil
-          modus-vivendi-theme-variable-pitch-headings t
-          modus-vivendi-theme-intense-paren-match t
-          modus-vivendi-theme-bold-constructs t
-          modus-vivendi-theme-completions 'opinionated
-          modus-vivendi-theme-diffs 'desaturated
-          modus-vivendi-theme-syntax 'faint
-          modus-vivendi-theme-links 'faint
-          modus-vivendi-theme-prompts 'subtle)
-    (setq modus-vivendi-theme-override-colors-alist
-          '(("bg-main" . "#1c1c1c")
-            ("bg-alt" .  "#282c34")
-            ("bg-dim" . "#161129")
-            ("bg-hl-line" . "#191628")
-            ("bg-active" . "#282e46")
-            ("bg-inactive" . "#1a1e39")
-            ("bg-region" . "#393a53")
-            ("bg-header" . "#202037")
-            ("bg-tab-bar" . "#262b41")
-            ("bg-tab-active" . "#120f18")
-            ("bg-tab-inactive" . "#3a3a5a")
-            ("fg-unfocused" . "#9a9aab"))))
-
+    (setq modus-themes-org-blocks nil
+          modus-themes-intense-hl-line t
+          modus-themes-completions t
+          modus-themes-org-blocks 'grayscale
+          modus-themes-fringes 'subtle
+          modus-themes-scale-headings t
+          modus-themes-section-headings nil
+          modus-themes-variable-pitch-headings t
+          modus-themes-intense-paren-match t
+          modus-themes-bold-constructs t
+          modus-themes-completions 'opinionated
+          modus-themes-diffs 'desaturated
+          modus-themes-syntax 'faint
+          modus-themes-links 'faint
+          modus-themes-prompts 'subtle
+          modus-themes-mode-line 'accented-3d
+          modus-themes-org-habit 'simplified)
+    (setq modus-themes-vivendi-color-overrides
+          '((bg-main . "#1c1c1c")
+            (bg-alt .  "#282c34")
+            (bg-dim . "#161129")
+            (bg-hl-line . "#191628")
+            (bg-active . "#282e46")
+            (bg-inactive . "#1a1e39")
+            (bg-region . "#393a53")
+            (bg-header . "#202037")
+            (bg-tab-bar . "#262b41")
+            (bg-tab-active . "#120f18")
+            (bg-tab-inactive . "#3a3a5a")
+            (fg-unfocused . "#9a9aab")))
+    (setq modus-themes-operandi-color-overrides
+          '((bg-main . "#fefcf4")
+            (bg-dim . "#faf6ef")
+            (bg-alt . "#f7efe5")
+            (bg-hl-line . "#f4f0e3")
+            (bg-active . "#e8dfd1")
+            (bg-inactive . "#f6ece5")
+            (bg-region . "#c6bab1")
+            (bg-header . "#ede3e0")
+            (bg-tab-bar . "#dcd3d3")
+            (bg-tab-active . "#fdf6eb")
+            (bg-tab-inactive . "#c8bab8")
+            (fg-unfocused . "#55556f"))))
+  
 (use-package doom-themes
   :ensure t
   :defer

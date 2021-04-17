@@ -19,6 +19,14 @@
       ;;   (buffer (styles basic flex substring)))
 )
 
+(defun my/messageless (fn &rest args)
+  "Set `minibuffer-message-timeout' to 0.
+Meant as advice around minibuffer completion FN with ARGS."
+  (let ((minibuffer-message-timeout 0))
+    (apply fn args)))
+
+(advice-add 'minibuffer-force-complete-and-exit :around #'my/messageless)
+
 (minibuffer-depth-indicate-mode 1)
 (minibuffer-electric-default-mode nil)
 ;; (define-key minibuffer-local-completion-map (kbd "-") #'minibuffer-complete-word)

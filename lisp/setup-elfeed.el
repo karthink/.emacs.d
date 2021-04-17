@@ -2,8 +2,8 @@
 ;;----------------------------------------------------------------------
 (use-package elfeed
   :commands (elfeed elfeed-update elfeed-search-bookmark-handler)
-  :load-path ("~/.local/share/git/melpa/elfeed/"
-              "~/.local/share/git/melpa/elfeed/web")
+  :load-path ("~/.local/share/git/elfeed/"
+              "~/.local/share/git/elfeed/web")
   :config
   (setq-default elfeed-db-directory "~/.cache/emacs/elfeed"
                 elfeed-save-multiple-enclosures-without-asking t

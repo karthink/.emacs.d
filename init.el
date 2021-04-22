@@ -59,6 +59,35 @@
   (push (dir-concat user-emacs-directory "plugins/") load-path)
   (push (dir-concat user-emacs-directory "lisp/") load-path))
 
+;; Packages not managed by package.el
+(defun my/package-sync-personal ()
+  "Download my packages not managed by package.el."
+  (let* ((my/packages-urls-extra)
+        (download-dir "~/.local/share/git/")
+        (default-directory (progn (or (file-directory-p download-dir)
+                                      (make-directory download-dir))
+                                  download-dir)))
+    (setq my/packages-urls-extra
+          '(("https://github.com/johnbcoughlin/calctex.git")
+            ("https://github.com/skeeto/elfeed.git")
+            ("git@github.com:karthink/ffmpeg-dispatch.git" . "ffmpeg")
+            ("git@github.com:karthink/ink.git")
+            ("https://git.code.sf.net/p/matlab-emacs/src" . "matlab-emacs-src")
+            ("https://git.nixo.xyz/nixo/ob-julia.git")
+            ("git@github.com:karthink/popper.git")
+            ("git@github.com:karthink/project-x.git")
+            ("git@github.com:karthink/sicp.git")
+            ("git@github.com:karthink/wallabag.el.git" . "wallabag")
+            ("https://github.com/chenyanming/wallabag.el.git")))
+    (dolist (pack my/packages-urls-extra)
+      (let ((packdir (or (cdr pack)
+                          (file-name-base (car pack)))))
+        (unless (file-directory-p packdir)
+            (start-process packdir
+                         (concat packdir ".out")
+                         "git" "clone" (car pack) packdir)
+            (message (format "Cloning %s -> %s" (car pack) packdir)))))))
+
 ;;########################################################################
 ;;;* CORE
 ;;########################################################################
@@ -1709,6 +1738,12 @@ and Interpretation of Classical Mechanics) - The book."
   :config
   (cl-defmethod project-root ((project (head julia)))
     (cdr project)))
+;;;** ESS
+;; Need this for ob-julia
+(use-package ess
+  :ensure t
+  :after ob-julia)
+
 ;;;* PLUGINS
 ;;######################################################################
 
@@ -2582,7 +2617,8 @@ fully before starting comparison."
   ;;           "k" '(helpful-key :wk "Describe keybind")
   ;;           "." '(helpful-at-point :wk "Help at point")
   ;;           "C" '(helpful-command :wk "Describe command"))
-  )
+
+)
 
 
 ;;----------------------------------------------------------------------

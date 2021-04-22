@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t -*-
 (use-package orderless
   :after setup-minibuffer
   :ensure t
@@ -134,7 +135,6 @@ require user confirmation."
 (use-package consult
   :ensure t
   :after minibuffer
-  :commands consult-file-externally
   :config
   (setq consult-narrow-key "<")
   (setq consult-line-numbers-widen t)
@@ -204,7 +204,8 @@ require user confirmation."
 
 (use-package embark-consult
   :ensure t
-  :after (embark consult)
+  :after consult
+  :demand
   :bind (:map embark-collect-mode-map
          ("C-c C-f" . my/embark-consult-preview-toggle))
   :config
@@ -270,7 +271,6 @@ require user confirmation."
          :map minibuffer-local-completion-map
          ("s-o"      . embark-act)
          ("C-o"      . embark-act)
-         ("C-M-o"    . embark-act-noexit)
          ("C-c C-o"  . embark-export)
          ("M-s o"    . embark-export)
          ("H-o"      . embark-export)
@@ -279,7 +279,6 @@ require user confirmation."
          ("C->"      . embark-become)
          :map completion-list-mode-map
          ("C-o"      . embark-act)
-         ("C-M-o"    . embark-act-noexit)
          :map embark-collect-mode-map
          ("M-s o"    . embark-export)
          ("H-SPC" . embark-act)
@@ -287,20 +286,25 @@ require user confirmation."
          ("O"        . embark-act-noexit)
          ("C-o"      . embark-act)
          ("M-g o"    . embark-act)
-         ("C-M-o"    . embark-act-noexit)
-         ("M-g M-o"  . embark-act-noexit)
          ("M-t"      . toggle-truncate-lines)
          ("M-q"      . embark-collect-toggle-view)
          :map embark-file-map
          ("j"        . dired-jump)
          ("S"        . sudo-find-file)
+         ("4"        . find-file-other-window)
+         ("5"        . find-file-other-frame)
          :map embark-buffer-map
          ("d"        . diff-buffer-with-file) ;FIXME
          ("l"        . eval-buffer)
+         ("4"        . switch-to-buffer-other-window)
+         ("5"        . switch-to-buffer-other-frame)
+         :map embark-bookmark-map
+         ("4"        . bookmark-jump-other-window)
+         ("5"        . bookmark-jump-other-frame)
          :map embark-url-map
          ("f"        . browse-url-firefox))
   :config
-  
+  (setq embark-quit-after-action t)
   ;; (setq embark-collect-initial-view-alist
   ;;       '((t . list)))
   (add-to-list 'embark-keymap-alist
@@ -322,13 +326,34 @@ require user confirmation."
   ;;                           virtual-buffers))))
   ;;     (ibuffer t "*Embark Export Ibuffer*"
   ;;              `((predicate . (member (buffer-name) ',buffers))))))
+
+  (eval-when-compile
+    (defmacro my/embark-ace-action (fn)
+      `(defun ,(intern (concat "my/embark-ace-" (symbol-name fn))) ()
+         (interactive)
+         (aw-switch-to-window (aw-select nil))
+         (call-interactively (symbol-function ',fn))))
+    
+    (defmacro my/embark-split-action (fn split-type) 
+      `(defun ,(intern (concat "my/embark-"
+                               (symbol-name fn)
+                               (car (last  (split-string
+                                            (symbol-name split-type) "-"))))) ()
+         (interactive)
+         (funcall #',split-type)
+         (call-interactively #',fn))))
+
+    (define-key embark-file-map (kbd "o") (my/embark-ace-action find-file))
+    (define-key embark-file-map (kbd "2") (my/embark-split-action find-file my/split-window-below))
+    (define-key embark-file-map (kbd "3") (my/embark-split-action find-file my/split-window-right))
+    (define-key embark-buffer-map (kbd "o") (my/embark-ace-action switch-to-buffer))
+    (define-key embark-buffer-map (kbd "2") (my/embark-split-action switch-to-buffer my/split-window-below))
+    (define-key embark-buffer-map (kbd "3") (my/embark-split-action switch-to-buffer my/split-window-right))
+    (define-key embark-bookmark-map (kbd "o") (my/embark-ace-action bookmark-jump))
+    (define-key embark-bookmark-map (kbd "2") (my/embark-split-action bookmark-jump my/split-window-below))
+    (define-key embark-bookmark-map (kbd "3") (my/embark-split-action bookmark-jump my/split-window-right))
   
-  (define-key embark-file-map (kbd "`") (lambda (f) (interactive)
-                                          (ace-window t)
-                                          (find-file f)))
-  (define-key embark-buffer-map (kbd "`") (lambda (b) (interactive)
-                                            (ace-window t)
-                                            (switch-to-buffer b)))
+  
   
   (use-package which-key
     :defer
@@ -337,15 +362,22 @@ require user confirmation."
           (lambda (map &optional target) (let ((which-key-side-window-location '(right bottom)))
                      (which-key--show-keymap "Embark" map nil nil 'no-paging)
                      #'which-key--hide-popup-ignore-command))
-      embark-become-indicator embark-action-indicator)))
+          embark-become-indicator embark-action-indicator))
+  (use-package helpful
+    :bind (:map embark-become-help-map
+                ("f" . helpful-callable)
+                ("v" . helpful-variable)
+                ("C" . helpful-command)))
+  )
 
-(use-package avy-embark-occur
-  :disabled
-  :after (avy embark)
+(use-package avy-embark-collect
+  :ensure t
+  :after embark
   :bind (:map minibuffer-local-completion-map
-              ("M-j" . avy-embark-occur-choose)
-              ("M-RET" . avy-embark-occur-choose)
-              ("C-M-o" . avy-embark-occur-act)))
+              ("M-j" . avy-embark-collect-choose)
+              ("M-RET" . avy-embark-collect-choose)
+              ("C-M-o" . avy-embark-collect-act)
+              ("C-M-j" . avy-embark-collect-act)))
 
 (use-package embark
   ;; Customizations to use embark's live-occur as a completion system for Emacs.

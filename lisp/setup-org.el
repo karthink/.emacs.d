@@ -70,7 +70,9 @@
                 org-log-done 'time
                 org-catch-invisible-edits 'smart
                 org-use-speed-commands t
-                org-speed-commands-user '(("z" . org-add-note))
+                org-speed-commands-user '(("z" . org-add-note)
+                                          ("4" . org-tree-to-indirect-buffer)
+                                          ("S" . org-tree-to-indirect-buffer))
                 org-highlight-latex-and-related '(native)
                 org-imenu-depth 7
                 org-id-link-to-org-use-id 'create-if-interactive
@@ -453,6 +455,14 @@ has no effect."
     )
   )
 
+(use-package org-crypt
+  :hook (org-mode . my/org-encrypt-entries)
+  :config
+  (defun my/org-encrypt-entries ()
+    (add-hook 'before-save-hook
+              'org-encrypt-entries
+              nil t))
+  (setq org-crypt-key user-full-name))
 
 (use-package ox
   :after org
@@ -501,7 +511,12 @@ has no effect."
 ;; ORG-BABEL
 ;;----------------------------------------------------------------------
 (use-package ob-octave-fix
-   :after ob-octave)
+  :after ob-octave)
+
+(use-package ob-julia
+  ;; Source: "https://git.nixo.xyz/nixo/ob-julia.git"
+  :load-path "~/.local/share/git/ob-julia/"
+  :defer)
 
 (use-package ob
   :after org
@@ -509,7 +524,7 @@ has no effect."
   :config
   (setq org-src-window-setup 'split-window-below
         org-confirm-babel-evaluate nil
-        org-export-use-babel nil)
+        org-export-use-babel t)
   (setq org-babel-load-languages '((emacs-lisp . t)
                                    (matlab . t)
                                    (octave . t)
@@ -517,7 +532,8 @@ has no effect."
                                    (R . t)
                                    (shell . t)
                                    (scheme . t)
-                                   (ditaa . t)))
+                                   (ditaa . t)
+                                   (julia . t)))
   (setq org-ditaa-jar-path "/usr/bin/ditaa")
   (defun my/org-babel-goto-tangle-file ()
     (if-let* ((args (nth 2 (org-babel-get-src-block-info t)))

@@ -1728,7 +1728,7 @@ and Interpretation of Classical Mechanics) - The book."
 ;;;** JULIA
 (use-package julia-repl
   :ensure t
-  :hook (julia-mode . julia-repl-mode)
+  :commands julia-repl-mode
   :config
   (julia-repl-set-terminal-backend 'vterm))
 

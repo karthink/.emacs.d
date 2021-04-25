@@ -922,6 +922,31 @@ active region use it instead."
           tex-mode
           org-mode
           conf-mode) . auto-revert-mode))
+;;;** Re-Builder
+(use-package re-builder
+  :bind (("C-M-5" . re-builder)
+         ("C-%" . re-builder)
+         :map reb-mode-map
+         ("C-c C-k" . reb-quit)
+         ("M-RET" . reb-replace-regexp)
+         ("C-M-%" . reb-replace-regexp)
+         ("C-M-5" . reb-replace-regexp))
+  :config
+  (defun reb-replace-regexp (&optional delimited)
+  "Run `query-replace-regexp' with the contents of re-builder. With
+non-nil optional argument DELIMITED, only replace matches
+surrounded by word boundaries."
+  (interactive "P")
+  (reb-update-regexp)
+  (let* ((re (reb-target-binding reb-regexp))
+         (re-printed (with-output-to-string (print re)))
+         (replacement (read-from-minibuffer
+                       (format "Replace regexp %s with: "
+                               (substring re-printed 1
+                                          (1- (length re-printed)))))))
+    (with-current-buffer reb-target-buffer
+      (query-replace-regexp re replacement delimited))
+    (reb-quit))))
 ;;;* UTILITY
 ;;######################################################################
 ;; Count words, print ASCII table, etc
@@ -1728,7 +1753,7 @@ and Interpretation of Classical Mechanics) - The book."
 ;;;** JULIA
 (use-package julia-repl
   :ensure t
-  :hook (julia-mode . julia-repl-mode)
+  :commands julia-repl-mode
   :config
   (julia-repl-set-terminal-backend 'vterm))
 

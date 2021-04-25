@@ -276,4 +276,8 @@ This relies on the external 'fd' executable."
   :config
   (setq dired-rsync-unmark-on-completion nil))
 
+(use-package dired-filter
+  :ensure t
+  :after dired)
+
 (provide 'setup-dired)

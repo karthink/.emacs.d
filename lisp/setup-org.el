@@ -9,6 +9,7 @@
   :bind (("\C-cl" . org-store-link)
          ("\C-ca" . org-agenda)
          ("<f5>"  . org-capture)
+         ("\C-cr" . org-capture)
          ("<f6>"  . org-agenda)
          :map org-mode-map
          ("C-c C-x +" . my/org-strike-through-heading)
@@ -17,7 +18,9 @@
 
   :hook ((org-mode . org-toggle-pretty-entities)
          (org-mode . turn-on-org-cdlatex)
-         (org-mode . visual-line-mode))
+         (org-mode . visual-line-mode)
+         (org-cdlatex-mode . my/org-cdlatex-texmathp-fix)
+         (org-mode . er/add-latex-in-org-mode-expansions))
   ;; :custom-face 
   ;; (org-level-1 ((t (:height 1.2 :inherit (outline-1 variable-pitch)))))
   ;; (org-level-2 ((t (:height 1.1 :inherit (outline-2 variable-pitch)))))
@@ -55,7 +58,7 @@
                 org-refile-targets '((nil :level . 1) (org-agenda-files :todo . "PROJECT"))
                 org-refile-target-verify-function nil
                 org-refile-use-outline-path nil
-                org-refile-use-cache nil
+                org-refile-use-cache t
                 org-refile-allow-creating-parent-nodes t
                 org-startup-folded t 
                 org-startup-indented t 
@@ -116,11 +119,27 @@
                         ("\\.x?html?\\'" . default)
                         ("\\.pdf\\'" . "zathura %s"))
         ;; Larger equations
-        org-format-latex-options (plist-put org-format-latex-options :scale 1.65))
+        org-format-latex-options (plist-put org-format-latex-options :scale 1.75))
 
   ;; Make org use `display-buffer' like every other Emacs citizen.
   (advice-add #'org-switch-to-buffer-other-window :override #'switch-to-buffer-other-window)
 
+  
+;;;###autoload
+  (defun er/add-latex-in-org-mode-expansions ()
+    ;; Make Emacs recognize \ as an escape character in org
+    (modify-syntax-entry ?\\ "\\" org-mode-syntax-table)
+    ;; Paragraph end at end of math environment
+    (setq paragraph-start (concat paragraph-start "\\|\\\\end{\\([A-Za-z0-9*]+\\)}"))
+    ;; (setq paragraph-separate (concat paragraph-separate "\\|\\\\end{\\([A-Za-z0-9*]+\\)}"))
+    ;; Latex mode expansions
+    (with-eval-after-load 'expand-region
+      (set (make-local-variable 'er/try-expand-list)
+           (append (remove #'er/mark-method-call er/try-expand-list)
+                   '(LaTeX-mark-environment
+                     ;; er/mark-LaTeX-inside-environment
+                     er/mark-LaTeX-math)))))
+  
 ;;;###autoload
   (defun org-cdlatex-pbb (&rest _arg)
     "Execute `cdlatex-pbb' in LaTeX fragments.
@@ -193,7 +212,32 @@
 
   (add-to-list 'org-structure-template-alist '("ma" . "src matlab"))
   (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
-  
+
+  (defun my/org-cdlatex-texmathp-fix ()
+    (ad-unadvise #'texmathp)
+    (defadvice texmathp (around org-math-always-on activate)
+      "Always return t in Org buffers.
+This is because we want to insert math symbols without dollars even outside
+the LaTeX math segments.  If Org mode thinks that point is actually inside
+an embedded LaTeX fragment, let `texmathp' do its job.
+`\\[org-cdlatex-mode-map]'"
+      (interactive)
+      (let (p)
+        (cond
+         ((not (derived-mode-p 'org-mode)) ad-do-it)
+         ((eq this-command 'cdlatex-math-symbol)
+	  (setq ad-return-value t
+	        texmathp-why '("cdlatex-math-symbol in org-mode" . 0)))
+         (t
+	  (let ((p (org-inside-LaTeX-fragment-p)))
+            (if (and p (cl-member (car p) (plist-get org-format-latex-options :matchers)
+                                  :test (lambda (a b) (string-match (regexp-quote b) a))))
+	        ad-do-it
+	      ad-do-it
+              ;; (setq ad-return-value t
+	      ;;       texmathp-why '("Org mode embedded math" . 0))
+	      ;; (when p ad-do-it)
+              )))))))
   )
 
 
@@ -320,6 +364,12 @@ has no effect."
                    (not (org-get-scheduled-time (point)))
                    (not (org-get-deadline-time (point))))
           (setq should-skip-entry t))))
+    (when (and (not should-skip-entry)
+               (save-excursion
+                 (outline-up-heading 1 t)
+                 (not (member (org-get-todo-state)
+                              '("PROJECT" "TODO")))))
+      (setq should-skip-entry t))
     should-skip-entry))
   
   (defun my/org-agenda-skip-all-siblings-but-first ()
@@ -337,7 +387,7 @@ has no effect."
           ("P" "All Projects" tags "TODO=\"PROJECT\"&LEVEL>1"
            ((org-agenda-overriding-header "All Projects")))
 
-          ("r" "Uncategorized items" tags "CATEGORY=\"Inbox\"&LEVEL=2"
+          ("i" "Uncategorized items" tags "CATEGORY=\"Inbox\"&LEVEL=2"
            ((org-agenda-overriding-header "Uncategorized items")))
 
           ("W" "Waiting tasks" tags "W-TODO=\"DONE\"|TODO={WAITING\\|DELEGATED}"
@@ -380,7 +430,7 @@ has no effect."
 
 (use-package org-capture
   :after org
-  :defer 
+  :defer
   :commands (org-capture make-orgcapture-frame)
   :config
  (add-to-list 'org-capture-after-finalize-hook
@@ -470,6 +520,9 @@ has no effect."
   :config
   (setq org-html-htmlize-output-type 'css)
   (with-eval-after-load 'ox-latex
+    (setq org-latex-default-packages-alist
+          (delete '("" "hyperref" nil) org-latex-default-packages-alist))
+    (push '("hidelinks" "hyperref" nil) (cdr (last org-latex-default-packages-alist)))
     (add-to-list 'org-latex-classes
                  '("IEEEtran"
                    "\\documentclass[conference]{IEEEtran}"
@@ -478,7 +531,8 @@ has no effect."
                    ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
                    ("\\paragraph{%s}" . "\\paragraph*{%s}")
                    ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
-  (setq org-export-with-LaTeX-fragments t))
+  (setq org-export-with-LaTeX-fragments t
+        org-latex-prefer-user-labels t))
 
 (use-package valign
   :disabled

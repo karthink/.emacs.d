@@ -40,7 +40,8 @@
 (use-package notmuch
   :ensure t
   :commands notmuch
-  :hook (notmuch-message-mode . turn-off-auto-fill)
+  :hook ((notmuch-message-mode . turn-off-auto-fill)
+         (notmuch-mua-send . notmuch-mua-attachment-check))
   :config
   (setq-default notmuch-search-oldest-first nil)
   (setq notmuch-show-logo nil

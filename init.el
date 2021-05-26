@@ -10,8 +10,8 @@
   ;;; Set load paths for ELPA packages
 (package-activate-all)
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
-;(add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/"))
-;(add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
+                                        ;(add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/"))
+                                        ;(add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
 ;; (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
 
 (unless (package-installed-p 'use-package)
@@ -41,7 +41,7 @@
 
 (use-package emacs
   :config
-;; (setq user-emacs-directory "~/.emacs.d/")
+  ;; (setq user-emacs-directory "~/.emacs.d/")
   (defun dir-concat (dir file)
     "join path DIR with filename FILE correctly"
     (concat (file-name-as-directory dir) file))
@@ -63,10 +63,10 @@
 (defun my/package-sync-personal ()
   "Download my packages not managed by package.el."
   (let* ((my/packages-urls-extra)
-        (download-dir "~/.local/share/git/")
-        (default-directory (progn (or (file-directory-p download-dir)
-                                      (make-directory download-dir))
-                                  download-dir)))
+         (download-dir "~/.local/share/git/")
+         (default-directory (progn (or (file-directory-p download-dir)
+                                       (make-directory download-dir))
+                                   download-dir)))
     (setq my/packages-urls-extra
           '(("https://github.com/johnbcoughlin/calctex.git")
             ("https://github.com/skeeto/elfeed.git")
@@ -78,15 +78,16 @@
             ("git@github.com:karthink/project-x.git")
             ("git@github.com:karthink/sicp.git")
             ("git@github.com:karthink/wallabag.el.git" . "wallabag")
+            ("git@github.com:karthink/peep-dired.git")
             ("https://github.com/chenyanming/wallabag.el.git")))
     (dolist (pack my/packages-urls-extra)
       (let ((packdir (or (cdr pack)
-                          (file-name-base (car pack)))))
+                         (file-name-base (car pack)))))
         (unless (file-directory-p packdir)
-            (start-process packdir
+          (start-process packdir
                          (concat packdir ".out")
                          "git" "clone" (car pack) packdir)
-            (message (format "Cloning %s -> %s" (car pack) packdir)))))))
+          (message (format "Cloning %s -> %s" (car pack) packdir)))))))
 
 ;;########################################################################
 ;;;* CORE
@@ -98,7 +99,7 @@
 ;;########################################################################
 (and (load-library
       (if (file-exists-p (concat user-emacs-directory "lisp/personal.el"))
-	   (concat user-emacs-directory "lisp/personal.el")
+	  (concat user-emacs-directory "lisp/personal.el")
 	(concat user-emacs-directory "lisp/personal.el.gpg")))
      ;; (require 'personal nil t)
      (setq user-full-name my-full-name)
@@ -424,7 +425,7 @@
   (desktop-save-mode 1))
 
 (use-package emacs
-;; Hyper bindings for emacs. Why use a pinky when you can use a thumb?
+  ;; Hyper bindings for emacs. Why use a pinky when you can use a thumb?
   :bind-keymap (("H-x" . ctl-x-map)
                 ("H-f" . space-menu-file-map)
                 ("H-b" . space-menu-buffer-map)
@@ -549,8 +550,15 @@ active region use it instead."
       ;; (message "No symbol to search for at point!")
       (call-interactively #'google-search-string)))
   :bind (:map help-map
-         ("g" . google-search-string)
-         ("C-=" . google-search-at-point)))
+              ("g" . google-search-string)
+              ("C-=" . google-search-at-point)))
+
+(use-package fish-completion
+  :when (executable-find "fish")
+  :load-path "~/.local/share/git/emacs-fish-completion/"
+  :after (shell)
+  :init
+  (global-fish-completion-mode))
 
 (use-package vterm
   :ensure t
@@ -560,6 +568,8 @@ active region use it instead."
 ;;----------------------------------------------------------------------
 (use-package eshell
   :defer
+  :init (add-hook 'eshell-mode-hook
+                  (lambda () (setq outline-regexp eshell-prompt-regexp)))
   :config
   (setq eshell-buffer-shorthand t)
   (setq eshell-directory-name "~/.cache/emacs/eshell/")
@@ -612,17 +622,17 @@ active region use it instead."
   :defer
   :general
   (:keymaps 'diff-mode-map
-   :states 'motion
-   "i" 'ignore
-   "f" 'next-error-follow-minor-mode
-   "q" 'quit-window)
+            :states 'motion
+            "i" 'ignore
+            "f" 'next-error-follow-minor-mode
+            "q" 'quit-window)
   :config
   (use-package outline
     :hook (diff-mode . my/outline-mode-diff)
     :config
     (defun my/outline-mode-diff ()
-        (setq-local outline-regexp "---\\|\\+\\+\\|@@ ")
-        (outline-minor-mode 1))
+      (setq-local outline-regexp "---\\|\\+\\+\\|@@ ")
+      (outline-minor-mode 1))
     )
   )
 
@@ -653,28 +663,28 @@ active region use it instead."
   :bind (:map occur-mode-map
               ("C-x C-q" . occur-edit-mode))
   :general
-   (:keymaps 'occur-mode-map
-    :states '(normal motion)
-    "gc" 'next-error-follow-minor-mode
-    :states 'motion
-    "f" 'next-error-follow-minor-mode)
+  (:keymaps 'occur-mode-map
+            :states '(normal motion)
+            "gc" 'next-error-follow-minor-mode
+            :states 'motion
+            "f" 'next-error-follow-minor-mode)
   )
 (require 'better-editing nil t)
 
 (use-package emacs
   :config
-   (setq set-mark-command-repeat-pop t)
-   (global-set-key (kbd "M-r") ctl-x-r-map)
-   (setq undo-limit 800000)
-:bind
+  (setq set-mark-command-repeat-pop t)
+  (global-set-key (kbd "M-r") ctl-x-r-map)
+  (setq undo-limit 800000)
+  :bind
   (("M-z" . zap-to-char-save)
    ("<C-M-backspace>" . backward-kill-sexp)))
 
 (use-package view
   :general
   (:keymaps 'view-mode-map
-   :states '(normal motion visual)
-   "M-SPC" 'space-menu))
+            :states '(normal motion visual)
+            "M-SPC" 'space-menu))
 
 (use-package easy-kill
   :ensure t
@@ -713,11 +723,11 @@ active region use it instead."
   ;;        ("C-M-`" . window-toggle-side-windows))
   :bind
   ("<f9>" . +make-frame-floating-with-current-buffer)
-   ;; "C-M-`" 'window-toggle-side-windows
+  ;; "C-M-`" 'window-toggle-side-windows
   :general
   (:keymaps 'space-menu-window-map
-   :wk-full-keys nil
-   "w" '(window-toggle-side-windows :wk "toggle side windows"))
+            :wk-full-keys nil
+            "w" '(window-toggle-side-windows :wk "toggle side windows"))
   )
 
 (use-package window
@@ -775,7 +785,7 @@ active region use it instead."
                       (mapcar (lambda (win-and-buf) (buffer-name (cdr win-and-buf)))
                               (append popper-open-buffer-window-alist
                                       popper-buried-buffer-window-alist))
-     nil t)))
+                      nil t)))
 
   (defun +popup-lower-to-popup ()
     "Choose a regular window to make a popup"
@@ -793,11 +803,11 @@ active region use it instead."
                            nil t))))))
   :general
   (:states 'motion
-   "C-w ^" '(popper-raise-popup :wk "raise popup")
-   "C-w _" '(popper-lower-to-popup :wk "lower to popup"))
+           "C-w ^" '(popper-raise-popup :wk "raise popup")
+           "C-w _" '(popper-lower-to-popup :wk "lower to popup"))
   (:keymaps 'space-menu-window-map
-   "^" '(+popup-raise-popup :wk "raise popup")
-   "_" '(+popup-lower-to-popup :wk "lower to popup")))
+            "^" '(+popup-raise-popup :wk "raise popup")
+            "_" '(+popup-lower-to-popup :wk "lower to popup")))
 
 ;;;** Winum - window numbers
 (use-package winum
@@ -813,17 +823,17 @@ active region use it instead."
              (winum-select-window-by-number ,num))))))
 
   (setq winum-keymap
-    (let ((map (make-sparse-keymap)))
-      (define-key map (kbd "M-0") 'winum-select-window-0-or-10)
-      (dolist (num '(1 2 3 4 5 6 7 8 9) nil)
-        (define-key map (kbd (concat "M-" (int-to-string num)))
-          (+winum-select num)))
-      map))
+        (let ((map (make-sparse-keymap)))
+          (define-key map (kbd "M-0") 'winum-select-window-0-or-10)
+          (dolist (num '(1 2 3 4 5 6 7 8 9) nil)
+            (define-key map (kbd (concat "M-" (int-to-string num)))
+              (+winum-select num)))
+          map))
 
   ;; If evil-mode is enabled further mode-line customization is needed before
   ;; enabling winum:
   (unless (bound-and-true-p evil-mode)
-      (winum-mode 1)))
+    (winum-mode 1)))
 
 ;;;** Winner mode
 (use-package winner
@@ -835,9 +845,9 @@ active region use it instead."
          ("s-u" . winner-undo))
   :general
   (:keymaps 'space-menu-window-map
-   :wk-full-keys nil
-   "u" 'winner-undo
-   "r" 'winner-redo)
+            :wk-full-keys nil
+            "u" 'winner-undo
+            "r" 'winner-redo)
   :config
   (winner-mode +1))
 
@@ -850,7 +860,7 @@ active region use it instead."
    ("M-o" . other-window))
   :general
   (:keymaps 'space-menu-map
-   "`" 'ace-window)
+            "`" 'ace-window)
   ;; :custom-face
   ;; (aw-leading-char-face ((t (:height 2.5 :weight normal))))
   :config
@@ -925,13 +935,25 @@ active region use it instead."
 ;;;** Re-Builder
 (use-package re-builder
   :bind (("C-M-5" . re-builder)
-         ("C-%" . re-builder)
+         ("C-M-%" . re-builder)
          :map reb-mode-map
          ("C-c C-k" . reb-quit)
-         ("M-RET" . reb-replace-regexp)
-         ("C-M-%" . reb-replace-regexp)
-         ("C-M-5" . reb-replace-regexp))
+         ("RET" . reb-replace-regexp)
+         :map reb-lisp-mode-map
+         ("RET" . reb-replace-regexp))
   :config
+  (defvar my/re-builder-positions nil
+    "Store point and region bounds before calling re-builder")
+  (advice-add 're-builder
+              :before
+              (defun my/re-builder-save-state (&rest _)
+                "Save into `my/re-builder-positions' the point and region
+positions before calling `re-builder'."
+                (setq my/re-builder-positions
+                      (cons (point)
+                            (when (region-active-p)
+                              (list (region-beginning)
+                                    (region-end)))))))
   (defun reb-replace-regexp (&optional delimited)
   "Run `query-replace-regexp' with the contents of re-builder. With
 non-nil optional argument DELIMITED, only replace matches
@@ -939,14 +961,24 @@ surrounded by word boundaries."
   (interactive "P")
   (reb-update-regexp)
   (let* ((re (reb-target-binding reb-regexp))
-         (re-printed (with-output-to-string (print re)))
-         (replacement (read-from-minibuffer
-                       (format "Replace regexp %s with: "
-                               (substring re-printed 1
-                                          (1- (length re-printed)))))))
-    (with-current-buffer reb-target-buffer
-      (query-replace-regexp re replacement delimited))
-    (reb-quit))))
+         (replacement (query-replace-read-to
+                       re 
+                       (concat "Query replace"
+		               (if current-prefix-arg
+		                   (if (eq current-prefix-arg '-) " backward" " word")
+		                 "")
+		               " regexp"
+		               (if (with-selected-window reb-target-window
+                                     (region-active-p)) " in region" ""))
+                       t))
+         (pnt (car my/re-builder-positions))
+         (beg (cadr my/re-builder-positions))
+         (end (caddr my/re-builder-positions)))
+    (with-selected-window reb-target-window
+      (goto-char pnt)
+      (setq my/re-builder-positions nil)
+      (reb-quit)
+      (query-replace-regexp re replacement delimited beg end)))))
 ;;;* UTILITY
 ;;######################################################################
 ;; Count words, print ASCII table, etc
@@ -1388,7 +1420,7 @@ If region is active, add its contents to the new buffer."
      ;; Setting this to t messes up previews
      ;; If previews still don't show disable the hyperref package
      TeX-PDF-mode nil
-     TeX-error-overview-open-after-TeX-run t)
+     TeX-error-overview-open-after-TeX-run nil)
     (setq LaTeX-command "latex")
     (setq-default TeX-source-correlate-mode t)
     (setq TeX-source-correlate-method 'synctex)
@@ -1597,7 +1629,7 @@ If region is active, add its contents to the new buffer."
   (setq matlab-shell-debug-tooltips-p t)
   (setq matlab-shell-command-switches '("-nodesktop" "-nosplash"))
   ;; (setq matlab-shell-echoes nil)
-  (setq matlab-shell-run-region-function 'matlab-shell-region->script)
+  (setq matlab-shell-run-region-function 'matlab-shell-region->internal)
   (add-hook 'matlab-shell-mode-hook (lambda () (interactive)
                                       (define-key matlab-shell-mode-map (kbd "C-<tab>") nil)))
 
@@ -1830,8 +1862,8 @@ and Interpretation of Classical Mechanics) - The book."
         (make-embrace-pair-struct
          :key ?\\
          :read-function #'+evil--embrace-escaped
-         :left-regexp "\\[[{(]|"
-         :right-regexp "\\[]})]|"))
+         :left-regexp "\\\\[[{(|]"
+         :right-regexp "\\\\[]})|]"))
 
   (defun +evil--embrace-get-pair (char)
     (if-let* ((pair (assoc-default char embrace--pairs-list)))
@@ -2214,7 +2246,7 @@ _d_: subtree
   (defun my/tab-bar-show-hide-tabs ()
     "Show or hide tabs."
     (interactive)
-    (setq tab-bar-show 1))
+    (setq tab-bar-show (if tab-bar-show nil 1)))
    ;; (custom-set-faces
    ;; '(tab-bar ((t (:inherit nil :height 1.1))))
    ;; '(tab-bar-tab-inactive ((t (:inherit tab-bar :weight normal :height 0.9))))
@@ -2231,6 +2263,14 @@ _d_: subtree
   ;;                       (alist-get 'explicit-name tab) t))
   ;;               ))
   )
+
+(use-package tab-bar-echo-area
+  :ensure
+  :after tab-bar
+  :init
+  (defvar tab-bar-format nil "Format for tab-bar-echo-area-mode")
+  :config
+  (tab-bar-echo-area-mode 1))
 ;;----------------------------------------------------------------------
 ;;;*** EYEBROWSE
 ;;----------------------------------------------------------------------
@@ -2980,6 +3020,8 @@ project, as defined by `vc-root-dir'."
   ("C-;"      'company-complete)
 
   (:keymaps   'company-active-map
+  "C-p"       nil
+  "C-n"       nil
   "C-;"       'company-other-backend
   "C-w" nil
   "C-]"       'company-show-location
@@ -3142,6 +3184,9 @@ project, as defined by `vc-root-dir'."
   :commands expand-region
   :bind ("C-," . 'er/expand-region)
   :config
+  (add-to-list 'expand-region-exclude-text-mode-expansions 'org-mode)
+  (set-default 'er--show-expansion-message t)
+  (setq expand-region-show-usage-message nil)
   (use-package outline
     :hook (outline-minor-mode . er/add-outline-mode-expansions)
     :config
@@ -3582,7 +3627,7 @@ the mode-line and switches to `variable-pitch-mode'."
   :ensure t
   :commands presentation-mode
   :config
-  (setq presentation-default-text-scale 1.5
+  (setq presentation-default-text-scale 1.25
         presentation-mode-lighter " BIG"
         presentation-keep-last-text-scale nil))
 ;;;*** SCREENCAST
@@ -3783,7 +3828,8 @@ the mode-line and switches to `variable-pitch-mode'."
   (setq custom-theme-directory (expand-file-name "lisp" user-emacs-directory))
 
   (defun my/toggle-theme (theme)
-    "Swap color themes. With prefix arg, don't disable the currently loaded theme first."
+    "Swap color themes. With prefix arg, don't disable the
+currently loaded theme first."
     (interactive
      (list
       (intern (completing-read "Load theme: "
@@ -3819,7 +3865,7 @@ the mode-line and switches to `variable-pitch-mode'."
           ;;                        :height 125 :width normal))))
           '(default ((t (:family "Iosevka" :foundry "PfEd"
                                  :slant normal :weight normal
-                                 :height 125 :width normal))))
+                                 :height 122 :width normal))))
           ;; '(default ((t (:family "FantasqueSansMono Nerd Font" :foundry "PfEd"
           ;;                        :slant normal :weight normal
           ;;                        :height 130 :width normal))))
@@ -3887,14 +3933,15 @@ the mode-line and switches to `variable-pitch-mode'."
           modus-themes-diffs 'desaturated
           modus-themes-syntax 'faint
           modus-themes-links 'faint
+          modus-themes-hl-line 'accented-background
           modus-themes-prompts 'subtle
           modus-themes-mode-line 'accented-3d
           modus-themes-org-habit 'simplified)
     (setq modus-themes-vivendi-color-overrides
-          '((bg-main . "#1c1c1c")
+          '((bg-main . "#1d1f21")
             (bg-alt .  "#282c34")
             (bg-dim . "#161129")
-            (bg-hl-line . "#191628")
+            ;; (bg-hl-line . "#191628")
             (bg-active . "#282e46")
             (bg-inactive . "#1a1e39")
             (bg-region . "#393a53")
@@ -3904,10 +3951,11 @@ the mode-line and switches to `variable-pitch-mode'."
             (bg-tab-inactive . "#3a3a5a")
             (fg-unfocused . "#9a9aab")))
     (setq modus-themes-operandi-color-overrides
-          '((bg-main . "#fefcf4")
+          '(;; (bg-main . "#e0e0e0")
+            (bg-main . "#fefcf4")
             (bg-dim . "#faf6ef")
             (bg-alt . "#f7efe5")
-            (bg-hl-line . "#f4f0e3")
+            ;; (bg-hl-line . "#f4f0e3")
             (bg-active . "#e8dfd1")
             (bg-inactive . "#f6ece5")
             (bg-region . "#c6bab1")

@@ -103,6 +103,31 @@
 
 (global-set-key (kbd "C-x C-M-y") 'insert-definition-at-point)
 
+;; SVG screenshots
+;;----------------------------------------------------------------------
+(defun screenshot-svg ()
+  "Save a screenshot of the current frame as an SVG image.
+Puts the filename in the kill ring and displays it using an
+X-sink (Executable dragon-drag-and-drop if available)."
+  (interactive)
+  (let ((filename (concat (file-name-as-directory
+                           (concat (getenv "HOME") "/Pictures/screenshots"))
+                           (format "%s_%sx%s_emacs.svg"
+                                   (format-time-string "%Y-%m-%d-%H%M%S")
+                                   (frame-pixel-width)
+                                   (frame-pixel-height))))
+        (data (x-export-frames nil 'svg)))
+    (with-temp-file filename
+      (insert data))
+    (kill-new filename)
+    (if (executable-find "dragon-drag-and-drop")
+        (start-process "drag_screenshot_svg" "drag_screenshot_svg"
+                     "dragon-drag-and-drop" filename)
+      (message "Could not find dragon-drag-and-drop"))
+    (message filename)))
+
+(global-set-key (kbd "<M-print>") #'screenshot-svg)
+
 ;;----------------------------------------------------------------------
 
 (provide 'utilities)

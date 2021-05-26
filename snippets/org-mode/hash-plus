@@ -1,0 +1,6 @@
+# -*- mode: snippet -*-
+# name: hash-plus
+# key: 3=
+# condition: 'auto
+# --
+#+$0

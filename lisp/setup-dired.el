@@ -81,8 +81,8 @@ This relies on the external 'fd' executable."
    "Files and dirs"
    "-i" "-H" "-a" "-t" "d" "-t" "f" "-c" "never")
 
-  :bind (("M-s f" . my/dired-fd-files-and-dirs)
-         ("M-s D" . my/dired-fd-dirs)))
+  :bind (("M-s M-f" . my/dired-fd-files-and-dirs)
+         ("M-s M-d" . my/dired-fd-dirs)))
 
 (use-package dired-x
   :after dired
@@ -137,7 +137,7 @@ This relies on the external 'fd' executable."
 
 (use-package dired-async
   :after (dired async)
-  :hook (dired-mode-hook . dired-async-mode))
+  :hook (dired-mode . dired-async-mode))
 
 (use-package wdired
   :after dired
@@ -179,15 +179,24 @@ This relies on the external 'fd' executable."
               ))
 
 (use-package peep-dired
-  :ensure t
+  :load-path "~/.local/share/git/peep-dired/"
   :general
   (:states '(normal visual)
            :keymaps 'dired-mode-map
            "z p" 'peep-dired)
   (:keymaps 'dired-mode-map
             "P" 'peep-dired)
+  :hook (peep-dired-display-file . auto-revert-mode)
   :config
   ;; (add-hook 'peep-dired-hook 'evil-normalize-keymaps)
+  (ignore-errors
+    (setq peep-dired-display-action-alist
+          '(display-buffer-in-direction
+            (direction . below)
+            (window-height . (lambda (win) (fit-window-to-buffer
+                                       win
+                                       (floor (* 0.6 (frame-height))))))
+            (window-parameters . ((dedicated . t))))))
   (general-def
     :states '(normal visual)
     :keymaps 'peep-dired-mode-map

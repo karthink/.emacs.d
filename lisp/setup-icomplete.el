@@ -1,4 +1,5 @@
 ;; -*- lexical-binding: t -*-
+;; Orderless
 (use-package orderless
   :after setup-minibuffer
   :ensure t
@@ -13,10 +14,16 @@
         '(my/orderless-flex-dispatcher
           my/orderless-literal-dispatcher
           my/orderless-initialism-dispatcher
-          my/orderless-exclude-dispatcher))
+          my/orderless-exclude-dispatcher
+          my/orderless-dollar-dispatcher))
 
-  (defun my/orderless-flex-dispatcher (pattern _index _total)
-    (when (or (string-suffix-p "`" pattern)
+  (defun my/orderless-dollar-dispatcher (pattern _index _total)
+    (when (string-suffix-p "$" pattern)
+      `(orderless-regexp . ,(concat (substring pattern 0 -1)
+                                    "[\x100000-\x10FFFD]*$"))))
+    
+    (defun my/orderless-flex-dispatcher (pattern _index _total)
+      (when (or (string-suffix-p "`)" pattern)
               (string-suffix-p "~" pattern))
       `(orderless-flex . ,(substring pattern 0 -1))))
 
@@ -35,6 +42,7 @@
   :bind (:map minibuffer-local-completion-map
               ("SPC" . self-insert-command)))
 
+;; Icomplete
 (use-package icomplete
   ;; :demand
   :disabled
@@ -121,6 +129,7 @@ require user confirmation."
              (cdr all)))
           (message nil))))))
 
+;;; Icomplete-vertical
 (use-package icomplete-vertical
   :disabled
   :ensure t
@@ -132,6 +141,7 @@ require user confirmation."
   :bind (:map icomplete-minibuffer-map
               ("C-v" . icomplete-vertical-toggle)))
 
+;; Consult
 (use-package consult
   :ensure t
   :after minibuffer
@@ -143,16 +153,77 @@ require user confirmation."
   (setq consult-preview-line nil)
   (setq consult-preview-outline nil)
   (setq consult-preview-key nil)
+  (setq consult-preview-key (list (kbd "C-M-n") (kbd "C-M-p")))
   (setq consult-project-root-function (lambda () "Return current project root"
                                         (project-root (project-current))))
   (setq consult-find-command "fd --hidden -t f -t d -t l --follow ARG OPTS")
-                           ;; "find . -not ( -wholename */.* -prune ) -ipath *ARG* OPTS"
+  ;; "find . -not ( -wholename */.* -prune ) -ipath *ARG* OPTS"
+  (when (executable-find "plocate")
+    (setq consult-locate-command "plocate --ignore-case --regexp ARG OPTS"))
   (defun consult-buffer-other-tab ()
   "Variant of `consult-buffer' which opens in other frame."
   (interactive)
   (let ((consult--buffer-display #'switch-to-buffer-other-tab))
     (consult-buffer)))
+
+  (setq xref-show-xrefs-function #'consult-xref
+        xref-show-definitions-function #'consult-xref)
   
+  (setq register-preview-delay 0
+        register-preview-function #'consult-register-format)
+  
+  (defcustom my/consult-ripgrep-or-line-limit 300000
+  "Buffer size threshold for `my/consult-ripgrep-or-line'.
+When the number of characters in a buffer exceeds this threshold,
+`consult-ripgrep' will be used instead of `consult-line'."
+  :type 'integer)
+
+  ;; From https://github.com/minad/consult/wiki
+  (defun my/consult-ripgrep-or-line (&optional initial start)
+  "Call `consult-line' for small buffers or `consult-ripgrep' for large files."
+  (interactive (list nil (not (not current-prefix-arg))))
+  (if (or (not buffer-file-name)
+          (buffer-narrowed-p)
+          (ignore-errors
+            (file-remote-p buffer-file-name))
+          (jka-compr-get-compression-info buffer-file-name)
+          (<= (buffer-size)
+              (/ my/consult-ripgrep-or-line-limit
+                 (if (eq major-mode 'org-mode) 4 1))))
+      (consult-line initial start)
+    (when (file-writable-p buffer-file-name)
+      (save-buffer))
+    (let ((consult-ripgrep-command
+           (concat "rg "
+                   "--null "
+                   "--line-buffered "
+                   "--color=ansi "
+                   "--max-columns=250 "
+                   "--no-heading "
+                   "--line-number "
+                   ;; adding these to default
+                   "--smart-case "
+                   "--hidden "
+                   "--max-columns-preview "
+                   ;; add back filename to get parsing to work
+                   "--with-filename "
+                   ;; defaults
+                   "-e ARG OPTS "
+                   (shell-quote-argument buffer-file-name))))
+      (consult-ripgrep default-directory initial))))
+
+  (defun consult-line-symbol-at-point ()
+  (interactive)
+  (my/consult-ripgrep-or-line (thing-at-point 'symbol)))
+
+  ;; ;; This is obviated by consult-yank-pop.
+  ;; (defun my/consult-yank-or-yank-pop (&optional arg)
+  ;;   "Call `consult-yank'. If called after a yank, call `yank-pop' instead."
+  ;;   (interactive "*p")
+  ;;   (if (eq last-command 'yank)
+  ;;       (yank-pop arg)
+  ;;     (consult-yank)))
+
 ;;   (defun my/consult-find-multi-dir (dirlist &optional prompt initial)
 ;;     "Search for regexp with find in directories in DIRLIST with INITIAL input.
 
@@ -177,19 +248,23 @@ require user confirmation."
          ("M-X" . consult-mode-command)
          ("C-c C-j" . consult-outline)
          ("M-s M-j" . consult-outline)
-         ("M-s l"   . consult-line)
+         ("M-s l"   . consult-line-symbol-at-point)
          ("M-s f"   . consult-find)
-         ("M-s M-f" . consult-locate)
+         ("M-s M-l" . consult-locate)
          ("M-s g"   . consult-ripgrep)
          ("M-s G"   . consult-git-grep)
          ("C-x C-r" . consult-recent-file)
          ("<help> a" . consult-apropos)
          ("M-s i" . consult-imenu)
          ("s-b" . consult-buffer)
+         ("M-g f" . consult-flymake)
+         ("M-g j" . consult-compile-error)
+         ("M-g g" . consult-goto-line)
          ;; ("H-b" . consult-buffer)
          ("M-m" . consult-register-store)
          ("M-s k l" . consult-focus-lines)
          ("M-'" . consult-register-load)
+         ("M-y" . consult-yank-pop)
          :map ctl-x-r-map
          ("b" . consult-bookmark)
          ("x" . consult-register)
@@ -200,8 +275,11 @@ require user confirmation."
          :map tab-prefix-map
          ("b" . consult-buffer-other-tab)
          :map space-menu-file-map
-         ("l" . consult-locate)))
+         ("l" . consult-locate)
+         :map minibuffer-local-map
+         ("C-r" . consult-history)))
 
+;;; Embark-consult
 (use-package embark-consult
   :ensure t
   :after consult
@@ -215,6 +293,8 @@ require user confirmation."
         (alist-get ?b
                    embark-become-file+buffer-map)
         'consult-buffer)
+  (add-to-list 'embark-collect-initial-view-alist
+               '(consult-compile-error . list))
   
   (defun my/embark-consult-preview-toggle ()
   "Toggle preview mode for Embark's Consult collections."
@@ -258,6 +338,7 @@ require user confirmation."
         '(marginalia-annotators-heavy marginalia-annotators-light)))
 
 
+;; Embark for actions
 (use-package embark
   :demand
   :ensure t
@@ -289,7 +370,7 @@ require user confirmation."
          ("M-t"      . toggle-truncate-lines)
          ("M-q"      . embark-collect-toggle-view)
          :map embark-file-map
-         ("j"        . dired-jump)
+         ("j"        . my/find-file-dir)
          ("S"        . sudo-find-file)
          ("4"        . find-file-other-window)
          ("5"        . find-file-other-frame)
@@ -304,6 +385,9 @@ require user confirmation."
          :map embark-url-map
          ("f"        . browse-url-firefox))
   :config
+  (defun my/find-file-dir (file)
+    (interactive (list (read-file-name "Jump to dir of file: ")))
+                         (dired (file-name-directory file)))
   (setq embark-quit-after-action t)
   ;; (setq embark-collect-initial-view-alist
   ;;       '((t . list)))
@@ -331,8 +415,10 @@ require user confirmation."
     (defmacro my/embark-ace-action (fn)
       `(defun ,(intern (concat "my/embark-ace-" (symbol-name fn))) ()
          (interactive)
-         (aw-switch-to-window (aw-select nil))
-         (call-interactively (symbol-function ',fn))))
+         (with-demoted-errors "%s"
+           (require ace-window)
+           (aw-switch-to-window (aw-select nil))
+           (call-interactively (symbol-function ',fn)))))
     
     (defmacro my/embark-split-action (fn split-type) 
       `(defun ,(intern (concat "my/embark-"
@@ -353,7 +439,35 @@ require user confirmation."
     (define-key embark-bookmark-map (kbd "2") (my/embark-split-action bookmark-jump my/split-window-below))
     (define-key embark-bookmark-map (kbd "3") (my/embark-split-action bookmark-jump my/split-window-right))
   
-  
+    ;; Embark actions for this buffer/file
+    (defun embark-target-this-buffer-file ()
+      (cons 'this-buffer-file (buffer-name)))
+
+    (add-to-list 'embark-target-finders #'embark-target-this-buffer-file 'append)
+
+    (embark-define-keymap this-buffer-file-map
+      "Commands to act on current file or buffer."
+      ("l" load-file)
+      ("b" byte-compile-file)
+      ("S" sudo-find-file)
+      ("r" rename-file-and-buffer)
+      ("d" diff-buffer-with-file)
+      ("=" ediff-buffers)
+      ("C-=" ediff-files)
+      ("!" shell-command)
+      ("&" async-shell-command)
+      ("x" consult-file-externally)
+      ("C-a" mml-attach-file)
+      ("c" copy-file)
+      ("k" kill-buffer)
+      ("z" bury-buffer)
+      ("|" embark-shell-command-on-buffer)
+      ("l" org-store-link)
+      ("g" revert-buffer))
+
+    (add-to-list 'embark-keymap-alist '(this-buffer-file . this-buffer-file-map))
+    (cl-pushnew 'revert-buffer embark-allow-edit-commands)
+    (cl-pushnew 'rename-file-and-buffer embark-allow-edit-commands)
   
   (use-package which-key
     :defer
@@ -370,6 +484,7 @@ require user confirmation."
                 ("C" . helpful-command)))
   )
 
+;;; Embark-avy
 (use-package avy-embark-collect
   :ensure t
   :after embark
@@ -379,11 +494,12 @@ require user confirmation."
               ("C-M-o" . avy-embark-collect-act)
               ("C-M-j" . avy-embark-collect-act)))
 
+;; Embark for completion and selection
 (use-package embark
   ;; Customizations to use embark's live-occur as a completion system for Emacs.
   ;;  Most of this code is copied from or inspired by the work of Protesilaos
   ;;  Stavrou: https://protesilaos.com/dotemacs/
-  ;;  :disabled
+  ;;  :disablednn
   :hook ((embark-post-action . embark-collect--update-linked)
          ;; (embark-pre-action  . completion--flush-all-sorted-completions)
          (embark-collect-post-revert . my/embark--collect-fit-window)
@@ -394,6 +510,9 @@ require user confirmation."
               ("C-M-n" . my/embark-completions-act-next)
               ("C-M-p" . my/embark-completions-act-previous)
               ("C-M-m" . my/embark-completions-act-current)
+              ;; ("C-M-n" . nil)
+              ;; ("C-M-p" . nil)
+              ;; ("C-M-m" . nil)
               ("C-n" . my/embark-next-line-or-mini)
               ("C-p" . my/embark-previous-line-or-mini)
               ("C-g" . my/embark-keyboard-quit)
@@ -412,6 +531,15 @@ require user confirmation."
               ("RET" . minibuffer-force-complete-and-exit))
   :config
 
+  (defun my/minibuffer-backward-kill (arg)
+    "When the minibuffer is a completing a file name delete up to parent directory."
+    (interactive "p")
+    (if minibuffer-completing-file-name
+        (if (string-match-p "/." (minibuffer-contents))
+            (zap-up-to-char (- arg) ?/)
+          (delete-minibuffer-contents))
+      (delete-backward-char arg)))
+  
   (setf  (alist-get "\\*Embark Collect .*\\*" display-buffer-alist nil nil 'equal)
          '((display-buffer-in-side-window)
            (window-height .  (lambda (win) (fit-window-to-buffer
@@ -459,6 +587,8 @@ Add this to `minibuffer-exit-hook'."
           (buffer         . list)
           (consult-multi  . list)
           (consult-location . list)
+          (consult-compile-error . list)
+          (consult-flymake-error . list)
           (symbol         . grid)
           (command        . grid)
           (imenu          . grid)
@@ -524,12 +654,25 @@ To be added to `embark-collect-post-revert-hook'."
   ;;     (embark-live-occur))
   ;;   (run-hooks 'my/embark-live-occur-hook))
 
-  (setq embark-live-collect-update-delay 0.30)
-  (setq embark-live-collect-initial-delay 0.30)
+  (setq embark-collect-live-update-delay 0.15)
+  (setq embark-collect-live-initial-delay 0.15)
 
   (setq embark-candidate-collectors
         (delete 'embark-minibuffer-candidates embark-candidate-collectors))
   (add-to-list 'embark-candidate-collectors 'embark-sorted-minibuffer-candidates)
+
+  (defun embark-top-sorted-minibuffer-candidates ()
+    "Return a sorted list of the top 30 current minibuffer completion candidates.
+This using the same sort order that `icomplete' and
+`minibuffer-force-complete' use. The intended usage is that you
+replace `embark-minibuffer-candidates' with this function in the
+list `embark-candidate-collectors'."
+    (when (minibufferp)
+      (cons
+       (completion-metadata-get (embark--metadata) 'category)
+       (let ((cacs (completion-all-sorted-completions)))
+         (nconc (cl-copy-list (if (listp cacs) (seq-take cacs 30))) nil)))))
+  
   ;; (defun my/embark-minibuffer-candidates ()
   ;;   (seq-take (embark-minibuffer-candidates) 40))
 
@@ -582,6 +725,13 @@ Meant to be bound in `minibuffer-local-completion-map'."
     (goto-char (point-at-bol)))
 
   ;; Better embark action movements
+  (defun my/embark-preview (arg)
+    (unless (bound-and-true-p consult--preview-function) ;; Disable preview for Consult commands
+      (save-selected-window
+        (forward-line arg)
+        (let ((embark-quit-after-action))
+          (embark-default-action)))))
+
   (defun my/embark--completions-act (arg)
     "Move ARG lines and perform `embark-default-action'."
     (forward-line arg)
@@ -592,7 +742,7 @@ Meant to be bound in `minibuffer-local-completion-map'."
 This calls `my/embark--completions-act' and is meant to be
 assigned to a key in `embark-collect-mode-map'."
     (interactive "p")
-    (my/embark--completions-act (or arg 1)))
+    (my/embark-preview (or arg 1)))
 
   (defun my/embark-completions-act-previous (&optional arg)
     "Run default action on previous or ARGth Embark target.
@@ -600,7 +750,7 @@ This calls `my/embark--completions-act' and is meant to be
 assigned to a key in `embark-collect-mode-map'."
     (interactive "p")
     (let ((num (if arg (- arg))))
-      (my/embark--completions-act (or num -1))))
+      (my/embark-preview (or num -1))))
 
   (defun my/embark-completions-act-current ()
     "Run default action on Embark target without exiting.
@@ -635,6 +785,7 @@ highlighting."
                  (move-overlay my/embark-collect--overlay beg end)))))))
   
 
+;; Icomplete vertical mini
 (use-package icomplete-vertical-mini
   :disabled
   :config
@@ -769,6 +920,7 @@ the `minibuffer-exit-hook'."
 
   (setq completion-in-region-function #'contrib/completing-read-in-region))
 
+;; Icomplete-actions - disabled
 (use-package icomplete-actions
   :disabled
   :config

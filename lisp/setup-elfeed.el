@@ -76,9 +76,11 @@ MYTAG"
   (general-def :keymaps 'elfeed-search-mode-map
     :states  '(normal visual emacs)
     "f"      (elfeed-search-tag-as 'later)
-    "d"      (elfeed-search-tag-as 'junk))
+    "d"      (elfeed-search-tag-as 'junk)
+    "l"      (elfeed-search-tag-as 'listen))
   (bind-key "f" (elfeed-search-tag-as 'later) elfeed-search-mode-map)
   (bind-key "u" (elfeed-search-tag-as 'unread) elfeed-search-mode-map)
+  (bind-key "l" (elfeed-search-tag-as 'listen) elfeed-search-mode-map)
 
   (defun elfeed-show-tag-as (mytag)
     "Returns a function that tags an elfeed entry or selection as
@@ -95,6 +97,10 @@ MYTAG"
     "f"     (elfeed-show-tag-as 'later)
     "d"     (elfeed-show-tag-as 'junk))
 
+  (bind-key "f" (elfeed-show-tag-as 'later)  elfeed-show-mode-map)
+  (bind-key "u" (elfeed-show-tag-as 'unread) elfeed-show-mode-map)
+  (bind-key "l" (elfeed-show-tag-as 'listen) elfeed-show-mode-map)
+  
   (setq elfeed-feeds my-elfeed-feeds)
 
   (defun elfeed-show-eww-open (&optional use-generic-p)
@@ -128,21 +134,21 @@ USE-SINGLE-P) with mpv."
   (add-hook 'elfeed-new-entry-hook
             (elfeed-make-tagger :feed-title "The Linux Experiment"
                                 :entry-title "Linux News"
-                                :add 'news))
+                                :add '(news listen)))
   
   (add-hook 'elfeed-new-entry-hook
             (elfeed-make-tagger :feed-title "Skill Up"
                                 :entry-title "This Week"
-                                :add 'news))
+                                :add '(news listen)))
 
   (add-hook 'elfeed-new-entry-hook
             (elfeed-make-tagger :feed-title "TechLinked"
-                                :add 'news))
+                                :add '(news listen)))
 
   (add-hook 'elfeed-new-entry-hook
             (elfeed-make-tagger :feed-title "ACG"
                                 :entry-title "\\(?:Roundup\\|Gaming News\\)"
-                                :add 'news))
+                                :add '(news listen)))
   
   (use-package wallabag
     :config 

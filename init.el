@@ -435,6 +435,8 @@
          ("H-M--" . shrink-window-if-larger-than-buffer)
          ("H-h" . mark-whole-buffer)
          ("H-M-x" . eval-defun)
+         ("H-s" . isearch-forward)
+         ("H-r" . isearch-backward)
          :map ctl-x-map
          ("H-s" . save-buffer)
          ("H-e" . eval-last-sexp)

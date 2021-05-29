@@ -29,12 +29,13 @@
   (defun dired-find-file-other-window ()
   "In Dired, visit this file or directory in another window. If `ace-window' is available, use it to select window for visiting this file.`"
   (interactive)
-  (let ((window 
+  (let ((file (dired-get-file-for-visit))
+        (window 
          (if (fboundp 'aw-select)
              (aw-select "Select Window")
            (next-window))))
     (select-window window)
-    (find-file (dired-get-file-for-visit))))
+    (find-file file)))
   )
 
 (use-package dired-aux

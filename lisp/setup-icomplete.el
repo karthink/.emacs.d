@@ -416,7 +416,7 @@ When the number of characters in a buffer exceeds this threshold,
       `(defun ,(intern (concat "my/embark-ace-" (symbol-name fn))) ()
          (interactive)
          (with-demoted-errors "%s"
-           (require ace-window)
+           (require 'ace-window)
            (aw-switch-to-window (aw-select nil))
            (call-interactively (symbol-function ',fn)))))
     

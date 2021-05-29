@@ -437,6 +437,9 @@
          ("H-M-x" . eval-defun)
          ("H-s" . isearch-forward)
          ("H-r" . isearch-backward)
+         :map isearch-mode-map
+         ("H-s" . isearch-repeat-forward)
+         ("H-r" . isearch-repeat-backward)
          :map ctl-x-map
          ("H-s" . save-buffer)
          ("H-e" . eval-last-sexp)
@@ -3880,7 +3883,7 @@ currently loaded theme first."
 
   ;; (custom-set-faces  '(region ((t (:inverse-video t))))
   ;;                    '(font-lock-comment-face ((t (:foreground "IndianRed3")))))
-  (add-to-list 'default-frame-alist '(alpha 96 90))
+  ;; (add-to-list 'default-frame-alist '(alpha 96 90))
 
   (use-package dracula-theme
     :disabled

@@ -574,7 +574,7 @@ has no effect."
 
 (use-package ob
   :after org
-  :defer
+  :commands org-babel-execute-src-block
   :config
   (setq org-src-window-setup 'split-window-below
         org-confirm-babel-evaluate nil

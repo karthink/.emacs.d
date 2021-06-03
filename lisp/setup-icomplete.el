@@ -438,6 +438,14 @@ When the number of characters in a buffer exceeds this threshold,
     (define-key embark-bookmark-map (kbd "o") (my/embark-ace-action bookmark-jump))
     (define-key embark-bookmark-map (kbd "2") (my/embark-split-action bookmark-jump my/split-window-below))
     (define-key embark-bookmark-map (kbd "3") (my/embark-split-action bookmark-jump my/split-window-right))
+    (define-key embark-file-map (kbd "U") '0x0-upload-file)
+    (define-key embark-region-map (kbd "U") '0x0-upload)
+    (define-key embark-buffer-map (kbd "U")
+      (defun 0x0-upload-buffer (buf)
+        (interactive (list (read-buffer "Upload buffer" (current-buffer) t)))
+        (with-current-buffer buf (0x0-upload (point-min)
+                                             (point-max)
+                                             (0x0--choose-service)))))
   
     ;; Embark actions for this buffer/file
     (defun embark-target-this-buffer-file ()
@@ -463,6 +471,7 @@ When the number of characters in a buffer exceeds this threshold,
       ("z" bury-buffer)
       ("|" embark-shell-command-on-buffer)
       ("l" org-store-link)
+      ("U" 0x0-upload)
       ("g" revert-buffer))
 
     (add-to-list 'embark-keymap-alist '(this-buffer-file . this-buffer-file-map))
@@ -494,12 +503,45 @@ When the number of characters in a buffer exceeds this threshold,
               ("C-M-o" . avy-embark-collect-act)
               ("C-M-j" . avy-embark-collect-act)))
 
+;; Vertico
+(use-package vertico
+  :ensure t
+  :defer
+  :after minibuffer
+  :init (vertico-mode 1)
+  :bind (:map vertico-map
+              ("M-s"     . nil)
+              ("C->"     . embark-become)
+              ("C-o"     . embark-act)
+              ("DEL"     . my/minibuffer-backward-kill)
+              ("M-s o"   . embark-export)
+              ("H-o"     . embark-export)
+              ("C-c C-o" . embark-export)
+              ("C-j"     . (lambda () (interactive)
+	        	     (if minibuffer--require-match
+	        	         (minibuffer-complete-and-exit)
+	        	       (exit-minibuffer)))))
+  :config
+  (defun my/minibuffer-backward-kill (arg)
+    "When the minibuffer is a completing a file name delete up to parent directory."
+    (interactive "p")
+    (if minibuffer-completing-file-name
+        (if (save-excursion (backward-char 1)
+                            (not (looking-at-p "/" )))
+            ;; (string-match-p "/." (minibuffer-contents))
+            (delete-backward-char arg)
+          (delete-backward-char 1)
+          (condition-case-unless-debug nil
+              (zap-up-to-char (- arg) ?/)
+              (error (delete-minibuffer-contents))))
+      (delete-backward-char arg))))
+
 ;; Embark for completion and selection
 (use-package embark
   ;; Customizations to use embark's live-occur as a completion system for Emacs.
   ;;  Most of this code is copied from or inspired by the work of Protesilaos
   ;;  Stavrou: https://protesilaos.com/dotemacs/
-  ;;  :disablednn
+  :disabled
   :hook ((embark-post-action . embark-collect--update-linked)
          ;; (embark-pre-action  . completion--flush-all-sorted-completions)
          (embark-collect-post-revert . my/embark--collect-fit-window)

@@ -515,6 +515,10 @@ output instead."
     (if arg (piper) (piper-user-interface))
     ))
 
+(use-package 0x0
+  :ensure
+  :commands (0x0-upload 0x0-dwim))
+
 (use-package explain-pause-mode
   :disabled
   :load-path "~/.local/share/git/melpa/explain-pause-mode/")
@@ -559,6 +563,7 @@ active region use it instead."
               ("C-=" . google-search-at-point)))
 
 (use-package fish-completion
+  :disabled
   :when (executable-find "fish")
   :load-path "~/.local/share/git/emacs-fish-completion/"
   :after (shell)
@@ -759,12 +764,12 @@ active region use it instead."
                 +occur-grep-modes-list
                 ;; +man-modes-list
                 '(Custom-mode
-                  compilation-mode
+                  (compilation-mode . hide)
                   messages-mode)
-                '("^\\*Warnings\\*"
-                  "^\\*Compile-Log\\*"
+                '(("^\\*Warnings\\*$" . hide)
+                  ("^\\*Compile-Log\\*$" . hide)
                   "^\\*Matlab Help\\*"
-                  "^\\*Messages\\*"
+                  "^\\*Messages\\*$"
                   "^\\*Backtrace\\*"
                   "^\\*evil-registers\\*"
                   "^\\*Apropos"
@@ -774,7 +779,7 @@ active region use it instead."
                   "^\\*TeX Help\\*"
                   "\\*Shell Command Output\\*"
                   "\\*Async Shell Command\\*"
-                  "\\*Completions\\*"
+                  ("\\*Completions\\*" . hide)
                   ;; "\\*scratch\\*"
                   "[Oo]utput\\*")))
 
@@ -1574,6 +1579,9 @@ If region is active, add its contents to the new buffer."
   ;; :ensure matlab-mode
   ;; :after 'evil
   ;; :commands (matlab-mode matlab-shell matlab-shell-run-block)
+  :init
+  (use-package matlab-shell
+    :after matlab)
   :mode ("\\.m\\'" . matlab-mode)
   :hook ((matlab-mode . company-mode-on)
          (matlab-mode . (lambda ()
@@ -1630,11 +1638,13 @@ If region is active, add its contents to the new buffer."
   ;; (add-to-list 'matlab-shell-command-switches "-nosplash")
   (with-demoted-errors "Error loading Matlab autoloads"
     (load-library "matlab-autoloads")
-    (load-library "matlab-shell"))
+    (load-library "matlab-shell")
+    (load-library "mlint"))
   (setq matlab-shell-debug-tooltips-p t)
   (setq matlab-shell-command-switches '("-nodesktop" "-nosplash"))
   ;; (setq matlab-shell-echoes nil)
-  (setq matlab-shell-run-region-function 'matlab-shell-region->internal)
+  (setq matlab-shell-run-region-function 'matlab-shell-region->script)
+  ;; (setq matlab-shell-run-region-function 'matlab-shell-region->internal)
   (add-hook 'matlab-shell-mode-hook (lambda () (interactive)
                                       (define-key matlab-shell-mode-map (kbd "C-<tab>") nil)))
 
@@ -1810,7 +1820,80 @@ and Interpretation of Classical Mechanics) - The book."
 ;;######################################################################
 
 ;;----------------------------------------------------------------------
-;;;* EMBRACE
+;;;** ERC
+(use-package erc
+  :commands (erc-tls erc)
+  :hook (erc-mode . erc-hl-nicks-mode)
+  :config
+  (setq erc-server "irc.libera.chat"
+        erc-nick "karthik"
+        erc-user-full-name "Karthik"
+        erc-prompt-for-password nil
+        erc-track-shorten-start 6
+        erc-autojoin-channels-alist '(("irc.libera.chat" "#systemcrafters"
+                                       "#org-mode" "#factorio" "nyxt"
+                                       "#gamingonlinux" "#emacs"))
+        erc-kill-buffer-on-part t
+        erc-lurker-hide-list '("JOIN" "PART" "QUIT" "NICK")
+        erc-track-exclude-types '("JOIN" "MODE" "NICK" "PART" "QUIT"
+                                  "324" "329" "332" "333" "353" "477")
+        erc-format-nick-function 'erc-format-@nick
+        erc-auto-query 'bury
+        erc-keywords nil))
+
+(use-package erc-image
+  :after erc
+  :ensure
+  :init
+  (setq erc-image-inline-rescale 350)
+  (add-to-list 'erc-modules 'image)
+  (push 'button erc-modules)
+  (push 'completion erc-modules)
+  (erc-update-modules)
+  :config
+  (defun erc-image-create-image (file-name)
+  "Create an image suitably scaled according to the setting of
+'ERC-IMAGE-RESCALE."
+  (let* ((positions (window-inside-absolute-pixel-edges))
+         (width (- (nth 2 positions) (nth 0 positions)))
+         (height (- (nth 3 positions) (nth 1 positions)))
+         (image (create-image file-name))
+         (dimensions (image-size image t))
+         (imagemagick-p (and (fboundp 'imagemagick-types) 'imagemagick)))
+                                        ; See if we want to rescale the image
+    (if (and erc-image-inline-rescale
+             (not (image-multi-frame-p image)))
+        ;; Rescale based on erc-image-rescale
+        (cond (;; Numeric: scale down to that size
+               (numberp erc-image-inline-rescale)
+               (let ((max-height (min (cdr dimensions)
+                                      erc-image-inline-rescale
+                                      (floor (* width (cdr dimensions))
+                                             (car dimensions)))))
+                 (if (> (floor (* max-height (car dimensions))
+                               (cdr dimensions))
+                        width)
+                     (create-image file-name imagemagick-p nil :width width)
+                   (create-image file-name imagemagick-p nil :height max-height))))
+              (;; 'window: scale down to window size, if bigger
+               (eq erc-image-inline-rescale 'window)
+               ;; But only if the image is greater than the window size
+               (if (or (> (car dimensions) width)
+                       (> (cdr dimensions) height))
+                   ;; Figure out in which direction we need to scale
+                   (if (> width height)
+                       (create-image file-name imagemagick-p nil :height  height)
+                     (create-image file-name imagemagick-p nil :width width))
+                 ;; Image is smaller than window, just give that back
+                 image))
+              (t (progn (message "Error: none of the rescaling options matched") image)))
+      ;; No rescale
+      image))))
+(use-package erc-hl-nicks
+  :ensure
+  :after erc)
+
+;;;** EMBRACE
 ;;----------------------------------------------------------------------
 (use-package embrace
   :ensure t
@@ -1951,7 +2034,7 @@ and Interpretation of Classical Mechanics) - The book."
 ;;----------------------------------------------------------------------
 (use-package undo-tree
   :defer
-  :ensure t
+  :ensure nil
   :config (setq undo-tree-enable-undo-in-region  t))
 
 ;;----------------------------------------------------------------------
@@ -3397,10 +3480,16 @@ project, as defined by `vc-root-dir'."
 (use-package tramp
   :defer
   :config
+  (setq remote-file-name-inhibit-cache 86400)
   (setq tramp-persistency-file-name (dir-concat
                                      (getenv "HOME")
                                      ".cache/emacs/tramp"))
-  )
+  (setq tramp-verbose 1)
+  (with-eval-after-load 'vc
+    (setq vc-ignore-dir-regexp
+          (format "%s\\|%s"
+                  vc-ignore-dir-regexp
+                  tramp-file-name-regexp))))
 ;;----------------------------------------------------------------------
 ;;;** DIRED
 ;;----------------------------------------------------------------------
@@ -3408,7 +3497,7 @@ project, as defined by `vc-root-dir'."
 
 ;;;** DICTIONARY AND SPELLING
 (use-package sdcv
-  :ensure t
+  :ensure nil
   :commands (sdcv-search-input)
   :bind (("C-x M-=" . sdcv-search-input)
          :map sdcv-mode-map

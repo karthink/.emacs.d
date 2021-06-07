@@ -47,7 +47,8 @@ If buffer-or-name is nil return current buffer's mode."
                            geiser-repl-mode
                            shell-mode
                            vterm-mode
-                           inferior-python-mode)
+                           inferior-python-mode
+                           inferior-ess-julia-mode)
   "List of major-modes used in REPL buffers")
 
 (defvar +repl-names-list '("\\*e*shell\\*"

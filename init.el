@@ -426,11 +426,12 @@
 
 (use-package emacs
   ;; Hyper bindings for emacs. Why use a pinky when you can use a thumb?
-  :bind-keymap (("H-x" . ctl-x-map)
-                ("H-f" . space-menu-file-map)
+  :bind-keymap (("H-f" . space-menu-file-map)
                 ("H-b" . space-menu-buffer-map)
                 ("H-r" . ctl-x-r-map))
-  :bind (("H-=" . text-scale-increase)
+  :bind (("H-x" . H-x)
+         ("H-c" . H-c)
+         ("H-=" . text-scale-increase)
          ("H--" . text-scale-decrease)
          ("H-M--" . shrink-window-if-larger-than-buffer)
          ("H-h" . mark-whole-buffer)
@@ -440,15 +441,40 @@
          :map isearch-mode-map
          ("H-s" . isearch-repeat-forward)
          ("H-r" . isearch-repeat-backward)
-         :map ctl-x-map
-         ("H-s" . save-buffer)
-         ("H-e" . eval-last-sexp)
-         ("H-c" . save-buffers-kill-terminal)
-         ("H-f" . find-file)
-         ("H-q" . read-only-mode))
+         ;; :map ctl-x-map
+         ;; ("H-s" . save-buffer)
+         ;; ("H-e" . eval-last-sexp)
+         ;; ("H-c" . save-buffers-kill-terminal)
+         ;; ("H-f" . find-file)
+         ;; ("H-q" . read-only-mode)
+         )
   :config
-  (define-key key-translation-map (kbd "H-x") (kbd "C-x"))
-  (define-key key-translation-map (kbd "H-c") (kbd "C-c")))
+  (defun hyperify-prefix-key (key)
+    (let* ((convert-function
+	    (lambda (event)
+	      (vector
+	       (if (memq 'hyper (event-modifiers event))
+		   (event-apply-modifier (event-basic-type event) 'control 26 "C-")
+	         event))))
+	   (first-key-sequence (vconcat key (funcall convert-function (read-event))))
+	   (command (or (lookup-key (current-local-map) first-key-sequence)
+		        (lookup-key (current-global-map) first-key-sequence))))
+      (catch 'finished
+        (while t
+	  (cond ((commandp command)
+	         (call-interactively command)
+	         (throw 'finished t))
+	        ((keymapp command)
+	         (setq command (lookup-key command (funcall convert-function (read-event)))))
+	        (t (error "ABORT")))))))
+
+  (defun H-x ()
+    (interactive)
+    (hyperify-prefix-key [24]))
+
+  (defun H-c ()
+    (interactive)
+    (hyperify-prefix-key [3])))
 
 ;;######################################################################
 ;;;* INTERFACING WITH THE OS
@@ -778,7 +804,7 @@ active region use it instead."
                   "^\\*ielm\\*"
                   "^\\*TeX Help\\*"
                   "\\*Shell Command Output\\*"
-                  "\\*Async Shell Command\\*"
+                  ("\\*Async Shell Command\\*" . hide)
                   ("\\*Completions\\*" . hide)
                   ;; "\\*scratch\\*"
                   "[Oo]utput\\*")))
@@ -1834,9 +1860,12 @@ and Interpretation of Classical Mechanics) - The book."
                                        "#org-mode" "#factorio" "nyxt"
                                        "#gamingonlinux" "#emacs"))
         erc-kill-buffer-on-part t
+        erc-lurker-threshold-time 1800
         erc-lurker-hide-list '("JOIN" "PART" "QUIT" "NICK")
         erc-track-exclude-types '("JOIN" "MODE" "NICK" "PART" "QUIT"
                                   "324" "329" "332" "333" "353" "477")
+        ;; erc-track-visibility t
+        ;; erc-track-when-inactive t
         erc-format-nick-function 'erc-format-@nick
         erc-auto-query 'bury
         erc-keywords nil))

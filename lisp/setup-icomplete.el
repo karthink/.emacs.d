@@ -468,6 +468,7 @@ When the number of characters in a buffer exceeds this threshold,
       ("C-a" mml-attach-file)
       ("c" copy-file)
       ("k" kill-buffer)
+      ("#" recover-this-file)
       ("z" bury-buffer)
       ("|" embark-shell-command-on-buffer)
       ("l" org-store-link)

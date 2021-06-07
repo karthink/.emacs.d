@@ -570,7 +570,14 @@ has no effect."
 (use-package ob-julia
   ;; Source: "https://git.nixo.xyz/nixo/ob-julia.git"
   :load-path "~/.local/share/git/ob-julia/"
+  :requires ess
   :defer)
+
+(use-package ess
+  :ensure t
+  :after ob-julia
+  :config
+  (use-package ess-julia))
 
 (use-package ob
   :after org
@@ -579,15 +586,16 @@ has no effect."
   (setq org-src-window-setup 'split-window-below
         org-confirm-babel-evaluate nil
         org-export-use-babel t)
-  (setq org-babel-load-languages '((emacs-lisp . t)
-                                   (matlab . t)
-                                   (octave . t)
-                                   (python . t)
-                                   (R . t)
-                                   (shell . t)
-                                   (scheme . t)
-                                   (ditaa . t)
-                                   (julia . t)))
+  (org-babel-do-load-languages
+   'org-babel-load-languages '((emacs-lisp . t)
+                               (matlab . t)
+                               (octave . t)
+                               (python . t)
+                               (R . t)
+                               (shell . t)
+                               (scheme . t)
+                               (ditaa . t)
+                               (julia . t)))
   (setq org-ditaa-jar-path "/usr/bin/ditaa")
   (defun my/org-babel-goto-tangle-file ()
     (if-let* ((args (nth 2 (org-babel-get-src-block-info t)))
@@ -595,6 +603,8 @@ has no effect."
         (unless (equal "no" tangle)
           (find-file tangle)
           t)))
+  (add-hook 'org-babel-after-execute-hook (lambda () (when org-inline-image-overlays
+                                                  (org-redisplay-inline-images))))
   (add-hook 'org-open-at-point-functions 'my/org-babel-goto-tangle-file))
 
 

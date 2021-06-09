@@ -152,7 +152,8 @@ require user confirmation."
   (setq consult-preview-mark nil)
   (setq consult-preview-line nil)
   (setq consult-preview-outline nil)
-  (setq consult-preview-key nil)
+  (setq consult-preview-key 'any)
+  (setf (alist-get 'consult-buffer consult-config) '(:preview-key nil))
   (setq consult-preview-key (list (kbd "C-M-n") (kbd "C-M-p")))
   (setq consult-project-root-function (lambda () "Return current project root"
                                         (project-root (project-current))))
@@ -383,7 +384,8 @@ When the number of characters in a buffer exceeds this threshold,
          ("4"        . bookmark-jump-other-window)
          ("5"        . bookmark-jump-other-frame)
          :map embark-url-map
-         ("f"        . browse-url-firefox))
+         ("f"        . browse-url-firefox)
+         ("m"        . browse-url-mpv))
   :config
   (defun my/find-file-dir (file)
     (interactive (list (read-file-name "Jump to dir of file: ")))
@@ -471,7 +473,7 @@ When the number of characters in a buffer exceeds this threshold,
       ("#" recover-this-file)
       ("z" bury-buffer)
       ("|" embark-shell-command-on-buffer)
-      ("l" org-store-link)
+      ;; ("l" org-store-link)
       ("U" 0x0-upload)
       ("g" revert-buffer))
 

@@ -457,8 +457,11 @@
 		   (event-apply-modifier (event-basic-type event) 'control 26 "C-")
 	         event))))
 	   (first-key-sequence (vconcat key (funcall convert-function (read-event))))
-	   (command (or (lookup-key (current-local-map) first-key-sequence)
-		        (lookup-key (current-global-map) first-key-sequence))))
+	   (command (or (let ((minor-cmd (lookup-key (current-minor-mode-maps) first-key-sequence)))
+                          (unless (equal minor-cmd 1) minor-cmd))
+                        (let ((local-cmd (lookup-key (current-local-map) first-key-sequence)))
+                          (unless (equal local-cmd 1) local-cmd))
+                        (lookup-key (current-global-map) first-key-sequence))))
       (catch 'finished
         (while t
 	  (cond ((commandp command)
@@ -791,11 +794,11 @@ active region use it instead."
                 ;; +man-modes-list
                 '(Custom-mode
                   (compilation-mode . hide)
-                  messages-mode)
+                  messages-buffer-mode)
                 '(("^\\*Warnings\\*$" . hide)
                   ("^\\*Compile-Log\\*$" . hide)
                   "^\\*Matlab Help\\*"
-                  "^\\*Messages\\*$"
+                  ;; "^\\*Messages\\*$"
                   "^\\*Backtrace\\*"
                   "^\\*evil-registers\\*"
                   "^\\*Apropos"
@@ -1851,7 +1854,8 @@ and Interpretation of Classical Mechanics) - The book."
   :commands (erc-tls erc)
   :hook (erc-mode . erc-hl-nicks-mode)
   :config
-  (setq erc-server "irc.libera.chat"
+  (setq erc-server "irc.karthinks.com"
+        erc-port 7078
         erc-nick "karthik"
         erc-user-full-name "Karthik"
         erc-prompt-for-password nil
@@ -1861,6 +1865,7 @@ and Interpretation of Classical Mechanics) - The book."
                                        "#gamingonlinux" "#emacs"))
         erc-kill-buffer-on-part t
         erc-lurker-threshold-time 1800
+        erc-hide-list '("NICK")
         erc-lurker-hide-list '("JOIN" "PART" "QUIT" "NICK")
         erc-track-exclude-types '("JOIN" "MODE" "NICK" "PART" "QUIT"
                                   "324" "329" "332" "333" "353" "477")
@@ -3750,7 +3755,7 @@ the mode-line and switches to `variable-pitch-mode'."
   :ensure t
   :commands presentation-mode
   :config
-  (setq presentation-default-text-scale 1.25
+  (setq presentation-default-text-scale 1.50
         presentation-mode-lighter " BIG"
         presentation-keep-last-text-scale nil))
 ;;;*** SCREENCAST

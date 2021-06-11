@@ -1610,7 +1610,17 @@ If region is active, add its contents to the new buffer."
   ;; :commands (matlab-mode matlab-shell matlab-shell-run-block)
   :init
   (use-package matlab-shell
-    :after matlab)
+    :after matlab
+    :config
+    (advice-add 'matlab-shell-run-region :around #'my-matlab-shell-no-display)
+    (defun my-matlab-shell-no-display (orig-fn beg end &optional noshow)
+      "Do not display the matlab-shell buffer after sending commands."
+      (interactive "r")
+      (cl-letf ((display-buffer-alist nil)
+                ((symbol-function 'display-buffer-reuse-window) #'display-buffer-no-window)
+                ((symbol-function 'display-buffer-at-bottom) #'display-buffer-no-window))
+        (save-window-excursion (funcall orig-fn beg end noshow)))))
+  
   :mode ("\\.m\\'" . matlab-mode)
   :hook ((matlab-mode . company-mode-on)
          (matlab-mode . (lambda ()
@@ -1665,10 +1675,10 @@ If region is active, add its contents to the new buffer."
   ;; :config
   ;; (setq matlab-shell-command "matlab")
   ;; (add-to-list 'matlab-shell-command-switches "-nosplash")
-  (with-demoted-errors "Error loading Matlab autoloads"
-    (load-library "matlab-autoloads")
-    (load-library "matlab-shell")
-    (load-library "mlint"))
+  ;; (with-demoted-errors "Error loading Matlab autoloads"
+  ;;   (load-library "matlab-autoloads")
+  ;;   (load-library "matlab-shell")
+  ;;   (load-library "mlint"))
   (setq matlab-shell-debug-tooltips-p t)
   (setq matlab-shell-command-switches '("-nodesktop" "-nosplash"))
   ;; (setq matlab-shell-echoes nil)
@@ -1683,11 +1693,11 @@ If region is active, add its contents to the new buffer."
       (if (and fcn (not (equal fcn "")))
           (matlab-shell-describe-command fcn))))
 
-;;;###autoload
-  (defun +matlab-shell-no-select-a (&rest _args)
-    "Switch back to matlab file buffer after evaluating region"
-    (other-window -1))
-  (advice-add 'matlab-shell-run-region :after #'+matlab-shell-no-select-a)
+;; ;;;###autoload
+  ;; (defun +matlab-shell-no-select-a (&rest _args)
+  ;;   "Switch back to matlab file buffer after evaluating region"
+  ;;   (other-window -1))
+  ;; (advice-add 'matlab-shell-run-region :after #'+matlab-shell-no-select-a)
 
 ;;;###autoload
   (defun matlab-select-block ()

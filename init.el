@@ -546,7 +546,8 @@ output instead."
 
 (use-package 0x0
   :ensure
-  :commands (0x0-upload 0x0-dwim))
+  :commands (0x0-upload 0x0-dwim)
+  :bind ("C-x U" . 0x0-dwim))
 
 (use-package explain-pause-mode
   :disabled
@@ -1675,10 +1676,10 @@ If region is active, add its contents to the new buffer."
   ;; :config
   ;; (setq matlab-shell-command "matlab")
   ;; (add-to-list 'matlab-shell-command-switches "-nosplash")
-  ;; (with-demoted-errors "Error loading Matlab autoloads"
-  ;;   (load-library "matlab-autoloads")
-  ;;   (load-library "matlab-shell")
-  ;;   (load-library "mlint"))
+  (with-demoted-errors "Error loading Matlab autoloads"
+    (load-library "matlab-autoloads")
+    (load-library "matlab-shell")
+    (load-library "mlint"))
   (setq matlab-shell-debug-tooltips-p t)
   (setq matlab-shell-command-switches '("-nodesktop" "-nosplash"))
   ;; (setq matlab-shell-echoes nil)
@@ -4076,10 +4077,10 @@ currently loaded theme first."
           modus-themes-mode-line 'accented-3d
           modus-themes-org-habit 'simplified)
     (setq modus-themes-vivendi-color-overrides
-          '((bg-main . "#1d1f21")
-            (bg-alt .  "#282c34")
+          '((bg-main . "#100b17")
             (bg-dim . "#161129")
-            ;; (bg-hl-line . "#191628")
+            (bg-alt . "#181732")
+            (bg-hl-line . "#191628")
             (bg-active . "#282e46")
             (bg-inactive . "#1a1e39")
             (bg-region . "#393a53")
@@ -4088,6 +4089,19 @@ currently loaded theme first."
             (bg-tab-active . "#120f18")
             (bg-tab-inactive . "#3a3a5a")
             (fg-unfocused . "#9a9aab")))
+    ;; (setq modus-themes-vivendi-color-overrides
+    ;;       '((bg-main . "#1d1f21")
+    ;;         (bg-alt .  "#282c34")
+    ;;         (bg-dim . "#161129")
+    ;;         ;; (bg-hl-line . "#191628")
+    ;;         (bg-active . "#282e46")
+    ;;         (bg-inactive . "#1a1e39")
+    ;;         (bg-region . "#393a53")
+    ;;         (bg-header . "#202037")
+    ;;         (bg-tab-bar . "#262b41")
+    ;;         (bg-tab-active . "#120f18")
+    ;;         (bg-tab-inactive . "#3a3a5a")
+    ;;         (fg-unfocused . "#9a9aab")))
     (setq modus-themes-operandi-color-overrides
           '(;; (bg-main . "#e0e0e0")
             (bg-main . "#fefcf4")

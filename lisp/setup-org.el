@@ -20,7 +20,8 @@
          (org-mode . turn-on-org-cdlatex)
          (org-mode . visual-line-mode)
          (org-cdlatex-mode . my/org-cdlatex-texmathp-fix)
-         (org-mode . er/add-latex-in-org-mode-expansions))
+         (org-mode . er/add-latex-in-org-mode-expansions)
+         (org-mode . my/org-prettify-symbols))
   ;; :custom-face 
   ;; (org-level-1 ((t (:height 1.2 :inherit (outline-1 variable-pitch)))))
   ;; (org-level-2 ((t (:height 1.1 :inherit (outline-2 variable-pitch)))))
@@ -46,6 +47,7 @@
   (setq-default org-adapt-indentation nil 
                 org-cycle-include-plain-lists t 
                 org-fontify-done-headline t 
+                org-ellipsis "  "
                 org-fontify-quote-and-verse-blocks t 
                 org-fontify-whole-heading-line t 
                 org-footnote-auto-label 'plain 
@@ -119,11 +121,39 @@
                         ("\\.x?html?\\'" . default)
                         ("\\.pdf\\'" . "zathura %s"))
         ;; Larger equations
-        org-format-latex-options (plist-put org-format-latex-options :scale 1.75))
+        org-format-latex-options
+        (progn (plist-put org-format-latex-options :background 'default)
+               (plist-put org-format-latex-options :scale 1.75)))
 
   ;; Make org use `display-buffer' like every other Emacs citizen.
   (advice-add #'org-switch-to-buffer-other-window :override #'switch-to-buffer-other-window)
 
+  (defun my/org-prettify-symbols ()
+    (setq prettify-symbols-alist
+          (mapcan (lambda (x) (list x (cons (upcase (car x)) (cdr x))))
+                  '(;; ("#+begin_src" . ?)
+                    (":properties:" . "")
+                    ;; ("#+end_src" . ?)
+                    ("#+begin_src" . ?)
+                    ;; ("#+begin_src" . ?)
+                    ;; ("#+end_src" . ?)
+                    ;; ("#+begin_src" . "")
+                    ("#+end_src" . "―")
+                    ("#+begin_example" . ?)
+                    ("#+end_example" . ?)
+                    ;; ("#+header:" . ?)
+                    ;; ("#+name:" . ?﮸)
+                    ;; ("#+results:" . ?)
+                    ;; ("#+call:" . ?)
+                    ;; (":properties:" . ?)
+                    ;; (":logbook:" . ?)
+                    (":end:" . "―")
+                    ("#+attr_latex:"    . "🄛")
+                    ("#+attr_html:"     . "🄗")
+                    ("#+attr_org:"      . "⒪")
+                    ("#+begin_quote:"   . "❝")
+                    ("#+end_quote:"     . "❞"))))
+    (prettify-symbols-mode 1))
   
 ;;;###autoload
   (defun er/add-latex-in-org-mode-expansions ()
@@ -432,21 +462,22 @@ has no effect."
   :after org
   :defer
   :commands (org-capture make-orgcapture-frame)
+  :hook ((org-capture-prepare-finalize . org-id-get-create)
+         (org-capture-after-finalize   . org-capture-after-delete-frame))
   :config
- (add-to-list 'org-capture-after-finalize-hook
-             (defun org-capture-after-delete-frame ()
-               "If this is a dedicated org-capture frame, delete it after"
-               (if (and (equal (frame-parameter nil 'name)
-                               "dropdown_org-capture")
-                        (not (eq this-command 'org-capture-refile)))
-                   (delete-frame))))
-
+  (defun org-capture-after-delete-frame ()
+   "If this is a dedicated org-capture frame, delete it after"
+   (if (and (equal (frame-parameter nil 'name)
+                   "dropdown_org-capture")
+            (not (eq this-command 'org-capture-refile)))
+       (delete-frame)))
+ 
  (add-to-list 'org-capture-templates `("t" "Add task"
                     entry
                     (file+headline "~/do.org" "Tasks")
-                    "* TODO %?
+                    "* TODO %?\n
 :PROPERTIES:
-:ID:       %(shell-command-to-string \"uuidgen\"):CREATED:  %U
+:CREATED:  %U
 :END:
 %a\n%x\n"
                     :prepend t))
@@ -670,8 +701,6 @@ See `org-capture-templates' for more information."
                    ,(concat "* TODO " title)
                    "\n:PROPERTIES:"
                    ,(concat "\n:EXPORT_FILE_NAME: " fname)
-                   "\n:ID: "
-                   ,(shell-command-to-string "uuidgen")
                    ":END:"
                    "\n%?\n")          ;Place the cursor here finally
                  "")))
@@ -1032,6 +1061,13 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
         (let* ((str (downcase (match-string 1 (buffer-name)))))
           (replace-regexp-in-string " " "-" str))
       (error "Cannot create link to this customize page"))))
+
+;;----------------------------------------------------------------
+;; ORG-FRAGTOG (seamless latex fragment preview)
+;;----------------------------------------------------------------
+(use-package org-fragtog
+  :ensure
+  :after org)
 
 (provide 'setup-org)
 

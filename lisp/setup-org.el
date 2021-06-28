@@ -475,7 +475,7 @@ has no effect."
  (add-to-list 'org-capture-templates `("t" "Add task"
                     entry
                     (file+headline "~/do.org" "Tasks")
-                    "* TODO %?\n
+                    "* TODO %?
 :PROPERTIES:
 :CREATED:  %U
 :END:

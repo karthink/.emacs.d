@@ -350,7 +350,7 @@ If buffer-or-name is nil return current buffer's mode."
           display-buffer-in-direction)
          ;; (direction . bottom)
          ;; (window-height . (lambda (win) (fit-window-to-buffer win 25 14)))
-         (window-width . 82 ;; (lambda (win) (fit-window-to-buffer win nil nil 75 65))
+         (window-width . 86 ;; (lambda (win) (fit-window-to-buffer win nil nil 75 65))
                        )
          (direction . right)
          (side . right)

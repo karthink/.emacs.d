@@ -122,8 +122,8 @@ MYTAG"
 USE-SINGLE-P) with mpv."
     (interactive "P")
     (let ((browse-url-browser-function (if use-single-p
-                                           (lambda (url &optional _) (browse-url-mpv url t))
-                                           #'browse-url-mpv)))
+                                           (lambda (url &optional _) (browse-url-umpv url t))
+                                           #'browse-url-umpv)))
       (pcase major-mode
         ('elfeed-search-mode (elfeed-search-browse-url))
         ('elfeed-show-mode (elfeed-show-visit)))))
@@ -193,6 +193,28 @@ USE-SINGLE-P) with mpv."
           (setq elfeed-search-filter
                 (read-from-minibuffer "Filter: " elfeed-search-filter elfeed-search-filter-map)))
       (elfeed-search-update :force)))
+
+  ;; (defun elfeed-search-live-filter ()
+  ;;   "Filter the elfeed-search buffer as the filter is written."
+  ;;   (interactive)
+  ;;   (let* ((keymap (copy-keymap minibuffer-local-map))
+  ;;          (prompt "Filter: ")
+  ;;          (current-query elfeed-search-filter)
+  ;;          (completions
+  ;;           (mapcan (lambda (tag) (list (substring-no-properties (concat "+" (symbol-name tag)))
+  ;;                                  (substring-no-properties (concat "-" (symbol-name tag)))))
+  ;;                   (elfeed-db-get-all-tags)))
+  ;;          (minibuffer-completion-table
+  ;;           (completion-table-dynamic
+  ;;            (lambda (string)
+  ;;              (cond
+  ;;               ((string-match "\\(+[^[:space:]]*\\|-[^[:space:]]*\\)$" string)
+  ;;                (all-completions (match-string-no-properties 1 string) completions))
+  ;;               (t (list string)))))))
+      
+  ;;     (define-key keymap (kbd "TAB") 'minibuffer-complete)
+  ;;     (let ((history-delete-duplicates t))
+  ;;       (read-from-minibuffer prompt elfeed-search-filter keymap))))
 
   (defun my/elfeed-search-tag-filter (plus-minus)
     "Filter `elfeed' by tags using completion."

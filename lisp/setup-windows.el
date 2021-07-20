@@ -51,7 +51,7 @@ If buffer-or-name is nil return current buffer's mode."
                            inferior-ess-julia-mode)
   "List of major-modes used in REPL buffers")
 
-(defvar +repl-names-list '("\\*e*shell\\*"
+(defvar +repl-names-list '("^\\*e*shell.*\\*$"
                            "\\*.*REPL.*\\*"
                            "\\*MATLAB\\*"
                            "\\*Python\\*"
@@ -306,10 +306,11 @@ If buffer-or-name is nil return current buffer's mode."
                                )))
 
         ("\\*Apropos\\*" (display-buffer-in-side-window)
-         (window-height . 0.40)
-         (side . bottom)
+         ;; (window-height . 0.40)
+         (window-width . 65)
+         (side . right)
          (slot . -2)
-         (window-parameters . ((no-other-window . t)
+         (window-parameters . (;; (no-other-window . t)
                                ;; (mode-line-format . (:eval (+helper-window-mode-line-format)))
                                )))
 

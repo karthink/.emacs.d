@@ -4,4 +4,4 @@
 # group: references
 # name : \ref
 # --
-\ref{${1:label$(unless yas/modified-p (reftex-reference nil 'dont-insert))}}$0
+`(unless yas/modified-p (consult-reftex-insert-reference nil 'dont-insert))`

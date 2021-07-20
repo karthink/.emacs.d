@@ -39,6 +39,9 @@
   )
 
 (use-package dired-aux
+  ;; This functionality is superceded by affe-find and affe-grep from the
+  ;; affe.el library and is thus disabled.
+  :disabled
   :config
   (defmacro my/dired-fd (name doc prompt &rest flags)
     "Make commands for selecting 'fd' results with completion.

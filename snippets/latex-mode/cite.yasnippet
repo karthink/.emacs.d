@@ -4,4 +4,4 @@
 # group: references
 # name : \cite
 # --
-\cite{${1:label$(unless yas/modified-p (car (reftex-citation 't)))}}$0
+\\cite{`(unless yas-modified-p (call-interactively 'bibtex-actions-insert-key))`}

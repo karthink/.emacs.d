@@ -59,9 +59,10 @@
                 ;; org-refile-targets '((nil :maxlevel . 2) (org-agenda-files :maxlevel . 3)) 
                 org-refile-targets '((nil :level . 1) (org-agenda-files :todo . "PROJECT"))
                 org-refile-target-verify-function nil
-                org-refile-use-outline-path nil
+                org-refile-use-outline-path t
                 org-refile-use-cache t
                 org-refile-allow-creating-parent-nodes t
+                org-outline-path-complete-in-steps nil
                 org-startup-folded t 
                 org-startup-indented t 
                 org-startup-with-inline-images nil 
@@ -141,6 +142,8 @@
                     ("#+end_src" . "―")
                     ("#+begin_example" . ?)
                     ("#+end_example" . ?)
+                    ("scheduled:" . ?)
+                    ("deadline:" . ?)
                     ;; ("#+header:" . ?)
                     ;; ("#+name:" . ?﮸)
                     ;; ("#+results:" . ?)

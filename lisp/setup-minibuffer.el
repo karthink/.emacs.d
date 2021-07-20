@@ -1,12 +1,12 @@
 (use-package minibuffer
   :config
 ;; Minibuffer completion
-(setq completion-cycle-threshold 20
+  (setq completion-cycle-threshold 2
       completion-flex-nospace nil
       completion-pcm-complete-word-inserts-delimiters nil
       ;;completion-pcm-word-delimiters "-_./:| "
-      completion-show-help nil
-      completion-ignore-case t
+      completion-show-help nil      
+      completion-ignore-case nil
       read-buffer-completion-ignore-case t
       read-file-name-completion-ignore-case t
       completions-format 'vertical   ; *Completions* buffer
@@ -14,10 +14,24 @@
       read-answer-short t
       resize-mini-windows 'grow-only
       completion-styles '(partial-completion substring initials)
-      ;; completion-category-overrides nil
+      completion-category-overrides '((file (styles basic-remote partial-completion initials)))
       ;; '((file (styles basic flex substring))
       ;;   (buffer (styles basic flex substring)))
 )
+
+  (defun basic-remote-try-completion (string table pred point)
+    (and (path-remote-p string)
+         (completion-basic-try-completion string table pred point)))
+  (defun basic-remote-all-completions (string table pred point)
+    (and (path-remote-p string)
+         (completion-basic-all-completions string table pred point)))
+  (add-to-list
+   'completion-styles-alist
+   '(basic-remote basic-remote-try-completion basic-remote-all-completions nil))
+  
+  (defun path-remote-p (path)
+    "Return t if PATH is a remote path."
+    (string-match-p "\\`/[^/|:]+:" (substitute-in-file-name path)))
 
 (defun my/messageless (fn &rest args)
   "Set `minibuffer-message-timeout' to 0.
@@ -81,14 +95,14 @@ instead."
 ;; 				(interactive)
 ;; 				(my/describe-symbol-at-point '(4))))
 
-(defun my/buffer-other-window ()
-  (interactive)
-  (let* ((candidate (thing-at-point 'symbol))
-	 (start (car (bounds-of-thing-at-point 'symbol)))
-	 (category (alist-get 'category (cdr (completion--field-metadata start)))))
-    (if (eq category 'file)
-	(find-file-other-window candidate)
-      )))
+;; (defun my/buffer-other-window ()
+;;   (interactive)
+;;   (let* ((candidate (thing-at-point 'symbol))
+;; 	 (start (car (bounds-of-thing-at-point 'symbol)))
+;; 	 (category (alist-get 'category (cdr (completion--field-metadata start)))))
+;;     (if (eq category 'file)
+;; 	(find-file-other-window candidate)
+;;       )))
 
 (defun my/minibuffer-focus-mini ()
   "Focus the active minibuffer."
@@ -97,41 +111,56 @@ instead."
     (when mini
       (select-window mini))))
 
-;;;###autoload
-(defun my/focus-minibuffer ()
-  "Focus the active minibuffer.
+;; ;;;###autoload
+;; (defun my/focus-minibuffer ()
+;;   "Focus the active minibuffer.
 
-Bind this to `completion-list-mode-map' to M-v to easily jump
-between the list of candidates present in the \\*Completions\\*
-buffer and the minibuffer (because by default M-v switches to the
-completions if invoked from inside the minibuffer."
-  (interactive)
-  (let ((mini (active-minibuffer-window)))
-    (when mini
-      (select-window mini))))
+;; Bind this to `completion-list-mode-map' to M-v to easily jump
+;; between the list of candidates present in the \\*Completions\\*
+;; buffer and the minibuffer (because by default M-v switches to the
+;; completions if invoked from inside the minibuffer."
+;;   (interactive)
+;;   (let ((mini (active-minibuffer-window)))
+;;     (when mini
+;;       (select-window mini))))
 
-;;;###autoload
-(defun my/focus-minibuffer-or-completions ()
-  "Focus the active minibuffer or the \\*Completions\\*.
+;; ;;;###autoload
+;; (defun my/focus-minibuffer-or-completions ()
+;;   "Focus the active minibuffer or the \\*Completions\\*.
 
-If both the minibuffer and the Completions are present, this
-command will first move per invocation to the former, then the
-latter, and then continue to switch between the two.
+;; If both the minibuffer and the Completions are present, this
+;; command will first move per invocation to the former, then the
+;; latter, and then continue to switch between the two.
 
-The continuous switch is essentially the same as running
-`my/focus-minibuffer' and `switch-to-completions' in
-succession."
-  (interactive)
-  (let* ((mini (active-minibuffer-window))
-         (completions (get-buffer-window "*Completions*")))
-    (cond ((and mini
-                (not (minibufferp)))
-           (select-window mini nil))
-          ((and completions
-                (not (eq (selected-window)
-                         completions)))
-           (select-window completions nil)))))
+;; The continuous switch is essentially the same as running
+;; `my/focus-minibuffer' and `switch-to-completions' in
+;; succession."
+;;   (interactive)
+;;   (let* ((mini (active-minibuffer-window))
+;;          (completions (get-buffer-window "*Completions*")))
+;;     (cond ((and mini
+;;                 (not (minibufferp)))
+;;            (select-window mini nil))
+;;           ((and completions
+;;                 (not (eq (selected-window)
+;;                          completions)))
+;;            (select-window completions nil)))))
 
+;; ;;;###autoload
+;; (defun my/minibuffer-backward-kill (arg)
+;;   "When the minibuffer is a completing a file name delete up to parent directory."
+;;   (interactive "p")
+;;   (if minibuffer-completing-file-name
+;;       (if (save-excursion (backward-char 1)
+;;                           (not (looking-at-p "/" )))
+;;           ;; (string-match-p "/." (minibuffer-contents))
+;;           (delete-backward-char arg)
+;;         (delete-backward-char 1)
+;;         (condition-case-unless-debug nil
+;;             (zap-up-to-char (- arg) ?/)
+;;           (error (delete-minibuffer-contents))))
+;;     (delete-backward-char arg)))
+  
 ;; (defvar my/minibuffer-user-completion-styles completion-styles
 ;;   "Default style of completion used by the minibuffer, inherited from `completion-styles'")
 

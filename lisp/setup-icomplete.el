@@ -145,6 +145,8 @@ require user confirmation."
 (use-package consult
   :ensure t
   :after minibuffer
+  :hook ((shell-mode eshell-mode) . (lambda () (setq completion-in-region-function
+                                                #'consult-completion-in-region)))
   :config
   (setq consult-narrow-key "<")
   (setq consult-line-numbers-widen t)
@@ -172,6 +174,8 @@ require user confirmation."
   
   (setq register-preview-delay 0
         register-preview-function #'consult-register-format)
+  
+  (fset 'completing-read-multiple 'consult-completing-read-multiple)
   
   (defcustom my/consult-ripgrep-or-line-limit 300000
   "Buffer size threshold for `my/consult-ripgrep-or-line'.
@@ -280,7 +284,17 @@ When the number of characters in a buffer exceeds this threshold,
          :map minibuffer-local-map
          ("C-r" . consult-history)))
 
-;;; Embark-consult
+(use-package affe
+  :ensure t
+  :bind (("M-s M-f" . affe-find)
+         ("M-s M-g" . affe-grep))
+  :config
+  ;; Configure Orderless
+  (setq affe-regexp-function #'orderless-pattern-compiler
+        affe-highlight-function #'orderless--highlight)
+    ;; Manual preview key for `affe-grep'
+  (consult-customize affe-grep :preview-key (kbd "M-.")))
+
 (use-package embark-consult
   :ensure t
   :after consult
@@ -353,6 +367,7 @@ When the number of characters in a buffer exceeds this threshold,
          :map minibuffer-local-completion-map
          ("s-o"      . embark-act)
          ("C-o"      . embark-act)
+         ("C-M-o"    . embark-act-noexit)
          ("C-c C-o"  . embark-export)
          ("M-s o"    . embark-export)
          ("H-o"      . embark-export)
@@ -375,18 +390,47 @@ When the number of characters in a buffer exceeds this threshold,
          ("S"        . sudo-find-file)
          ("4"        . find-file-other-window)
          ("5"        . find-file-other-frame)
+         ("C-="      . diff)
          :map embark-buffer-map
          ("d"        . diff-buffer-with-file) ;FIXME
          ("l"        . eval-buffer)
          ("4"        . switch-to-buffer-other-window)
          ("5"        . switch-to-buffer-other-frame)
+         ("C-="      . diff-buffers)
          :map embark-bookmark-map
          ("4"        . bookmark-jump-other-window)
          ("5"        . bookmark-jump-other-frame)
          :map embark-url-map
          ("f"        . browse-url-firefox)
-         ("m"        . browse-url-mpv))
+         ("m"        . browse-url-umpv))
   :config
+  (defun embark-act-with-completing-read (&optional arg)
+    (interactive "P")
+    (let* ((embark-prompter 'embark-completing-read-prompter)
+           (act (propertize "Act" 'face 'highlight))
+           (embark-action-indicator (cons act (concat act " on '%s'"))))
+      (embark-act arg)))
+  
+  (defun with-minibuffer-keymap (keymap)
+  (lambda (fn &rest args)
+    (minibuffer-with-setup-hook
+        (lambda ()
+          (use-local-map
+           (make-composed-keymap keymap (current-local-map))))
+      (apply fn args))))
+
+(defvar embark-completing-read-prompter-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map (kbd "<tab>") 'abort-recursive-edit)
+    map))
+
+(advice-add 'embark-completing-read-prompter :around
+            (with-minibuffer-keymap embark-completing-read-prompter-map))
+  
+  (defun embark-act-noexit ()
+    (interactive)
+    (embark-act 4))
+
   (defun my/find-file-dir (file)
     (interactive (list (read-file-name "Jump to dir of file: ")))
                          (dired (file-name-directory file)))
@@ -481,11 +525,20 @@ When the number of characters in a buffer exceeds this threshold,
     (cl-pushnew 'revert-buffer embark-allow-edit-commands)
     (cl-pushnew 'rename-file-and-buffer embark-allow-edit-commands)
   
+    (setf   (alist-get "^\\*Embark \\(?:Export\\|Collect\\).*\\*" display-buffer-alist nil nil 'equal)
+            '((display-buffer-in-direction)
+              (window-height . (lambda (win) (fit-window-to-buffer
+                                         win
+                                         (floor (frame-height) 3))))
+              (direction . below)
+              (window-parameters . ((split-window . #'ignore)))))
+    
   (use-package which-key
     :defer
     :config
     (setq embark-action-indicator
-          (lambda (map &optional target) (let ((which-key-side-window-location '(right bottom)))
+          (lambda (map &optional target) (let ((which-key-side-window-location 'bottom)
+                                          (which-key-side-window-max-height 0.4))
                      (which-key--show-keymap "Embark" map nil nil 'no-paging)
                      #'which-key--hide-popup-ignore-command))
           embark-become-indicator embark-action-indicator))
@@ -510,36 +563,124 @@ When the number of characters in a buffer exceeds this threshold,
 (use-package vertico
   :ensure t
   :defer
+  :load-path "~/.local/share/git/vertico/"
   :after minibuffer
   :init (vertico-mode 1)
   :bind (:map vertico-map
               ("M-s"     . nil)
               ("C->"     . embark-become)
+              ("<tab>"   . embark-act-with-completing-read)
               ("C-o"     . embark-act)
-              ("DEL"     . my/minibuffer-backward-kill)
+              ("C-M-o"   . embark-act-noexit)
               ("M-s o"   . embark-export)
               ("H-o"     . embark-export)
               ("C-c C-o" . embark-export)
+              ("C-l"     . embark-export)
+              ("M-i"     . vertico-insert)
+              ("C-M-n"   . vertico-next-group)
+              ("C-M-p"   . vertico-previous-group)
               ("C-j"     . (lambda () (interactive)
 	        	     (if minibuffer--require-match
 	        	         (minibuffer-complete-and-exit)
 	        	       (exit-minibuffer)))))
   :config
-  (defun my/minibuffer-backward-kill (arg)
-    "When the minibuffer is a completing a file name delete up to parent directory."
-    (interactive "p")
-    (if minibuffer-completing-file-name
-        (if (save-excursion (backward-char 1)
-                            (not (looking-at-p "/" )))
-            ;; (string-match-p "/." (minibuffer-contents))
-            (delete-backward-char arg)
-          (delete-backward-char 1)
-          (condition-case-unless-debug nil
-              (zap-up-to-char (- arg) ?/)
-              (error (delete-minibuffer-contents))))
-      (delete-backward-char arg))))
+  (setq vertico-count 15
+        vertico-cycle t)
+  (advice-add #'tmm-add-prompt :after #'minibuffer-hide-completions))
 
-;; Embark for completion and selection
+(use-package vertico-directory
+  :load-path "~/.local/share/git/vertico/extensions/"
+  :hook (rfn-eshadow-update-overlay vertico-directory-tidy)
+  :after vertico
+  :bind (:map vertico-map
+         ("DEL"   . vertico-directory-delete-char)
+         ("M-DEL" . vertico-directory-delete-word)
+         ("C-w"   . vertico-directory-delete-word)
+         ("RET"   . vertico-directory-enter)))
+
+(use-package vertico-repeat
+  :load-path "~/.local/share/git/vertico/extensions/"
+  :after vertico
+  :bind (("C-x ." . vertico-repeat)
+         ("H-."   . vertico-repeat)))
+
+(use-package vertico-flat
+  :load-path "~/.local/share/git/vertico/extensions/"
+  :after vertico
+  :defer 2
+  :bind (:map vertico-map
+         ("M-SPC" . vertico-flat-mode)
+         ("M-S-SPC" . cycle-spacing))
+  :hook ((minibuffer-setup . my/vertico-list-mode-setup)
+         (minibuffer-exit . my/vertico-list-mode-exit))
+  :config
+  (defvar vertico-list-mode-commands nil
+    "List of commands that should not use vertico-flat mode")
+  (defvar my/vertico-flat-mode-restore nil
+    "Flag to restore vertico mode")
+  
+  (setq vertico-list-mode-commands
+        '(consult-line
+          consult-line-symbol-at-point
+          consult-outline
+          consult-register-load
+          consult-imenu imenu
+          consult-completion-in-region
+          embark-keymap-help
+          consult-grep consult-ripgrep consult-git-grep
+          bibtex-actions-insert-key bibtex-actions-insert-citation
+          bibtex-actions-insert-reference bibtex-actions-insert-bibtex
+          consult-reftex-insert-reference
+          consult-find affe-find affe-grep
+          my/search-occur-browse-url my/eshell-previous-matching-input))
+  
+  (defun my/vertico-list-mode-setup ()
+    (when (and vertico-flat-mode
+               (member this-command vertico-list-mode-commands))
+      (vertico-flat-mode -1)
+      (setq my/vertico-flat-mode-restore t)))
+  
+  (defun my/vertico-list-mode-exit ()
+    (when my/vertico-flat-mode-restore
+      (vertico-flat-mode 1)
+      (setq my/vertico-flat-mode-restore nil))))
+
+;;; Embark-Collect overlays
+(use-package embark
+  :hook ((embark-collect-mode . my/embark-collect--live-setup))
+  :config
+   ;; Highlighting selections in embark-collect buffers
+  (defvar-local my/embark-collect--overlay nil
+    "Text overlay for embark-collect buffers.")
+
+  (defun my/embark--live-completions-p ()
+  "Determine whether current collection is for live completions."
+  (and (derived-mode-p 'embark-collect-mode)
+       (eq embark-collect--kind :completions)))
+
+  (defun my/embark-collect--live-setup ()
+    "Remove mode-line from live embark-collect buffers and set up
+highlighting."
+    (when (my/embark--live-completions-p)
+      (my/mode-line-hidden-mode 1))
+    (setq my/embark-collect--overlay (make-overlay 1 1))
+    (overlay-put my/embark-collect--overlay 'face 'highlight)
+    (add-hook 'post-command-hook 'my/embark-collect--live-overlay-update nil t))
+
+  (defun my/embark-collect--live-overlay-update ()
+    "Update the overlay in the embark-collect buffer."
+    (pcase embark-collect-view
+      ('list (hl-line-mode 1))
+      ('grid (when (and (overlayp my/embark-collect--overlay)
+                        (get-text-property (point) 'mouse-face))
+               (hl-line-mode 0)
+               (let ((beg (previous-single-property-change
+                           (if (eobp) (point-max) (1+ (point)))
+                           'mouse-face nil (point-min)))
+                     (end (next-single-property-change (point) 'mouse-face nil (point-max))))
+                 (move-overlay my/embark-collect--overlay beg end)))))))
+
+;;; Embark-based completion and selection
 (use-package embark
   ;; Customizations to use embark's live-occur as a completion system for Emacs.
   ;;  Most of this code is copied from or inspired by the work of Protesilaos
@@ -549,7 +690,6 @@ When the number of characters in a buffer exceeds this threshold,
          ;; (embark-pre-action  . completion--flush-all-sorted-completions)
          (embark-collect-post-revert . my/embark--collect-fit-window)
          (minibuffer-setup . embark-collect-completions-after-input)
-         (embark-collect-mode . my/embark-collect--live-setup)
          (minibuffer-exit . my/embark-clear-live-buffers))
   :bind (:map embark-collect-mode-map
               ("C-M-n" . my/embark-completions-act-next)
@@ -687,7 +827,6 @@ To be added to `embark-collect-post-revert-hook'."
       (when (eq embark-collect-view 'list)
         (hl-line-mode -1)
         (embark-collect--toggle 'embark-collect-view 'list 'grid)
-        
         )
       )
   ;; (defun my/embark-live-occur-toggle ()

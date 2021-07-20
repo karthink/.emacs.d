@@ -68,7 +68,9 @@
                                        (make-directory download-dir))
                                    download-dir)))
     (setq my/packages-urls-extra
-          '(("https://github.com/johnbcoughlin/calctex.git")
+          '(("git@github.com:karthink/consult-reftex.git")
+            ("https://github.com/minad/vertico.git")
+            ("https://github.com/johnbcoughlin/calctex.git")
             ("https://github.com/skeeto/elfeed.git")
             ("git@github.com:karthink/ffmpeg-dispatch.git" . "ffmpeg")
             ("git@github.com:karthink/ink.git")
@@ -81,13 +83,15 @@
             ("git@github.com:karthink/peep-dired.git")
             ("https://github.com/chenyanming/wallabag.el.git")))
     (dolist (pack my/packages-urls-extra)
-      (let ((packdir (or (cdr pack)
-                         (file-name-base (car pack)))))
-        (unless (file-directory-p packdir)
-          (start-process packdir
-                         (concat packdir ".out")
-                         "git" "clone" (car pack) packdir)
-          (message (format "Cloning %s -> %s" (car pack) packdir)))))))
+      (let* ((packurl (car pack))
+             (packdir (or (cdr pack) (file-name-base (car pack))))
+             (buf (concat packdir ".out")))
+        (if (file-directory-p packdir)
+            (let ((default-directory (concat default-directory packdir)))
+              (start-process packdir buf "git" "pull" packurl)
+              (message (format "Updating %s in %s" packurl packdir)))
+          (start-process packdir buf "git" "clone" packurl packdir)
+          (message (format "Cloning %s to %s" packurl packdir)))))))
 
 ;;########################################################################
 ;;;* CORE
@@ -429,8 +433,10 @@
   :bind-keymap (("H-f" . space-menu-file-map)
                 ("H-b" . space-menu-buffer-map)
                 ("H-r" . ctl-x-r-map))
-  :bind (("H-x" . H-x)
+  :bind (("M-ESC ESC" . nil)
+         ("H-x" . H-x)
          ("H-c" . H-c)
+         ("H-z" . repeat)
          ("H-=" . text-scale-increase)
          ("H--" . text-scale-decrease)
          ("H-M--" . shrink-window-if-larger-than-buffer)
@@ -592,28 +598,14 @@ active region use it instead."
               ("g" . google-search-string)
               ("C-=" . google-search-at-point)))
 
-(use-package fish-completion
-  :disabled
-  :when (executable-find "fish")
-  :load-path "~/.local/share/git/emacs-fish-completion/"
-  :after (shell)
-  :init
-  (global-fish-completion-mode))
 
 (use-package vterm
   :ensure t
   :defer)
 ;;----------------------------------------------------------------------
-;;;** ESHELL PREFERENCES
+;;;** SHELL AND ESHELL PREFERENCES
 ;;----------------------------------------------------------------------
-(use-package eshell
-  :defer
-  :init (add-hook 'eshell-mode-hook
-                  (lambda () (setq outline-regexp eshell-prompt-regexp)))
-  :config
-  (setq eshell-buffer-shorthand t)
-  (setq eshell-directory-name "~/.cache/emacs/eshell/")
-  (advice-add 'eshell-life-is-too-much :after #'delete-window-if-not-single))
+(use-package setup-shells)
 
 ;;######################################################################
 ;;;* LINE NUMBERS
@@ -733,7 +725,8 @@ active region use it instead."
          :map easy-kill-base-map
          ("," . easy-kill-expand))
   :config
-  (add-to-list 'easy-kill-alist '(62 page "\n")))
+  (add-to-list 'easy-kill-alist '(62 page "\n"))
+  (add-to-list 'easy-kill-alist '(104 paragraph "\n")))
 
 (use-package goto-chg
   :ensure t
@@ -809,7 +802,7 @@ active region use it instead."
                   "^\\*TeX Help\\*"
                   "\\*Shell Command Output\\*"
                   ("\\*Async Shell Command\\*" . hide)
-                  ("\\*Completions\\*" . hide)
+                  "\\*Completions\\*"
                   ;; "\\*scratch\\*"
                   "[Oo]utput\\*")))
 
@@ -928,22 +921,22 @@ active region use it instead."
     "Enlarge window horizontally by 8% of the frame width."
     (interactive "p")
     (enlarge-window-horizontally (* (or repeat 1)
-                                    (/ (frame-width) 16))))
+                                    (floor (frame-width) 20))))
   (defun my/shrink-window-horizontally (&optional repeat)
     "Enlarge window horizontally by 8% of the frame width."
     (interactive "p")
     (shrink-window-horizontally (* (or repeat 1)
-                                   (/ (frame-width) 16))))
+                                   (floor (frame-width) 20))))
   (defun my/shrink-window (&optional repeat)
     "Enlarge window horizontally by 8% of the frame height."
     (interactive "p")
     (shrink-window (* (or repeat 1)
-                      (/ (frame-height) 16))))
+                      (floor (frame-height) 20))))
   (defun my/enlarge-window (&optional repeat)
     "Enlarge window horizontally by 8% of the frame height."
     (interactive "p")
     (enlarge-window (* (or repeat 1)
-                       (/ (frame-height) 16))))
+                       (floor (frame-height) 20))))
   :bind
   (("<C-S-right>" . my/enlarge-window-horizontally)
    ("<C-S-left>"  . my/shrink-window-horizontally)
@@ -962,7 +955,8 @@ active region use it instead."
   :ensure t
   :bind (("H-\\" . rotate-frame-anticlockwise)
          :map ctl-x-4-map
-         ("|" . flip-frame)
+         ("|" . flop-frame)
+         ("_" . flip-frame)
          ("\\" . rotate-frame-anticlockwise)))
 ;;######################################################################
 ;;;** Auto-revert
@@ -1484,10 +1478,8 @@ If region is active, add its contents to the new buffer."
                    ((output-dvi style-pstricks) "dvips and gv")
                    (output-dvi "xdvi")
                    (output-pdf "Zathura")
-                   (output-html "xdg-open"))))
-          )
-    (TeX-fold-mode 1)
-    ))
+                   (output-html "xdg-open")))))
+    (TeX-fold-mode 1)))
 
 (use-package tex-fold
   :after latex
@@ -1543,6 +1535,24 @@ If region is active, add its contents to the new buffer."
   (setq reftex-insert-label-flags '("sf" "sfte"))
   (setq reftex-plug-into-AUCTeX t)
   (setq reftex-use-multiple-selection-buffers t))
+
+(use-package company-reftex
+  :ensure
+  :after (reftex company)
+  :hook ((latex-mode LaTeX-mode) . my/company-reftex-completions)
+  :config
+  (defun my/company-reftex-completions ()
+    "Add company-reftex based completions to company-backends in
+    latex/org buffers."
+    (make-variable-buffer-local 'company-backends)
+    (add-to-list 'company-backends '(company-reftex-labels company-reftex-citations))))
+
+(use-package consult-reftex
+  :load-path "~/.local/share/git/consult-reftex"
+  :after (reftex consult embark)
+  :bind (:map reftex-mode-map
+         ("C-c )"   . consult-reftex-insert-reference)
+         ("C-c M-." . consult-reftex-goto-label)))
 
 ;; (setq-default TeX-master nil)
 (use-package cdlatex
@@ -1600,6 +1610,36 @@ If region is active, add its contents to the new buffer."
   :after latex
   :commands (ink-make-figure ink-edit-figure))
 
+;;;*** BIBTEX
+(use-package bibtex-actions
+  :after latex
+  :bind (:map LaTeX-mode-map
+         ("C-c [" . bibtex-actions-insert-citation)
+         :map reftex-mode-map
+         ("C-c [" . bibtex-actions-insert-citation))
+  :config
+  ;; make sure to set this to ensure open commands work correctly
+  (setq bibtex-completion-additional-search-fields '(doi url))
+  (setq bibtex-completion-bibliography '("~/Documents/research/control_systems.bib"))
+  
+  (use-package embark
+    :config
+    (add-to-list 'embark-target-finders 'bibtex-actions-citation-key-at-point)
+    (add-to-list 'embark-keymap-alist '(bibtex . bibtex-actions-map))
+    (add-to-list 'embark-keymap-alist '(citation . bibtex-actions-map-buffer)))
+
+  (use-package cdlatex
+    :config
+    (defun my/cdlatex-bibtex-action ()
+      "Call `bibtex-actions-insert-citation' interactively."
+      (call-interactively 'bibtex-actions-insert-citation))
+    (setf (alist-get "cite" cdlatex-command-alist nil nil 'equal)
+          '("Make a citation interactively"
+            "" my/cdlatex-bibtex-action nil t nil))
+    (setf (alist-get "cite{" cdlatex-command-alist nil nil 'equal)
+          '("Make a citation interactively"
+            "cite{" my/cdlatex-bibtex-action nil t nil))))
+
 ;;----------------------------------------------------------------------
 ;;;** MATLAB
 ;;----------------------------------------------------------------------
@@ -1622,6 +1662,73 @@ If region is active, add its contents to the new buffer."
                 ((symbol-function 'display-buffer-at-bottom) #'display-buffer-no-window))
         (save-window-excursion (funcall orig-fn beg end noshow)))))
   
+  (defun matlab-shell-region->script (beg end &optional noshow)
+    "Extract region between BEG & END into a temporary M file.
+The tmp file name is based on the name of the current buffer.
+The extracted region is unmodified from src buffer unless NOSHOW is non-nil,
+in which case ; are added to quiesce the buffer.
+Scan the extracted region for any functions that are in the original
+buffer,and include them.
+Return the name of the temporary file."
+    (interactive "r")
+    (require 'semantic-matlab)
+    (let* ((start (count-lines (point-min) beg))
+           (len (count-lines beg end))
+           (stem (file-name-sans-extension (file-name-nondirectory
+                                            (buffer-file-name))))
+           (orig (current-buffer))
+           (newf (concat stem "_" (number-to-string start) "_"
+                         (number-to-string len)))
+           (bss (buffer-substring-no-properties beg end))
+           (buff (find-file-noselect (concat newf ".m")))
+           (intro "%% Automatically created temporary file created to run-region")
+           ;; These variables are for script / fcn tracking
+           (functions (matlab-semantic-get-local-functions-for-script (current-buffer)))
+           )
+
+      ;; TODO : if the directory in which the current buffer is in is READ ONLY
+      ;; we should write our tmp buffer to /tmp instead.
+      
+      (with-current-buffer buff
+
+        (goto-char (point-min))
+        
+        ;; Clean up old extracted regions.
+        (when (looking-at intro) (delete-region (point-min) (point-max)))
+        ;; Don't stomp on old code.
+        (when (not (= (point-min) (point-max)))
+          (error "Region extract to tmp file: Temp file not empty!"))
+
+        (insert intro "\n\n" bss "\n%%\n")
+
+        ;; Some scripts call local functions from the script.  Find them
+        ;; and copy those local scripts over.
+        (goto-char (point-min))
+        (dolist (F functions)
+          (save-excursion
+            ;; Copy ALL local functions in the script to the buffer.
+            (let ((ft (matlab-semantic-tag-text F orig)))
+              (goto-char (point-max))
+              (insert "% Copy of " (semantic-tag-name F) "\n\n")
+              (insert ft)
+              (insert "\n%%\n")))
+          )
+
+        ;; Save buffer, and setup ability to run this new script.
+        (save-buffer)
+
+        ;; Flush any pending MATLAB stuff.
+        (accept-process-output)
+        
+        ;; This sets us up to cleanup our file after it's done running.
+        (add-hook 'matlab-shell-prompt-appears-hook `(lambda () (matlab-shell-cleanup-extracted-region ,(buffer-file-name buff))))
+
+        (kill-buffer)
+        )
+
+      ;; Return the command.
+      (concat "run('" (expand-file-name newf) "')\n")))
+
   :mode ("\\.m\\'" . matlab-mode)
   :hook ((matlab-mode . company-mode-on)
          (matlab-mode . (lambda ()
@@ -2136,25 +2243,25 @@ is not visible. Otherwise delegates to regular Emacs next-error."
 ;; BROWSE-URL
 ;;----------------------------------------------------------------------
 (use-package browse-url
-  :commands (browse-url-at-point-mpv browse-url-mpv)
+  :commands (browse-url-at-point-umpv browse-url-umpv)
   :config
   (when IS-LINUX
-    (defun browse-url-mpv (url &optional single)
+    (defun browse-url-umpv (url &optional single)
       (start-process "mpv" nil (if single "mpv" "umpv")
                      (shell-quote-wildcard-pattern url)))
 
-    (defun browse-url-at-point-mpv (&optional single)
+    (defun browse-url-at-point-umpv (&optional single)
       "Open link in mpv"
       (interactive "P")
       (let ((browse-url-browser-function
              (if single
-                 (lambda (url &optional _new-window) (browse-url-mpv url t))
-               #'browse-url-mpv)))
+                 (lambda (url &optional _new-window) (browse-url-umpv url t))
+               #'browse-url-umpv)))
         (browse-url-at-point)))
 
     (setq browse-url-generic-program "/usr/bin/qutebrowser")
     (setq browse-url-browser-function
-          '(("https:\\/\\/www\\.youtu\\.*be." . browse-url-mpv)
+          '(("https:\\/\\/www\\.youtu\\.*be." . browse-url-umpv)
             ("." . browse-url-generic)))))
 
 ;;----------------------------------------------------------------------
@@ -3051,7 +3158,7 @@ project, as defined by `vc-root-dir'."
    "h" 'which-key-show-major-mode
    "C-k" 'which-key-show-major-mode)
   :init
-  (setq which-key-sort-order #'which-key-description-order
+  (setq which-key-sort-order #'which-key-description-order 
         ;; which-key-sort-order #'which-key-prefix-then-key-order
         which-key-idle-delay 0.8
         which-key-idle-secondary-delay 0.1
@@ -3069,8 +3176,8 @@ project, as defined by `vc-root-dir'."
     (which-key-add-key-based-replacements general-localleader-alt "major-mode"))
 
   (set-face-attribute 'which-key-local-map-description-face nil :weight 'bold)
-  ;; (which-key-setup-side-window-bottom)
-  (which-key-setup-side-window-right-bottom)
+  (which-key-setup-side-window-bottom)
+  ;; (which-key-setup-side-window-right-bottom)
   (add-hook 'which-key-init-buffer-hook
             (lambda () (setq-local line-spacing 3)))
 
@@ -3138,10 +3245,9 @@ project, as defined by `vc-root-dir'."
 (use-package abbrev
   :defer
   :config
-  (setq abbrev-file-name "~/.cache/emacs/abbvev-defs"))
-;; (setq save-abbrevs t)
-;; (if (file-exists-p abbrev-file-name)
-;;     (quietly-read-abbrev-file))
+  ;; (setq abbrev-file-name (expand-file-name "~/.cache/emacs/abbvev-defs"))
+  (if (file-exists-p abbrev-file-name)
+      (quietly-read-abbrev-file)))
 
 ;;----------------------------------------------------------------------
 ;;;** COMPANY-MODE
@@ -3195,7 +3301,7 @@ project, as defined by `vc-root-dir'."
         ;; company-transformers '(company-sort-by-statistics)
         company-global-modes '(latex-mode matlab-mode emacs-lisp-mode lisp-interaction-mode
                                python-mode sh-mode fish-mode conf-mode text-mode org-mode)
-        company-backends '((company-files company-capf company-keywords company-yasnippet) company-dabbrev))
+        company-backends '((company-files company-capf company-keywords) company-yasnippet))
 
   (add-hook 'matlab-mode-hook (lambda ()
                                 ;; (unless (featurep 'company-matlab)
@@ -3395,6 +3501,14 @@ project, as defined by `vc-root-dir'."
        (define-key map (kbd ",") (lambda (&optional arg) (interactive)
                                    (my/avy-previous-char-2 str2 arg)))
        map)))
+  
+  (defun my/avy-copy-line-no-prompt (arg)
+    (interactive "p")
+    (avy-copy-line arg)
+    (beginning-of-line)
+    (zap-to-char 1 32)
+    (delete-forward-char)
+    (move-end-of-line 1))
 
   :general
   ("M-j"        '(avy-goto-char-2            :wk "Avy goto char")
@@ -3408,7 +3522,8 @@ project, as defined by `vc-root-dir'."
    "M-s M-t"    '(avy-move-region            :wk "Avy move region")
    "M-s s"      '(my/avy-next-char-2         :wk "Avy snipe forward")
    "M-s r"      '(my/avy-previous-char-2     :wk "Avy snipe backward")
-   "M-g l"      '(avy-goto-end-of-line       :wk "Avy goto line"))
+   "M-g l"      '(avy-goto-end-of-line       :wk "Avy goto line")
+   "M-s z"      '(my/avy-copy-line-no-prompt :wk "Avy copy and zap"))
   ;; (:states '(normal visual)
   ;;  :prefix "g"
   ;;  "s" 'avy-goto-char-timer)
@@ -3447,6 +3562,7 @@ project, as defined by `vc-root-dir'."
 ;;;*** ICOMPLETE/CONSULT/EMBARK
 ;;----------------------------------------------------------------------
 (use-package icomplete
+  :disabled
   :demand
   :init
   (require 'setup-icomplete nil t)
@@ -4028,6 +4144,7 @@ currently loaded theme first."
                               ((t (:background "#282a36" :inverse-video nil :weight normal))))
                             '(aw-leading-char-face
                               ((t (:foreground "#bd93f9" :height 2.5 :weight normal))))))
+
   (use-package dichromacy-theme
     :disabled
     :defer
@@ -4042,19 +4159,18 @@ currently loaded theme first."
                             '(org-document-title ((t (:inherit bold :height 1.5))))
                             ))
 
-  (use-package gruvbox-theme
-    :disabled
-    :defer
-    :config
-    (custom-theme-set-faces 'gruvbox
-                            '(aw-leading-char-face
-                              ((t (:height 2.5 :weight normal))))
-                            '(org-level-1 ((t (:height 1.3 :foreground "#83a598" :inherit (bold) ))))
-                            '(org-level-2 ((t (:height 1.1 :foreground "#fabd2f" :inherit (bold) ))))
-                            '(org-document-title ((t (:inherit (bold) :height 1.5))))
-                          ))
+;;   (use-package gruvbox-theme
+;;     :disabled
+;;     :defer
+;;     :config
+;;     (custom-theme-set-faces 'gruvbox
+;;                             '(aw-leading-char-face
+;;                               ((t (:height 2.5 :weight normal))))
+;;                             '(org-level-1 ((t (:height 1.3 :foreground "#83a598" :inherit (bold) ))))
+;;                             '(org-level-2 ((t (:height 1.1 ;; 
 
   (use-package modus-themes
+    :disabled
     :ensure
     :defer
     :config
@@ -4116,7 +4232,16 @@ currently loaded theme first."
             (bg-tab-active . "#fdf6eb")
             (bg-tab-inactive . "#c8bab8")
             (fg-unfocused . "#55556f"))))
-  
+  ;;             (bg-active . "#e8dfd1")
+  ;;             (bg-inactive . "#f6ece5")
+  ;;             (bg-region . "#c6bab1")
+  ;;             (bg-header . "#ede3e0")
+  ;;             (bg-tab-bar . "#dcd3d3")
+  ;;             (bg-tab-active . "#fdf6eb")
+  ;;             (bg-tab-inactive . "#c8bab8")
+  ;;             (fg-unfocused . "#55556f"))))
+  )
+
 (use-package doom-themes
   :ensure t
   :defer
@@ -4132,10 +4257,11 @@ currently loaded theme first."
      '(aw-background-face ((t (:background "#061229" :inverse-video nil :weight normal))))
      '(aw-leading-char-face ((t (:foreground "#bd93f9" :height 2.0 :weight normal))))))
 
-  ;; (custom-theme-set-faces
-  ;;  'user
-  ;;  '(aw-background-face ((t (:background "#061229" :inverse-video nil :weight normal))))
-  ;;  '(aw-leading-char-face ((t (:foreground "#bd93f9" :height 2.0 :weight normal)))))
+  (use-package doom-rouge-theme
+    :defer
+    :config
+    (custom-theme-set-faces 'user
+                            '(hl-line ((t (:background "#1f2a3f"))))))
 
   ;; (setq doom-one-brighter-comments t
   ;;       doom-one-brighter-modeline t
@@ -4143,7 +4269,7 @@ currently loaded theme first."
   ;; (setq doom-one-light-brighter-comments t
   ;;       doom-one-light-brighter-modeline t
   ;;       doom-one-light-comment-bg t)
-  ))
+)
 
 ;;######################################################################
 ;;;* EVIL-MODE

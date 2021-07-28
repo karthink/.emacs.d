@@ -132,7 +132,6 @@ require user confirmation."
 ;;; Icomplete-vertical
 (use-package icomplete-vertical
   :disabled
-  :ensure t
   :demand
   :after (minibuffer icomplete)
   :config
@@ -359,30 +358,25 @@ When the number of characters in a buffer exceeds this threshold,
   :ensure t
   :after minibuffer
   :bind (("M-s RET"  . embark-act)
-         ("M-g RET"  . embark-act)
          ("M-g o"    . embark-act)
-         ("M-g M-o"  . embark-act)
          ("s-o"      . embark-act)
          ("H-SPC" . embark-act)
          :map minibuffer-local-completion-map
          ("s-o"      . embark-act)
-         ("C-o"      . embark-act)
-         ("C-M-o"    . embark-act-noexit)
+         ("C-o"      . embark-minimal-act)
+         ("C-M-o"    . embark-minimal-act-noexit)
          ("C-c C-o"  . embark-export)
          ("M-s o"    . embark-export)
-         ("H-o"      . embark-export)
          ("M-q"      . embark-collect-toggle-view)
          ("H-SPC"    . embark-act)
          ("C->"      . embark-become)
          :map completion-list-mode-map
-         ("C-o"      . embark-act)
+         ("C-o"      . embark-minimal-act)
          :map embark-collect-mode-map
-         ("M-s o"    . embark-export)
          ("H-SPC" . embark-act)
          ("o"        . embark-act)
          ("O"        . embark-act-noexit)
          ("C-o"      . embark-act)
-         ("M-g o"    . embark-act)
          ("M-t"      . toggle-truncate-lines)
          ("M-q"      . embark-collect-toggle-view)
          :map embark-file-map
@@ -408,8 +402,17 @@ When the number of characters in a buffer exceeds this threshold,
     (interactive "P")
     (let* ((embark-prompter 'embark-completing-read-prompter)
            (act (propertize "Act" 'face 'highlight))
-           (embark-action-indicator (cons act (concat act " on '%s'"))))
+           (embark-indicator (lambda (_keymap targets) nil)))
       (embark-act arg)))
+  
+  (defun embark-minimal-act (&optional arg)
+    (interactive "P")
+    (let ((embark-indicator #'embark-which-key-indicator))
+      (embark-act arg)))
+  
+  (defun embark-minimal-act-noexit ()
+    (interactive)
+    (embark-minimal-act 4))
   
   (defun with-minibuffer-keymap (keymap)
   (lambda (fn &rest args)
@@ -435,8 +438,6 @@ When the number of characters in a buffer exceeds this threshold,
     (interactive (list (read-file-name "Jump to dir of file: ")))
                          (dired (file-name-directory file)))
   (setq embark-quit-after-action t)
-  ;; (setq embark-collect-initial-view-alist
-  ;;       '((t . list)))
   (add-to-list 'embark-keymap-alist
                '(project-file . embark-file-map))
   ;; (add-to-list 'embark-keymap-alist
@@ -485,19 +486,31 @@ When the number of characters in a buffer exceeds this threshold,
     (define-key embark-bookmark-map (kbd "2") (my/embark-split-action bookmark-jump my/split-window-below))
     (define-key embark-bookmark-map (kbd "3") (my/embark-split-action bookmark-jump my/split-window-right))
     (define-key embark-file-map (kbd "U") '0x0-upload-file)
-    (define-key embark-region-map (kbd "U") '0x0-upload)
-    (define-key embark-buffer-map (kbd "U")
-      (defun 0x0-upload-buffer (buf)
-        (interactive (list (read-buffer "Upload buffer" (current-buffer) t)))
-        (with-current-buffer buf (0x0-upload (point-min)
-                                             (point-max)
-                                             (0x0--choose-service)))))
+    (define-key embark-region-map (kbd "U") '0x0-upload-text)
+    (define-key embark-buffer-map (kbd "U") '0x0-dwim)
+    ;; (defun 0x0-upload-buffer (buf)
+    ;;   (interactive (list (read-buffer "Upload buffer" (current-buffer) t)))
+    ;;   (with-current-buffer buf (0x0-upload (point-min)
+    ;;                                        (point-max)
+    ;;                                        (0x0--choose-service))))
+
   
     ;; Embark actions for this buffer/file
     (defun embark-target-this-buffer-file ()
       (cons 'this-buffer-file (buffer-name)))
 
-    (add-to-list 'embark-target-finders #'embark-target-this-buffer-file 'append)
+    (defun embark-reverse-act (&optional arg)
+      (interactive "p")
+      (let* ((order (pcase arg (4 #'reverse) (_ #'identity)))
+             (embark-target-finders (funcall order embark-target-finders)))
+        (embark-act (when (= arg 16) 4))))
+
+    ;; (add-to-list 'embark-target-finders #'embark-target-this-buffer-file 'append)
+    (unless (member 'embark-target-this-buffer-file embark-target-finders)
+      (setq embark-target-finders
+            (append (butlast embark-target-finders 2)
+                    '(embark-target-this-buffer-file)
+                    (last embark-target-finders 2))))
 
     (embark-define-keymap this-buffer-file-map
       "Commands to act on current file or buffer."
@@ -505,7 +518,7 @@ When the number of characters in a buffer exceeds this threshold,
       ("b" byte-compile-file)
       ("S" sudo-find-file)
       ("r" rename-file-and-buffer)
-      ("d" diff-buffer-with-file)
+      ("d" my/diff-buffer-dwim)
       ("=" ediff-buffers)
       ("C-=" ediff-files)
       ("!" shell-command)
@@ -518,7 +531,7 @@ When the number of characters in a buffer exceeds this threshold,
       ("z" bury-buffer)
       ("|" embark-shell-command-on-buffer)
       ;; ("l" org-store-link)
-      ("U" 0x0-upload)
+      ("U" 0x0-dwim)
       ("g" revert-buffer))
 
     (add-to-list 'embark-keymap-alist '(this-buffer-file . this-buffer-file-map))
@@ -533,25 +546,39 @@ When the number of characters in a buffer exceeds this threshold,
               (direction . below)
               (window-parameters . ((split-window . #'ignore)))))
     
-  (use-package which-key
-    :defer
-    :config
-    (setq embark-action-indicator
-          (lambda (map &optional target) (let ((which-key-side-window-location 'bottom)
-                                          (which-key-side-window-max-height 0.4))
-                     (which-key--show-keymap "Embark" map nil nil 'no-paging)
-                     #'which-key--hide-popup-ignore-command))
-          embark-become-indicator embark-action-indicator))
-  (use-package helpful
-    :bind (:map embark-become-help-map
-                ("f" . helpful-callable)
-                ("v" . helpful-variable)
-                ("C" . helpful-command)))
-  )
+    (use-package which-key
+      :defer
+      :config
+      ;; From the embark wiki
+      (defun embark-which-key-indicator (keymap targets)
+        "An embark indicator that displays KEYMAP with which-key.
+The which-key help message will show the type and value of the
+current target followed by an ellipsis if there are further
+TARGETS."
+        (which-key--show-keymap
+         (if (eq (caar targets) 'embark-become)
+             "Become"
+           (format "Act on %s '%s'%s"
+                   (caar targets)
+                   (embark--truncate-target (cdar targets))
+                   (if (cdr targets) "…" "")))
+         keymap
+         nil nil t)
+        (lambda (prefix)
+          (if prefix
+              (embark-which-key-indicator (lookup-key keymap prefix) targets)
+            (kill-buffer which-key--buffer)))))
+  
+    (use-package helpful
+      :defer
+      :bind (:map embark-become-help-map
+                  ("f" . helpful-callable)
+                  ("v" . helpful-variable)
+                  ("C" . helpful-command))))
 
 ;;; Embark-avy
 (use-package avy-embark-collect
-  :ensure t
+  :disabled
   :after embark
   :bind (:map minibuffer-local-completion-map
               ("M-j" . avy-embark-collect-choose)
@@ -570,10 +597,9 @@ When the number of characters in a buffer exceeds this threshold,
               ("M-s"     . nil)
               ("C->"     . embark-become)
               ("<tab>"   . embark-act-with-completing-read)
-              ("C-o"     . embark-act)
-              ("C-M-o"   . embark-act-noexit)
+              ("C-o"     . embark-minimal-act)
+              ("C-M-o"   . embark-minimal-act-noexit)
               ("M-s o"   . embark-export)
-              ("H-o"     . embark-export)
               ("C-c C-o" . embark-export)
               ("C-l"     . embark-export)
               ("M-i"     . vertico-insert)
@@ -609,8 +635,7 @@ When the number of characters in a buffer exceeds this threshold,
   :after vertico
   :defer 2
   :bind (:map vertico-map
-         ("M-SPC" . vertico-flat-mode)
-         ("M-S-SPC" . cycle-spacing))
+         ("M-q" . vertico-flat-mode))
   :hook ((minibuffer-setup . my/vertico-list-mode-setup)
          (minibuffer-exit . my/vertico-list-mode-exit))
   :config
@@ -626,13 +651,15 @@ When the number of characters in a buffer exceeds this threshold,
           consult-register-load
           consult-imenu imenu
           consult-completion-in-region
+          consult-yank-pop
           embark-keymap-help
           consult-grep consult-ripgrep consult-git-grep
           bibtex-actions-insert-key bibtex-actions-insert-citation
           bibtex-actions-insert-reference bibtex-actions-insert-bibtex
           consult-reftex-insert-reference
           consult-find affe-find affe-grep
-          my/search-occur-browse-url my/eshell-previous-matching-input))
+          my/search-occur-browse-url my/eshell-previous-matching-input
+          eshell/cd))
   
   (defun my/vertico-list-mode-setup ()
     (when (and vertico-flat-mode

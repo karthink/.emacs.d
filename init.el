@@ -101,13 +101,14 @@
 ;;########################################################################
 ;;;* PERSONAL INFO
 ;;########################################################################
-(and (load-library
-      (if (file-exists-p (concat user-emacs-directory "lisp/personal.el"))
-	  (concat user-emacs-directory "lisp/personal.el")
-	(concat user-emacs-directory "lisp/personal.el.gpg")))
-     ;; (require 'personal nil t)
-     (setq user-full-name my-full-name)
-     (setq user-mail-address my-email-address))
+(with-demoted-errors 
+    (and (load-library
+          (if (file-exists-p (concat user-emacs-directory "lisp/personal.el"))
+	      (concat user-emacs-directory "lisp/personal.el")
+	    (concat user-emacs-directory "lisp/personal.el.gpg")))
+         ;; (require 'personal nil t)
+         (setq user-full-name my-full-name)
+         (setq user-mail-address my-email-address)))
 
 ;;########################################################################
 ;;;* UI FIXES
@@ -583,7 +584,8 @@ command tuxi on it."
         (if (<= (count-lines (point-min) (point-max)) 1)
             (message search-output)
           (goto-char (point-min))
-          (display-buffer (current-buffer))))))
+          (display-buffer (current-buffer))
+          (goto-address-mode 1)))))
   (defun google-search-at-point (&optional beg end)
     "Call the shell command tuxi on the symbol at point. With an
 active region use it instead."
@@ -846,20 +848,19 @@ active region use it instead."
 (use-package winum
   :ensure
   :init
-  (eval-when-compile
-    (defmacro +winum-select (num)
-      `(lambda (&optional arg) (interactive "P")
-         (if arg
-             (winum-select-window-by-number (- 0 ,num))
-           (if (equal ,num (winum-get-number))
-               (winum-select-window-by-number (winum-get-number (get-mru-window t)))
-             (winum-select-window-by-number ,num))))))
+  (defun +winum-select (num)
+    (lambda (&optional arg) (interactive "P")
+      (if arg
+          (winum-select-window-by-number (- 0 num))
+        (if (equal num (winum-get-number))
+            (winum-select-window-by-number (winum-get-number (get-mru-window t)))
+          (winum-select-window-by-number num)))))
 
   (setq winum-keymap
         (let ((map (make-sparse-keymap)))
-          (define-key map (kbd "M-0") 'winum-select-window-0-or-10)
+          (define-key map (kbd "C-M-0") 'winum-select-window-0-or-10)
           (dolist (num '(1 2 3 4 5 6 7 8 9) nil)
-            (define-key map (kbd (concat "M-" (int-to-string num)))
+            (define-key map (kbd (concat "C-M-" (int-to-string num)))
               (+winum-select num)))
           map))
 
@@ -873,7 +874,6 @@ active region use it instead."
   :commands winner-undo
   :bind (("C-c <left>" . winner-undo)
          ("C-x C-/" . winner-undo)
-         ("H-u" . winner-undo)
          ("H-/" . winner-undo)
          ("s-u" . winner-undo))
   :general
@@ -1086,7 +1086,9 @@ surrounded by word boundaries."
 
 (use-package outline
   :bind (:map outline-minor-mode-map
-              ("<tab>" . outline-cycle))
+              ("<tab>" . outline-cycle)
+              ("C-c C-n" . 'outline-next-visible-heading)
+              ("C-c C-p" . 'outline-previous-visible-heading))
   :config
   (define-key outline-minor-mode-map (kbd "<backtab>") (lambda () (interactive)
                                                          (outline-back-to-heading)
@@ -3020,8 +3022,28 @@ a log that covers all files in the present directory."
     ;;              (propertize commit 'face 'bold)
     ;;              (propertize out-dir 'face 'success))))
 
+    ;; From https://protesilaos.com/codelog/2021-07-24-emacs-misc-custom-commands/
+    (defun my/diff-buffer-dwim (&optional arg)
+  "Diff buffer with its file's last saved state, or run `vc-diff'.
+With optional prefix ARG (\\[universal-argument]) enable
+highlighting of word-wise changes (local to the current buffer)."
+  (interactive "P")
+  (let ((buf))
+    (if (buffer-modified-p)
+        (progn
+          (diff-buffer-with-file (current-buffer))
+          (setq buf "*Diff*"))
+      (vc-diff)
+      (setq buf "*vc-diff*"))
+    (when arg
+      (with-current-buffer (get-buffer buf)
+        (unless diff-refine
+          (setq-local diff-refine 'font-lock))))))
+
     :bind-keymap ("H-v" . vc-prefix-map)
     :bind (("C-x v C-l" . my/vc-print-log)
+           :map vc-prefix-map
+           ("=" . my/diff-buffer-dwim)
            :map log-view-mode-map
            ("<tab>" . log-view-toggle-entry-display)
            ("<return>" . log-view-find-revision)
@@ -3441,6 +3463,32 @@ project, as defined by `vc-root-dir'."
   :commands (avy-goto-word-1 avy-goto-char-2 avy-goto-char-timer)
   :config
   (setq avy-timeout-seconds 0.35)
+  (setq avy-keys '(?a ?s ?d ?f ?g ?h ?j ?l ?\; ?x
+                   ?v ?b ?n ?. ?, ?/ ?u ?o ?p ?e
+                   ?c ?q ?2 ?3 ?'))
+  (setq avy-dispatch-alist '((?k . avy-action-kill-move)
+                             (?K . avy-action-kill-stay)
+                             (?t . avy-action-teleport)
+                             (?m . avy-action-mark)
+                             (?  . my/avy-action-mark-to-char)
+                             (?w . avy-action-copy)
+                             (?y . avy-action-yank)
+                             (25 . avy-action-yank-line)
+                             (?Y . avy-action-yank-line)
+                             (?i . avy-action-ispell)
+                             (?z . avy-action-zap-to-char)))
+  
+  (defun my/avy-action-mark-to-char (pt)
+    (activate-mark)
+    (goto-char pt))
+  
+  (defun my/avy-goto-char-this-window (&optional arg)
+    "Goto char in this window with hints."
+    (interactive "P")
+    (let ((avy-all-windows)
+          (current-prefix-arg (if arg 4)))
+      (call-interactively 'avy-goto-char)))
+  
   (defun my/avy--read-char-2 (char1 char2)
     "Read two characters from the minibuffer."
     (interactive (list (let ((c1 (read-char "char 1: " t)))
@@ -3511,7 +3559,8 @@ project, as defined by `vc-root-dir'."
     (move-end-of-line 1))
 
   :general
-  ("M-j"        '(avy-goto-char-2            :wk "Avy goto char")
+  ("C-'"        '(my/avy-goto-char-this-window :wk "Avy goto char")
+   "M-j"        '(avy-goto-char-2            :wk "Avy goto char 2")
    "M-s y"      '(avy-copy-line              :wk "Avy copy line above")
    "M-s M-y"    '(avy-copy-region            :wk "Avy copy region above")
    "M-s M-k"    '(avy-kill-whole-line        :wk "Avy copy line as kill")
@@ -4114,7 +4163,7 @@ currently loaded theme first."
   (cond (IS-LINUX
          (set-fontset-font t 'unicode "Symbola" nil 'prepend)
          (custom-set-faces
-          '(variable-pitch ((t (:family "Ubuntu" :height 125))))
+          '(variable-pitch ((t (:family "Ubuntu" :height 120))))
           ;; '(default ((t (:family "Ubuntu Mono" :foundry "PfEd"
           ;;                        :slant normal :weight normal
           ;;                        :height 125 :width normal))))

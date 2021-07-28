@@ -14,7 +14,9 @@
          :map org-mode-map
          ("C-c C-x +" . my/org-strike-through-heading)
          ("C-,"   . nil)
-         ("C-'"   . nil))
+         ("C-'"   . nil)
+         ("C-S-<right>" . nil)
+         ("C-S-<left>" . nil))
 
   :hook ((org-mode . org-toggle-pretty-entities)
          (org-mode . turn-on-org-cdlatex)

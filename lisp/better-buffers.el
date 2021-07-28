@@ -310,10 +310,12 @@ User buffers are those not starting with *."
         (message "Buffer '%s' is not visiting a file!" name)
       (if (get-buffer new-name)
           (message "A buffer named '%s' already exists!" new-name)
-        (progn (rename-file name new-name 1)
-               (rename-buffer new-name)
-               (set-visited-file-name new-name)
-               (set-buffer-modified-p nil))))))
+        (if (vc-registered filename)
+            (vc-rename-file name new-name)
+          (rename-file name new-name 1))
+        (rename-buffer new-name)
+        (set-visited-file-name new-name)
+        (set-buffer-modified-p nil)))))
 
 ;;;###autoload
 (defun move-buffer-file (dir)

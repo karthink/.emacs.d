@@ -69,6 +69,7 @@
                                    download-dir)))
     (setq my/packages-urls-extra
           '(("git@github.com:karthink/consult-reftex.git")
+            ("git@github.com:karthink/consult-dir.git")
             ("https://github.com/minad/vertico.git")
             ("https://github.com/johnbcoughlin/calctex.git")
             ("https://github.com/skeeto/elfeed.git")
@@ -1190,11 +1191,10 @@ To be used with `imenu-after-jump-hook' or equivalent."
   (flimenu-global-mode 1))
 
 (use-package imenu-list
-  :ensure t
+  :disabled
   :after imenu
   :defer
-  :bind ("M-s M-i" . imenu-list)
-  )
+  :bind ("M-s M-i" . imenu-list))
 
 (use-package scratch
   :ensure
@@ -3870,7 +3870,7 @@ managers such as DWM, BSPWM refer to this state as 'monocle'."
   :commands (my/olivetti-mode)
   :ensure t
   :config
-  (setq olivetti-body-width 0.7
+  (setq olivetti-body-width 0.8
         olivetti-minimum-body-width 80
         olivetti-recall-visual-line-mode-entry-state t)
 

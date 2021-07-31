@@ -154,8 +154,11 @@ require user confirmation."
   (setq consult-preview-line nil)
   (setq consult-preview-outline nil)
   (setq consult-preview-key 'any)
-  (setf (alist-get 'consult-buffer consult-config) '(:preview-key nil))
-  (setq consult-preview-key (list (kbd "C-M-n") (kbd "C-M-p")))
+  (consult-customize
+   consult-ripgrep consult-git-grep consult-grep
+   consult-bookmark consult--source-buffer consult-recent-file consult-xref
+   consult--source-file consult--source-project-file consult--source-bookmark
+   :preview-key (kbd "C-M-m"))
   (setq consult-project-root-function (lambda () "Return current project root"
                                         (project-root (project-current))))
   (setq consult-find-command "fd --hidden -t f -t d -t l --follow ARG OPTS")
@@ -182,6 +185,13 @@ When the number of characters in a buffer exceeds this threshold,
 `consult-ripgrep' will be used instead of `consult-line'."
   :type 'integer)
 
+  ;; Combine `consult-imenu' and `consult-project-imenu'
+  (defun consult-imenu-all (&optional arg)
+    "Call `consult-imenu'. With prefix-command ARG, call
+    `consult-project-imenu'."
+    (interactive "P")
+    (if arg (consult-project-imenu) (consult-imenu)))
+  
   ;; From https://github.com/minad/consult/wiki
   (defun my/consult-ripgrep-or-line (&optional initial start)
   "Call `consult-line' for small buffers or `consult-ripgrep' for large files."
@@ -242,8 +252,10 @@ When the number of characters in a buffer exceeds this threshold,
 ;;       (consult--find (or prompt "Find: ") consult-find-command initial)))
 
   (use-package org
-    :bind (:map org-mode-map
-                ("C-c C-j" . consult-outline)))
+  :defer
+  :bind (:map org-mode-map
+         ("C-c C-j" . consult-org-heading)
+         ("M-s M-j" . consult-org-heading)))
 
   :bind (("C-x b"   . consult-buffer)
          ("C-x H-r" . consult-recent-file)
@@ -259,7 +271,7 @@ When the number of characters in a buffer exceeds this threshold,
          ("M-s G"   . consult-git-grep)
          ("C-x C-r" . consult-recent-file)
          ("<help> a" . consult-apropos)
-         ("M-s i" . consult-imenu)
+         ("M-s i" . consult-imenu-all)
          ("s-b" . consult-buffer)
          ("M-g f" . consult-flymake)
          ("M-g j" . consult-compile-error)
@@ -283,6 +295,33 @@ When the number of characters in a buffer exceeds this threshold,
          :map minibuffer-local-map
          ("C-r" . consult-history)))
 
+(use-package consult-dir
+  :load-path "~/.local/share/git/consult-dir"
+  :defer 2
+  :after (vertico consult bookmark marginalia)
+  :bind (("C-x C-d" . consult-dir)
+         :map vertico-map
+         ("C-M-d" . consult-dir-maybe)
+         ("H-M-d" . consult-dir-maybe)
+         ("M-s f" . consult-dir-file-jump)
+         ("C-M-j" . consult-dir-file-jump)
+         ("H-M-j" . consult-dir-file-jump)
+         :map embark-become-file+buffer-map
+         ("d" . consult-switch-find-file))
+  :config
+  (setq consult-switch-shadow-filenames nil)
+  (defun consult-dir-maybe ()
+    (interactive)
+    (let* ((full-category (completion-metadata-get (embark--metadata) 'category))
+           (category (pcase full-category
+                       ('consult-multi (car (get-text-property
+                                             0 'consult-multi
+                                             (vertico--candidate))))
+                       (_ full-category))))
+      (if (member category '(file))
+          (call-interactively #'consult-dir)
+        (call-interactively (lookup-key global-map (kbd "C-M-d")))))))
+
 (use-package affe
   :ensure t
   :bind (("M-s M-f" . affe-find)
@@ -296,19 +335,14 @@ When the number of characters in a buffer exceeds this threshold,
 
 (use-package embark-consult
   :ensure t
-  :after consult
+  :after (embark consult)
   :demand
   :bind (:map embark-collect-mode-map
-         ("C-c C-f" . my/embark-consult-preview-toggle))
+         ("C-c C-f" . my/embark-consult-preview-toggle)
+         :map embark-become-file+buffer-map
+         ("b" . consult-buffer)
+         ("j" . consult-find))
   :config
-  (setf (alist-get 'consult-location
-                   embark-collect-initial-view-alist)
-        'list
-        (alist-get ?b
-                   embark-become-file+buffer-map)
-        'consult-buffer)
-  (add-to-list 'embark-collect-initial-view-alist
-               '(consult-compile-error . list))
   
   (defun my/embark-consult-preview-toggle ()
   "Toggle preview mode for Embark's Consult collections."
@@ -337,6 +371,8 @@ When the number of characters in a buffer exceeds this threshold,
   :ensure t
   :after embark
   :init (marginalia-mode 1)
+  :bind (:map vertico-map
+         ("M-]" . marginalia-cycle))
   :config
   ;; Must be in the :init section of use-package such that the mode gets
   ;; enabled right away. Note that this forces loading the package.
@@ -358,7 +394,6 @@ When the number of characters in a buffer exceeds this threshold,
   :ensure t
   :after minibuffer
   :bind (("M-s RET"  . embark-act)
-         ("M-g o"    . embark-act)
          ("s-o"      . embark-act)
          ("H-SPC" . embark-act)
          :map minibuffer-local-completion-map
@@ -437,7 +472,11 @@ When the number of characters in a buffer exceeds this threshold,
   (defun my/find-file-dir (file)
     (interactive (list (read-file-name "Jump to dir of file: ")))
                          (dired (file-name-directory file)))
-  (setq embark-quit-after-action t)
+  
+  ;; Use Embark instead of `describe-prefix-bindings'
+  (setq prefix-help-command #'embark-prefix-help-command)
+  (setq embark-quit-after-action t
+        embark-mixed-indicator-delay 0)
   (add-to-list 'embark-keymap-alist
                '(project-file . embark-file-map))
   ;; (add-to-list 'embark-keymap-alist
@@ -499,13 +538,7 @@ When the number of characters in a buffer exceeds this threshold,
     (defun embark-target-this-buffer-file ()
       (cons 'this-buffer-file (buffer-name)))
 
-    (defun embark-reverse-act (&optional arg)
-      (interactive "p")
-      (let* ((order (pcase arg (4 #'reverse) (_ #'identity)))
-             (embark-target-finders (funcall order embark-target-finders)))
-        (embark-act (when (= arg 16) 4))))
-
-    ;; (add-to-list 'embark-target-finders #'embark-target-this-buffer-file 'append)
+    (add-to-list 'embark-target-finders #'embark-target-this-buffer-file 'append)
     (unless (member 'embark-target-this-buffer-file embark-target-finders)
       (setq embark-target-finders
             (append (butlast embark-target-finders 2)
@@ -596,6 +629,7 @@ TARGETS."
   :bind (:map vertico-map
               ("M-s"     . nil)
               ("C->"     . embark-become)
+              (">"       . embark-become)
               ("<tab>"   . embark-act-with-completing-read)
               ("C-o"     . embark-minimal-act)
               ("C-M-o"   . embark-minimal-act-noexit)
@@ -649,7 +683,7 @@ TARGETS."
           consult-line-symbol-at-point
           consult-outline
           consult-register-load
-          consult-imenu imenu
+          consult-imenu consult-project-imenu
           consult-completion-in-region
           consult-yank-pop
           embark-keymap-help
@@ -671,6 +705,15 @@ TARGETS."
     (when my/vertico-flat-mode-restore
       (vertico-flat-mode 1)
       (setq my/vertico-flat-mode-restore nil))))
+
+(use-package vertico-buffer
+  :load-path "~/.local/share/git/vertico/extensions/"
+  :after vertico
+  :hook (vertico-buffer-mode . vertico-buffer-setup)
+  :config
+  (defun vertico-buffer-setup ()
+    (setq vertico-count (if vertico-buffer-mode 35 12)))
+  (setq vertico-buffer-action 'display-buffer-reuse-window))
 
 ;;; Embark-Collect overlays
 (use-package embark

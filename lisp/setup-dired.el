@@ -2,8 +2,8 @@
 ;;(require 'use-package nil t)
 (use-package dired
   :commands dired
-  :hook (;; (dired-mode . dired-hide-details-mode)
-         (dired-mode . hl-line-mode))
+  :hook ((dired-mode . hl-line-mode)
+         (dired-mode . toggle-truncate-lines))
   :bind
   (:map dired-mode-map
         ("M-s f" . nil)

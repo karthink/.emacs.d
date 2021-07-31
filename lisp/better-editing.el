@@ -115,8 +115,10 @@
 ;; (global-set-key (kbd "C-;") 'complete-symbol) 
 
 ;; Cycle spacing: just-one-space to no-space to original-spacing
-(global-set-key (kbd "M-SPC") 'cycle-spacing)
- 
+(global-set-key (kbd "M-SPC") (defun cycle-spacing-fast (&optional N)
+                                "Call `cycle-spacing', but in fast mode."
+                                (interactive "*p")
+                                (cycle-spacing N nil 'fast))) 
 ;;; Alternative to M-x
 (global-set-key "\C-x\C-m" 'execute-extended-command)
 ;;(global-set-key "\C-c\C-m" 'execute-extended-command)

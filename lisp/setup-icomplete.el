@@ -22,8 +22,8 @@
       `(orderless-regexp . ,(concat (substring pattern 0 -1)
                                     "[\x100000-\x10FFFD]*$"))))
     
-    (defun my/orderless-flex-dispatcher (pattern _index _total)
-      (when (or (string-suffix-p "`)" pattern)
+  (defun my/orderless-flex-dispatcher (pattern _index _total)
+    (when (or (string-suffix-p "`" pattern)
               (string-suffix-p "~" pattern))
       `(orderless-flex . ,(substring pattern 0 -1))))
 
@@ -177,7 +177,7 @@ require user confirmation."
   (setq register-preview-delay 0
         register-preview-function #'consult-register-format)
   
-  (fset 'completing-read-multiple 'consult-completing-read-multiple)
+  ;; (advice-add #'completing-read-multiple :override #'consult-completing-read-multiple)
   
   (defcustom my/consult-ripgrep-or-line-limit 300000
   "Buffer size threshold for `my/consult-ripgrep-or-line'.
@@ -303,9 +303,9 @@ When the number of characters in a buffer exceeds this threshold,
          :map vertico-map
          ("C-M-d" . consult-dir-maybe)
          ("H-M-d" . consult-dir-maybe)
-         ("M-s f" . consult-dir-file-jump)
-         ("C-M-j" . consult-dir-file-jump)
-         ("H-M-j" . consult-dir-file-jump)
+         ("M-s f" . consult-dir-jump-file)
+         ("C-M-j" . consult-dir-jump-file)
+         ("H-M-j" . consult-dir-jump-file)
          :map embark-become-file+buffer-map
          ("d" . consult-switch-find-file))
   :config
@@ -407,6 +407,15 @@ When the number of characters in a buffer exceeds this threshold,
          ("C->"      . embark-become)
          :map completion-list-mode-map
          ("C-o"      . embark-minimal-act)
+         :map vertico-map
+         ("C->"     . embark-become)
+         (">"       . embark-become)
+         ("<tab>"   . embark-act-with-completing-read)
+         ("C-o"     . embark-minimal-act)
+         ("C-M-o"   . embark-minimal-act-noexit)
+         ("M-s o"   . embark-export)
+         ("C-c C-o" . embark-export)
+         ("C-l"     . embark-export)
          :map embark-collect-mode-map
          ("H-SPC" . embark-act)
          ("o"        . embark-act)
@@ -509,6 +518,7 @@ When the number of characters in a buffer exceeds this threshold,
     (defmacro my/embark-split-action (fn split-type) 
       `(defun ,(intern (concat "my/embark-"
                                (symbol-name fn)
+                               "-"
                                (car (last  (split-string
                                             (symbol-name split-type) "-"))))) ()
          (interactive)
@@ -628,14 +638,6 @@ TARGETS."
   :init (vertico-mode 1)
   :bind (:map vertico-map
               ("M-s"     . nil)
-              ("C->"     . embark-become)
-              (">"       . embark-become)
-              ("<tab>"   . embark-act-with-completing-read)
-              ("C-o"     . embark-minimal-act)
-              ("C-M-o"   . embark-minimal-act-noexit)
-              ("M-s o"   . embark-export)
-              ("C-c C-o" . embark-export)
-              ("C-l"     . embark-export)
               ("M-i"     . vertico-insert)
               ("C-M-n"   . vertico-next-group)
               ("C-M-p"   . vertico-previous-group)

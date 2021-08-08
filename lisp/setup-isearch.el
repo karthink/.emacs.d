@@ -136,6 +136,8 @@ Also see `my/search-occur-url'."
          ("C-SPC"       . my/isearch-mark-and-exit)
          ("DEL"         . my/isearch-abort)
          ("<C-return>"  . my/isearch-other-end)
+         ("C-w"         . backward-kill-word-or-region)
+         ("M-w"         . isearch-yank-word-or-char)
          ("C-M-s"       . my/isearch-forward-other-buffer)
          ("C-M-r"       . my/isearch-backward-other-buffer)))
 

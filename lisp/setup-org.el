@@ -103,6 +103,10 @@
                 ;; org-use-sub-superscripts '{}
                 )
   
+  (font-lock-add-keywords 'org-mode
+                          '(("\\(\\(?:\\\\\\(?:label\\|ref\\)\\)\\){\\(.+?\\)}"
+                             (1 font-lock-keyword-face)
+                             (2 font-lock-constant-face))))
   (defun save-org-mode-files ()
     (dolist (buf (buffer-list))
       (with-current-buffer buf
@@ -275,6 +279,10 @@ an embedded LaTeX fragment, let `texmathp' do its job.
               )))))))
   )
 
+(use-package consult-reftex
+  :after (org latex reftex)
+  :bind (:map org-mode-map
+         ("C-c )" . 'consult-reftex-insert-reference)))
 
 (use-package org-src
   :after org
@@ -559,6 +567,9 @@ has no effect."
     (setq org-latex-default-packages-alist
           (delete '("" "hyperref" nil) org-latex-default-packages-alist))
     (push '("hidelinks" "hyperref" nil) (cdr (last org-latex-default-packages-alist)))
+    (when (executable-find "latexmk")
+      (setq org-latex-pdf-process
+            '("latexmk -f -pdf -%latex -shell-escape -interaction=nonstopmode -output-directory=%o %f")))
     (add-to-list 'org-latex-classes
                  '("IEEEtran"
                    "\\documentclass[conference]{IEEEtran}"
@@ -568,7 +579,39 @@ has no effect."
                    ("\\paragraph{%s}" . "\\paragraph*{%s}")
                    ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
   (setq org-export-with-LaTeX-fragments t
-        org-latex-prefer-user-labels t))
+        org-latex-prefer-user-labels t)
+  
+  (defun org-export-ignore-headlines (data backend info)
+    "Remove headlines tagged \"ignore\" retaining contents and promoting children.
+Each headline tagged \"ignore\" will be removed retaining its
+contents and promoting any children headlines to the level of the
+parent."
+    (org-element-map data 'headline
+      (lambda (object)
+        (when (member "ignore" (org-element-property :tags object))
+          (let ((level-top (org-element-property :level object))
+                level-diff)
+            (mapc (lambda (el)
+                    ;; recursively promote all nested headlines
+                    (org-element-map el 'headline
+                      (lambda (el)
+                        (when (equal 'headline (org-element-type el))
+                          (unless level-diff
+                            (setq level-diff (- (org-element-property :level el)
+                                                level-top)))
+                          (org-element-put-property el
+                                                    :level (- (org-element-property :level el)
+                                                              level-diff)))))
+                    ;; insert back into parse tree
+                    (org-element-insert-before el object))
+                  (org-element-contents object)))
+          (org-element-extract-element object)))
+      info nil)
+    data)
+
+  (add-hook 'org-export-filter-parse-tree-functions 'org-export-ignore-headlines)
+  
+  )
 
 (use-package valign
   :disabled

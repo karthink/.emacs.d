@@ -6,6 +6,37 @@
 ;;
 ;;- For the second fix see function. C-s "kludge".
 
+(defun org-babel-execute:octave (body params &optional matlabp)
+  "Execute a block of octave code with Babel."
+  (let* ((session
+	  (funcall (intern (format "org-babel-%s-initiate-session"
+				   (if matlabp "matlab" "octave")))
+		   (cdr (assq :session params)) params))
+         (result-type (cdr (assq :result-type params)))
+	 (full-body
+	  (org-babel-expand-body:generic
+	   body params (org-babel-variable-assignments:octave params)))
+	 (gfx-file (ignore-errors (org-babel-graphical-output-file params)))
+	 (result (org-babel-octave-evaluate
+		  session
+		  (if gfx-file
+		      (mapconcat 'identity
+				 (list
+				  "set (0, \"defaultfigurevisible\", \"off\");"
+				  full-body
+				  (format "export_fig('%s','-png','-transparent','-r300')" gfx-file))
+				 "\n")
+		    full-body)
+		  result-type matlabp)))
+    (if gfx-file
+	nil
+      (org-babel-reassemble-table
+       result
+       (org-babel-pick-name
+	(cdr (assq :colname-names params)) (cdr (assq :colnames params)))
+       (org-babel-pick-name
+	(cdr (assq :rowname-names params)) (cdr (assq :rownames params)))))))
+
 (defun org-babel-octave-evaluate-session
     (session body result-type &optional matlabp)
   "Evaluate BODY in SESSION."

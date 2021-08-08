@@ -977,6 +977,8 @@ active region use it instead."
          :map reb-lisp-mode-map
          ("RET" . reb-replace-regexp))
   :config
+  ;; reb-fix modifies reb-update-overlays to restrict matches to region
+  (use-package reb-fix)
   (defvar my/re-builder-positions nil
     "Store point and region bounds before calling re-builder")
   (advice-add 're-builder
@@ -3489,6 +3491,13 @@ project, as defined by `vc-root-dir'."
           (current-prefix-arg (if arg 4)))
       (call-interactively 'avy-goto-char)))
   
+  (defun my/avy-isearch (&optional arg)
+    "Goto isearch candidate in this window with hints."
+    (interactive "P")
+    (let ((avy-all-windows)
+          (current-prefix-arg (if arg 4)))
+      (call-interactively 'avy-isearch)))
+  
   (defun my/avy--read-char-2 (char1 char2)
     "Read two characters from the minibuffer."
     (interactive (list (let ((c1 (read-char "char 1: " t)))
@@ -3577,7 +3586,7 @@ project, as defined by `vc-root-dir'."
   ;;  :prefix "g"
   ;;  "s" 'avy-goto-char-timer)
   :bind (:map isearch-mode-map
-         ("M-j" . avy-isearch))
+         ("C-'" . my/avy-isearch))
   )
 
 ;;----------------------------------------------------------------------

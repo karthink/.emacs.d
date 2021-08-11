@@ -564,6 +564,7 @@ has no effect."
   :config
   (setq org-html-htmlize-output-type 'css)
   (with-eval-after-load 'ox-latex
+    (setq org-latex-caption-above nil)
     (setq org-latex-default-packages-alist
           (delete '("" "hyperref" nil) org-latex-default-packages-alist))
     (push '("hidelinks" "hyperref" nil) (cdr (last org-latex-default-packages-alist)))

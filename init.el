@@ -68,7 +68,9 @@
                                        (make-directory download-dir))
                                    download-dir)))
     (setq my/packages-urls-extra
-          '(("git@github.com:karthink/consult-reftex.git")
+          '(("https://git.sr.ht/~pkal/vc-backup")
+            ("https://github.com/xFA25E/ytel-show.git")
+            ("git@github.com:karthink/consult-reftex.git")
             ("git@github.com:karthink/consult-dir.git")
             ("https://github.com/minad/vertico.git")
             ("https://github.com/johnbcoughlin/calctex.git")
@@ -2929,6 +2931,9 @@ fully before starting comparison."
 
 )
 
+(use-package emacs
+  :bind (("C-h A" . info-apropos)
+         ("C-h C-a" . customize-apropos)))
 
 ;;----------------------------------------------------------------------
 ;;;** SHACKLE
@@ -4248,7 +4253,7 @@ currently loaded theme first."
           modus-themes-links 'faint
           modus-themes-hl-line 'accented-background
           modus-themes-prompts 'subtle
-          modus-themes-mode-line 'accented-3d
+          modus-themes-mode-line '(moody accented borderless)
           modus-themes-org-habit 'simplified)
     (setq modus-themes-vivendi-color-overrides
           '((bg-main . "#100b17")

@@ -34,7 +34,7 @@
 ;; Scrolling
 (setq scroll-margin 0
       scroll-preserve-screen-position t
-      next-screen-context-lines 4)
+      next-screen-context-lines 2)
 ;; mouse
 ;; (setq mouse-wheel-scroll-amount '(t ((shift) . 2))
 ;;       mouse-wheel-progressive-speed t)

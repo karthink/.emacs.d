@@ -1,7 +1,6 @@
 (use-package ytel
   :ensure t
-  :after (elfeed)
-  :defer 5
+  :commands ytel
   :bind (:map ytel-mode-map
               ("b" . ytel-watch-browse-url)
               ("m" . ytel-watch-umpv)

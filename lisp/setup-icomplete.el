@@ -442,6 +442,7 @@ When the number of characters in a buffer exceeds this threshold,
          ("f"        . browse-url-firefox)
          ("m"        . browse-url-umpv))
   :config
+  (setq embark-cycle-key (kbd "s-o"))
   (defun embark-act-with-completing-read (&optional arg)
     (interactive "P")
     (let* ((embark-prompter 'embark-completing-read-prompter)
@@ -665,6 +666,15 @@ TARGETS."
   :after vertico
   :bind (("C-x ." . vertico-repeat)
          ("H-."   . vertico-repeat)))
+
+(use-package vertico-reverse
+  :load-path "~/.local/share/git/vertico/extensions/"
+  :after vertico
+  :hook ((vertico-reverse-mode . my/vertico-reverse-setup)
+         (vertico-mode . vertico-reverse-mode))
+  :config
+  (defun my/vertico-reverse-setup ()
+    (setq vertico-resize vertico-reverse-mode)))
 
 (use-package vertico-flat
   :load-path "~/.local/share/git/vertico/extensions/"

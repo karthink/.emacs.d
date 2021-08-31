@@ -1967,7 +1967,20 @@ and Interpretation of Classical Mechanics) - The book."
 ;; Need this for ob-julia
 (use-package ess
   :ensure t
-  :after ob-julia)
+  :after ob-julia
+  :bind (:map ess-julia-mode-map
+         ("`" . my/ess-julia-cdlatex-symbol)
+         :map inferior-ess-julia-mode-map
+         ("`" . my/ess-julia-cdlatex-symbol))
+  :config
+  (defun my/ess-julia-cdlatex-symbol ()
+    (interactive)
+    (require 'cdlatex)
+    (cl-letf (((symbol-function 'texmathp)
+               (lambda () t)))
+      (cdlatex-math-symbol))
+    (call-interactively 'completion-at-point)
+    (forward-sexp)))
 
 ;;;* PLUGINS
 ;;######################################################################
@@ -2232,7 +2245,7 @@ is not visible. Otherwise delegates to regular Emacs next-error."
   :after flymake
   :hook (flymake-mode . flymake-diagnostic-at-point-mode)
   :config (setq flymake-diagnostic-at-point-display-diagnostic-function
-                'flymake-diagnostic-at-point-display-minibuffer))
+                'flymake-diagnostic-at-point-display-popup))
 
 (use-package package-lint-flymake
   :ensure t
@@ -3718,6 +3731,30 @@ project, as defined by `vc-root-dir'."
 ;;;** DIRED
 ;;----------------------------------------------------------------------
 (require 'setup-dired nil t)
+(use-package emacs
+  :after setup-dired
+  :config
+  (defun my/dired-ffmpeg-crop ()
+    (interactive)
+    (let ((file-suffix ""))
+      (cl-loop for file in (dired-get-marked-files) do
+               (start-process "ffmpeg" "ffmpeg" "/usr/bin/ffmpeg"
+                              "-i" file
+                              "-ss" (progn (start-process (concat "mpv " (file-name-base file))
+                                                          (concat "mpv " (file-name-base file))
+                                                          "/usr/bin/mpv"
+                                                          file)
+                                           (setq file-suffix (read-from-minibuffer "Video type: "))
+                                           (read-from-minibuffer "From: "))
+                              "-to" (read-from-minibuffer "To: ")
+                              "-vf" "scale='trunc(iw/2):trunc(ih/2)'"
+                              "-an"
+                              (replace-regexp-in-string "\\.mp4" (concat "_small_"
+                                                                         (string-join
+                                                                          (split-string file-suffix)
+                                                                          "_")
+                                                                         ".mp4")
+                                                        file))))))
 
 ;;;** DICTIONARY AND SPELLING
 (use-package sdcv

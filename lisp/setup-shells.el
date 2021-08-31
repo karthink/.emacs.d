@@ -90,7 +90,7 @@ Filenames are always matched by eshell."
   (defun my/eshell-first-load-settings ()
     (setq eshell-visual-commands (append eshell-visual-commands
                                          '("btm" "fzf" "pulsemixer" "mpv"
-                                           "ncmpcpp"))
+                                           "ncmpcpp" "progress"))
           ;; eshell-input-filter-functions '(eshell-expand-history-references)
           eshell-hist-ignoredups t
           eshell-destroy-buffer-when-process-dies t

@@ -369,7 +369,7 @@ When the number of characters in a buffer exceeds this threshold,
 ;; Enable richer annotations using the Marginalia package
 (use-package marginalia
   :ensure t
-  :after embark
+  :after (embark vertico)
   :init (marginalia-mode 1)
   :bind (:map vertico-map
          ("M-]" . marginalia-cycle))
@@ -407,15 +407,6 @@ When the number of characters in a buffer exceeds this threshold,
          ("C->"      . embark-become)
          :map completion-list-mode-map
          ("C-o"      . embark-minimal-act)
-         :map vertico-map
-         ("C->"     . embark-become)
-         (">"       . embark-become)
-         ("<tab>"   . embark-act-with-completing-read)
-         ("C-o"     . embark-minimal-act)
-         ("C-M-o"   . embark-minimal-act-noexit)
-         ("M-s o"   . embark-export)
-         ("C-c C-o" . embark-export)
-         ("C-l"     . embark-export)
          :map embark-collect-mode-map
          ("H-SPC" . embark-act)
          ("o"        . embark-act)
@@ -645,7 +636,15 @@ TARGETS."
               ("C-j"     . (lambda () (interactive)
 	        	     (if minibuffer--require-match
 	        	         (minibuffer-complete-and-exit)
-	        	       (exit-minibuffer)))))
+	        	       (exit-minibuffer))))
+              ("C->"     . embark-become)
+              (">"       . embark-become)
+              ("<tab>"   . embark-act-with-completing-read)
+              ("C-o"     . embark-minimal-act)
+              ("C-M-o"   . embark-minimal-act-noexit)
+              ("M-s o"   . embark-export)
+              ("C-c C-o" . embark-export)
+              ("C-l"     . embark-export))
   :config
   (setq vertico-count 15
         vertico-cycle t)

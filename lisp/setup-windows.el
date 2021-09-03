@@ -317,7 +317,8 @@ If buffer-or-name is nil return current buffer's mode."
 
         ((lambda (buf act) (seq-some (lambda (regex) (string-match-p regex buf))
                                      +repl-names-list))
-         (+select-buffer-in-direction
+         (display-buffer-reuse-window
+          +select-buffer-in-direction
           +select-buffer-in-side-window)
          ;; +select-buffer-at-bottom
          (window-height . .35)

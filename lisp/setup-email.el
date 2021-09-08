@@ -38,7 +38,6 @@
 ;; NOTMUCH
 ;;----------------------------------------------------------------------
 (use-package notmuch
-  :ensure t
   :commands notmuch
   :hook ((notmuch-message-mode . turn-off-auto-fill)
          (notmuch-mua-send . notmuch-mua-attachment-check))
@@ -164,7 +163,6 @@
   )
 
 (use-package notmuch-bookmarks
-:ensure
 :after notmuch
 :config
 (notmuch-bookmarks-mode))

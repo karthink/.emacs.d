@@ -75,12 +75,12 @@ MYTAG"
 
   (general-def :keymaps 'elfeed-search-mode-map
     :states  '(normal visual emacs)
-    "f"      (elfeed-search-tag-as 'later)
+    "l"      (elfeed-search-tag-as 'later)
     "d"      (elfeed-search-tag-as 'junk)
-    "l"      (elfeed-search-tag-as 'listen))
-  (bind-key "f" (elfeed-search-tag-as 'later) elfeed-search-mode-map)
+    "a"      (elfeed-search-tag-as 'listen))
+  (bind-key "l" (elfeed-search-tag-as 'later) elfeed-search-mode-map)
   (bind-key "u" (elfeed-search-tag-as 'unread) elfeed-search-mode-map)
-  (bind-key "l" (elfeed-search-tag-as 'listen) elfeed-search-mode-map)
+  (bind-key "a" (elfeed-search-tag-as 'listen) elfeed-search-mode-map)
 
   (defun elfeed-show-tag-as (mytag)
     "Returns a function that tags an elfeed entry or selection as
@@ -97,9 +97,9 @@ MYTAG"
     "f"     (elfeed-show-tag-as 'later)
     "d"     (elfeed-show-tag-as 'junk))
 
-  (bind-key "f" (elfeed-show-tag-as 'later)  elfeed-show-mode-map)
+  (bind-key "l" (elfeed-show-tag-as 'later)  elfeed-show-mode-map)
   (bind-key "u" (elfeed-show-tag-as 'unread) elfeed-show-mode-map)
-  (bind-key "l" (elfeed-show-tag-as 'listen) elfeed-show-mode-map)
+  (bind-key "a" (elfeed-show-tag-as 'listen) elfeed-show-mode-map)
   
   (setq elfeed-feeds my-elfeed-feeds)
 
@@ -185,6 +185,35 @@ USE-SINGLE-P) with mpv."
 ;;   (elfeed-entry-feed-id (elfeed-search-selected :ignore-region)))))
 ;;   (elfeed-declickbait entry))
 
+  (defun my/elfeed-search-by-day (dir)
+    (lambda (&optional arg)
+      (interactive "p")
+      (let* ((entry (elfeed-search-selected :ignore-region))
+             (this-day (if entry
+                           (elfeed-entry-date entry)
+                         (current-time)))
+             (next-day (time-add this-day (days-to-time (or arg 1))))
+             (next-next-day (time-add next-day (days-to-time (or arg 1))))
+             (prev-day (time-subtract this-day (days-to-time (or arg 1))))
+             from to)
+        (pcase dir
+          ('next (setq from next-day
+                       to   next-next-day))
+          ('prev (setq from prev-day
+                       to   this-day))
+          (_     (setq from this-day
+                       to   next-day)))
+        (setq elfeed-search-filter (concat (replace-regexp-in-string
+                                            "@[^[:space:]]*" ""
+                                            elfeed-search-filter)
+                                           "@"  (elfeed-search-format-date from)
+                                           "--" (elfeed-search-format-date to)))
+        (elfeed-search-update :force))))
+  
+  (define-key elfeed-search-mode-map (kbd ".") (my/elfeed-search-by-day 'this))
+  (define-key elfeed-search-mode-map (kbd "f") (my/elfeed-search-by-day 'next))
+  (define-key elfeed-search-mode-map (kbd "b") (my/elfeed-search-by-day 'prev))
+        
   (use-package wallabag
     :config 
     (defun elfeed-post-to-wallabag ()
@@ -292,10 +321,13 @@ USE-SINGLE-P) with mpv."
   (:keymaps 'elfeed-show-mode-map
             "SPC" 'elfeed-scroll-up-command
             "S-SPC" 'elfeed-scroll-down-command
-            "B" 'elfeed-show-eww-open)
+            "W" 'elfeed-search-eww-open
+            "B" 'elfeed-show-eww-open
+            "x" 'elfeed-search-browse-url)
   (:keymaps 'elfeed-search-mode-map
-            "B" 'elfeed-search-eww-open)
-  )
+            "B" 'elfeed-search-eww-open
+            "W" 'elfeed-search-eww-open
+            "x" 'elfeed-search-browse-url))
 
 (use-package wallabag
   :load-path "~/.local/share/git/wallabag"

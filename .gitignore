@@ -26,3 +26,5 @@ srecode-map.el
 *~
 package-quickstart.el
 custom.el
+image-dired/
+newsticker/

@@ -185,6 +185,7 @@ nil."
 
 (global-set-key (kbd "C-x 2") 'my/split-window-below)
 (global-set-key (kbd "C-x 3") 'my/split-window-right)
+(global-set-key (kbd "C-x 0") 'my/delete-window-or-delete-frame)
 (global-set-key (kbd "H-0") 'my/delete-window-or-delete-frame)
 (global-set-key (kbd "H-1") 'delete-other-windows)
 (global-set-key (kbd "H-2") 'my/split-window-below)

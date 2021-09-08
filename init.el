@@ -68,8 +68,7 @@
                                        (make-directory download-dir))
                                    download-dir)))
     (setq my/packages-urls-extra
-          '(("https://git.sr.ht/~pkal/vc-backup")
-            ("https://github.com/xFA25E/ytel-show.git")
+          '(("https://github.com/xFA25E/ytel-show.git")
             ("git@github.com:karthink/consult-reftex.git")
             ("git@github.com:karthink/consult-dir.git")
             ("https://github.com/minad/vertico.git")
@@ -104,14 +103,14 @@
 ;;########################################################################
 ;;;* PERSONAL INFO
 ;;########################################################################
-(with-demoted-errors 
-    (and (load-library
-          (if (file-exists-p (concat user-emacs-directory "lisp/personal.el"))
-	      (concat user-emacs-directory "lisp/personal.el")
-	    (concat user-emacs-directory "lisp/personal.el.gpg")))
-         ;; (require 'personal nil t)
-         (setq user-full-name my-full-name)
-         (setq user-mail-address my-email-address)))
+(let* ((personal-file (concat user-emacs-directory "lisp/personal.el.gpg"))
+       (personal-file-bc (concat personal-file ".elc")))
+  (unless (file-exists-p personal-file-bc)
+    (epa-file-enable)
+    (byte-compile-file personal-file)))
+(load-library "personal.el.gpg")
+(setq user-full-name my-full-name)
+(setq user-mail-address my-email-address)
 
 ;;########################################################################
 ;;;* UI FIXES
@@ -448,6 +447,7 @@
          ("H-M-x" . eval-defun)
          ("H-s" . isearch-forward)
          ("H-r" . isearch-backward)
+         ("H-q" . kill-buffer-and-window)
          :map isearch-mode-map
          ("H-s" . isearch-repeat-forward)
          ("H-r" . isearch-repeat-backward)
@@ -874,6 +874,7 @@ active region use it instead."
 
 ;;;** Winner mode
 (use-package winner
+  :disabled
   :commands winner-undo
   :bind (("C-c <left>" . winner-undo)
          ("C-x C-/" . winner-undo)
@@ -2484,9 +2485,13 @@ _d_: subtree
    ("H-<iso-lefttab>" . tab-bar-switch-to-prev-tab)
    :map tab-prefix-map
    ("h" . my/tab-bar-show-hide-tabs)
-   ("H-t" . tab-bar-select-tab-by-name))
+   ("H-t" . tab-bar-select-tab-by-name)
+   ("s-u" . tab-bar-history-back)
+   ("C-c u" . tab-bar-history-back)
+   ("s-S-U" . tab-bar-history-forward))
 
   :config
+  (tab-bar-history-mode 1)
   (setq  tab-bar-close-last-tab-choice 'tab-bar-mode-disable
          tab-bar-show                   nil
          tab-bar-tab-name-truncated-max 14
@@ -2536,44 +2541,43 @@ _d_: subtree
 ;;----------------------------------------------------------------------
 ;; This is superceded by native tabs (tab-bar-mode) in Emacs 27, only
 ;; load if running a lower Emacs version
-(when (version-list-<
+(use-package eyebrowse
+  :disabled
+  :if (version-list-<
        (version-to-list emacs-version)
        '(27 0 1 0))
-  (use-package eyebrowse
-    ;; :bind ("C-c C-w c" . eyebrowse-create-window-config)
-    ;; :commands eyebrowse-create-window-config
-    :hook (after-init . eyebrowse-mode)
-    :init (setq eyebrowse-keymap-prefix (kbd "C-x t"))
-    :config
-    (setq eyebrowse-new-workspace (lambda nil "Buffer menu for user buffers" (buffer-menu 1))
-          eyebrowse-wrap-around t
-          eyebrowse-switch-back-and-forth t)
-    (define-key eyebrowse-mode-map (kbd "C-M-TAB") 'eyebrowse-next-window-config)
-    (define-key eyebrowse-mode-map (kbd "C-M-<tab>") 'eyebrowse-next-window-config)
-    (define-key eyebrowse-mode-map (kbd "<C-M-iso-lefttab>") 'eyebrowse-last-window-config)
-    ;; (define-key eyebrowse-mode-map (kbd "M-1") 'eyebrowse-switch-to-window-config-1)
-    ;; (define-key eyebrowse-mode-map (kbd "M-2") 'eyebrowse-switch-to-window-config-2)
-    ;; (define-key eyebrowse-mode-map (kbd "M-3") 'eyebrowse-switch-to-window-config-3)
-    ;; (defmacro eyebrowse-remap-tab-keys () )
-    ;; (eyebrowse-setup-opinionated-keys)
+  :hook (after-init . eyebrowse-mode)
+  :init (setq eyebrowse-keymap-prefix (kbd "C-x t"))
+  ;; :bind ("C-c C-w c" . eyebrowse-create-window-config)
+  ;; :commands eyebrowse-create-window-config
+  :config
+  (setq eyebrowse-new-workspace (lambda nil "Buffer menu for user buffers" (buffer-menu 1))
+        eyebrowse-wrap-around t
+        eyebrowse-switch-back-and-forth t)
+  (define-key eyebrowse-mode-map (kbd "C-M-TAB") 'eyebrowse-next-window-config)
+  (define-key eyebrowse-mode-map (kbd "C-M-<tab>") 'eyebrowse-next-window-config)
+  (define-key eyebrowse-mode-map (kbd "<C-M-iso-lefttab>") 'eyebrowse-last-window-config)
+  ;; (define-key eyebrowse-mode-map (kbd "M-1") 'eyebrowse-switch-to-window-config-1)
+  ;; (define-key eyebrowse-mode-map (kbd "M-2") 'eyebrowse-switch-to-window-config-2)
+  ;; (define-key eyebrowse-mode-map (kbd "M-3") 'eyebrowse-switch-to-window-config-3)
+  ;; (defmacro eyebrowse-remap-tab-keys () )
+  ;; (eyebrowse-setup-opinionated-keys)
 
-    ;; Display tab configuration in Emacs title bar
-    (defun my-title-bar-format()
-      (let* ((current-slot (eyebrowse--get 'current-slot))
-             (window-configs (eyebrowse--get 'window-configs))
-             (window-config (assoc current-slot window-configs))
-             (window-config-name (nth 2 window-config))
-             (num-slots (length window-configs)))
-        (concat window-config-name " [" (number-to-string current-slot)
-                "/" (number-to-string num-slots) "] | " "%b")))
+  ;; Display tab configuration in Emacs title bar
+  (defun my-title-bar-format()
+    (let* ((current-slot (eyebrowse--get 'current-slot))
+           (window-configs (eyebrowse--get 'window-configs))
+           (window-config (assoc current-slot window-configs))
+           (window-config-name (nth 2 window-config))
+           (num-slots (length window-configs)))
+      (concat window-config-name " [" (number-to-string current-slot)
+              "/" (number-to-string num-slots) "] | " "%b")))
 
-    (if (display-graphic-p)
-        (progn
-          (setq frame-title-format
-                '(:eval (my-title-bar-format)))))
+  (if (display-graphic-p)
+      (progn
+        (setq frame-title-format
+              '(:eval (my-title-bar-format))))))
 
-    ))
-;; (define-key ivy-minibuffer-map (kbd "C-M-w") 'ivy-yank-word)
 ;;----------------------------------------------------------------------
 ;;;** HIGHLIGHTS
 ;;----------------------------------------------------------------------
@@ -2735,8 +2739,7 @@ _d_: subtree
 
 ;;;** EWW
 ;;----------------------------------------------------------------------
-(use-package eww
-  :bind ("M-s W" . eww-search-words))
+(require 'setup-eww)
 ;;----------------------------------------------------------------------
 
 ;;;** NAV-FLASH
@@ -3780,6 +3783,7 @@ argument, query for word to search."
   (setq bookmark-file "~/.cache/emacs/bookmarks"))
 ;;;** NOV.EL
 (use-package nov
+  :disabled
   :init
   (add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode))
   :hook (nov-mode . my/nov-font-setup)
@@ -4189,13 +4193,13 @@ currently loaded theme first."
   (cond (IS-LINUX
          (set-fontset-font t 'unicode "Symbola" nil 'prepend)
          (custom-set-faces
-          '(variable-pitch ((t (:family "Ubuntu" :height 120))))
+          '(variable-pitch ((t (:family "Ubuntu" :height 110))))
           ;; '(default ((t (:family "Ubuntu Mono" :foundry "PfEd"
           ;;                        :slant normal :weight normal
           ;;                        :height 125 :width normal))))
           '(default ((t (:family "Iosevka" :foundry "PfEd"
                                  :slant normal :weight normal
-                                 :height 122 :width normal))))
+                                 :height 110 :width normal))))
           ;; '(default ((t (:family "FantasqueSansMono Nerd Font" :foundry "PfEd"
           ;;                        :slant normal :weight normal
           ;;                        :height 130 :width normal))))

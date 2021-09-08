@@ -43,8 +43,47 @@
   :bind (("H-<return>" . eshell)
          ("H-!" . eshell-here))
   :hook ((eshell-mode . my/eshell-keys-and-modes)
+         (eshell-mode . my/eshell-hist-use-global-history)
+         (eshell-pre-command-hook . eshell-save-some-history)
+         (eshell-pre-command-hook . my/eshell-history-remove-duplicates)
          (eshell-first-time-mode . my/eshell-first-load-settings))
   :config
+  ;; From https://gitlab.com/ambrevar/dotfiles/-/blob/master/.emacs.d/lisp/init-eshell.el
+  (defvar my/eshell-history-global-ring nil
+    "History ring shared across Eshell sessions.")
+
+  (defun my/eshell-hist-use-global-history ()
+    "Make Eshell history shared across different sessions."
+    (unless my/eshell-history-global-ring
+      (when eshell-history-file-name
+        (eshell-read-history nil t))
+      (setq my/eshell-history-global-ring (or eshell-history-ring (make-ring eshell-history-size))))
+    (setq eshell-history-ring my/eshell-history-global-ring))
+  
+  (defun my/ring-delete-first-item-duplicates (ring)
+    "Remove duplicates of last command in history.
+Return RING.
+
+This should be faster then `seq-uniq'.  Unlike
+`eshell-hist-ignoredups' or `comint-input-ignoredups', it does
+not allow duplicates ever.
+Surrounding spaces are ignored when comparing."
+    (let ((first (ring-ref ring 0))
+          (index 1))
+      (while (<= index (1- (ring-length ring)))
+        (if (string= (string-trim first)
+                     (string-trim (ring-ref ring index)))
+            ;; REVIEW: We could stop at the first match, it would be faster and it
+            ;; would eliminate duplicates if we started from a fresh history.
+            ;; From an existing history that would not clean up existing
+            ;; duplicates beyond the first one.
+            (ring-remove ring index)
+          (setq index (1+ index))))
+      ring))
+
+  (defun my/eshell-history-remove-duplicates ()
+    (my/ring-delete-first-item-duplicates eshell-history-ring))
+  
   (defun my/eshell-fish-complete-commands-list ()
   "Gerenate list of appliclable, visible commands by combining
 Eshell specific completions with those returned by fish shell.
@@ -90,7 +129,7 @@ Filenames are always matched by eshell."
   (defun my/eshell-first-load-settings ()
     (setq eshell-visual-commands (append eshell-visual-commands
                                          '("btm" "fzf" "pulsemixer" "mpv"
-                                           "ncmpcpp" "progress"))
+                                           "ncmpcpp" "progress" "julia"))
           ;; eshell-input-filter-functions '(eshell-expand-history-references)
           eshell-hist-ignoredups t
           eshell-destroy-buffer-when-process-dies t
@@ -104,7 +143,7 @@ Filenames are always matched by eshell."
           eshell-last-dir-ring-file-name (concat (file-name-as-directory
                                             eshell-directory-name)
                                            "lastdir")
-          eshell-history-size 2048
+          eshell-history-size 4096
           eshell-command-completion-function (lambda ()
                                                (pcomplete-here
                                                 (my/eshell-fish-complete-commands-list))))
@@ -113,6 +152,7 @@ Filenames are always matched by eshell."
     ;; (setq eshell-buffer-shorthand t)
     
     (advice-add 'eshell-life-is-too-much :after #'delete-window-if-not-single)
+    (advice-add 'eshell-mark-output :after #'activate-mark)
     
     ;; From
     ;; https://gitlab.com/ambrevar/dotfiles/-/blob/master/.emacs.d/lisp/init-eshell.el
@@ -132,9 +172,12 @@ Filenames are always matched by eshell."
   (defun my/eshell-keys-and-modes ()
     (setq outline-regexp eshell-prompt-regexp)
     (abbrev-mode 1)
-    (define-key eshell-mode-map (kbd "H-<return>") 'delete-window)
+    (define-key eshell-mode-map (kbd "H-<return>") 'my/delete-window-or-delete-frame)
     (define-key eshell-mode-map (kbd "M-r") 'my/eshell-previous-matching-input)
     (define-key eshell-mode-map (kbd "M-s") nil)
+    (define-key eshell-mode-map (kbd "C-c M-w") 'eshell-copy-output)
+    (define-key eshell-mode-map (kbd "C-c C-l") 'my/eshell-export)
+    (define-key eshell-mode-map (kbd "C-c C-SPC") 'eshell-mark-output)
     (setq-local company-minimum-prefix-length 2)
     ;; (setq-local completion-in-region-function #'consult-completion-in-region)
     (setq eshell-cmpl-cycle-cutoff-length 2))
@@ -149,6 +192,43 @@ Filenames are always matched by eshell."
                                    (point)))))
       (delete-region (save-excursion (eshell-bol)) (point))
       (insert input)))
+  
+  (defun eshell-copy-output (&optional arg)
+  "Copy output of the last command to the kill ring. With prefix
+argument arg, Also copy the prompt and input."
+  (interactive "P")
+  (copy-region-as-kill (if arg (eshell-beginning-of-input)
+                         (eshell-beginning-of-output))
+                       (eshell-end-of-output))
+  (message (if arg "Copied last input and output to kill ring."
+             "Copied last output to kill ring.")))
+  
+  ;; From https://protesilaos.com/dotemacs
+  
+  (defcustom my/eshell-output-buffer "*Exported Eshell output*"
+    "Name of buffer with the last output of Eshell command.
+Used by `my/eshell-export'."
+    :type 'string
+    :group 'eshell)
+
+  (defun my/eshell-export (&optional arg)
+  "Produce a buffer with output of the last Eshell command. 
+With optional argument ARG, include the input as well.
+If `my/eshell-output-buffer' does not exist, create it. Else
+append to it."
+  (interactive "P")
+  (let ((eshell-output (buffer-substring-no-properties
+                        (if arg (save-excursion (goto-char (eshell-beginning-of-input))
+                                                (goto-char (point-at-bol)))
+                          (eshell-beginning-of-output))
+                        (eshell-end-of-output))))
+    (with-current-buffer (get-buffer-create my/eshell-output-buffer)
+      (goto-char (point-max))
+      (unless (eq (point-min) (point-max))
+        (insert (format "\n%s\n\n" "* * *")))
+      (goto-char (point-at-bol))
+      (insert eshell-output)
+      (switch-to-buffer-other-window (current-buffer)))))
   
   ;; From http://howardism.org/Technical/Emacs/eshell-fun.html
   (defun eshell-here ()
@@ -173,12 +253,23 @@ Filenames are always matched by eshell."
   
   (defun eshell/z (&optional regexp)
     "Navigate to a previously visited directory in eshell."
-    (eshell/cd
-     (if regexp (eshell-find-previous-directory regexp)
-       (completing-read "cd: " (delete-dups (mapcar 'abbreviate-file-name
-                                                    (ring-elements eshell-last-dir-ring)))))))
-  
-  )
+    (let ((eshell-dirs (delete-dups (mapcar 'abbreviate-file-name
+                                            (ring-elements eshell-last-dir-ring)))))
+      (cond
+       ((and (not regexp) (featurep 'consult-dir))
+        (let* ((consult-dir--source-eshell `(:name "Eshell"
+                                             :narrow ?e
+                                             :category file
+                                             :face consult-file
+                                             :items ,eshell-dirs))
+               (consult-dir-sources (cons consult-dir--source-eshell consult-dir-sources)))
+          (eshell/cd (substring-no-properties (consult-dir--pick "Switch directory: ")))))
+       (t (eshell/cd (if regexp (eshell-find-previous-directory regexp)
+                            (completing-read "cd: " eshell-dirs))))))))
+
+(use-package eshell-bookmark
+  :ensure
+  :hook (eshell-mode . eshell-bookmark-setup))
 
 (use-package em-alias
   :after eshell

@@ -185,6 +185,35 @@ USE-SINGLE-P) with mpv."
 ;;   (elfeed-entry-feed-id (elfeed-search-selected :ignore-region)))))
 ;;   (elfeed-declickbait entry))
 
+  (defun my/elfeed-search-by-day (dir)
+    (lambda (&optional arg)
+      (interactive "p")
+      (let* ((entry (elfeed-search-selected :ignore-region))
+             (this-day (if entry
+                           (elfeed-entry-date entry)
+                         (current-time)))
+             (next-day (time-add this-day (days-to-time (or arg 1))))
+             (next-next-day (time-add next-day (days-to-time (or arg 1))))
+             (prev-day (time-subtract this-day (days-to-time (or arg 1))))
+             from to)
+        (pcase dir
+          ('next (setq from next-day
+                       to   next-next-day))
+          ('prev (setq from prev-day
+                       to   this-day))
+          (_     (setq from this-day
+                       to   next-day)))
+        (setq elfeed-search-filter (concat (replace-regexp-in-string
+                                            "@[^[:space:]]*" ""
+                                            elfeed-search-filter)
+                                           "@"  (elfeed-search-format-date from)
+                                           "--" (elfeed-search-format-date to)))
+        (elfeed-search-update :force))))
+  
+  (define-key elfeed-search-mode-map (kbd ".") (my/elfeed-search-by-day 'this))
+  (define-key elfeed-search-mode-map (kbd "<") (my/elfeed-search-by-day 'next))
+  (define-key elfeed-search-mode-map (kbd ">") (my/elfeed-search-by-day 'prev))
+        
   (use-package wallabag
     :config 
     (defun elfeed-post-to-wallabag ()

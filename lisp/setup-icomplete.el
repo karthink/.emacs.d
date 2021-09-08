@@ -340,6 +340,7 @@ When the number of characters in a buffer exceeds this threshold,
   :bind (:map embark-collect-mode-map
          ("C-c C-f" . my/embark-consult-preview-toggle)
          :map embark-become-file+buffer-map
+         ("m" . consult-bookmark)
          ("b" . consult-buffer)
          ("j" . consult-find))
   :config

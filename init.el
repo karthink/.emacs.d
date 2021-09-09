@@ -41,7 +41,7 @@
 
 (use-package emacs
   :config
-  ;; (setq user-emacs-directory "~/.emacs.d/")
+  (setq user-emacs-directory "~/.emacs.orig/")
   (defun dir-concat (dir file)
     "join path DIR with filename FILE correctly"
     (concat (file-name-as-directory dir) file))
@@ -52,7 +52,6 @@
                "/cygdrive/c/Users/karth/OneDrive/Documents/")
               ((equal system-type 'nt)
                "/cygdrive/c/Users/karth/OneDrive/Documents/")
-              ((equal (system-name) "thinkpad") "~/")
               (t "~/")))
 
   ;; Adds ~/.emacs.d to the load-path
@@ -99,6 +98,14 @@
 ;;;* CORE
 ;;########################################################################
 (require 'setup-core)
+
+;;;* NATIVE-COMP
+;;########################################################################
+;; Only on Emacs 28
+(unless (version-list-<
+         (version-to-list emacs-version)
+         '(28 0 1 0))
+  (add-to-list 'native-comp-eln-load-path "~/.cache/emacs/eln-cache/"))
 
 ;;########################################################################
 ;;;* PERSONAL INFO
@@ -773,7 +780,7 @@ active region use it instead."
 
 (require 'better-buffers nil t)
 
-;;;** Popup Buffers
+;;;** POPPER
 (use-package popper
   :load-path "~/.local/share/git/popper"
   :after (setup-windows setup-project)
@@ -786,7 +793,8 @@ active region use it instead."
          ("H-M-k" . popper-kill-latest-popup))
   :init
   (setq popper-group-function #'popper-group-by-project)
-  (setq popper-reference-buffers
+  (setq popper-mode-line nil
+        popper-reference-buffers
         (append +help-modes-list
                 +repl-modes-list
                 +occur-grep-modes-list
@@ -1790,7 +1798,7 @@ Return the name of the temporary file."
   ;; :config
   ;; (setq matlab-shell-command "matlab")
   ;; (add-to-list 'matlab-shell-command-switches "-nosplash")
-  (with-demoted-errors "Error loading Matlab autoloads"
+  (with-demoted-errors "Error loading Matlab autoloads: %s"
     (load-library "matlab-autoloads")
     (load-library "matlab-shell")
     (load-library "mlint"))
@@ -3735,6 +3743,7 @@ project, as defined by `vc-root-dir'."
 
 ;;;** DICTIONARY AND SPELLING
 (use-package sdcv
+  :disabled
   :ensure nil
   :commands (sdcv-search-input)
   :bind (("C-x M-=" . sdcv-search-input)
@@ -3780,7 +3789,7 @@ argument, query for word to search."
 ;;;** BOOKMARKS
 (use-package bookmark
   :config
-  (setq bookmark-file "~/.cache/emacs/bookmarks"))
+  (setq bookmark-default-file "~/.cache/emacs/bookmarks"))
 ;;;** NOV.EL
 (use-package nov
   :disabled

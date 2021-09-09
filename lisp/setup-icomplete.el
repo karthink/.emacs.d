@@ -439,12 +439,13 @@ When the number of characters in a buffer exceeds this threshold,
     (interactive "P")
     (let* ((embark-prompter 'embark-completing-read-prompter)
            (act (propertize "Act" 'face 'highlight))
-           (embark-indicator (lambda (_keymap targets) nil)))
+           (embark-indicators (list (lambda (&optional _keymap targets prefix)
+                                      #'ignore))))
       (embark-act arg)))
   
   (defun embark-minimal-act (&optional arg)
     (interactive "P")
-    (let ((embark-indicator #'embark-which-key-indicator))
+    (let ((embark-indicators '(embark-which-key-indicator)))
       (embark-act arg)))
   
   (defun embark-minimal-act-noexit ()
@@ -668,6 +669,7 @@ TARGETS."
          ("H-."   . vertico-repeat)))
 
 (use-package vertico-reverse
+  :disabled
   :load-path "~/.local/share/git/vertico/extensions/"
   :after vertico
   :hook ((vertico-reverse-mode . my/vertico-reverse-setup)

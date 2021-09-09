@@ -48,7 +48,41 @@
          (eshell-pre-command-hook . my/eshell-history-remove-duplicates)
          (eshell-first-time-mode . my/eshell-first-load-settings))
   :config
-  ;; From https://gitlab.com/ambrevar/dotfiles/-/blob/master/.emacs.d/lisp/init-eshell.el
+  ;; From the Doom emacs config
+  (defun my/eshell-default-prompt-fn ()
+    "Generate the prompt string for eshell. Use for `eshell-prompt-function'."
+    (concat (if (bobp) "" "\n")
+            (let ((pwd (eshell/pwd)))
+              (propertize (if (equal pwd "~")
+                              pwd
+                            (abbreviate-file-name pwd))
+                          'face 'my/eshell-prompt-pwd))
+            (propertize (my/eshell--current-git-branch)
+                        'face 'my/eshell-prompt-git-branch)
+            (propertize " λ" 'face (if (zerop eshell-last-command-status) 'success 'error))
+            " "))
+
+  (defun my/eshell--current-git-branch ()
+    ;; TODO Refactor me
+    (cl-destructuring-bind (status . output)
+        (with-temp-buffer (cons
+                           (or (call-process "git" nil t nil "symbolic-ref" "-q" "--short" "HEAD")
+                               (call-process "git" nil t nil "describe" "--all" "--always" "HEAD")
+                               -1)
+                           (string-trim (buffer-string))))
+      (if (equal status 0)
+          (format " [%s]" output)
+        "")))
+
+  (defface my/eshell-prompt-pwd '((t (:inherit font-lock-constant-face)))
+    "TODO"
+    :group 'eshell)
+
+  (defface my/eshell-prompt-git-branch '((t (:inherit font-lock-builtin-face)))
+    "TODO"
+    :group 'eshell)
+
+;; From https://gitlab.com/ambrevar/dotfiles/-/blob/master/.emacs.d/lisp/init-eshell.el
   (defvar my/eshell-history-global-ring nil
     "History ring shared across Eshell sessions.")
 
@@ -146,7 +180,17 @@ Filenames are always matched by eshell."
           eshell-history-size 4096
           eshell-command-completion-function (lambda ()
                                                (pcomplete-here
-                                                (my/eshell-fish-complete-commands-list))))
+                                                (my/eshell-fish-complete-commands-list)))
+          eshell-glob-case-insensitive t
+          eshell-error-if-no-glob t)
+    (setq eshell-prompt-regexp "^.* λ "
+          eshell-prompt-function #'my/eshell-default-prompt-fn
+          eshell-banner-message
+        '(format "%s %s\n"
+                 (propertize (format " %s " (string-trim (buffer-name)))
+                             'face 'mode-line-highlight)
+                 (propertize (current-time-string)
+                             'face 'font-lock-keyword-face)))
 
     (defalias 'eshell/x #'eshell/exit)
     ;; (setq eshell-buffer-shorthand t)

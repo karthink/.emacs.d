@@ -293,4 +293,8 @@ This relies on the external 'fd' executable."
   :ensure t
   :after dired)
 
+(use-package diredfl
+  :ensure t
+  :hook (dired-mode . diredfl-mode))
+
 (provide 'setup-dired)

@@ -253,9 +253,10 @@ If buffer-or-name is nil return current buffer's mode."
          (side . bottom)
          (slot . -6)
          ;; (preserve-size . (nil . t))
-         (window-parameters . ((no-other-window . #'ignore)
-                               ;; (mode-line-format . (:eval (+helper-window-mode-line-format)))
-                               )))
+         ;; (window-parameters . ((no-other-window . #'ignore)
+         ;;                       ;; (mode-line-format . (:eval (+helper-window-mode-line-format)))
+         ;;                       ))
+         )
 
         ("\\*\\(?:Warnings\\|Compile-Log\\|Messages\\|Tex Help\\|TeX errors\\)\\*"
          (display-buffer-in-side-window display-buffer-at-bottom)
@@ -266,7 +267,7 @@ If buffer-or-name is nil return current buffer's mode."
          (slot . -5)
          ;; (preserve-size . (nil . t))
          (window-parameters . ((split-window . #'ignore)
-                               (no-other-window . t)
+                               ;; (no-other-window . t)
                                ;; (mode-line-format . (:eval (+helper-window-mode-line-format)))
                                )))
 
@@ -301,9 +302,10 @@ If buffer-or-name is nil return current buffer's mode."
          (window-height . 0.20)
          (side . bottom)
          (slot . -2)
-         (window-parameters . ((no-other-window . t)
-                               ;; (mode-line-format . (:eval (+helper-window-mode-line-format)))
-                               )))
+         ;; (window-parameters . ((no-other-window . t)
+         ;;                       ;; (mode-line-format . (:eval (+helper-window-mode-line-format)))
+         ;;                       ))
+         )
 
         ("\\*Apropos\\*" (display-buffer-in-side-window)
          ;; (window-height . 0.40)

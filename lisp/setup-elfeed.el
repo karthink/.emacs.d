@@ -94,7 +94,7 @@ MYTAG"
 
   (general-def :keymaps 'elfeed-show-mode-map
     :states '(normal visual emacs)
-    "f"     (elfeed-show-tag-as 'later)
+    "l"     (elfeed-show-tag-as 'later)
     "d"     (elfeed-show-tag-as 'junk))
 
   (bind-key "l" (elfeed-show-tag-as 'later)  elfeed-show-mode-map)
@@ -211,8 +211,8 @@ USE-SINGLE-P) with mpv."
         (elfeed-search-update :force))))
   
   (define-key elfeed-search-mode-map (kbd ".") (my/elfeed-search-by-day 'this))
-  (define-key elfeed-search-mode-map (kbd "f") (my/elfeed-search-by-day 'next))
-  (define-key elfeed-search-mode-map (kbd "b") (my/elfeed-search-by-day 'prev))
+  (define-key elfeed-search-mode-map (kbd "b") (my/elfeed-search-by-day 'next))
+  (define-key elfeed-search-mode-map (kbd "f") (my/elfeed-search-by-day 'prev))
         
   (use-package wallabag
     :config 

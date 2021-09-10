@@ -2491,12 +2491,12 @@ _d_: subtree
    ("C-M-S-<tab>" . tab-bar-switch-to-prev-tab)
    ("H-<tab>" . tab-bar-switch-to-next-tab)
    ("H-<iso-lefttab>" . tab-bar-switch-to-prev-tab)
-   :map tab-prefix-map
-   ("h" . my/tab-bar-show-hide-tabs)
-   ("H-t" . tab-bar-select-tab-by-name)
    ("s-u" . tab-bar-history-back)
    ("C-c u" . tab-bar-history-back)
-   ("s-S-U" . tab-bar-history-forward))
+   ("s-S-U" . tab-bar-history-forward)
+   :map tab-prefix-map
+   ("h" . my/tab-bar-show-hide-tabs)
+   ("H-t" . tab-bar-select-tab-by-name))
 
   :config
   (tab-bar-history-mode 1)
@@ -4206,12 +4206,12 @@ currently loaded theme first."
           ;; '(default ((t (:family "Ubuntu Mono" :foundry "PfEd"
           ;;                        :slant normal :weight normal
           ;;                        :height 125 :width normal))))
-          '(default ((t (:family "Iosevka" :foundry "PfEd"
+          ;; '(default ((t (:family "Iosevka" :foundry "PfEd"
+          ;;                        :slant normal :weight normal
+          ;;                        :height 110 :width normal))))
+          '(default ((t (:family "FantasqueSansMono" :foundry "PfEd"
                                  :slant normal :weight normal
                                  :height 110 :width normal))))
-          ;; '(default ((t (:family "FantasqueSansMono Nerd Font" :foundry "PfEd"
-          ;;                        :slant normal :weight normal
-          ;;                        :height 130 :width normal))))
           ))
         (IS-WINDOWS
          (custom-set-faces

@@ -249,7 +249,7 @@ argument arg, Also copy the prompt and input."
   
   ;; From https://protesilaos.com/dotemacs
   
-  (defcustom my/eshell-output-buffer "*Exported Eshell output*"
+  (defcustom my/eshell-output-buffer "*Eshell Export*"
     "Name of buffer with the last output of Eshell command.
 Used by `my/eshell-export'."
     :type 'string

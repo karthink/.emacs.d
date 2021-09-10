@@ -193,6 +193,7 @@ nil."
 (global-set-key (kbd "H-4") ctl-x-4-map)
 (global-set-key (kbd "H-5") ctl-x-5-map)
 (global-set-key (kbd "H-k") 'kill-this-buffer)
+(global-set-key (kbd "H-q") 'kill-buffer-and-window)
 (global-set-key (kbd "<f7>") '+make-frame-floating-with-current-buffer)
 ;;----------------------------------------------------------------------
 ;; FUNCTIONS

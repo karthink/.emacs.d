@@ -41,7 +41,6 @@
 
 (use-package emacs
   :config
-  (setq user-emacs-directory "~/.emacs.orig/")
   (defun dir-concat (dir file)
     "join path DIR with filename FILE correctly"
     (concat (file-name-as-directory dir) file))
@@ -4258,28 +4257,44 @@ currently loaded theme first."
 ;;                             '(org-level-2 ((t (:height 1.1 ;; 
 
   (use-package modus-themes
-    :disabled
     :ensure
     :defer
     :config
     (setq modus-themes-org-blocks nil
           modus-themes-intense-hl-line t
-          modus-themes-completions t
           modus-themes-org-blocks 'grayscale
           modus-themes-fringes 'subtle
           modus-themes-scale-headings t
           modus-themes-section-headings nil
-          modus-themes-variable-pitch-headings t
+          modus-themes-variable-pitch-headings nil
           modus-themes-intense-paren-match t
           modus-themes-bold-constructs t
           modus-themes-completions 'opinionated
-          modus-themes-diffs 'desaturated
-          modus-themes-syntax 'faint
-          modus-themes-links 'faint
+          modus-themes-diffs 'desaturated ;'fg-only-deuteranopia
+          modus-themes-syntax nil ;'faint
+          modus-themes-links '(faint neutral-underline)
           modus-themes-hl-line 'accented-background
-          modus-themes-prompts 'subtle
-          modus-themes-mode-line '(moody accented borderless)
-          modus-themes-org-habit 'simplified)
+          modus-themes-prompts '(bold background)
+          modus-themes-mode-line '(3d moody accented borderless)
+          ;; modus-themes-org-habit 'simplified
+          modus-themes-subtle-line-numbers t
+          modus-themes-tabs-accented t
+          modus-themes-inhibit-reload t
+          modus-themes-paren-match '(underline)
+          modus-themes-region '(no-extend accented)
+          modus-themes-org-agenda ; this is an alist: read the manual or its doc string
+          '((header-block . (variable-pitch scale-title))
+            (header-date . (bold-today grayscale scale))
+            (scheduled . rainbow)
+            (habit . traffic-light-deuteranopia))
+          modus-themes-headings  '((t . (background overline rainbow)))
+          modus-themes-variable-pitch-ui nil
+          modus-themes-scale-headings t
+          modus-themes-scale-1 1.1
+          modus-themes-scale-2 1.15
+          modus-themes-scale-3 1.20
+          modus-themes-scale-4 1.25
+          modus-themes-scale-title 1.30)
     (setq modus-themes-vivendi-color-overrides
           '((bg-main . "#100b17")
             (bg-dim . "#161129")
@@ -4292,43 +4307,15 @@ currently loaded theme first."
             (bg-tab-bar . "#262b41")
             (bg-tab-active . "#120f18")
             (bg-tab-inactive . "#3a3a5a")
-            (fg-unfocused . "#9a9aab")))
-    ;; (setq modus-themes-vivendi-color-overrides
-    ;;       '((bg-main . "#1d1f21")
-    ;;         (bg-alt .  "#282c34")
-    ;;         (bg-dim . "#161129")
-    ;;         ;; (bg-hl-line . "#191628")
-    ;;         (bg-active . "#282e46")
-    ;;         (bg-inactive . "#1a1e39")
-    ;;         (bg-region . "#393a53")
-    ;;         (bg-header . "#202037")
-    ;;         (bg-tab-bar . "#262b41")
-    ;;         (bg-tab-active . "#120f18")
-    ;;         (bg-tab-inactive . "#3a3a5a")
-    ;;         (fg-unfocused . "#9a9aab")))
-    (setq modus-themes-operandi-color-overrides
-          '(;; (bg-main . "#e0e0e0")
-            (bg-main . "#fefcf4")
-            (bg-dim . "#faf6ef")
-            (bg-alt . "#f7efe5")
-            ;; (bg-hl-line . "#f4f0e3")
-            (bg-active . "#e8dfd1")
-            (bg-inactive . "#f6ece5")
-            (bg-region . "#c6bab1")
-            (bg-header . "#ede3e0")
-            (bg-tab-bar . "#dcd3d3")
-            (bg-tab-active . "#fdf6eb")
-            (bg-tab-inactive . "#c8bab8")
-            (fg-unfocused . "#55556f"))))
-  ;;             (bg-active . "#e8dfd1")
-  ;;             (bg-inactive . "#f6ece5")
-  ;;             (bg-region . "#c6bab1")
-  ;;             (bg-header . "#ede3e0")
-  ;;             (bg-tab-bar . "#dcd3d3")
-  ;;             (bg-tab-active . "#fdf6eb")
-  ;;             (bg-tab-inactive . "#c8bab8")
-  ;;             (fg-unfocused . "#55556f"))))
-  )
+            (fg-unfocused . "#9a9aab")))))
+
+(use-package moody
+  :disabled
+  :after (modus-themes smart-mode-line)
+  :config
+  (setq x-underline-at-descent-line t)
+  (moody-replace-sml/mode-line-buffer-identification)
+  (moody-replace-vc-mode))
 
 (use-package doom-themes
   :ensure t

@@ -48,6 +48,7 @@
          (eshell-pre-command-hook . my/eshell-history-remove-duplicates)
          (eshell-first-time-mode . my/eshell-first-load-settings))
   :config
+  (defalias 'eshell/v 'eshell-exec-visual)
   ;; From the Doom emacs config
   (defun my/eshell-default-prompt-fn ()
     "Generate the prompt string for eshell. Use for `eshell-prompt-function'."
@@ -163,11 +164,12 @@ Filenames are always matched by eshell."
   (defun my/eshell-first-load-settings ()
     (setq eshell-visual-commands (append eshell-visual-commands
                                          '("btm" "fzf" "pulsemixer" "mpv"
-                                           "ncmpcpp" "progress" "julia"))
+                                           "ncmpcpp" "progress" "julia"
+                                           "ranger" "watch" "bluetoothctl"))
           ;; eshell-input-filter-functions '(eshell-expand-history-references)
           eshell-hist-ignoredups t
           eshell-destroy-buffer-when-process-dies t
-          eshell-directory-name "~/.cache/emacs/eshell/"
+          eshell-directory-name (dir-concat user-cache-directory "eshell/")
           eshell-history-file-name (concat (file-name-as-directory
                                             eshell-directory-name)
                                            "history")
@@ -283,14 +285,11 @@ append to it."
       (let* ((parent (if (buffer-file-name)
                          (file-name-directory (buffer-file-name))
                        default-directory))
-             (height (/ (window-total-height) 3))
              (name   (car (last (split-string parent "/" t)))))
-        (split-window-vertically (- height))
-        (other-window 1)
         (if-let* ((eshell-name (concat "*eshell: " name "*"))
                   (existing-eshell-buffer (get-buffer eshell-name)))
-            (switch-to-buffer existing-eshell-buffer)
-          (eshell "new")
+            (select-window (display-buffer existing-eshell-buffer))
+          (select-window (display-buffer (eshell "new")))
           (rename-buffer eshell-name)
           (insert (concat "ls"))
           (eshell-send-input))))

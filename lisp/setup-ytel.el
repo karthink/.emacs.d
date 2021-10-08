@@ -2,7 +2,7 @@
   :ensure t
   :commands ytel
   :bind (:map ytel-mode-map
-              ("b" . ytel-watch-browse-url)
+              ("x" . ytel-watch-browse-url)
               ("m" . ytel-watch-umpv)
               ("w" . ytel-url-kill-new))
   :hook ((ytel-mode . toggle-truncate-lines)
@@ -45,16 +45,19 @@
   (defun ytel-watch-umpv (&optional arg)
     (interactive "P")
     (browse-url-umpv (ytel-video-url) arg)
-    (message "Playing video with mpv."))
+    (message "Playing video with mpv.")
+    (forward-line))
 
   (defun ytel-watch-browse-url (&optional arg)
     (interactive "P")
-    (browse-url (ytel-video-url) arg))
+    (browse-url (ytel-video-url) arg)
+    (forward-line))
   
   (defun ytel-url-kill-new ()
     (interactive)
     (kill-new (ytel-video-url))
-    (message "Copied url to kill ring.")))
+    (message "Copied url to kill ring.")
+    (forward-line)))
 
 (use-package ytel-show
   :after ytel

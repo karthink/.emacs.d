@@ -6,7 +6,7 @@
 ;; (flyspell-mode)
 
 (save-place-mode 1)
-(setq save-place-file "~/.cache/emacs/places")
+(setq save-place-file (dir-concat user-cache-directory "places"))
 (setq-default fill-column 80)
 (setq vc-follow-symlinks t)
 (setq scroll-error-top-bottom t)

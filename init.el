@@ -57,6 +57,10 @@
   (push (dir-concat user-emacs-directory "plugins/") load-path)
   (push (dir-concat user-emacs-directory "lisp/") load-path))
 
+;; cache directory
+(defvar user-cache-directory "~/.cache/emacs/"
+  "Location where files created by emacs are placed.")
+
 ;; Packages not managed by package.el
 (defun my/package-sync-personal ()
   "Download my packages not managed by package.el."
@@ -104,7 +108,8 @@
 (unless (version-list-<
          (version-to-list emacs-version)
          '(28 0 1 0))
-  (add-to-list 'native-comp-eln-load-path "~/.cache/emacs/eln-cache/"))
+  (when (boundp 'native-comp-eln-load-path)
+    (add-to-list 'native-comp-eln-load-path (dir-concat user-cache-directory "eln-cache/"))))
 
 ;;########################################################################
 ;;;* PERSONAL INFO
@@ -364,8 +369,10 @@
 ;; Put backups elsewhere:
 (setq auto-save-interval 2400)
 (setq auto-save-timeout 300)
-(setq auto-save-list-file-prefix "~/.cache/emacs/auto-save-list/.saves-")
-(setq backup-directory-alist '(("." . "~/.cache/emacs/backup"))
+(setq auto-save-list-file-prefix
+      (dir-concat user-cache-directory "auto-save-list/.saves-"))
+(setq backup-directory-alist
+      `(("." . ,(dir-concat user-cache-directory "backup")))
       backup-by-copying t ; Use copies
       version-control t ; Use version numbers on backups
       delete-old-versions t ; Automatically delete excess backups
@@ -426,8 +433,8 @@
   :disabled
   :config
   (setq desktop-auto-save-timeout 300
-        desktop-path '("~/.cache/emacsdesktop")
-        desktop-dirname "~/.cache/emacsdesktop"
+        desktop-path `(,(dir-concat user-cache-directory "desktop"))
+        desktop-dirname (dir-concat user-cache-directory "desktop")
         desktop-base-file-name "desktop"
         desktop-globals-to-clear nil
         desktop-load-locked-desktop t
@@ -718,7 +725,7 @@ active region use it instead."
   :config
   (setq set-mark-command-repeat-pop t)
   (global-set-key (kbd "M-r") ctl-x-r-map)
-  (setq undo-limit 800000)
+  (setq undo-limit 1600000)
   :bind
   (("M-z" . zap-to-char-save)
    ("<C-M-backspace>" . backward-kill-sexp)))
@@ -752,7 +759,7 @@ active region use it instead."
 (use-package recentf
   :defer 2
   :init
-  (setq recentf-save-file "~/.cache/emacs/recentf"
+  (setq recentf-save-file (dir-concat user-cache-directory "recentf")
         recentf-max-saved-items 200)
   (recentf-mode 1)
   )
@@ -818,6 +825,33 @@ active region use it instead."
                   ;; "\\*scratch\\*"
                   "[Oo]utput\\*")))
 
+  (use-package popper-echo
+    :hook (popper-mode . popper-echo-mode)
+    :config
+    (defun popper-message-shorten (name)
+      (cond
+       ((string-match "^\\*[hH]elpful.*?: \\(.*\\)\\*$" name)
+        (concat (match-string 1 name)
+                "(H)"))
+       ((string-match "^\\*Help:?\\(.*\\)\\*$" name)
+        (concat (match-string 1 name)
+                "(H)"))
+       ((string-match "^\\*eshell:? ?\\(.*\\)\\*$" name)
+        (concat (match-string 1 name)
+                (if (string-empty-p (match-string 1 name)) "shell(E)" "(E)")))
+       ((string-match "^\\*\\(.*?\\)\\(?:Output\\|Command\\)\\*$" name)
+        (concat (match-string 1 name)
+                "(O)"))
+       ((string-match "^\\*\\(.*?\\)[ -][Ll]og\\*$" name)
+        (concat (match-string 1 name)
+                "(L)"))
+       ((string-match "^\\*[Cc]ompil\\(?:e\\|ation\\)\\(.*\\)\\*$" name)
+        (concat (match-string 1 name)
+                "(C)"))
+       (t name)))
+    (setq popper-echo-transform-function #'popper-message-shorten)
+    (setq popper-echo-dispatch-keys '(?1 ?2 ?3 ?4 ?5 ?6 ?7 ?8 ?9 ?0))
+    )
   (popper-mode +1)
 
   :config
@@ -2156,7 +2190,7 @@ and Interpretation of Classical Mechanics) - The book."
 (use-package strokes
   :bind ("<down-mouse-2>" . strokes-do-stroke)
   :config
-  (setq strokes-file "~/.cache/emacs/strokes")
+  (setq strokes-file (dir-concat user-cache-directory "strokes"))
   (setq strokes-use-strokes-buffer t))
 
 ;;----------------------------------------------------------------------
@@ -2254,7 +2288,7 @@ is not visible. Otherwise delegates to regular Emacs next-error."
   :after flymake
   :hook (flymake-mode . flymake-diagnostic-at-point-mode)
   :config (setq flymake-diagnostic-at-point-display-diagnostic-function
-                'flymake-diagnostic-at-point-display-popup))
+                'flymake-diagnostic-at-point-display-minibuffer))
 
 (use-package package-lint-flymake
   :ensure t
@@ -2299,9 +2333,9 @@ is not visible. Otherwise delegates to regular Emacs next-error."
   :defer
   :config
   (setq transient-display-buffer-action '(display-buffer-below-selected))
-  (setq transient-history-file "~/.cache/emacs/transient/history.el"
-        transient-levels-file "~/.cache/emacs/transient/levels.el"
-        transient-values-file "~/.cache/emacs/transient/values.el"))
+  (setq transient-history-file (dir-concat user-cache-directory "transient/history.el")
+        transient-levels-file (dir-concat user-cache-directory "transient/levels.el")
+        transient-values-file (dir-concat user-cache-directory "transient/values.el")))
 
 ;;----------------------------------------------------------------------
 ;;;** HYDRAS
@@ -2735,13 +2769,9 @@ _d_: subtree
   :load-path "~/.local/share/git/wallabag.el/"
   :commands wallabag
   :config
-  (setq wallabag-host "https://read.karthinks.com") ;; wallabag server host name
-  (setq wallabag-username "karthink") ;; username
-  (setq wallabag-password "Dreghed88wal") ;; password
-  ;;(setq wallabag-clientid "3_1nte20im2xgk4gg84ogwcs8g0gskckk8s8css0sosgs08swk8s") ;; created with API clients management
-  ;;(setq wallabag-secret "4jgjg1lcdlkwocc8owks88wggccwg8k08gcwso80s4cckk44sc") ;; created with API clients management
-  ;;(setq wallabag-db-file "~/.cache/emacs/wallabag.sqlite") ;; optional, default is saved to ~/.emacs.d/.cache/wallabag.sqlite
-  ;; (run-with-timer 0 3540 'wallabag-request-token) ;; optional, auto refresh token, token should refresh every hour
+  (setq wallabag-host my-wallabag-host) ;; wallabag server host name
+  (setq wallabag-username my-wallabag-username) ;; username
+  (setq wallabag-password my-wallabag-password) ;; password
   )
 
 ;;;** EWW
@@ -3234,6 +3264,10 @@ project, as defined by `vc-root-dir'."
             (lambda () (setq-local line-spacing 3)))
 
   (which-key-mode +1)
+  
+  (when (featurep 'embark)
+    (setq prefix-help-command
+          #'embark-prefix-help-command))
 
   :diminish "")
 
@@ -3297,7 +3331,7 @@ project, as defined by `vc-root-dir'."
 (use-package abbrev
   :defer
   :config
-  ;; (setq abbrev-file-name (expand-file-name "~/.cache/emacs/abbvev-defs"))
+  ;; (setq abbrev-file-name (expand-file-name (dir-concat user-cache-directory "abbvev-defs")))
   (if (file-exists-p abbrev-file-name)
       (quietly-read-abbrev-file)))
 
@@ -3673,7 +3707,7 @@ project, as defined by `vc-root-dir'."
     "Y" '(ivy-youtube :wk "Youtube search"))
   :config
   (setq ivy-youtube-history-file
-        "~/.cache/emacs/ivy-youtube-history")
+        (dir-concat user-cache-directory "ivy-youtube-history"))
   (setq ivy-youtube-key my-ivy-youtube-key
         ivy-youtube-play-at (expand-file-name
                              "~/.local/bin/i3cmds/umpv")))
@@ -3702,9 +3736,8 @@ project, as defined by `vc-root-dir'."
   :defer
   :config
   (setq remote-file-name-inhibit-cache 86400)
-  (setq tramp-persistency-file-name (dir-concat
-                                     (getenv "HOME")
-                                     ".cache/emacs/tramp"))
+  (setq tramp-persistency-file-name
+        (dir-concat user-cache-directory "tramp"))
   (setq tramp-verbose 1)
   (with-eval-after-load 'vc
     (setq vc-ignore-dir-regexp
@@ -3788,7 +3821,7 @@ argument, query for word to search."
 ;;;** BOOKMARKS
 (use-package bookmark
   :config
-  (setq bookmark-default-file "~/.cache/emacs/bookmarks"))
+  (setq bookmark-default-file (dir-concat user-cache-directory "bookmarks")))
 ;;;** NOV.EL
 (use-package nov
   :disabled
@@ -3797,7 +3830,7 @@ argument, query for word to search."
   :hook (nov-mode . my/nov-font-setup)
   :config
   (setq nov-text-width 80
-        nov-save-place-file "~/.cache/emacs/nov-places")
+        nov-save-place-file (dir-concat user-cache-directory "nov-places"))
   (defun my/nov-font-setup ()
     (face-remap-add-relative 'variable-pitch
                              :family "Noto Serif"
@@ -4210,7 +4243,7 @@ currently loaded theme first."
           ;;                        :height 110 :width normal))))
           '(default ((t (:family "FantasqueSansMono" :foundry "PfEd"
                                  :slant normal :weight normal
-                                 :height 110 :width normal))))
+                                 :height 120 :width normal))))
           ))
         (IS-WINDOWS
          (custom-set-faces
@@ -4273,9 +4306,9 @@ currently loaded theme first."
           modus-themes-diffs 'desaturated ;'fg-only-deuteranopia
           modus-themes-syntax nil ;'faint
           modus-themes-links '(faint neutral-underline)
-          modus-themes-hl-line 'accented-background
+          modus-themes-hl-line '(intense)
           modus-themes-prompts '(bold background)
-          modus-themes-mode-line '(3d moody accented borderless)
+          modus-themes-mode-line '(accented borderless)
           ;; modus-themes-org-habit 'simplified
           modus-themes-subtle-line-numbers t
           modus-themes-tabs-accented t
@@ -4295,6 +4328,8 @@ currently loaded theme first."
           modus-themes-scale-3 1.20
           modus-themes-scale-4 1.25
           modus-themes-scale-title 1.30)
+    ;; (setq modus-themes-operandi-color-overrides
+    ;;       '((bg-main . "#ededed")))
     (setq modus-themes-vivendi-color-overrides
           '((bg-main . "#100b17")
             (bg-dim . "#161129")
@@ -4362,28 +4397,28 @@ currently loaded theme first."
 (use-package url
   :defer
   :config
-  (setq url-configuration-directory "~/.cache/emacs/url/"))
+  (setq url-configuration-directory (dir-concat user-cache-directory "url/")))
 
 (use-package request
   :defer
   :config
-  (setq request-storage-directory "~/.cache/emacs/request/"))
+  (setq request-storage-directory (dir-concat user-cache-directory "request/")))
 
 (use-package semantic
   :defer
   :config
-  (setq semanticdb-default-save-directory "~/.cache/emacs/semanticdb/"))
+  (setq semanticdb-default-save-directory (dir-concat user-cache-directory "semanticdb/")))
 
 (use-package srecode
   :defer
   :config
-  (setq srecode-map-save-file "~/.cache/emacs/srecode-map.el"))
+  (setq srecode-map-save-file (dir-concat user-cache-directory "srecode-map.el")))
 
 (use-package savehist
   :defer 2
   :hook (after-init . savehist-mode)
   :config
-  (setq savehist-file "~/.cache/emacs/savehist")
+  (setq savehist-file (dir-concat user-cache-directory "savehist"))
   (setq history-length 1000)
   (setq history-delete-duplicates t)
   (setq savehist-save-minibuffer-history t))

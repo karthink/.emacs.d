@@ -37,6 +37,8 @@
   (setq ibuffer-expert t)
   (setq ibuffer-show-empty-filter-groups nil)
   (setq ibuffer-default-sorting-mode 'filename/process)
+  (add-to-list 'ibuffer-help-buffer-modes 'helpful-mode)
+  (add-to-list 'ibuffer-help-buffer-modes 'Man-mode)
   ;; (setq ibuffer-use-header-line t)
   ;; (setq ibuffer-display-summary nil)
   ;; (setq ibuffer-use-other-window nil)
@@ -85,7 +87,7 @@ When no VC root is available, use standard `switch-to-buffer'."
         (call-interactively 'switch-to-buffer))))
 
   :hook ((ibuffer-mode . hl-line-mode)
-         (ibuffer-mode . my/ibuffer-project-generate-filter-groups)
+         ;; (ibuffer-mode . my/ibuffer-project-generate-filter-groups)
          ;; (ibuffer-mode . ibuffer-vc-set-filter-groups-by-vc-root)
          )
   :bind (:map ibuffer-mode-map
@@ -109,7 +111,7 @@ When no VC root is available, use standard `switch-to-buffer'."
 (use-package ibuffer-project
   :ensure t
   :after (ibuffer project)
-  ;; :hook (ibuffer-mode . my/ibuffer-project-generate-filter-groups)
+  :hook (ibuffer . my/ibuffer-project-generate-filter-groups)
   :config
   (setq ibuffer-project-use-cache t
         ibuffer-project-root-functions

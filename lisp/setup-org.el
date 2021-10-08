@@ -85,7 +85,7 @@
                 org-imenu-depth 7
                 org-id-link-to-org-use-id 'create-if-interactive
                 org-extend-today-until 3
-                org-id-locations-file "~/.cache/emacs/org-id-locations"
+                org-id-locations-file (dir-concat user-cache-directory "org-id-locations")
                 org-default-notes-file "~/org/do.org"
                 org-M-RET-may-split-line '((headline) (default . t))
                 org-fast-tag-selection-single-key 'expert
@@ -349,8 +349,7 @@ has no effect."
   :config
   (setq org-agenda-files '("~/Documents/org/do.org"
                            "~/Documents/org/gmail-cal.org"
-                           "~/Documents/org/ucsb-cal.org"
-                           "~/karthinks/posts.org"))
+                           "~/Documents/org/ucsb-cal.org"))
   (setq-default
    org-agenda-span 2
    org-agenda-restore-windows-after-quit t
@@ -750,7 +749,7 @@ See `org-capture-templates' for more information."
                    ,(concat "* TODO " title)
                    "\n:PROPERTIES:"
                    ,(concat "\n:EXPORT_FILE_NAME: " fname)
-                   ":END:"
+                   "\n:END:"
                    "\n%?\n")          ;Place the cursor here finally
                  "")))
 
@@ -779,7 +778,7 @@ See `org-capture-templates' for more information."
   :commands (org-gcal-sync org-gcal-fetch my/org-gcal-sync-maybe)
   :hook (org-agenda-mode . my/org-gcal-sync-maybe)
   :config
-  (setq org-gcal-dir "~/.cache/emacs/org-gcal/")
+  (setq org-gcal-dir (dir-concat user-cache-directory "org-gcal/"))
   ;; (add-hook 'org-capture-after-finalize-hook (lambda () (org-gcal-sync)))
   (setq org-gcal-client-id my-org-gcal-client-id
         org-gcal-client-secret my-org-gcal-client-secret

@@ -400,9 +400,8 @@ cmd, a function of one argument."
   ;;     (ivy-prescient-re-builder str)))
 
   ;; NOTE prescient config duplicated with `company'
-  (setq prescient-save-file (concat (expand-file-name
-                                     (file-name-as-directory "~/.cache/emacs"))
-                                    "prescient-save.el"))
+  (setq prescient-save-file
+        (dir-concat user-cache-directory "prescient-save.el"))
   (prescient-persist-mode +1))
 
 ;; ivy-rich shows descriptions along with selection candidates in ivy

@@ -23,7 +23,7 @@ The directory name must be absolute."
     
     :config
     ;; (fset 'project-prefix-map project-prefix-map)
-    (setq project-list-file "~/.cache/emacs/projects")
+    (setq project-list-file (dir-concat user-cache-directory "projects"))
 
     ;; Declare directories with ".project" as a project
     (cl-defgeneric project-root (project)
@@ -72,7 +72,7 @@ The directory name must be absolute."
              (dir (completing-read "REMOVE project from list: " projects nil t)))
         (setq project--list (delete (assoc dir projects) projects))))
 
-    (setq project-window-list-file "~/.cache/emacs/project-window-list")
+    (setq project-window-list-file (dir-concat user-cache-directory "project-window-list"))
 
     :bind-keymap ("H-p" . project-prefix-map)
     :bind (("C-x p q" . project-query-replace-regexp) ; C-x p is `project-prefix-map'
@@ -86,7 +86,8 @@ The directory name must be absolute."
   :load-path "~/.local/share/git/project-x/"
   :after project
   :config
-  (setq project-x-window-list-file "~/.cache/emacs/project-window-list")
+  (setq project-x-window-list-file (dir-concat user-cache-directory "project-window-list")
+        project-x-save-interval 600)
   (project-x-mode 1))
 
 (provide 'setup-project)

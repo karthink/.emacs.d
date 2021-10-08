@@ -5,7 +5,7 @@
   :load-path ("~/.local/share/git/elfeed/"
               "~/.local/share/git/elfeed/web")
   :config
-  (setq-default elfeed-db-directory "~/.cache/emacs/elfeed"
+  (setq-default elfeed-db-directory (dir-concat user-cache-directory "elfeed")
                 elfeed-save-multiple-enclosures-without-asking t
                 elfeed-search-clipboard-type 'CLIPBOARD
                 elfeed-search-filter "#50 +unread "
@@ -159,7 +159,7 @@ USE-SINGLE-P) with mpv."
                 (youtube-p (string-match-p "youtube\\.com" feed-url))
                 (title (elfeed-entry-title entry)))
       (setf (elfeed-meta entry :title)
-            (let* ((title-no-bang (if (string-match "!+\\?*\\s-*$" title)
+            (let* ((title-no-bang (if (string-match "!*\\?*\\s-*$" title)
                                       (substring title 0 (- (length (match-string 0))))
                                     title))
                    (words (split-string title-no-bang))
@@ -181,17 +181,23 @@ USE-SINGLE-P) with mpv."
                                       (t word)))
                                    words)
                            " ")))))
-;; (dolist (entry (elfeed-feed-entries (with-current-buffer "*elfeed-search*"
-;;   (elfeed-entry-feed-id (elfeed-search-selected :ignore-region)))))
-;;   (elfeed-declickbait entry))
+  ;; (dolist (entry (elfeed-feed-entries
+  ;;                 (with-current-buffer "*elfeed-search*"
+  ;;                   (elfeed-entry-feed-id (elfeed-search-selected :ignore-region)))))
+  ;;   (elfeed-declickbait entry))
 
   (defun my/elfeed-search-by-day (dir)
     (lambda (&optional arg)
       (interactive "p")
       (let* ((entry (elfeed-search-selected :ignore-region))
-             (this-day (if entry
-                           (elfeed-entry-date entry)
-                         (current-time)))
+             (this-day (or (and entry
+                                (elfeed-entry-date entry))
+                           (time-to-seconds (parse-time-string
+                                             (concat (replace-regexp-in-string
+                                                      ".*@\\(.+\\)--.*" "\\1"
+                                                      elfeed-search-filter)
+                                                     " 00:00:00 Z")))
+                           (current-time)))
              (next-day (time-add this-day (days-to-time (or arg 1))))
              (next-next-day (time-add next-day (days-to-time (or arg 1))))
              (prev-day (time-subtract this-day (days-to-time (or arg 1))))

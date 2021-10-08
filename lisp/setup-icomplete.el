@@ -151,7 +151,7 @@ require user confirmation."
   (setq consult-line-numbers-widen t)
   (setq consult-preview-buffer nil)
   (setq consult-preview-mark nil)
-  (setq consult-preview-line nil)
+  (setq consult-preview-line 'any)
   (setq consult-preview-outline nil)
   (setq consult-preview-key 'any)
   (consult-customize
@@ -161,10 +161,10 @@ require user confirmation."
    :preview-key (kbd "C-M-m"))
   (setq consult-project-root-function (lambda () "Return current project root"
                                         (project-root (project-current))))
-  (setq consult-find-command "fd --hidden -t f -t d -t l --follow ARG OPTS")
-  ;; "find . -not ( -wholename */.* -prune ) -ipath *ARG* OPTS"
+  ;; (setq consult-find-args
+  ;;       "fd --color=never --hidden -t f -t d -t l --follow")
   (when (executable-find "plocate")
-    (setq consult-locate-command "plocate --ignore-case --regexp ARG OPTS"))
+    (setq consult-locate-args "plocate --ignore-case --existing --regexp"))
   (defun consult-buffer-other-tab ()
   "Variant of `consult-buffer' which opens in other frame."
   (interactive)
@@ -176,6 +176,30 @@ require user confirmation."
   
   (setq register-preview-delay 0
         register-preview-function #'consult-register-format)
+  
+(defvar consult--fd-command nil)
+(defun consult--fd-builder (input)
+  (unless consult--fd-command
+    (setq consult--fd-command
+          (if (eq 0 (call-process-shell-command "fdfind"))
+              "fdfind"
+            "fd")))
+  (pcase-let* ((`(,arg . ,opts) (consult--command-split input))
+               (`(,re . ,hl) (funcall consult--regexp-compiler
+                                      arg 'extended)))
+    (when re
+      (list :command (append
+                      (list consult--fd-command
+                            "--color=never" "--full-path"
+                            (consult--join-regexps re 'extended))
+                      opts)
+            :highlight hl))))
+
+(defun consult-fd (&optional dir initial)
+  (interactive "P")
+  (let* ((prompt-dir (consult--directory-prompt "Fd" dir))
+         (default-directory (cdr prompt-dir)))
+    (find-file (consult--find (car prompt-dir) #'consult--fd-builder initial))))
   
   ;; (advice-add #'completing-read-multiple :override #'consult-completing-read-multiple)
   
@@ -207,7 +231,7 @@ When the number of characters in a buffer exceeds this threshold,
       (consult-line initial start)
     (when (file-writable-p buffer-file-name)
       (save-buffer))
-    (let ((consult-ripgrep-command
+    (let ((consult-ripgrep-args
            (concat "rg "
                    "--null "
                    "--line-buffered "
@@ -222,7 +246,7 @@ When the number of characters in a buffer exceeds this threshold,
                    ;; add back filename to get parsing to work
                    "--with-filename "
                    ;; defaults
-                   "-e ARG OPTS "
+                   "-e "
                    (shell-quote-argument buffer-file-name))))
       (consult-ripgrep default-directory initial))))
 
@@ -307,9 +331,9 @@ When the number of characters in a buffer exceeds this threshold,
          ("C-M-j" . consult-dir-jump-file)
          ("H-M-j" . consult-dir-jump-file)
          :map embark-become-file+buffer-map
-         ("d" . consult-switch-find-file))
+         ("d" . consult-dir))
   :config
-  (setq consult-switch-shadow-filenames nil)
+  (setq consult-dir-shadow-filenames nil)
   (defun consult-dir-maybe ()
     (interactive)
     (let* ((full-category (completion-metadata-get (embark--metadata) 'category))
@@ -331,7 +355,7 @@ When the number of characters in a buffer exceeds this threshold,
   (setq affe-regexp-function #'orderless-pattern-compiler
         affe-highlight-function #'orderless--highlight)
     ;; Manual preview key for `affe-grep'
-  (consult-customize affe-grep :preview-key (kbd "M-.")))
+  (consult-customize affe-grep :preview-key (kbd "C-M-m")))
 
 (use-package embark-consult
   :ensure t
@@ -462,7 +486,7 @@ When the number of characters in a buffer exceeds this threshold,
 
 (defvar embark-completing-read-prompter-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "<tab>") 'abort-recursive-edit)
+    (define-key map (kbd "C-<tab>") 'abort-recursive-edit)
     map))
 
 (advice-add 'embark-completing-read-prompter :around
@@ -641,7 +665,7 @@ TARGETS."
 	        	       (exit-minibuffer))))
               ("C->"     . embark-become)
               (">"       . embark-become)
-              ("<tab>"   . embark-act-with-completing-read)
+              ("C-<tab>"   . embark-act-with-completing-read)
               ("C-o"     . embark-minimal-act)
               ("C-M-o"   . embark-minimal-act-noexit)
               ("M-s o"   . embark-export)
@@ -726,8 +750,8 @@ TARGETS."
   :hook (vertico-buffer-mode . vertico-buffer-setup)
   :config
   (defun vertico-buffer-setup ()
-    (setq vertico-count (if vertico-buffer-mode 35 12)))
-  (setq vertico-buffer-action 'display-buffer-reuse-window))
+    (setq vertico-count (if vertico-buffer-mode 50 12)))
+  (setq vertico-buffer-display-action 'display-buffer-reuse-window))
 
 ;;; Embark-Collect overlays
 (use-package embark

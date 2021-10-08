@@ -225,6 +225,12 @@ This relies on the external 'fd' executable."
       '("mkv" "iso" "mp4" "pdf" "djvu" "one" "mat"
         "fig" "nb" "slx" "slxc" "r2016b" "onetoc2")))
 
+(use-package image-dired
+  :commands image-dired
+  :config
+  (setq image-dired-dir
+        (dir-concat user-cache-directory "image-dired/")))
+
 (use-package dired-sidebar
   :after dired
   :disabled

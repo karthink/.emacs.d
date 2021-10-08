@@ -200,16 +200,16 @@ If buffer-or-name is nil return current buffer's mode."
                                ;; (mode-line-format . (:eval (+helper-window-mode-line-format)))
                                )))
 
-        ("\\*Custom.*"
-         (display-buffer-in-side-window)
-         (window-width . 70 ;; (lambda (win) (fit-window-to-buffer win nil nil 65))
-                       )
-         (side . right)
-         (slot . 5)
-         ;; (window-parameters . (;; (no-other-window . t)
-         ;;                       ;; (mode-line-format . (:eval (+helper-window-mode-line-format)))
-         ;;                       ))
-         )
+        ;; ("\\*Custom.*"
+        ;;  (display-buffer-in-side-window)
+        ;;  (window-width . 70 ;; (lambda (win) (fit-window-to-buffer win nil nil 65))
+        ;;                )
+        ;;  (side . right)
+        ;;  (slot . 5)
+        ;;  ;; (window-parameters . (;; (no-other-window . t)
+        ;;  ;;                       ;; (mode-line-format . (:eval (+helper-window-mode-line-format)))
+        ;;  ;;                       ))
+        ;;  )
 
         ("*undo-tree*" ;; (lambda (buf act) (equal (buffer-mode buf) 'undo-tree-visualizer-mode))
           (display-buffer-in-direction)

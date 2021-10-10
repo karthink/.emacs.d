@@ -798,7 +798,20 @@ active region use it instead."
          ("H-6" . popper-toggle-type)
          ("H-M-k" . popper-kill-latest-popup))
   :init
-  (setq popper-group-function #'popper-group-by-project)
+  (setq popper-group-function
+        (defun my/popper-group-by-heuristic ()
+          "Group popups according to heuristic rules suitable for
+          my usage."
+          (cond
+           ((string-match-p "\\(?:~/\\.config/\\|~/dotfiles/\\)" default-directory)
+            'config)
+           ((locate-dominating-file default-directory "init.el") 'emacs)
+           ((string-match-p "local/share/git" default-directory) 'projects)
+           ((string-match-p "\\(?:KarthikBa\\|research/\\)" default-directory)
+            'research)
+           ((string-match-p "karthinks" default-directory) 'website)
+           ((locate-dominating-file default-directory "research") 'documents)
+           (t (popper-group-by-project)))))
   (setq popper-mode-line nil
         popper-reference-buffers
         (append +help-modes-list

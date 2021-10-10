@@ -51,7 +51,7 @@ If buffer-or-name is nil return current buffer's mode."
                            inferior-ess-julia-mode)
   "List of major-modes used in REPL buffers")
 
-(defvar +repl-names-list '("^\\*e*shell.*\\*$"
+(defvar +repl-names-list '("^\\*e*shell.*\\*"
                            "\\*.*REPL.*\\*"
                            "\\*MATLAB\\*"
                            "\\*Python\\*"

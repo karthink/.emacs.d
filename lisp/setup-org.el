@@ -753,15 +753,25 @@ See `org-capture-templates' for more information."
                    "\n%?\n")          ;Place the cursor here finally
                  "")))
 
+  (add-to-list 'org-capture-templates '("h" "Hugo post"))
   (add-to-list 'org-capture-templates
-               '("h"                ;`org-capture' binding + h
-                 "Hugo post"
+               '("hb" "Hugo Blog section"
                  entry
                  ;; It is assumed that below file is present in `org-directory'
                  ;; and that it has a "Blog Ideas" heading. It can even be a
                  ;; symlink pointing to the actual location of all-posts.org!
                  (file+olp "posts.org" "Blog Ideas")
-                 (function org-hugo-new-subtree-post-capture-template)))))
+                 (function org-hugo-new-subtree-post-capture-template)
+                 :kill-buffer t))
+  (add-to-list 'org-capture-templates
+               '("hs" "Hugo Software section"
+                entry
+                ;; It is assumed that below file is present in `org-directory'
+                ;; and that it has a "Blog Ideas" heading. It can even be a
+                ;; symlink pointing to the actual location of all-posts.org!
+                (file+olp "posts.org" "Software")
+                (function org-hugo-new-subtree-post-capture-template)
+                :kill-buffer t))))
 
 ;;----------------------------------------------------------------------
 ;; OL-NOTMUCH

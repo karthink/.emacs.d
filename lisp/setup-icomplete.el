@@ -420,9 +420,11 @@ When the number of characters in a buffer exceeds this threshold,
   :after minibuffer
   :bind (("M-s RET"  . embark-act)
          ("s-o"      . embark-act)
+         ("s-C-o"    . embark-act-noexit)
          ("H-SPC" . embark-act)
          :map minibuffer-local-completion-map
          ("s-o"      . embark-act)
+         ("s-C-o"    . embark-act-noexit)
          ("C-o"      . embark-minimal-act)
          ("C-M-o"    . embark-minimal-act-noexit)
          ("C-c C-o"  . embark-export)
@@ -459,38 +461,22 @@ When the number of characters in a buffer exceeds this threshold,
          ("m"        . browse-url-umpv))
   :config
   (setq embark-cycle-key (kbd "s-o"))
-  (defun embark-act-with-completing-read (&optional arg)
-    (interactive "P")
-    (let* ((embark-prompter 'embark-completing-read-prompter)
-           (act (propertize "Act" 'face 'highlight))
-           (embark-indicators (list (lambda (&optional _keymap targets prefix)
-                                      #'ignore))))
-      (embark-act arg)))
-  
+  (setq embark-quit-after-action t)
+  ;; Use Embark instead of `describe-prefix-bindings'
+  (setq prefix-help-command #'embark-prefix-help-command)
+
+  ;; Utility commands
   (defun embark-minimal-act (&optional arg)
     (interactive "P")
-    (let ((embark-indicators '(embark-which-key-indicator)))
+    (let ((embark-indicators
+           '(embark-which-key-indicator
+             embark-highlight-indicator
+             embark-isearch-highlight-indicator)))
       (embark-act arg)))
   
   (defun embark-minimal-act-noexit ()
     (interactive)
     (embark-minimal-act 4))
-  
-  (defun with-minibuffer-keymap (keymap)
-  (lambda (fn &rest args)
-    (minibuffer-with-setup-hook
-        (lambda ()
-          (use-local-map
-           (make-composed-keymap keymap (current-local-map))))
-      (apply fn args))))
-
-(defvar embark-completing-read-prompter-map
-  (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "C-<tab>") 'abort-recursive-edit)
-    map))
-
-(advice-add 'embark-completing-read-prompter :around
-            (with-minibuffer-keymap embark-completing-read-prompter-map))
   
   (defun embark-act-noexit ()
     (interactive)
@@ -500,30 +486,7 @@ When the number of characters in a buffer exceeds this threshold,
     (interactive (list (read-file-name "Jump to dir of file: ")))
                          (dired (file-name-directory file)))
   
-  ;; Use Embark instead of `describe-prefix-bindings'
-  (setq prefix-help-command #'embark-prefix-help-command)
-  (setq embark-quit-after-action t
-        embark-mixed-indicator-delay 0)
-  (add-to-list 'embark-keymap-alist
-               '(project-file . embark-file-map))
-  ;; (add-to-list 'embark-keymap-alist
-  ;;              '(virtual-buffer . embark-buffer-map))
-  (add-to-list 'embark-exporters-alist
-               '(project-file . embark-export-dired))
-  ;; (add-to-list 'embark-exporters-alist
-  ;;              '(virtual-buffer . embark-export-virtual-ibuffer))
-
-  ;; (defun embark-export-virtual-ibuffer (virtual-buffers)
-  ;;   "docstring"
-  ;;   (let ((buffers (mapcar (lambda (buf) (substring buf 1))
-  ;;                          (cl-remove-if-not
-  ;;                           (lambda (buf) (equal (- (elt buf 0)
-  ;;                                              consult--special-char)
-  ;;                                           ?b))
-  ;;                           virtual-buffers))))
-  ;;     (ibuffer t "*Embark Export Ibuffer*"
-  ;;              `((predicate . (member (buffer-name) ',buffers))))))
-
+  ;; Extra embark actions
   (eval-when-compile
     (defmacro my/embark-ace-action (fn)
       `(defun ,(intern (concat "my/embark-ace-" (symbol-name fn))) ()
@@ -555,13 +518,7 @@ When the number of characters in a buffer exceeds this threshold,
     (define-key embark-file-map (kbd "U") '0x0-upload-file)
     (define-key embark-region-map (kbd "U") '0x0-upload-text)
     (define-key embark-buffer-map (kbd "U") '0x0-dwim)
-    ;; (defun 0x0-upload-buffer (buf)
-    ;;   (interactive (list (read-buffer "Upload buffer" (current-buffer) t)))
-    ;;   (with-current-buffer buf (0x0-upload (point-min)
-    ;;                                        (point-max)
-    ;;                                        (0x0--choose-service))))
 
-  
     ;; Embark actions for this buffer/file
     (defun embark-target-this-buffer-file ()
       (cons 'this-buffer-file (buffer-name)))
@@ -573,6 +530,12 @@ When the number of characters in a buffer exceeds this threshold,
                     '(embark-target-this-buffer-file)
                     (last embark-target-finders 2))))
 
+    ;; Embark keymaps
+    (add-to-list 'embark-keymap-alist
+                 '(project-file . embark-file-map))
+    (add-to-list 'embark-exporters-alist
+                 '(project-file . embark-export-dired))
+    
     (embark-define-keymap this-buffer-file-map
       "Commands to act on current file or buffer."
       ("l" load-file)
@@ -598,7 +561,15 @@ When the number of characters in a buffer exceeds this threshold,
     (add-to-list 'embark-keymap-alist '(this-buffer-file . this-buffer-file-map))
     (cl-pushnew 'revert-buffer embark-allow-edit-commands)
     (cl-pushnew 'rename-file-and-buffer embark-allow-edit-commands)
-  
+    
+    (use-package helpful
+      :defer
+      :bind (:map embark-become-help-map
+                  ("f" . helpful-callable)
+                  ("v" . helpful-variable)
+                  ("C" . helpful-command)))
+
+    ;; Embark-collect display
     (setf   (alist-get "^\\*Embark \\(?:Export\\|Collect\\).*\\*" display-buffer-alist nil nil 'equal)
             '((display-buffer-in-direction)
               (window-height . (lambda (win) (fit-window-to-buffer
@@ -607,35 +578,74 @@ When the number of characters in a buffer exceeds this threshold,
               (direction . below)
               (window-parameters . ((split-window . #'ignore)))))
     
+    ;; Embark prompters
+    (setq embark-indicators '(embark-highlight-indicator
+                            embark-isearch-highlight-indicator))
+
+    ;; Vertico highlight indicator
+    (defun embark-vertico-indicator ()
+      (let ((fr face-remapping-alist))
+        (lambda (&optional keymap _targets prefix)
+          (when (bound-and-true-p vertico--input)
+            (setq-local face-remapping-alist
+                        (if keymap
+                            (cons '(vertico-current . embark-target) fr)
+                          fr))))))
+    (add-to-list 'embark-indicators #'embark-vertico-indicator)
+    
+    ;; Helm style prompter
+    (defun with-minibuffer-keymap (keymap)
+      (lambda (fn &rest args)
+        (minibuffer-with-setup-hook
+            (lambda ()
+              (use-local-map
+               (make-composed-keymap keymap (current-local-map))))
+          (apply fn args))))
+
+    (defvar embark-completing-read-prompter-map
+      (let ((map (make-sparse-keymap)))
+        (define-key map (kbd "C-<tab>") 'abort-recursive-edit)
+        map))
+
+    (advice-add 'embark-completing-read-prompter :around
+                (with-minibuffer-keymap embark-completing-read-prompter-map))
+    
+    (defun embark-act-with-completing-read (&optional arg)
+      (interactive "P")
+      (let* ((embark-prompter 'embark-completing-read-prompter)
+             (act (propertize "Act" 'face 'highlight))
+             (embark-indicators (list (lambda (&optional _keymap targets prefix)
+                                        #'ignore))))
+        (embark-act arg)))
+
+    ;; Which-key style indicator
     (use-package which-key
       :defer
       :config
       ;; From the embark wiki
-      (defun embark-which-key-indicator (keymap targets)
-        "An embark indicator that displays KEYMAP with which-key.
+      (defun embark-which-key-indicator ()
+        "An embark indicator that displays keymaps using which-key.
 The which-key help message will show the type and value of the
 current target followed by an ellipsis if there are further
-TARGETS."
-        (which-key--show-keymap
-         (if (eq (caar targets) 'embark-become)
-             "Become"
-           (format "Act on %s '%s'%s"
-                   (caar targets)
-                   (embark--truncate-target (cdar targets))
-                   (if (cdr targets) "…" "")))
-         keymap
-         nil nil t)
-        (lambda (prefix)
-          (if prefix
-              (embark-which-key-indicator (lookup-key keymap prefix) targets)
-            (kill-buffer which-key--buffer)))))
-  
-    (use-package helpful
-      :defer
-      :bind (:map embark-become-help-map
-                  ("f" . helpful-callable)
-                  ("v" . helpful-variable)
-                  ("C" . helpful-command))))
+targets."
+        (lambda (&optional keymap targets prefix)
+          (if (null keymap)
+              (which-key--hide-popup-ignore-command)
+            (which-key--show-keymap
+             (if (eq (caar targets) 'embark-become)
+                 "Become"
+               (format "Act on %s '%s'%s"
+                       (plist-get (car targets) :type)
+                       (embark--truncate-target (plist-get (car targets) :target))
+                       (if (cdr targets) "…" "")))
+             (if prefix
+                 (pcase (lookup-key keymap prefix 'accept-default)
+                   ((and (pred keymapp) km) km)
+                   (_ (key-binding prefix 'accept-default)))
+               keymap)
+             nil nil t))))
+      (add-to-list 'embark-indicators
+                   'embark-which-key-indicator)))
 
 ;;; Embark-avy
 (use-package avy-embark-collect

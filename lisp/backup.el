@@ -558,3 +558,18 @@
 ;; (define-key org-mode-map (kbd "C-c r") nil)
 
  '(counsel-projectile-mode t nil (counsel-projectile))
+  ;; (add-to-list 'embark-keymap-alist
+  ;;              '(virtual-buffer . embark-buffer-map))
+  ;; (add-to-list 'embark-exporters-alist
+  ;;              '(virtual-buffer . embark-export-virtual-ibuffer))
+
+  ;; (defun embark-export-virtual-ibuffer (virtual-buffers)
+  ;;   "docstring"
+  ;;   (let ((buffers (mapcar (lambda (buf) (substring buf 1))
+  ;;                          (cl-remove-if-not
+  ;;                           (lambda (buf) (equal (- (elt buf 0)
+  ;;                                              consult--special-char)
+  ;;                                           ?b))
+  ;;                           virtual-buffers))))
+  ;;     (ibuffer t "*Embark Export Ibuffer*"
+  ;;              `((predicate . (member (buffer-name) ',buffers))))))

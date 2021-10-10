@@ -126,7 +126,7 @@ kill region instead"
 
 ;; History
 (when (require 'savehist nil t)
-  (setq savehist-file "~/.cache/emacs/savehist"
+  (setq savehist-file (dir-concat user-cache-directory "savehist")
 	history-length 10000
 	history-delete-duplicates nil
 	savehist-save-minibuffer-history t)

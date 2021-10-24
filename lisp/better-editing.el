@@ -431,6 +431,17 @@
 (add-hook 'auto-save-hook 'save-buffer-if-visiting-file)
 
 ;;----------------------------------------------------------------------
+;; Better mark handling
+;;----------------------------------------------------------------------
+;; Switch to older buffers with marks with pop-to-buffer
+(advice-add 'pop-global-mark :around
+            (defun my/pop-global-mark-display-buffer (pgm)
+              (interactive)
+              (cl-letf (((symbol-function 'switch-to-buffer)
+                         #'pop-to-buffer))
+                (funcall pgm))))
+
+;;----------------------------------------------------------------------
 ;; MOVE-LINE-REGION
 ;;----------------------------------------------------------------------
 ;; Functions to move blocks of text (or single lines) up and down

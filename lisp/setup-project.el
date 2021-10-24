@@ -9,9 +9,8 @@
             (?v "VC-Dir" project-vc-dir)
             (?k "Kill buffers" project-kill-buffers)
             (?! "Shell command" project-shell-command)
-            ;; (?e "Eshell" project-eshell)
-            ))
-    ;; Declare directories with ".project" as a project
+            (?e "Eshell" project-eshell)))
+    
     (cl-defgeneric project-root (project)
       "Return root directory of the current project.
 
@@ -22,19 +21,8 @@ The directory name must be absolute."
       (car project))
     
     :config
-    ;; (fset 'project-prefix-map project-prefix-map)
     (setq project-list-file (dir-concat user-cache-directory "projects"))
 
-    ;; Declare directories with ".project" as a project
-    (cl-defgeneric project-root (project)
-      "Return root directory of the current project.
-
-It usually contains the main build file, dependencies
-configuration file, etc. Though neither is mandatory.
-
-The directory name must be absolute."
-      (car project))
-    
     ;; Use =fd= instead of =find= in non-VC projects (if available)
     (when (executable-find "fd")
       (defun my/project-files-in-directory (dir)

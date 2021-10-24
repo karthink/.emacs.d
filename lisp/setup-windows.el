@@ -53,6 +53,7 @@ If buffer-or-name is nil return current buffer's mode."
 
 (defvar +repl-names-list '("^\\*e*shell.*\\*"
                            "\\*.*REPL.*\\*"
+                           "-eshell\\*$"
                            "\\*MATLAB\\*"
                            "\\*Python\\*"
                            "\\*Inferior .*\\*$"
@@ -200,16 +201,12 @@ If buffer-or-name is nil return current buffer's mode."
                                ;; (mode-line-format . (:eval (+helper-window-mode-line-format)))
                                )))
 
-        ;; ("\\*Custom.*"
-        ;;  (display-buffer-in-side-window)
-        ;;  (window-width . 70 ;; (lambda (win) (fit-window-to-buffer win nil nil 65))
-        ;;                )
-        ;;  (side . right)
-        ;;  (slot . 5)
-        ;;  ;; (window-parameters . (;; (no-other-window . t)
-        ;;  ;;                       ;; (mode-line-format . (:eval (+helper-window-mode-line-format)))
-        ;;  ;;                       ))
-        ;;  )
+        ((lambda (buf act) (or (equal (buffer-mode buf) 'Custom-mode)
+                          (string-match-p "^\\*Customize" (buffer-name))))
+         (+select-buffer-in-side-window)
+         (window-width . 74)
+         (side . right)
+         (slot . 5))
 
         ("*undo-tree*" ;; (lambda (buf act) (equal (buffer-mode buf) 'undo-tree-visualizer-mode))
           (display-buffer-in-direction)

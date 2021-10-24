@@ -150,42 +150,80 @@ USE-SINGLE-P) with mpv."
                                 :entry-title "\\(?:Roundup\\|Gaming News\\)"
                                 :add '(news listen)))
   
-  (add-hook 'elfeed-new-entry-hook
-            #'elfeed-declickbait)
+  (add-hook 'elfeed-new-entry-hook #'elfeed-declickbait-entry)
 
-  (defun elfeed-declickbait (entry)
-    (when-let* ((feed (elfeed-entry-feed entry))
-                (feed-url (elfeed-feed-url feed))
-                (youtube-p (string-match-p "youtube\\.com" feed-url))
-                (title (elfeed-entry-title entry)))
+  (defun elfeed-declickbait-entry (entry)
+    (when-let ((title (elfeed-entry-title entry))
+               (feed (elfeed-entry-feed entry))
+               (feed-url (elfeed-feed-url feed))
+               (youtube-p (string-match-p "youtube\\.com" feed-url)))
       (setf (elfeed-meta entry :title)
-            (let* ((title-no-bang (if (string-match "!*\\?*\\s-*$" title)
-                                      (substring title 0 (- (length (match-string 0))))
-                                    title))
-                   (words (split-string title-no-bang))
-                   (case-fold-search nil))
-              (string-join (mapcar (lambda (word)
-                                     (cond
-                                      ((member word '("AND" "OR" "IF" "ON" "IT"
-                                                      "TO" "A" "OF" "THE" "VS"
-                                                      "IN" "FOR" "AN" "WAS" "IS"))
-                                       (downcase word))
-                                      ((member word '("WE" "DAY" "HOW" "WHY" "NOW"
-                                                      "CUP" "OLD" "NEW" "MY" "TOO"
-                                                      "GOT" "GET" "EYE"))
-                                       (capitalize word))
-                                      ((and (> (length word) 3)
-                                            (string-match-p "\\`[A-Z\\.\\?\\!\\':,’\\-]*\\'"
-                                                            word))
-                                       (capitalize word))
-                                      (t word)))
-                                   words)
-                           " ")))))
+            (elfeed-title-transform title))))
+
+  (defun elfeed-title-transform (title)
+    "Declickbait string TITLE."
+    (let* ((trim "\\(?:\\(?:\\.\\.\\.\\|[!?]\\)+\\)")
+           (arr (split-string title nil t trim))
+           (s-table (copy-syntax-table)))
+      (modify-syntax-entry ?\' "w" s-table)
+      (with-syntax-table s-table
+        (mapconcat (lambda (word)
+                     (cond
+                      ((member word '("AND" "OR" "IF" "ON" "IT" "TO"
+                                      "A" "OF" "VS" "IN" "FOR" "WAS"
+                                      "IS" "BE" "SO"))
+                       (downcase word))
+                      ((member word '("WE" "DAY" "HOW" "WHY" "NOW" "OLD"
+                                      "NEW" "MY" "TOO" "GOT" "GET" "THE"
+                                      "ONE" "DO" "YOU" "BAD" "ALL"))
+                       (capitalize word))
+                      ((and (> (length word) 3)
+                            (string-match-p "\\`[A-Z\\.\\?\\!\\':,’\\-]*\\'"
+                                            word))
+                       (capitalize word))
+                      (t word)))
+                   arr " "))))
+
+  ;; (add-hook 'elfeed-new-entry-hook
+  ;;           #'elfeed-declickbait)
+
+  ;; (defun elfeed-declickbait (entry)
+  ;;   (when-let* ((feed (elfeed-entry-feed entry))
+  ;;               (feed-url (elfeed-feed-url feed))
+  ;;               (youtube-p (string-match-p "youtube\\.com" feed-url))
+  ;;               (title (elfeed-entry-title entry)))
+  ;;     (setf (elfeed-meta entry :title)
+  ;;           (let* ((title-no-bang (if (string-match
+  ;;                                      (rx (seq (or "!" "?" space)
+  ;;                                               (group (1+ (or "!" "?" space)))
+  ;;                                               eol))
+  ;;                                      title)
+  ;;                                     (substring title 0 (- (length (match-string 1 title))))
+  ;;                                   title))
+  ;;                  (words (split-string title-no-bang))
+  ;;                  (case-fold-search nil))
+  ;;             (string-join (mapcar (lambda (word)
+  ;;                                    (cond
+  ;;                                     ((member word '("AND" "OR" "IF" "ON" "IT"
+  ;;                                                     "TO" "A" "OF" "THE" "VS"
+  ;;                                                     "IN" "FOR" "AN" "WAS" "IS"))
+  ;;                                      (downcase word))
+  ;;                                     ((member word '("WE" "DAY" "HOW" "WHY" "NOW"
+  ;;                                                     "CUP" "OLD" "NEW" "MY" "TOO"
+  ;;                                                     "GOT" "GET" "EYE"))
+  ;;                                      (capitalize word))
+  ;;                                     ((and (> (length word) 3)
+  ;;                                           (string-match-p "\\`[A-Z\\.\\?\\!\\':,’\\-]*\\'"
+  ;;                                                           word))
+  ;;                                      (capitalize word))
+  ;;                                     (t word)))
+  ;;                                  words)
+  ;;                          " ")))))
   ;; (dolist (entry (elfeed-feed-entries
   ;;                 (with-current-buffer "*elfeed-search*"
   ;;                   (elfeed-entry-feed-id (elfeed-search-selected :ignore-region)))))
-  ;;   (elfeed-declickbait entry))
-
+  ;;   (elfeed-undeclickbait entry))
+  
   (defun my/elfeed-search-by-day (dir)
     (lambda (&optional arg)
       (interactive "p")

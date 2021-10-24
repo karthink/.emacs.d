@@ -1,7 +1,7 @@
 # key: <video
 # name: video template
 # --
-<video style="center" width="${1:700}" ${2:autoplay }${3:controls }${4:loop}>
+<video style="center" width="${1:700}" ${2:autoplay }${3:controls}${4: loop}>
  <source src=`(let ((s (read-file-name "Video file: ")))
                 (concat "\""
                         (substring s (string-match "/img" s))

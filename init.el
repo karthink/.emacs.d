@@ -420,7 +420,8 @@
   buffer file, then recompile the file."
   (interactive)
   (when (and (eq major-mode 'emacs-lisp-mode)
-             (not (string= user-init-file (buffer-file-name)))
+             (not ;; (string= user-init-file (buffer-file-name))
+              (string-match-p "init\\.el$" (buffer-file-name)))
              (file-exists-p (byte-compile-dest-file buffer-file-name)))
     (byte-recompile-file buffer-file-name)))
 (add-hook 'after-save-hook 'auto-byte-recompile)
@@ -782,7 +783,7 @@ active region use it instead."
   )
 
 (use-package window
-  :bind ("H-+" . balance-windows))
+  :bind ("H-+" . balance-windows-area))
 
 (require 'better-buffers nil t)
 
@@ -802,16 +803,17 @@ active region use it instead."
         (defun my/popper-group-by-heuristic ()
           "Group popups according to heuristic rules suitable for
           my usage."
-          (cond
-           ((string-match-p "\\(?:~/\\.config/\\|~/dotfiles/\\)" default-directory)
-            'config)
-           ((locate-dominating-file default-directory "init.el") 'emacs)
-           ((string-match-p "local/share/git" default-directory) 'projects)
-           ((string-match-p "\\(?:KarthikBa\\|research/\\)" default-directory)
-            'research)
-           ((string-match-p "karthinks" default-directory) 'website)
-           ((locate-dominating-file default-directory "research") 'documents)
-           (t (popper-group-by-project)))))
+          (let ((dd (abbreviate-file-name default-directory)))
+            (cond
+             ((string-match-p "\\(?:~/\\.config/\\|~/dotfiles/\\)" dd)
+              'config)
+             ((locate-dominating-file dd "init.el") 'emacs)
+             ((string-match-p "local/share/git" dd) 'projects)
+             ((string-match-p "\\(?:KarthikBa\\|research/\\)" dd)
+              'research)
+             ((string-match-p "karthinks" dd) 'website)
+             ((locate-dominating-file dd "research") 'documents)
+             (t (popper-group-by-project))))))
   (setq popper-mode-line nil
         popper-reference-buffers
         (append +help-modes-list
@@ -1007,7 +1009,9 @@ active region use it instead."
   (("H-<right>" . windmove-swap-states-right)
    ("H-<down>" . windmove-swap-states-down)
    ("H-<up>" . windmove-swap-states-up)
-   ("H-<left>" . windmove-swap-states-left)))
+   ("H-<left>" . windmove-swap-states-left))
+  :config
+  (use-package emacs-i3))
 ;;;** Transpose-frame
 (use-package transpose-frame
   :ensure t
@@ -1609,6 +1613,7 @@ If region is active, add its contents to the new buffer."
     (add-to-list 'company-backends '(company-reftex-labels company-reftex-citations))))
 
 (use-package consult-reftex
+  :disabled
   :load-path "~/.local/share/git/consult-reftex"
   :after (reftex consult embark)
   :bind (:map reftex-mode-map
@@ -1686,8 +1691,8 @@ If region is active, add its contents to the new buffer."
   (use-package embark
     :config
     (add-to-list 'embark-target-finders 'bibtex-actions-citation-key-at-point)
-    (add-to-list 'embark-keymap-alist '(bibtex . bibtex-actions-map))
-    (add-to-list 'embark-keymap-alist '(citation . bibtex-actions-map-buffer)))
+    (add-to-list 'embark-keymap-alist '(bib-reference . bibtex-actions-map))
+    (add-to-list 'embark-keymap-alist '(citation-key . bibtex-actions-buffer-map)))
 
   (use-package cdlatex
     :config
@@ -2782,10 +2787,8 @@ _d_: subtree
   :load-path "~/.local/share/git/wallabag.el/"
   :commands wallabag
   :config
-  (setq wallabag-host my-wallabag-host) ;; wallabag server host name
-  (setq wallabag-username my-wallabag-username) ;; username
-  (setq wallabag-password my-wallabag-password) ;; password
-  )
+  (setq wallabag-host my-wallabag-host)
+  (setq wallabag-username my-wallabag-username))
 
 ;;;** EWW
 ;;----------------------------------------------------------------------
@@ -3519,22 +3522,117 @@ project, as defined by `vc-root-dir'."
   :commands (avy-goto-word-1 avy-goto-char-2 avy-goto-char-timer)
   :config
   (setq avy-timeout-seconds 0.35)
-  (setq avy-keys '(?a ?s ?d ?f ?g ?h ?j ?l ?\; ?x
-                   ?v ?b ?n ?. ?, ?/ ?u ?o ?p ?e
+  (setq avy-keys '(?a ?s ?d ?f ?g ?j ?l ?\; ?x
+                   ?v ?b ?n ?, ?/ ?u ?p ?e ?.
                    ?c ?q ?2 ?3 ?'))
-  (setq avy-dispatch-alist '((?k . avy-action-kill-move)
-                             (?K . avy-action-kill-stay)
-                             (?t . avy-action-teleport)
-                             (?m . avy-action-mark)
-                             (?  . my/avy-action-mark-to-char)
-                             (?w . avy-action-copy)
-                             (?y . avy-action-yank)
-                             (25 . avy-action-yank-line)
-                             (?Y . avy-action-yank-line)
+  (setq avy-dispatch-alist '((?m . avy-action-mark)
+                             (?  . avy-action-mark-to-char)
                              (?i . avy-action-ispell)
-                             (?z . avy-action-zap-to-char)))
+                             (?z . avy-action-zap-to-char)
+                             (?o . avy-action-embark)
+                             (?= . avy-action-define)
+                             (67108925 . avy-action-tuxi)
+                             ;; (?W . avy-action-tuxi)
+                             (?h . avy-action-helpful)
+                             
+                             (11 . avy-action-kill-line)
+                             (25 . avy-action-yank-line)
+                             
+                             (?w . avy-action-copy)
+                             (?k . avy-action-kill-stay)
+                             (?y . avy-action-yank)
+                             (?t . avy-action-teleport)
+                             
+                             (?W . avy-action-copy-whole-line)
+                             (?K . avy-action-kill-whole-line)
+                             (?Y . avy-action-yank-whole-line)
+                             (?T . avy-action-teleport-whole-line)))
   
-  (defun my/avy-action-mark-to-char (pt)
+  ;; (defun avy-action-flyspell (pt)
+  ;;   (save-excursion
+  ;;     (goto-char pt)
+  ;;     (when (require 'flyspell nil t)
+  ;;       (flyspell-auto-correct-word)))
+  ;;   (select-window
+  ;;    (cdr (ring-ref avy-ring 0)))
+  ;;   t)
+  
+  (defun avy-action-helpful (pt)
+    (save-excursion
+      (goto-char pt)
+      (helpful-at-point))
+    (select-window
+     (cdr (ring-ref avy-ring 0)))
+    t)
+  
+  (defun avy-action-define (pt)
+    (cl-letf (((symbol-function 'keyboard-quit)
+            #'abort-recursive-edit))
+      (save-excursion
+        (goto-char pt)
+        (dictionary-search-dwim))
+      (select-window
+       (cdr (ring-ref avy-ring 0))))
+    t)
+  
+  (defun avy-action-tuxi (pt)
+    (cl-letf (((symbol-function 'keyboard-quit)
+            #'abort-recursive-edit))
+      (save-excursion
+        (goto-char pt)
+        (google-search-at-point))
+      (select-window
+       (cdr (ring-ref avy-ring 0))))
+    t)
+  
+  (defun avy-action-embark (pt)
+    (cl-letf (((symbol-function 'keyboard-quit)
+            #'abort-recursive-edit))
+      (save-excursion
+        (goto-char pt)
+        (embark-act))
+      (select-window
+       (cdr (ring-ref avy-ring 0))))
+    t)
+  
+  (defun avy-action-kill-line (pt)
+    (save-excursion
+      (goto-char pt)
+      (kill-line))
+    (select-window
+     (cdr (ring-ref avy-ring 0)))
+    t)
+  
+  (defun avy-action-copy-whole-line (pt)
+    (save-excursion
+      (goto-char pt)
+      (cl-destructuring-bind (start . end)
+          (bounds-of-thing-at-point 'line)
+        (copy-region-as-kill start end)))
+    (select-window
+     (cdr
+      (ring-ref avy-ring 0)))
+    t)
+  
+  (defun avy-action-kill-whole-line (pt)
+    (save-excursion
+      (goto-char pt)
+      (kill-whole-line))
+    (select-window
+     (cdr
+      (ring-ref avy-ring 0)))
+    t)
+  
+  (defun avy-action-yank-whole-line (pt)
+    (avy-action-copy-whole-line pt)
+    (save-excursion (yank))
+    t)
+  
+  (defun avy-action-teleport-whole-line (pt)
+    (avy-action-kill-whole-line pt)
+    (save-excursion (yank)) t)
+  
+  (defun avy-action-mark-to-char (pt)
     (activate-mark)
     (goto-char pt))
   
@@ -3623,11 +3721,11 @@ project, as defined by `vc-root-dir'."
 
   :general
   ("C-'"        '(my/avy-goto-char-this-window :wk "Avy goto char")
-   "M-j"        '(avy-goto-char-2            :wk "Avy goto char 2")
+   "M-s j"        '(avy-goto-char-2            :wk "Avy goto char 2")
    "M-s y"      '(avy-copy-line              :wk "Avy copy line above")
    "M-s M-y"    '(avy-copy-region            :wk "Avy copy region above")
    "M-s M-k"    '(avy-kill-whole-line        :wk "Avy copy line as kill")
-   "M-s j"      '(avy-goto-char-timer        :wk "Avy goto char timer")
+   "M-j"        '(avy-goto-char-timer        :wk "Avy goto char timer")
    "M-s C-w"    '(avy-kill-region            :wk "Avy kill region")
    "M-s M-w"    '(avy-kill-ring-save-region  :wk "Avy copy as kill")
    "M-s t"      '(avy-move-line              :wk "Avy move line")
@@ -3640,8 +3738,8 @@ project, as defined by `vc-root-dir'."
   ;;  :prefix "g"
   ;;  "s" 'avy-goto-char-timer)
   :bind (:map isearch-mode-map
-         ("C-'" . my/avy-isearch))
-  )
+         ("C-'" . my/avy-isearch)
+         ("M-j" . my/avy-isearch)))
 
 ;;----------------------------------------------------------------------
 ;;;** IY-GO-TO-CHAR
@@ -3671,10 +3769,25 @@ project, as defined by `vc-root-dir'."
 ;;######################################################################
 ;;;** COMPLETION FRAMEWORKS:
 ;;----------------------------------------------------------------------
-;;;*** ICOMPLETE/CONSULT/EMBARK
+;;;*** MOVEC: MARGINALIA/ORDERLESS/VERTICO/EMBARK/CONSULT
 ;;----------------------------------------------------------------------
-(use-package setup-icomplete
-  :demand)
+(use-package setup-marginalia :demand)
+(use-package setup-orderless :demand)
+;; (use-package setup-vertico :demand)
+(use-package setup-embark :demand)
+(use-package setup-consult :demand)
+;;;**** ELM - EMBARK-LIVE-MODE
+(use-package elm
+  :commands embark-live-mode
+  :init (embark-live-mode 1)
+  :config
+  (setq elm-always-show-list
+        '(consult-line consult-outline
+          consult-line-symbol-at-point 
+          consult-imenu consult-imenu-all
+          consult-dir consult-xref
+          embark-keymap-help embark-keymap-prompter
+          embark-act-with-completing-read)))
 
 ;;----------------------------------------------------------------------
 ;;;*** IVY/COUNSEL/SWIPER
@@ -4028,7 +4141,31 @@ the mode-line and switches to `variable-pitch-mode'."
   (setq keycast-separator-width 1)
   (dolist (input '(self-insert-command
                    org-self-insert-command))
-    (add-to-list 'keycast-substitute-alist `(,input "." "Typing!"))))
+    (add-to-list 'keycast-substitute-alist `(,input "." "Typing!")))
+  
+  (defun store-action-key+cmd (cmd)
+    (setq keycast--this-command-keys (this-single-command-keys)
+          keycast--this-command cmd)
+    cmd)
+
+  (defun store-action-key-no-cmd (cmd)
+    (setq keycast--this-command-keys (this-single-command-keys)
+          keycast--this-command cmd))
+  
+  (defun keycast-capture-avy-dispatch (char)
+    (if-let ((cmd (assoc char avy-dispatch-alist)))
+        (setq keycast--this-command-keys (make-vector 1 char)
+              keycast--this-command (cdr cmd))))
+  
+  (advice-add 'embark-keymap-prompter :filter-return #'store-action-key+cmd)
+  ;; (advice-add 'avy-goto-char-timer :filter-return #'store-action-key+cmd)
+  (advice-add 'avy-handler-default :before #'keycast-capture-avy-dispatch)
+
+  (defun force-keycast-update (&rest _)
+    (force-mode-line-update t))
+
+  (dolist (cmd '(embark-act embark-become))
+    (advice-add cmd :before #'force-keycast-update)))
 
 ;; Using a screen recorder instead. gif-screencast misses keystrokes.
 (use-package gif-screencast

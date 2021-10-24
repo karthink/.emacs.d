@@ -280,6 +280,7 @@ an embedded LaTeX fragment, let `texmathp' do its job.
   )
 
 (use-package consult-reftex
+  :disabled
   :after (org latex reftex)
   :bind (:map org-mode-map
          ("C-c )" . 'consult-reftex-insert-reference)))
@@ -629,16 +630,17 @@ parent."
 ;;----------------------------------------------------------------------
 (use-package org-download
   :ensure t
+  :after org
   :hook ((dired-mode . org-download-enable)
          (org-mode . org-download-enable))
   :config
   ;; (setq org-download-backend (if IS-LINUX "curl" "url-retrieve"))
   (setq org-download-heading-lvl nil)
   (setq org-download-backend 'curl)
+  (setq org-download-image-dir "./figures")
   (setq org-download-image-attr-list
         '("#+attr_html: :width 70% :align center"
-         "#+attr_org: :width 100px"
-         "#+attr_latex: :width 0.6\textwidth")))
+          "#+attr_latex: :width 0.6\\textwidth")))
 
 ;;----------------------------------------------------------------------
 ;; ORG-BABEL
@@ -743,12 +745,15 @@ parent."
     "Returns `org-capture' template string for new Hugo post.
 See `org-capture-templates' for more information."
     (let* ((title (read-from-minibuffer "Post Title: ")) ;Prompt to enter the post title
-           (fname (org-hugo-slug title)))
+           (fname (org-hugo-slug title))
+           (commentp (y-or-n-p "Enable comments? ")))
       (mapconcat #'identity
                  `(
                    ,(concat "* TODO " title)
                    "\n:PROPERTIES:"
-                   ,(concat "\n:EXPORT_FILE_NAME: " fname)
+                   ,(concat "\n:EXPORT_FILE_NAME: " fname
+                            "\n:EXPORT_HUGO_CUSTOM_FRONT_MATTER: :comments "
+                            (if commentp "true" "false"))
                    "\n:END:"
                    "\n%?\n")          ;Place the cursor here finally
                  "")))

@@ -70,7 +70,9 @@
                                        (make-directory download-dir))
                                    download-dir)))
     (setq my/packages-urls-extra
-          '(("https://github.com/xFA25E/ytel-show.git")
+          '(("https://codeberg.org/jao/consult-notmuch.git")
+            ("https://github.com/xFA25E/ytel-show.git")
+            ("git@github.com:karthink/lazytab.git")
             ("git@github.com:karthink/consult-reftex.git")
             ("git@github.com:karthink/consult-dir.git")
             ("https://github.com/minad/vertico.git")
@@ -1150,6 +1152,7 @@ surrounded by word boundaries."
 
 (use-package outline
   :bind (:map outline-minor-mode-map
+              ("TAB" . outline-cycle)
               ("<tab>" . outline-cycle)
               ("C-c C-n" . 'outline-next-visible-heading)
               ("C-c C-p" . 'outline-previous-visible-heading))
@@ -1403,8 +1406,22 @@ If region is active, add its contents to the new buffer."
               ("C-h ." . eldoc))
   :config
   (setq eglot-put-doc-in-help-buffer nil)
-  (add-to-list 'eglot-server-programs '(matlab-mode . ("~/.local/share/git/matlab-langserver/matlab-langserver.sh" "")))
-  )
+  (add-to-list 'eglot-server-programs
+               '(matlab-mode . ("~/.local/share/git/matlab-langserver/matlab-langserver.sh" ""))))
+
+;;----------------------------------------------------------------------
+;;;** EMACS-LISP
+;;----------------------------------------------------------------------
+(use-package pp
+  :bind ([remap eval-last-sexp] . eval-sexp-maybe-pp)
+  :config
+  (defun eval-sexp-maybe-pp (&optional arg)
+    (interactive "P")
+    (if arg
+        (let ((current-prefix-arg '4))
+          (call-interactively #'pp-eval-last-sexp))
+      (call-interactively #'eval-last-sexp))))
+
 ;;----------------------------------------------------------------------
 ;;;** AUCTEX-MODE & ADDITIONS
 ;;----------------------------------------------------------------------
@@ -1412,7 +1429,8 @@ If region is active, add its contents to the new buffer."
   :defer 5
   :after tex
   :ensure auctex
-  :hook (LaTeX-mode . electric-pair-mode)
+  :hook ((LaTeX-mode . electric-pair-mode)
+         (LaTeX-mode . my/latex-with-outline))
   :mode ("\\.tex\\'" . latex-mode)
   ;; :init (add-hook 'LaTeX-mode-hook
   ;;                 (lambda ()  (interactive)
@@ -1493,6 +1511,12 @@ If region is active, add its contents to the new buffer."
     ;; "{" 'cdlatex-environment)
 
   :config
+  ;; (add-to-list 'Info-directory-list "/usr/share/texmf-dist/tex/texinfo/")
+  (defun my/latex-with-outline ()
+    (add-to-list 'minor-mode-overriding-map-alist
+                 `(outline-minor-mode . ,outline-minor-mode-map))
+    (outline-minor-mode 1))
+  
   (use-package embrace
       :bind (:map TeX-mode-map
              ("M-s a" . embrace-add)
@@ -1544,18 +1568,43 @@ If region is active, add its contents to the new buffer."
                    (output-dvi "xdvi")
                    (output-pdf "Zathura")
                    (output-html "xdg-open")))))
-    (TeX-fold-mode 1)))
+    (TeX-fold-mode 1))
+  
+  ;; Monkey patching: Stop this from marking to the end of the line at the end
+  ;; of the env.
+  (defun LaTeX-mark-environment (&optional count)
+    "Set mark to end of current environment and point to the matching begin.
+If prefix argument COUNT is given, mark the respective number of
+enclosing environments.  The command will not work properly if
+there are unbalanced begin-end pairs in comments and verbatim
+environments."
+    (interactive "p")
+    (setq count (if count (abs count) 1))
+    (let ((cur (point)) beg end)
+      ;; Only change point and mark after beginning and end were found.
+      ;; Point should not end up in the middle of nowhere if the search fails.
+      (save-excursion
+        (dotimes (_ count) (LaTeX-find-matching-end))
+        (setq end (point))
+        (goto-char cur)
+        (dotimes (_ count) (LaTeX-find-matching-begin))
+        (setq beg (point)))
+      (push-mark end)
+      (goto-char beg)
+      (TeX-activate-region))))
 
 (use-package tex-fold
   :after latex
   :defer
   :config
-  (setq TeX-fold-folded-face '((t (:height 1.15 :foreground "SlateBlue1")))
-        TeX-fold-auto t))
+  (setq TeX-fold-folded-face '((t (:height 1.1 :foreground "SlateBlue1")))
+        TeX-fold-auto t
+        TeX-fold-type-list '(env macro comment)))
 
 (use-package latex-extra
+  :disabled
   :after latex
-  :ensure
+  ;; :ensure
   :defines (latex-extra-mode)
   :hook (LaTeX-mode . latex-extra-mode)
   :general
@@ -1581,14 +1630,13 @@ If region is active, add its contents to the new buffer."
 
 (use-package preview
   :after latex
-  :defer 5
-  :init
-  (setq preview-scale-function '+preview-scale-larger)
+  :hook (LaTeX-mode . my/preview-scale-larger)
   :config
   (define-key LaTeX-mode-map (kbd "C-c C-x") preview-map)
-  (defun +preview-scale-larger ()
+  (defun my/preview-scale-larger ()
     "Increase the size of `preview-latex' images"
-    (lambda nil (* 1.25 (funcall (preview-scale-from-face))))))
+    (setq preview-scale-function 
+          (lambda nil (* 1.25 (funcall (preview-scale-from-face)))))))
 
 (use-package reftex
   :after latex
@@ -1602,7 +1650,7 @@ If region is active, add its contents to the new buffer."
   (setq reftex-use-multiple-selection-buffers t))
 
 (use-package company-reftex
-  :ensure
+  :disabled
   :after (reftex company)
   :hook ((latex-mode LaTeX-mode) . my/company-reftex-completions)
   :config
@@ -1613,8 +1661,7 @@ If region is active, add its contents to the new buffer."
     (add-to-list 'company-backends '(company-reftex-labels company-reftex-citations))))
 
 (use-package consult-reftex
-  :disabled
-  :load-path "~/.local/share/git/consult-reftex"
+  :load-path "~/.local/share/git/consult-reftex/"
   :after (reftex consult embark)
   :bind (:map reftex-mode-map
          ("C-c )"   . consult-reftex-insert-reference)
@@ -1626,20 +1673,12 @@ If region is active, add its contents to the new buffer."
   :ensure t
   ;; :commands turn-on-cdlatex
   :hook (LaTeX-mode . turn-on-cdlatex)
-  :bind (:map cdlatex-mode-map ("[" . nil) ("(" . nil) ("{" . nil))
+  :bind (:map cdlatex-mode-map ("[" . nil) ("(" . nil) ("{" . nil)
+              ("<tab>" . cdlatex-tab))
   :config
   (progn
     (setq cdlatex-command-alist
           '(("vc" "Insert \\vect{}" "\\vect{?}"
-             cdlatex-position-cursor nil nil t)
-            ("smat" "Insert smallmatrix env"
-             "\\left( \\begin{smallmatrix} ? \\end{smallmatrix} \\right)"
-             cdlatex-position-cursor nil nil t)
-            ("bmat" "Insert bmatrix env"
-             "\\begin{bmatrix} ? \\end{bmatrix}"
-             cdlatex-position-cursor nil nil t)
-            ("pmat" "Insert pmatrix env"
-             "\\begin{pmatrix} ? \\end{pmatrix}"
              cdlatex-position-cursor nil nil t)
             ("equ*" "Insert equation* env"
              "\\begin{equation*}\n?\n\\end{equation*}"
@@ -1657,12 +1696,38 @@ If region is active, add its contents to the new buffer."
     (setq cdlatex-math-symbol-alist '((?F ("\\Phi"))
                                       (?o ("\\omega" "\\mho" "\\mathcal{O}"))
                                       (?6 ("\\partial"))
-                                      (?v ("\\vee" "\\forall"))))
+                                      (?v ("\\vee" "\\forall"))
+                                      (?^ ("\\uparrow" "\\Updownarrow" "\\updownarrow"))))
     (setq cdlatex-math-modify-alist '((?b "\\mathbb" "\\textbf" t nil nil)
                                       (?B "\\mathbf" "\\textbf" t nil nil)
                                       (?t "\\text" nil t nil nil)))
-    (setq cdlatex-paired-parens "$[{("))
-  )
+    (setq cdlatex-paired-parens "$[{(")))
+
+;; Make cdlatex play nice inside org tables
+(use-package lazytab
+  :load-path "~/.local/share/git/lazytab/"
+  :after cdlatex
+  :hook (cdlatex-tab . lazytab-cdlatex-or-orgtbl-next-field)
+  :bind (:map ortbl-mode-map
+              ("<tab>" . lazytab-org-table-next-field-maybe)
+              ("TAB" . lazytab-org-table-next-field-maybe))
+  :config
+  (add-to-list 'cdlatex-command-alist '("smat" "Insert smallmatrix env"
+                                       "\\left( \\begin{smallmatrix} ? \\end{smallmatrix} \\right)"
+                                       lazytab-position-cursor-and-edit
+                                       nil nil t))
+  (add-to-list 'cdlatex-command-alist '("bmat" "Insert bmatrix env"
+                                       "\\begin{bmatrix} ? \\end{bmatrix}"
+                                       lazytab-position-cursor-and-edit
+                                       nil nil t))
+  (add-to-list 'cdlatex-command-alist '("pmat" "Insert pmatrix env"
+                                       "\\begin{pmatrix} ? \\end{pmatrix}"
+                                       lazytab-position-cursor-and-edit
+                                       nil nil t))
+  (add-to-list 'cdlatex-command-alist '("tbl" "Insert table"
+                                        "\\begin{table}\n\\centering ? \\caption{}\n\\end{table}\n"
+                                       lazytab-position-cursor-and-edit
+                                       nil t nil)))
 
 (use-package inkscape-figures
   :disabled
@@ -2146,6 +2211,16 @@ and Interpretation of Classical Mechanics) - The book."
               ("M-s c" . embrace-change)
               ("M-s d" . embrace-delete))
   :config
+  ;; Monkey patching: Expand region goes haywire sometimes
+  (defun embrace--get-region-overlay (open close)
+    (let ((bounds (or (embrace--fallback-re-search open close)
+                      (embrace--expand-region-research open close))))
+      (when bounds
+        (make-overlay (car bounds) (cdr bounds) nil nil t))))
+
+  (defun  embrace--fallback-re-search (open close)
+    (my/find-bounds-of-regexps open close))
+  
   (defun my/embrace-latex-mode-hook-extra ()
     (add-to-list 'embrace-semantic-units-alist '(?E . er/mark-LaTeX-inside-environment))
     (add-to-list 'embrace-semantic-units-alist '(?e . LaTeX-mark-environment))
@@ -2154,12 +2229,14 @@ and Interpretation of Classical Mechanics) - The book."
                               (embrace-build-help "\\macro{" "}"))
     (embrace-add-pair-regexp ?e "\\\\begin{[a-z*]+}" "\\\\end{[a-z*]+}"
                               (lambda ()
-                                (let ((env (read-string "Env: ")))
+                                (let ((env (completing-read "Env: "
+                                                            (mapcar #'car
+                                                                    LaTeX-environment-list))))
                                   (cons (format "\\begin{%s}" env)
                                         (format "\\end{%s}" env))))
                               (embrace-build-help "\\begin{.}" "\\end{.}"))
     (embrace-add-pair-regexp 36 "\\$" "\\$" nil)
-    (embrace-add-pair-regexp ?d "\\\\left\\\\*[{([|<]" "\\\\right\\\\*[}([|>]"
+    (embrace-add-pair-regexp ?d "\\\\left\\\\*[{([|<]" "\\\\right\\\\*[]})|>]"
                               (lambda ()
                                 (let* ((env (read-char "Delim type: "))
                                        (env-pair (pcase env
@@ -2203,7 +2280,7 @@ and Interpretation of Classical Mechanics) - The book."
           (cons (format text (car pair))
                 (format text (cdr pair))))))))
 ;;----------------------------------------------------------------------
-;; STROKES
+;;;** STROKES
 ;;----------------------------------------------------------------------
 (use-package strokes
   :bind ("<down-mouse-2>" . strokes-do-stroke)
@@ -2212,7 +2289,7 @@ and Interpretation of Classical Mechanics) - The book."
   (setq strokes-use-strokes-buffer t))
 
 ;;----------------------------------------------------------------------
-;; ERRORS
+;;;** ERRORS
 ;;----------------------------------------------------------------------
 (use-package simple
   :bind (("M-g n" . my/next-error)
@@ -2237,7 +2314,7 @@ and Interpretation of Classical Mechanics) - The book."
          (define-key map (kbd "p") 'my/next-error)
          map)))))
 ;;----------------------------------------------------------------------
-;; DUMB-JUMP
+;;;** DUMB-JUMP
 ;;----------------------------------------------------------------------
 ;; Even dumber jump
 (use-package buffer-local-xref
@@ -2262,15 +2339,15 @@ and Interpretation of Classical Mechanics) - The book."
   )
 
 ;;----------------------------------------------------------------------
-;; UNDO-TREE
+;;;** UNDO-TREE
 ;;----------------------------------------------------------------------
 (use-package undo-tree
+  :disabled
   :defer
-  :ensure nil
   :config (setq undo-tree-enable-undo-in-region  t))
 
 ;;----------------------------------------------------------------------
-;; FLYMAKE
+;;;** FLYMAKE
 ;;----------------------------------------------------------------------
 (use-package flymake
   :defer
@@ -2320,7 +2397,7 @@ is not visible. Otherwise delegates to regular Emacs next-error."
   :hook ((markdown-mode org-mode text-mode) . flymake-proselint-setup))
 
 ;;----------------------------------------------------------------------
-;; BROWSE-URL
+;;;** BROWSE-URL
 ;;----------------------------------------------------------------------
 (use-package browse-url
   :commands (browse-url-at-point-umpv browse-url-umpv)
@@ -2345,7 +2422,7 @@ is not visible. Otherwise delegates to regular Emacs next-error."
             ("." . browse-url-generic)))))
 
 ;;----------------------------------------------------------------------
-;; TRANSIENT
+;;;** TRANSIENT
 ;;----------------------------------------------------------------------
 (use-package transient
   :defer
@@ -2829,7 +2906,36 @@ _d_: subtree
                 :test 'equal))
 
   (with-eval-after-load 'cdlatex
-    (add-hook 'cdlatex-tab-hook #'yas-expand))
+    ;; Allow cdlatex tab to work inside Yas fields
+    (defun cdlatex-in-yas-field ()
+      ;; Check if we're at the end of the Yas field
+      (when-let* ((_ (overlayp yas--active-field-overlay))
+                  (end (overlay-end yas--active-field-overlay)))
+        (if (>= (point) end)
+            ;; Call yas-next-field if cdlatex can't expand here
+            (let ((s (thing-at-point 'sexp)))
+              (unless (and s (assoc (substring-no-properties s)
+                                    cdlatex-command-alist-comb))
+                (yas-next-field-or-maybe-expand)
+                t))
+          ;; otherwise expand and jump to the correct location
+          (let (cdlatex-tab-hook minp)
+            (setq minp
+                  (min (save-excursion (cdlatex-tab)
+                                       (point))
+                       (overlay-end yas--active-field-overlay)))
+            (goto-char minp) t))))
+
+    (add-hook 'cdlatex-tab-hook #'yas-expand)
+    (add-hook 'cdlatex-tab-hook #'cdlatex-in-yas-field)
+    (define-key yas-keymap (kbd "TAB")
+      (defun yas-next-field-or-cdlatex ()
+        (interactive)
+        "Jump to the next Yas field correctly with cdlatex active."
+        (if (bound-and-true-p cdlatex-mode)
+            (cdlatex-tab)
+          (yas-next-field-or-maybe-expand))))
+    (define-key yas-keymap [tab] 'yas-next-field-or-cdlatex))
 
   (setq yas-wrap-around-region t
         yas-triggers-in-field t)
@@ -2841,15 +2947,14 @@ _d_: subtree
   (add-hook 'post-self-insert-hook #'my/yas-try-expanding-auto-snippets)
 
 (with-eval-after-load 'company
-;;;###autoload
-    (defun my/yas-company-next-field ()
-      "company-complete-common or yas-next-field-or-maybe-expand."
-      (interactive)
-      (if company-candidates (company-complete-common)
-        (yas-next-field-or-maybe-expand)))
+  ;; (defun my/yas-company-next-field ()
+  ;;     "company-complete-common or yas-next-field-or-maybe-expand."
+  ;;     (interactive)
+  ;;     (if company-candidates (company-complete-common)
+  ;;       (yas-next-field-or-maybe-expand)))
 
-    (define-key yas-keymap [tab] #'my/yas-company-next-field)
-    (define-key yas-keymap (kbd "TAB") #'my/yas-company-next-field)
+  ;;   (define-key yas-keymap [tab] #'my/yas-company-next-field)
+  ;;   (define-key yas-keymap (kbd "TAB") #'my/yas-company-next-field)
 
 ;;;###autoload
     (defun my/yas-company-cancel ()
@@ -3358,8 +3463,8 @@ project, as defined by `vc-root-dir'."
   :ensure t
   :defer 3
   :general
-  ("C-;"      'company-complete)
-
+  ("M-s <tab>"      'company-yasnippet)
+  
   (:keymaps   'company-active-map
   "C-p"       nil
   "C-n"       nil
@@ -3403,8 +3508,8 @@ project, as defined by `vc-root-dir'."
         ;; company-transformers '(company-sort-by-statistics)
         company-global-modes '(latex-mode matlab-mode emacs-lisp-mode lisp-interaction-mode
                                python-mode sh-mode fish-mode conf-mode text-mode org-mode)
-        company-backends '((company-files company-capf company-keywords) company-yasnippet))
-
+        company-backends '((company-files company-capf))) ;;company-keywords
+  (setq tab-always-indent 'complete)
   (add-hook 'matlab-mode-hook (lambda ()
                                 ;; (unless (featurep 'company-matlab)
                                 ;;   (require 'company-matlab))
@@ -3505,14 +3610,87 @@ project, as defined by `vc-root-dir'."
   :bind ("C-," . 'er/expand-region)
   :config
   (add-to-list 'expand-region-exclude-text-mode-expansions 'org-mode)
+  (add-to-list 'expand-region-exclude-text-mode-expansions 'LaTeX-mode)
   (set-default 'er--show-expansion-message t)
   (setq expand-region-show-usage-message nil)
+  
+  (defun my/find-bounds-of-regexps (open close)
+    (let ((start (point))
+          (parity 0)
+          (open-close (concat "\\(?:" open "\\|" close "\\)")))
+      (save-excursion
+        (while (and (not (= parity -1))
+                    (re-search-backward open-close nil t))
+          (if (looking-at open)
+              (setq parity (1- parity))
+            (setq parity (1+ parity))))
+        (push-mark)
+        (goto-char start)
+        (while (and (not (= parity 0))
+                    (re-search-forward open-close nil t))
+          (if (looking-back close)
+              (setq parity (1+ parity))
+            (setq parity (1- parity))))
+        (when (= parity 0) (cons (mark) (point))))))
+
   (use-package outline
     :hook (outline-minor-mode . er/add-outline-mode-expansions)
     :config
     (defun er/add-outline-mode-expansions ()
       (make-variable-buffer-local 'er/try-expand-list)
-      (add-to-list 'er/try-expand-list 'outline-mark-subtree))))
+      (add-to-list 'er/try-expand-list 'outline-mark-subtree)))
+  
+  (use-package latex
+    :defer
+    :config
+    (add-hook 'LaTeX-mode-hook 'er/set-latex-mode-expansions 90)
+    (defun er/mark-latex-text-sentence ()
+      (unless(texmathp) (er/mark-text-sentence)))
+    (defun er/mark-latex-text-paragraph ()
+      (unless (texmathp) (er/mark-text-paragraph)))
+    (defun er/mark-latex-inside-pairs ()
+      (unless (texmathp) (er/mark-inside-pairs)))
+    (defun er/mark-latex-outside-pairs ()
+      (unless (texmathp) (er/mark-outside-pairs)))
+    (defun er/mark-latex-outside-delimiters ()
+      (destructuring-bind (beg . end )
+          (my/find-bounds-of-regexps "\\\\left\\\\*[{([|<]"
+                                     "\\\\right\\\\*[]})|>]")
+        (set-mark (save-excursion
+                    (goto-char beg)
+                    (skip-chars-forward er--space-str)
+                    (point)))
+        (goto-char end)
+        (skip-chars-backward er--space-str)
+        (exchange-point-and-mark)))
+    (defun er/mark-latex-inside-delimiters ()
+      (when (texmathp)
+        (destructuring-bind (beg . end)
+            (my/find-bounds-of-regexps "\\\\left\\\\*[{([|<]"
+                                       "\\\\right\\\\*[]})|>]")
+          (set-mark (save-excursion
+                      (goto-char beg)
+                      (skip-chars-forward er--space-str)
+                      (forward-char 6)
+                      (point)))
+          (goto-char end)
+          (skip-chars-backward er--space-str)
+          (backward-char 7))
+        (exchange-point-and-mark)))
+    (defun er/set-latex-mode-expansions ()
+      (make-variable-buffer-local 'er/try-expand-list)
+      (setq er/try-expand-list
+            '(er/mark-word er/mark-symbol er/mark-symbol-with-prefix
+              er/mark-next-accessor  er/mark-inside-quotes er/mark-outside-quotes
+              er/mark-latex-inside-pairs er/mark-latex-outside-pairs
+              er/mark-latex-inside-delimiters er/mark-latex-outside-delimiters
+              er/mark-comment er/mark-url er/mark-email ;er/mark-defun
+              er/mark-latex-text-sentence er/mark-latex-text-paragraph))
+      (er/add-latex-mode-expansions)
+      ;;  LaTeX-mark-environment LaTeX-mark-section
+      ;;  er/mark-LaTeX-inside-environment er/mark-LaTeX-math
+      ;;  er/mark-method-call 
+      )))
 
 ;;----------------------------------------------------------------------
 ;;;** AVY
@@ -3538,7 +3716,8 @@ project, as defined by `vc-root-dir'."
                              (11 . avy-action-kill-line)
                              (25 . avy-action-yank-line)
                              
-                             (?w . avy-action-copy)
+                             (?w . avy-action-easy-copy)
+                             ;; (134217847  . avy-action-easy-copy)
                              (?k . avy-action-kill-stay)
                              (?y . avy-action-yank)
                              (?t . avy-action-teleport)
@@ -3548,14 +3727,36 @@ project, as defined by `vc-root-dir'."
                              (?Y . avy-action-yank-whole-line)
                              (?T . avy-action-teleport-whole-line)))
   
-  ;; (defun avy-action-flyspell (pt)
-  ;;   (save-excursion
-  ;;     (goto-char pt)
-  ;;     (when (require 'flyspell nil t)
-  ;;       (flyspell-auto-correct-word)))
-  ;;   (select-window
-  ;;    (cdr (ring-ref avy-ring 0)))
-  ;;   t)
+  (defun avy-action-easy-copy (pt)
+        (require 'easy-kill)
+        (goto-char pt)
+        (cl-letf (((symbol-function 'easy-kill-activate-keymap)
+                   (lambda ()
+                     (let ((map (easy-kill-map)))
+                       (set-transient-map
+                        map
+                        (lambda ()
+                          ;; Prevent any error from activating the keymap forever.
+                          (condition-case err
+                              (or (and (not (easy-kill-exit-p this-command))
+                                       (or (eq this-command
+                                               (lookup-key map (this-single-command-keys)))
+                                           (let ((cmd (key-binding
+                                                       (this-single-command-keys) nil t)))
+                                             (command-remapping cmd nil (list map)))))
+                                  (ignore
+                                   (easy-kill-destroy-candidate)
+                                   (unless (or (easy-kill-get mark) (easy-kill-exit-p this-command))
+                                     (easy-kill-save-candidate))))
+                            (error (message "%s:%s" this-command (error-message-string err))
+                                   nil)))
+                        (lambda ()
+                          (let ((dat (ring-ref avy-ring 0)))
+                            (select-frame-set-input-focus
+                             (window-frame (cdr dat)))
+                            (select-window (cdr dat))
+                            (goto-char (car dat)))))))))
+          (easy-kill)))
   
   (defun avy-action-helpful (pt)
     (save-excursion
@@ -3586,13 +3787,12 @@ project, as defined by `vc-root-dir'."
     t)
   
   (defun avy-action-embark (pt)
-    (cl-letf (((symbol-function 'keyboard-quit)
-            #'abort-recursive-edit))
-      (save-excursion
-        (goto-char pt)
-        (embark-act))
-      (select-window
-       (cdr (ring-ref avy-ring 0))))
+    (unwind-protect
+        (save-excursion
+          (goto-char pt)
+          (embark-act)))
+    (select-window
+     (cdr (ring-ref avy-ring 0)))
     t)
   
   (defun avy-action-kill-line (pt)
@@ -3721,7 +3921,7 @@ project, as defined by `vc-root-dir'."
 
   :general
   ("C-'"        '(my/avy-goto-char-this-window :wk "Avy goto char")
-   "M-s j"        '(avy-goto-char-2            :wk "Avy goto char 2")
+   "M-s j"      '(avy-goto-char-2            :wk "Avy goto char 2")
    "M-s y"      '(avy-copy-line              :wk "Avy copy line above")
    "M-s M-y"    '(avy-copy-region            :wk "Avy copy region above")
    "M-s M-k"    '(avy-kill-whole-line        :wk "Avy copy line as kill")
@@ -3776,18 +3976,27 @@ project, as defined by `vc-root-dir'."
 ;; (use-package setup-vertico :demand)
 (use-package setup-embark :demand)
 (use-package setup-consult :demand)
-;;;**** ELM - EMBARK-LIVE-MODE
-(use-package elm
-  :commands embark-live-mode
-  :init (embark-live-mode 1)
+
+;;;**** ELMO - EMBARK-LIVE-MODE
+(use-package elmo
+  :load-path "~/.local/share/git/elmo/"
+  :commands elmo-mode
+  :after embark
+  :init (elmo-mode 1)
+  :bind (:map elmo-minibuffer-local-completion-map
+         ("C-<tab>" . #'embark-act-with-completing-read))
   :config
-  (setq elm-always-show-list
-        '(consult-line consult-outline
-          consult-line-symbol-at-point 
+  (setq elmo-always-show-list
+        '(consult-line consult-outline 
+          ;; consult-line-symbol-at-point 
+          consult-completion-in-region             
           consult-imenu consult-imenu-all
-          consult-dir consult-xref
-          embark-keymap-help embark-keymap-prompter
-          embark-act-with-completing-read)))
+          consult-xref consult-org-heading
+          embark-completing-read-prompter
+          embark-act-with-completing-read
+          embark-act
+          embark-prefix-help-command
+          consult-yank-pop)))
 
 ;;----------------------------------------------------------------------
 ;;;*** IVY/COUNSEL/SWIPER
@@ -4035,7 +4244,7 @@ This function is meant to be mapped to a key in `rg-mode-map'."
   :config 
   (defvar my/window-configuration nil
     "Current window configuration.
-Intended for use by `my/window-single-toggle'.")
+Intended for use by `my/monocle-mode.")
 
   (define-minor-mode my/monocle-mode
     "Toggle between multiple windows and single window.

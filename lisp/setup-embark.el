@@ -53,10 +53,11 @@
   (setq prefix-help-command #'embark-prefix-help-command)
 
   ;; Embark indicators
-  (setq embark-indicators '(embark-highlight-indicator
+  (setq embark-indicators '(embark-minimal-indicator
+                            embark-highlight-indicator
                             embark-isearch-highlight-indicator))
-  (add-to-list 'embark-indicators 'embark-mixed-indicator)
-  (setq embark-mixed-indicator-delay 0.5)
+  ;; (add-to-list 'embark-indicators 'embark-mixed-indicator)
+  ;; (setq embark-mixed-indicator-delay 0.5)
   (setq embark-verbose-indicator-display-action '(display-buffer-at-bottom))
 
   ;; Utility commands
@@ -153,8 +154,8 @@
       ("g" revert-buffer))
 
     (add-to-list 'embark-keymap-alist '(this-buffer-file . this-buffer-file-map))
-    (cl-pushnew 'revert-buffer embark-allow-edit-commands)
-    (cl-pushnew 'rename-file-and-buffer embark-allow-edit-commands)
+    (cl-pushnew 'revert-buffer embark-allow-edit-actions)
+    (cl-pushnew 'rename-file-and-buffer embark-allow-edit-actions)
     
     (use-package helpful
       :defer
@@ -181,30 +182,19 @@
               (slot . 5)
               (window-parameters . ((split-window . #'ignore)))))
     
-    ;; Vertico highlight indicator
-    (defun embark-vertico-indicator ()
-      (let ((fr face-remapping-alist))
-        (lambda (&optional keymap _targets prefix)
-          (when (bound-and-true-p vertico--input)
-            (setq-local face-remapping-alist
-                        (if keymap
-                            (cons '(vertico-current . embark-target) fr)
-                          fr))))))
-    (add-to-list 'embark-indicators #'embark-vertico-indicator)
-    
     ;; Helm style prompter
     (defun with-minibuffer-keymap (keymap)
       (lambda (fn &rest args)
         (minibuffer-with-setup-hook
-            (lambda ()
-              (use-local-map
-               (make-composed-keymap keymap (current-local-map))))
+            (:append (lambda ()
+                       (use-local-map
+                        (make-composed-keymap keymap (current-local-map)))))
           (apply fn args))))
 
     (defvar embark-completing-read-prompter-map
       (let ((map (make-sparse-keymap)))
         (define-key map (kbd "C-<tab>") 'abort-recursive-edit)
-        (define-key map (kbd "<tab>") 'abort-recursive-edit)
+        (define-key map (kbd "H-<tab>") 'abort-recursive-edit)
         map))
 
     (advice-add 'embark-completing-read-prompter :around
@@ -214,8 +204,7 @@
       (interactive "P")
       (let* ((embark-prompter 'embark-completing-read-prompter)
              (act (propertize "Act" 'face 'highlight))
-             (embark-indicators (list (lambda (&optional _keymap targets prefix)
-                                        #'ignore))))
+             (embark-indicators '(embark-minimal-indicator)))
         (embark-act arg)))
 
     ;; Which-key style indicator
@@ -243,7 +232,21 @@ targets."
                    ((and (pred keymapp) km) km)
                    (_ (key-binding prefix 'accept-default)))
                keymap)
-             nil nil t))))))
+             nil nil t)))))
+    
+    ;; Vertico highlight indicator
+    (use-package vertico 
+      :defer
+      :config
+      (defun embark-vertico-indicator ()
+        (let ((fr face-remapping-alist))
+          (lambda (&optional keymap _targets prefix)
+            (when (bound-and-true-p vertico--input)
+              (setq-local face-remapping-alist
+                          (if keymap
+                              (cons '(vertico-current . embark-target) fr)
+                            fr))))))
+      (add-to-list 'embark-indicators #'embark-vertico-indicator)))
 
 (use-package embark-consult
   :ensure t
@@ -254,6 +257,25 @@ targets."
          ("b" . consult-buffer)
          ("j" . consult-find))
   :config
+  
+;; (setq embark-collect-initial-view-alist
+;;       '((file           . list)
+;;         (project-file   . list)
+;;         (virtual-buffer . list)
+;;         (buffer         . list)
+;;         (consult-multi  . list)
+;;         (consult-location . list)
+;;         (consult-compile-error . list)
+;;         (consult-flymake-error . list)
+;;         (symbol         . grid)
+;;         (command        . grid)
+;;         (imenu          . grid)
+;;         (line           . list)
+;;         (xref-location  . list)
+;;         (kill-ring      . zebra)
+;;         (face           . list)
+;;         (t              . grid)))
+
   (dolist (pair '((consult-fd . list)))
     (add-to-list 'embark-collect-initial-view-alist
                  pair))

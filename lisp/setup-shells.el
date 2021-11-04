@@ -342,4 +342,8 @@ append to it."
   :config
   (setq async-shell-command-buffer 'new-buffer))
 
+(use-package capf-autosuggest
+  :ensure t
+  :hook ((eshell-mode comint-mode) . capf-autosuggest-mode))
+
 (provide 'setup-shells)

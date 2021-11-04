@@ -1,12 +1,10 @@
 ;; -*- lexical-binding: t -*-
 ;; Vertico
 (use-package vertico
-  :disabled
   :ensure t
   :defer
   :load-path "~/.local/share/git/vertico/"
   :after minibuffer
-  :init (vertico-mode 1)
   :bind (:map vertico-map
               ("M-s"     . nil)
               ("M-i"     . vertico-insert)
@@ -30,7 +28,6 @@
   (advice-add #'tmm-add-prompt :after #'minibuffer-hide-completions))
 
 (use-package vertico-directory
-  :disabled
   :load-path "~/.local/share/git/vertico/extensions/"
   :hook (rfn-eshadow-update-overlay vertico-directory-tidy)
   :after vertico
@@ -41,19 +38,15 @@
          ("RET"   . vertico-directory-enter)))
 
 (use-package vertico-repeat
-  :disabled
   :load-path "~/.local/share/git/vertico/extensions/"
   :after vertico
   :bind (("C-x ." . vertico-repeat)
          ("H-."   . vertico-repeat)))
 
 (use-package vertico-reverse
-  :disabled
-  :disabled
   :load-path "~/.local/share/git/vertico/extensions/"
   :after vertico
-  :hook ((vertico-reverse-mode . my/vertico-reverse-setup)
-         (vertico-mode . vertico-reverse-mode))
+  :hook (vertico-reverse-mode . my/vertico-reverse-setup)
   :config
   (defun my/vertico-reverse-setup ()
     (setq vertico-resize vertico-reverse-mode)))

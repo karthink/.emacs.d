@@ -39,6 +39,8 @@
 ;;----------------------------------------------------------------------
 (use-package notmuch
   :commands notmuch
+  :bind (("C-x C-m" . notmuch-mua-new-mail)
+         ("C-x M-m" . notmuch-jump-search))
   :hook ((notmuch-message-mode . turn-off-auto-fill)
          (notmuch-mua-send . notmuch-mua-attachment-check))
   :config
@@ -167,8 +169,10 @@
 :config
 (notmuch-bookmarks-mode))
 
-(use-package counsel-notmuch
-  :disabled
-  :commands counsel-notmuch)
+(use-package consult-notmuch
+  :load-path "~/.local/share/git/consult-notmuch/"
+  :after consult
+  :bind (("M-s M-m" . consult-notmuch-tree)
+         ("M-s m" . consult-notmuch)))
 
 (provide 'setup-email)

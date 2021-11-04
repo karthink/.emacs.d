@@ -14,7 +14,7 @@
   (setq consult-preview-outline nil)
   (setq consult-preview-key 'any)
   (consult-customize
-   consult-ripgrep consult-git-grep consult-grep
+   consult-ripgrep consult-git-grep consult-grep consult-notmuch consult-notmuch-tree
    consult-bookmark consult--source-buffer consult-recent-file consult-xref
    consult--source-file consult--source-project-file consult--source-bookmark
    :preview-key (kbd "C-M-m"))
@@ -73,7 +73,7 @@ When the number of characters in a buffer exceeds this threshold,
     "Call `consult-imenu'. With prefix-command ARG, call
     `consult-project-imenu'."
     (interactive "P")
-    (if arg (consult-project-imenu) (consult-imenu)))
+    (if arg (consult-imenu-multi) (consult-imenu)))
   
   ;; From https://github.com/minad/consult/wiki
   (defun my/consult-ripgrep-or-line (&optional initial start)

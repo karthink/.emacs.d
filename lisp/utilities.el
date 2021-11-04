@@ -50,11 +50,6 @@
             ((= 1 count) (message "1 word"))
             (t  (message  (format "%d words" count)))))))
 
-(add-hook 'after-save-hook
-          (lambda () (if  (member major-mode '(text-mode
-                                          latex-mode
-                                          auctex-mode))
-                    (count-words-buffer))))
 ;;----------------------------------------------------------------------
 ;; PRINT ASCII TABLE
 ;;----------------------------------------------------------------------

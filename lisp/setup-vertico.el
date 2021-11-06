@@ -1,7 +1,6 @@
 ;; -*- lexical-binding: t -*-
 ;; Vertico
 (use-package vertico
-  :ensure t
   :defer
   :load-path "~/.local/share/git/vertico/"
   :after minibuffer

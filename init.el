@@ -867,8 +867,8 @@ active region use it instead."
                 "(C)"))
        (t name)))
     (setq popper-echo-transform-function #'popper-message-shorten)
-    (setq popper-echo-dispatch-keys '(?1 ?2 ?3 ?4 ?5 ?6 ?7 ?8 ?9 ?0))
-    )
+    (setq popper-echo-dispatch-keys '(?0 ?1 ?2 ?3 ?4 ?5 ?6 ?7 ?8 ?9)))
+  
   (popper-mode +1)
 
   :config
@@ -3314,7 +3314,8 @@ project, as defined by `vc-root-dir'."
   (defun my/git-clone-clipboard-url ()
     "Clone git URL in clipboard asynchronously and open in dired when finished."
     (interactive)
-    (cl-assert (or (string-match-p "^git@github.com" (current-kill 0)) 
+    (cl-assert (or (string-match-p "^git@github.com" (current-kill 0))
+                   (string-match-p "^git@.*\\.org" (current-kill 0)) 
                    (string-match-p "^\\(http\\|https\\|ssh\\)://" (current-kill 0)))
                nil
                "No URL in clipboard")
@@ -3384,12 +3385,13 @@ project, as defined by `vc-root-dir'."
   (add-hook 'which-key-init-buffer-hook
             (lambda () (setq-local line-spacing 3)))
 
-  (which-key-mode +1)
+  (advice-add 'which-key-mode :after
+              (lambda (_arg)
+                (when (featurep 'embark)
+                  (setq prefix-help-command
+                        #'embark-prefix-help-command))))
   
-  (when (featurep 'embark)
-    (setq prefix-help-command
-          #'embark-prefix-help-command))
-
+  (which-key-mode +1)
   :diminish "")
 
 ;;----------------------------------------------------------------------
@@ -4240,7 +4242,7 @@ This function is meant to be mapped to a key in `rg-mode-map'."
 ;;;*** MONOCLE-MODE
 (use-package emacs
   :bind (("H-m" . my/monocle-mode)
-         ("C-x m" . my/monocle-mode))
+         ("C-x C-m" . my/monocle-mode))
   :config 
   (defvar my/window-configuration nil
     "Current window configuration.

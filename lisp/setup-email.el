@@ -39,7 +39,7 @@
 ;;----------------------------------------------------------------------
 (use-package notmuch
   :commands notmuch
-  :bind (("C-x C-m" . notmuch-mua-new-mail)
+  :bind (("C-x m" . notmuch-mua-new-mail)
          ("C-x M-m" . notmuch-jump-search))
   :hook ((notmuch-message-mode . turn-off-auto-fill)
          (notmuch-mua-send . notmuch-mua-attachment-check))
@@ -73,36 +73,33 @@
                                                     ;; :background "gray16"
                                                     ))))
   
-  (define-key notmuch-search-mode-map (kbd "d")
-    (defun my/notmuch-toggle-trash ()
-      (interactive)
-      (let ((taglist (if (member "trash" (notmuch-search-get-tags))
-                         '("+inbox" "-trash")
-                       '("-inbox" "+trash"))))
-        (notmuch-search-tag taglist)
-        (notmuch-search-next-thread))))
-
-  (defun notmuch-search-make-tagger (tag)
+  (defun notmuch-search-make-tagger (&rest tags)
     (lambda () (interactive)
-      (let ((taglist (if (member tag (notmuch-search-get-tags))
-                         (list (concat "-" tag))
-                       (list (concat "+" tag)))))
+      (let ((taglist (mapcar (lambda (tag)
+                               (if (member tag (notmuch-search-get-tags))
+                                   (concat "-" tag)
+                                 (concat "+" tag)))
+                             tags)))
         (notmuch-search-tag taglist)
         (notmuch-search-next-thread))))
   
-  (defun notmuch-show-make-tagger (tag)
+  (defun notmuch-show-make-tagger (&rest tags)
     (lambda () (interactive)
-      (let ((taglist (if (member tag (notmuch-show-get-tags))
-                         (list (concat "-" tag))
-                       (list (concat "+" tag)))))
+      (let ((taglist (mapcar (lambda (tag)
+                               (if (member tag (notmuch-search-get-tags))
+                                   (concat "-" tag)
+                                 (concat "+" tag)))
+                             tags)))
         (notmuch-show-tag taglist)
         (notmuch-show-next-message))))
   
-  (defun notmuch-tree-make-tagger (tag)
+  (defun notmuch-tree-make-tagger (&rest tags)
     (lambda (&optional all) (interactive "P")
-      (let ((taglist (if (member tag (notmuch-tree-get-tags))
-                         (list (concat "-" tag))
-                       (list (concat "+" tag)))))
+      (let ((taglist (mapcar (lambda (tag)
+                               (if (member tag (notmuch-search-get-tags))
+                                   (concat "-" tag)
+                                 (concat "+" tag)))
+                             tags)))
         (if all
             (notmuch-tree-tag-thread taglist)
           (notmuch-tree-tag taglist))
@@ -111,6 +108,10 @@
   (define-key notmuch-search-mode-map (kbd "f") (notmuch-search-make-tagger "flagged"))
   (define-key notmuch-show-mode-map (kbd "f") (notmuch-show-make-tagger "flagged"))
   (define-key notmuch-tree-mode-map (kbd "f") (notmuch-tree-make-tagger "flagged"))
+
+  (define-key notmuch-show-mode-map (kbd "d") (notmuch-search-make-tagger "trash" "inbox"))
+  (define-key notmuch-show-mode-map (kbd "d") (notmuch-show-make-tagger "trash" "inbox"))
+  (define-key notmuch-tree-mode-map (kbd "d") (notmuch-tree-make-tagger "trash" "inbox"))
 
   
   ;; (define-key notmuch-show-mode-map "`" 'notmuch-show-apply-tag-macro)
@@ -172,7 +173,63 @@
 (use-package consult-notmuch
   :load-path "~/.local/share/git/consult-notmuch/"
   :after consult
-  :bind (("M-s M-m" . consult-notmuch-tree)
-         ("M-s m" . consult-notmuch)))
+  :bind (("M-s M-m" . consult-notmuch-latest-tree)
+         ("M-s m" . consult-notmuch-latest))
+  :config
+  (defun consult-notmuch-latest (&optional arg)
+    (interactive "P")
+    (let ((consult-async-input-debounce 0.6)
+          (consult-async-input-throttle 0.7))
+      (consult-notmuch
+       (unless arg "tag:inbox date:1d.."))))
+  (defun consult-notmuch-latest-tree (&optional arg)
+    (interactive "P")
+    (let ((consult-async-input-debounce 0.6)
+          (consult-async-input-throttle 0.7))
+      (consult-notmuch-tree
+       (unless arg "tag:inbox date:1d..")))))
+
+(use-package consult
+  :after (notmuch consult)
+  :config
+  (add-to-list 'consult-buffer-sources 'consult-notmuch-buffer-source))
+
+(use-package embark
+  :after (notmuch embark)
+  :config
+  (defun embark-notmuch-tagger (tags)
+    "Make a function to tag a message with TAGS."
+    (lambda (msg)
+      "Tag a notmuch message using Embark."
+      (when-let ((thread-id (consult-notmuch--thread-id msg)))
+        (notmuch-tag (concat "(" thread-id ")")
+                     (split-string tags)))))
+  (defun embark-export-consult-notmuch (msgs)
+    "Create a notmuch search buffer listing messages."
+    (notmuch-search
+     (concat "("
+             (mapconcat #'consult-notmuch--thread-id msgs " ")
+             ")")))
+  
+  (defun embark-notmuch-tag (msg)
+    (when-let* ((thread-id (consult-notmuch--thread-id msg))
+                (tags (get-text-property 0 'tags msg))
+                (tag-changes (notmuch-read-tag-changes
+                              tags "Tags: "
+                             "-")))
+      (notmuch-tag (concat "(" thread-id ")")
+                   tag-changes)))
+  
+  (defvar embark-notmuch-map 
+    (let ((map (make-sparse-keymap))) 
+      (define-key map (kbd "d") (embark-notmuch-tagger "+trash -inbox"))
+      (define-key map (kbd "a") (embark-notmuch-tagger "-inbox"))
+      (define-key map (kbd "f") (embark-notmuch-tagger "+flagged"))
+      (define-key map (kbd "+") 'embark-notmuch-tag)
+      (define-key map (kbd "-") 'embark-notmuch-tag)
+      map)
+    "Keymap for actions on Notmuch entries.")
+  (add-to-list 'embark-keymap-alist '(notmuch-result . embark-notmuch-map))
+  (add-to-list 'embark-exporters-alist '(notmuch-result . embark-export-consult-notmuch)))
 
 (provide 'setup-email)

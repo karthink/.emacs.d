@@ -14,7 +14,7 @@
   (setq consult-preview-outline nil)
   (setq consult-preview-key 'any)
   (consult-customize
-   consult-ripgrep consult-git-grep consult-grep consult-notmuch consult-notmuch-tree
+   consult-ripgrep consult-git-grep consult-grep 
    consult-bookmark consult--source-buffer consult-recent-file consult-xref
    consult--source-file consult--source-project-file consult--source-bookmark
    :preview-key (kbd "C-M-m"))

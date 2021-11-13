@@ -1,0 +1,3 @@
+[submodule "plugins/ffmpeg-crop"]
+	path = plugins/ffmpeg-crop
+	url = git@github.com:karthink/ffmpeg-crop.git

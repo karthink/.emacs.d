@@ -790,7 +790,7 @@ active region use it instead."
 
 ;;;** POPPER
 (use-package popper
-  :load-path "~/.local/share/git/popper"
+  :load-path "plugins/popper/"
   :after (setup-windows setup-project)
   :commands popper-mode
   :bind (("C-`" . popper-toggle-latest)
@@ -1660,7 +1660,7 @@ environments."
     (add-to-list 'company-backends '(company-reftex-labels company-reftex-citations))))
 
 (use-package consult-reftex
-  :load-path "~/.local/share/git/consult-reftex/"
+  :load-path "plugins/consult-reftex/"
   :after (reftex consult embark)
   :bind (:map reftex-mode-map
          ("C-c )"   . consult-reftex-insert-reference)
@@ -1704,7 +1704,7 @@ environments."
 
 ;; Make cdlatex play nice inside org tables
 (use-package lazytab
-  :load-path "~/.local/share/git/lazytab/"
+  :load-path "plugins/lazytab/"
   :after cdlatex
   :hook (cdlatex-tab . lazytab-cdlatex-or-orgtbl-next-field)
   :bind (:map ortbl-mode-map
@@ -1736,7 +1736,7 @@ environments."
             ("C-c e" . +inkscape-figures-edit)))
 
 (use-package ink
-  :load-path "~/.local/share/git/ink/"
+  :load-path "plugins/ink/"
   :after latex
   :commands (ink-make-figure ink-edit-figure))
 
@@ -2861,7 +2861,7 @@ _d_: subtree
 (use-package wallabag
   :disabled
   :defer t
-  :load-path "~/.local/share/git/wallabag.el/"
+  :load-path "plugins/wallabag/"
   :commands wallabag
   :config
   (setq wallabag-host my-wallabag-host)
@@ -3981,7 +3981,7 @@ project, as defined by `vc-root-dir'."
 
 ;;;**** ELMO - EMBARK-LIVE-MODE
 (use-package elmo
-  :load-path "~/.local/share/git/elmo/"
+  :load-path "plugins/elmo/"
   :commands elmo-mode
   :after embark
   :init (elmo-mode 1)
@@ -4086,32 +4086,11 @@ project, as defined by `vc-root-dir'."
 ;;----------------------------------------------------------------------
 (require 'setup-dired nil t)
 (use-package emacs
-  :after setup-dired
+  :after dired
   :config
   (use-package ffmpeg-crop
-    :load-path (lambda () (concat user-emacs-directory "plugins/ffmpeg-crop/")))
-  (defun my/dired-ffmpeg-crop ()
-    (interactive)
-    (let ((file-suffix ""))
-      (cl-loop
-       for file in (dired-get-marked-files) do
-       (start-process "ffmpeg" "ffmpeg" "/usr/bin/ffmpeg"
-                      "-i" file
-                      "-ss" (progn (start-process (concat "mpv " (file-name-base file))
-                                                  (concat "mpv " (file-name-base file))
-                                                  "/usr/bin/mpv"
-                                                  file)
-                                   (setq file-suffix (read-from-minibuffer "Video type: "))
-                                   (read-from-minibuffer "From: "))
-                      "-to" (read-from-minibuffer "To: ")
-                      "-vf" "scale='trunc(iw/2):trunc(ih/2)'"
-                      "-an"
-                      (replace-regexp-in-string "\\.mp4" (concat "_small_"
-                                                                 (string-join
-                                                                  (split-string file-suffix)
-                                                                  "_")
-                                                                 ".mp4")
-                                                file))))))
+    :load-path "plugins/ffmpeg-crop/"
+    :commands (ffmpeg-crop ffmpeg-crop-dired)))
 
 ;;;** DICTIONARY AND SPELLING
 (use-package sdcv

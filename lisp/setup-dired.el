@@ -183,7 +183,7 @@ This relies on the external 'fd' executable."
               ))
 
 (use-package peep-dired
-  :load-path "~/.local/share/git/peep-dired/"
+  :load-path "plugins/peep-dired/"
   :general
   (:states '(normal visual)
            :keymaps 'dired-mode-map

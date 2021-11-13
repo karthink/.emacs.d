@@ -375,7 +375,7 @@ USE-SINGLE-P) with mpv."
             "x" 'elfeed-search-browse-url))
 
 (use-package wallabag
-  :load-path "~/.local/share/git/wallabag"
+  :load-path "plugins/wallabag"
   :commands wallabag-post-entry
   :config
   (setq wallabag-data-dir "~/.cache/wallabag")

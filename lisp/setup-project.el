@@ -71,7 +71,7 @@ The directory name must be absolute."
            ("M-s L" . find-library)))
 
 (use-package project-x
-  :load-path "~/.local/share/git/project-x/"
+  :load-path "plugins/project-x/"
   :after project
   :config
   (setq project-x-window-list-file (dir-concat user-cache-directory "project-window-list")

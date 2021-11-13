@@ -573,3 +573,26 @@
   ;;                           virtual-buffers))))
   ;;     (ibuffer t "*Embark Export Ibuffer*"
   ;;              `((predicate . (member (buffer-name) ',buffers))))))
+
+;; (defun my/dired-ffmpeg-crop ()
+;;     (interactive)
+;;     (let ((file-suffix ""))
+;;       (cl-loop
+;;        for file in (dired-get-marked-files) do
+;;        (start-process "ffmpeg" "ffmpeg" "/usr/bin/ffmpeg"
+;;                       "-i" file
+;;                       "-ss" (progn (start-process (concat "mpv " (file-name-base file))
+;;                                                   (concat "mpv " (file-name-base file))
+;;                                                   "/usr/bin/mpv"
+;;                                                   file)
+;;                                    (setq file-suffix (read-from-minibuffer "Video type: "))
+;;                                    (read-from-minibuffer "From: "))
+;;                       "-to" (read-from-minibuffer "To: ")
+;;                       "-vf" "scale='trunc(iw/2):trunc(ih/2)'"
+;;                       "-an"
+;;                       (replace-regexp-in-string "\\.mp4" (concat "_small_"
+;;                                                                  (string-join
+;;                                                                   (split-string file-suffix)
+;;                                                                   "_")
+;;                                                                  ".mp4")
+;;                                                 file)))))

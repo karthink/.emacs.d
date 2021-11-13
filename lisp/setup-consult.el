@@ -179,7 +179,7 @@ When the number of characters in a buffer exceeds this threshold,
          ("C-r" . consult-history)))
 
 (use-package consult-dir
-  :load-path "~/.local/share/git/consult-dir"
+  :load-path "plugins/consult-dir/"
   :defer 2
   :after (consult bookmark marginalia)
   :bind (("C-x C-d" . consult-dir)

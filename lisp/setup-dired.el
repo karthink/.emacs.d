@@ -231,6 +231,10 @@ This relies on the external 'fd' executable."
   (setq image-dired-dir
         (dir-concat user-cache-directory "image-dired/")))
 
+(use-package gnus-dired
+  :defer 5
+  :after dired)
+
 (use-package dired-sidebar
   :after dired
   :disabled

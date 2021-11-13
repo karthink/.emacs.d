@@ -764,8 +764,7 @@ active region use it instead."
   :init
   (setq recentf-save-file (dir-concat user-cache-directory "recentf")
         recentf-max-saved-items 200)
-  (recentf-mode 1)
-  )
+  (recentf-mode 1))
 
 (use-package setup-windows
   :demand t
@@ -2417,9 +2416,10 @@ is not visible. Otherwise delegates to regular Emacs next-error."
         (browse-url-at-point)))
 
     (setq browse-url-generic-program "/usr/bin/qutebrowser")
-    (setq browse-url-browser-function
-          '(("https:\\/\\/www\\.youtu\\.*be." . browse-url-umpv)
-            ("." . browse-url-generic)))))
+    ;; (setq browse-url-browser-function
+    ;;       '(("https:\\/\\/www\\.youtu\\.*be." . browse-url-umpv)
+    ;;         ("." . browse-url-generic)))
+    ))
 
 ;;----------------------------------------------------------------------
 ;;;** TRANSIENT
@@ -3692,7 +3692,7 @@ project, as defined by `vc-root-dir'."
       ;;  LaTeX-mark-environment LaTeX-mark-section
       ;;  er/mark-LaTeX-inside-environment er/mark-LaTeX-math
       ;;  er/mark-method-call 
-      )))
+)))
 
 ;;----------------------------------------------------------------------
 ;;;** AVY
@@ -4088,27 +4088,30 @@ project, as defined by `vc-root-dir'."
 (use-package emacs
   :after setup-dired
   :config
+  (use-package ffmpeg-crop
+    :load-path (lambda () (concat user-emacs-directory "plugins/ffmpeg-crop/")))
   (defun my/dired-ffmpeg-crop ()
     (interactive)
     (let ((file-suffix ""))
-      (cl-loop for file in (dired-get-marked-files) do
-               (start-process "ffmpeg" "ffmpeg" "/usr/bin/ffmpeg"
-                              "-i" file
-                              "-ss" (progn (start-process (concat "mpv " (file-name-base file))
-                                                          (concat "mpv " (file-name-base file))
-                                                          "/usr/bin/mpv"
-                                                          file)
-                                           (setq file-suffix (read-from-minibuffer "Video type: "))
-                                           (read-from-minibuffer "From: "))
-                              "-to" (read-from-minibuffer "To: ")
-                              "-vf" "scale='trunc(iw/2):trunc(ih/2)'"
-                              "-an"
-                              (replace-regexp-in-string "\\.mp4" (concat "_small_"
-                                                                         (string-join
-                                                                          (split-string file-suffix)
-                                                                          "_")
-                                                                         ".mp4")
-                                                        file))))))
+      (cl-loop
+       for file in (dired-get-marked-files) do
+       (start-process "ffmpeg" "ffmpeg" "/usr/bin/ffmpeg"
+                      "-i" file
+                      "-ss" (progn (start-process (concat "mpv " (file-name-base file))
+                                                  (concat "mpv " (file-name-base file))
+                                                  "/usr/bin/mpv"
+                                                  file)
+                                   (setq file-suffix (read-from-minibuffer "Video type: "))
+                                   (read-from-minibuffer "From: "))
+                      "-to" (read-from-minibuffer "To: ")
+                      "-vf" "scale='trunc(iw/2):trunc(ih/2)'"
+                      "-an"
+                      (replace-regexp-in-string "\\.mp4" (concat "_small_"
+                                                                 (string-join
+                                                                  (split-string file-suffix)
+                                                                  "_")
+                                                                 ".mp4")
+                                                file))))))
 
 ;;;** DICTIONARY AND SPELLING
 (use-package sdcv
@@ -4161,10 +4164,11 @@ argument, query for word to search."
   (setq bookmark-default-file (dir-concat user-cache-directory "bookmarks")))
 ;;;** NOV.EL
 (use-package nov
-  :disabled
+  :ensure t
   :init
   (add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode))
-  :hook (nov-mode . my/nov-font-setup)
+  :hook ((nov-mode . my/nov-font-setup)
+         (nov-mode . er/add-text-mode-expansions))
   :config
   (setq nov-text-width 80
         nov-save-place-file (dir-concat user-cache-directory "nov-places"))
@@ -4753,7 +4757,9 @@ currently loaded theme first."
 ;; Settings that I'm not sure where to put:
 (use-package shr
   :defer
-  :config (setq shr-image-animate nil))
+  :config
+  (setq shr-image-animate nil
+        shr-width 66))
 
 (use-package url
   :defer

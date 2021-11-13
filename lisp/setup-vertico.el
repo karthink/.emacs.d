@@ -24,7 +24,51 @@
   :config
   (setq vertico-count 15
         vertico-cycle t)
+  ;; (defvar vertico-min-chars 3)
+  ;; (defun vertico-min-chars-ad ()
+  ;;   (let ((content (minibuffer-contents-no-properties)))
+  ;;     (>= (length content) vertico-min-chars)))
+  ;; (advice- #'vertico--exhibit :before-while #'vertico-min-chars-ad)
   (advice-add #'tmm-add-prompt :after #'minibuffer-hide-completions))
+
+(use-package vertico-grid
+  :load-path "~/.local/share/git/vertico/extensions/"
+  :after vertico
+  :bind (:map vertico-map
+              ("M-q" . vertico-grid-mode))
+  :config
+  (setq vertico-grid-separator "    ")
+  (defvar vertico-grid-view-categories
+    '(symbol command file buffer))
+  (defun vertico-grid-maybe ()
+    (let ((category 
+           (completion-metadata-get (completion-metadata
+                                     (buffer-substring-no-properties
+                                      (minibuffer-prompt-end)
+                                      (max (minibuffer-prompt-end) (point)))
+                                     minibuffer-completion-table
+                                     minibuffer-completion-predicate)
+                                    'category)))
+      (when (member category vertico-grid-view-categories)
+        (vertico-grid-mode 1))))
+  (advice-add #'vertico--setup :after #'vertico-grid-maybe)
+  (add-hook 'minibuffer-exit-hook
+            (lambda () (when (bound-and-true-p vertico-grid-mode))
+              (vertico-grid-mode -1))))
+
+(use-package vertico-indexed
+  :load-path "~/.local/share/git/vertico/extensions/"
+  :after vertico
+  :bind (:map vertico-map
+         ("M-i" . vertico-quick-insert)
+         ("C-'" . vertico-quick-exit)
+         ("C-o" . vertico-quick-embark))
+  :config
+  (defun vertico-quick-embark (&optional arg)
+    "Embark on candidate using quick keys."
+    (interactive)
+    (when (vertico-quick-jump)
+      (embark-act arg))))
 
 (use-package vertico-directory
   :load-path "~/.local/share/git/vertico/extensions/"

@@ -81,35 +81,38 @@
                                  (concat "+" tag)))
                              tags)))
         (notmuch-search-tag taglist)
+        (message "Tagged: %s" (mapconcat #'identity taglist " "))
         (notmuch-search-next-thread))))
   
   (defun notmuch-show-make-tagger (&rest tags)
     (lambda () (interactive)
       (let ((taglist (mapcar (lambda (tag)
-                               (if (member tag (notmuch-search-get-tags))
+                               (if (member tag (notmuch-show-get-tags))
                                    (concat "-" tag)
                                  (concat "+" tag)))
                              tags)))
         (notmuch-show-tag taglist)
+        (message "Tagged: %s" (mapconcat #'identity taglist " "))
         (notmuch-show-next-message))))
   
   (defun notmuch-tree-make-tagger (&rest tags)
     (lambda (&optional all) (interactive "P")
       (let ((taglist (mapcar (lambda (tag)
-                               (if (member tag (notmuch-search-get-tags))
+                               (if (member tag (notmuch-tree-get-tags))
                                    (concat "-" tag)
                                  (concat "+" tag)))
                              tags)))
         (if all
             (notmuch-tree-tag-thread taglist)
           (notmuch-tree-tag taglist))
+        (message "Tagged: %s" (mapconcat #'identity taglist " "))
         (notmuch-tree-next-thread))))
 
   (define-key notmuch-search-mode-map (kbd "f") (notmuch-search-make-tagger "flagged"))
   (define-key notmuch-show-mode-map (kbd "f") (notmuch-show-make-tagger "flagged"))
   (define-key notmuch-tree-mode-map (kbd "f") (notmuch-tree-make-tagger "flagged"))
 
-  (define-key notmuch-show-mode-map (kbd "d") (notmuch-search-make-tagger "trash" "inbox"))
+  (define-key notmuch-search-mode-map (kbd "d") (notmuch-search-make-tagger "trash" "inbox"))
   (define-key notmuch-show-mode-map (kbd "d") (notmuch-show-make-tagger "trash" "inbox"))
   (define-key notmuch-tree-mode-map (kbd "d") (notmuch-tree-make-tagger "trash" "inbox"))
 
@@ -197,7 +200,7 @@
 (use-package embark
   :after (notmuch embark)
   :config
-  (defun embark-notmuch-tagger (tags)
+  (defun embark-notmuch-make-tagger (tags)
     "Make a function to tag a message with TAGS."
     (lambda (msg)
       "Tag a notmuch message using Embark."
@@ -216,15 +219,15 @@
                 (tags (get-text-property 0 'tags msg))
                 (tag-changes (notmuch-read-tag-changes
                               tags "Tags: "
-                             "-")))
+                             "+")))
       (notmuch-tag (concat "(" thread-id ")")
                    tag-changes)))
   
   (defvar embark-notmuch-map 
     (let ((map (make-sparse-keymap))) 
-      (define-key map (kbd "d") (embark-notmuch-tagger "+trash -inbox"))
-      (define-key map (kbd "a") (embark-notmuch-tagger "-inbox"))
-      (define-key map (kbd "f") (embark-notmuch-tagger "+flagged"))
+      (define-key map (kbd "d") (embark-notmuch-make-tagger "+trash -inbox"))
+      (define-key map (kbd "a") (embark-notmuch-make-tagger "-inbox"))
+      (define-key map (kbd "f") (embark-notmuch-make-tagger "+flagged"))
       (define-key map (kbd "+") 'embark-notmuch-tag)
       (define-key map (kbd "-") 'embark-notmuch-tag)
       map)

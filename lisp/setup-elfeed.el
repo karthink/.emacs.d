@@ -175,7 +175,8 @@ USE-SINGLE-P) with mpv."
                        (downcase word))
                       ((member word '("WE" "DAY" "HOW" "WHY" "NOW" "OLD"
                                       "NEW" "MY" "TOO" "GOT" "GET" "THE"
-                                      "ONE" "DO" "YOU" "BAD" "ALL"))
+                                      "ONE" "DO" "YOU" "BAD" "ALL" "CAN"
+                                      "HE" "EAT"))
                        (capitalize word))
                       ((and (> (length word) 3)
                             (string-match-p "\\`[A-Z\\.\\?\\!\\':,’\\-]*\\'"

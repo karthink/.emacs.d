@@ -1,7 +1,0 @@
-# -*- mode: snippet -*-
-# name: sin
-# key: sin
-# group: math
-# condition: (and (texmathp) 'auto)
-# --
-\\sin

@@ -1,6 +1,0 @@
-# key: iff
-# name: if and only if
-# condition: (and (texmathp) (quote auto))
-# group: math
-# --
-\iff

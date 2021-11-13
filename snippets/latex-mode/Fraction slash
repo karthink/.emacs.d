@@ -1,8 +1,0 @@
-# -*- mode: snippet -*-
-# name: Fraction slash
-# key: /
-# expand-env: ((numerator 't))
-# condition: (texmathp)
-# group: math
-# --
-`(condition-case nil (save-excursion (backward-sexp) (kill-sexp) (delete-char 1)) (error (setq numerator 'nil)))`\\frac{`(if numerator (yank))`}{$1}$0

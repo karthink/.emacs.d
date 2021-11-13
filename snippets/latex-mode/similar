@@ -1,7 +1,0 @@
-# -*- mode: snippet -*-
-# name: similar
-# key: ~~
-# condition: (and (texmathp) 'auto)
-# group: math
-# --
-\\sim

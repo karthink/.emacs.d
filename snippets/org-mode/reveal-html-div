@@ -1,7 +1,0 @@
-# -*- mode: snippet -*-
-# name: reveal-html-div
-# key: <div
-# --
-#+REVEAL_HTML: <div class="${1:row}" style="$2">
-$0
-#+REVEAL_HTML: </div>

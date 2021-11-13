@@ -1,6 +1,0 @@
-# key: =>
-# name: implies
-# condition: (and (texmathp) (quote auto))
-# group: math
-# --
-\implies$0

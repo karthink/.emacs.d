@@ -1,7 +1,0 @@
-# -*- mode: snippet -*-
-# name: lesser lesser
-# key: <<
-# condition: (and (texmathp) 'auto)
-# group: math
-# --
-\\ll

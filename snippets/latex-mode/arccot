@@ -1,7 +1,0 @@
-# -*- mode: snippet -*-
-# name: arccot
-# key: arccot
-# group: math
-# condition: (and (texmathp) 'auto)
-# --
-\\arccot

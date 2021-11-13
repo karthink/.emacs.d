@@ -1,7 +1,0 @@
-# -*- mode: snippet -*-
-# name: subset
-# key: cc
-# group: math
-# condition: (and (texmathp) 'auto)
-# --
-\subset

@@ -1,7 +1,0 @@
-# -*- mode: snippet -*-
-# name: log
-# key: log
-# group: math
-# condition: (and (texmathp) 'auto)
-# --
-\\log

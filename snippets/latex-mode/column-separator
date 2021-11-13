@@ -1,7 +1,0 @@
-# -*- mode: snippet -*-
-# name: column-separator
-# key: ,,
-# condition: (and (texmathp) 'auto)
-# group: math
-# --
-& $0

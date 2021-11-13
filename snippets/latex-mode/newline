@@ -1,8 +1,0 @@
-# -*- mode: snippet -*-
-# name: newline
-# key: ;;
-# condition: (and (texmathp) 'auto)
-# group: math
-# --
-\\\\
-`(save-excursion (previous-line)(make-string (current-indentation) ?\s))`$0

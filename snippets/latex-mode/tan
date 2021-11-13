@@ -1,7 +1,0 @@
-# -*- mode: snippet -*-
-# name: tan
-# key: tan
-# group: math
-# condition: (and (texmathp) 'auto)
-# --
-\\tan

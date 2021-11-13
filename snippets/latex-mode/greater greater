@@ -1,7 +1,0 @@
-# -*- mode: snippet -*-
-# name: greater greater
-# key: >>
-# condition: (and (texmathp) 'auto)
-# group: math
-# --
-\\gg

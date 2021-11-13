@@ -1,7 +1,0 @@
-# -*- mode: snippet -*-
-# name: in
-# key: inn
-# condition: (and (texmathp) 'auto)
-# group: math
-# --
-\\in

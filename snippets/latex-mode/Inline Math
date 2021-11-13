@@ -1,6 +1,0 @@
-# key: mk
-# name: Inline Math
-# condition: (and (not (texmathp)) (quote auto))
-# group: math
-# --
-`(if (eq major-mode 'org-mode) "\\(" "$")`$0`(if (eq major-mode 'org-mode) " \\)" "$")`

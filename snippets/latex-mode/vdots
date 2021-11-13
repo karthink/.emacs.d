@@ -1,7 +1,0 @@
-# -*- mode: snippet -*-
-# name: vdots
-# key: ;.
-# group: math
-# condition: 'auto
-# --
-\\vdots 

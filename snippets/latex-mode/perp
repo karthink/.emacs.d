@@ -1,7 +1,0 @@
-# -*- mode: snippet -*-
-# name: perp
-# key: perp
-# group: math
-# condition: (and (texmathp) 'auto)
-# --
-\\perp

@@ -1,7 +1,0 @@
-# key: //
-# name: Fraction auto
-# expand-env: ((numerator (quote t)))
-# condition: (and (texmathp) (quote auto))
-# group: math
-# --
-`(condition-case nil (save-excursion (backward-sexp) (kill-sexp) (delete-char 1)) (error (setq numerator 'nil)))`\\frac{`(if numerator (current-kill 0))`}{$1}$0

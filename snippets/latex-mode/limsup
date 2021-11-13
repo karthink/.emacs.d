@@ -1,7 +1,0 @@
-# -*- mode: snippet -*-
-# name: limsup
-# key: limsup
-# condition: (and (texmathp) 'auto)
-# group: math
-# --
-\\limsup_{${1:n} \\to ${2:\\infty}} $0

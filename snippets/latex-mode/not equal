@@ -1,7 +1,0 @@
-# -*- mode: snippet -*-
-# name: not equal
-# key: neq
-# condition: (and (texmathp) 'auto)
-# group: math
-# --
-\\ne

@@ -1,8 +1,0 @@
-# -*- mode: snippet -*-
-# name: hat
-# key: hat
-# expand-env: ((argument (quote t)))
-# condition: (and (texmathp) 'auto)
-# group: math
-# --
-`(condition-case nil (progn (backward-sexp) (kill-sexp) (delete-char 1)) (error (setq argument 'nil)))`\\hat{`(if argument (current-kill 0))`}$0

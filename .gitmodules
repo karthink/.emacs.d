@@ -28,3 +28,6 @@
 [submodule "plugins/peep-dired"]
 	path = plugins/peep-dired
 	url = git@github.com:karthink/peep-dired.git
+[submodule "snippets"]
+	path = snippets
+	url = git@github.com:karthink/yasnippets.git

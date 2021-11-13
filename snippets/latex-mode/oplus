@@ -1,6 +1,0 @@
-# key: o+
-# name: oplus
-# condition: (and (texmathp) 'auto)
-# group: math
-# --
-\oplus

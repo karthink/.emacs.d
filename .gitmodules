@@ -1,3 +1,30 @@
 [submodule "plugins/ffmpeg-crop"]
 	path = plugins/ffmpeg-crop
 	url = git@github.com:karthink/ffmpeg-crop.git
+[submodule "plugins/ink"]
+	path = plugins/ink
+	url = git@github.com:karthink/ink.git
+[submodule "plugins/elmo"]
+	path = plugins/elmo
+	url = git@github.com:karthink/elmo.git
+[submodule "plugins/popper"]
+	path = plugins/popper
+	url = git@github.com:karthink/popper.git
+[submodule "plugins/consult-dir"]
+	path = plugins/consult-dir
+	url = git@github.com:karthink/consult-dir.git
+[submodule "plugins/project-x"]
+	path = plugins/project-x
+	url = git@github.com:karthink/project-x.git
+[submodule "plugins/lazytab"]
+	path = plugins/lazytab
+	url = git@github.com:karthink/lazytab.git
+[submodule "plugins/consult-reftex"]
+	path = plugins/consult-reftex
+	url = git@github.com:karthink/consult-reftex.git
+[submodule "plugins/wallabag"]
+	path = plugins/wallabag
+	url = git@github.com:karthink/wallabag.el.git
+[submodule "plugins/peep-dired"]
+	path = plugins/peep-dired
+	url = git@github.com:karthink/peep-dired.git

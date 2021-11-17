@@ -185,58 +185,22 @@ USE-SINGLE-P) with mpv."
                       (t word)))
                    arr " "))))
 
-  ;; (add-hook 'elfeed-new-entry-hook
-  ;;           #'elfeed-declickbait)
-
-  ;; (defun elfeed-declickbait (entry)
-  ;;   (when-let* ((feed (elfeed-entry-feed entry))
-  ;;               (feed-url (elfeed-feed-url feed))
-  ;;               (youtube-p (string-match-p "youtube\\.com" feed-url))
-  ;;               (title (elfeed-entry-title entry)))
-  ;;     (setf (elfeed-meta entry :title)
-  ;;           (let* ((title-no-bang (if (string-match
-  ;;                                      (rx (seq (or "!" "?" space)
-  ;;                                               (group (1+ (or "!" "?" space)))
-  ;;                                               eol))
-  ;;                                      title)
-  ;;                                     (substring title 0 (- (length (match-string 1 title))))
-  ;;                                   title))
-  ;;                  (words (split-string title-no-bang))
-  ;;                  (case-fold-search nil))
-  ;;             (string-join (mapcar (lambda (word)
-  ;;                                    (cond
-  ;;                                     ((member word '("AND" "OR" "IF" "ON" "IT"
-  ;;                                                     "TO" "A" "OF" "THE" "VS"
-  ;;                                                     "IN" "FOR" "AN" "WAS" "IS"))
-  ;;                                      (downcase word))
-  ;;                                     ((member word '("WE" "DAY" "HOW" "WHY" "NOW"
-  ;;                                                     "CUP" "OLD" "NEW" "MY" "TOO"
-  ;;                                                     "GOT" "GET" "EYE"))
-  ;;                                      (capitalize word))
-  ;;                                     ((and (> (length word) 3)
-  ;;                                           (string-match-p "\\`[A-Z\\.\\?\\!\\':,’\\-]*\\'"
-  ;;                                                           word))
-  ;;                                      (capitalize word))
-  ;;                                     (t word)))
-  ;;                                  words)
-  ;;                          " ")))))
-  ;; (dolist (entry (elfeed-feed-entries
-  ;;                 (with-current-buffer "*elfeed-search*"
-  ;;                   (elfeed-entry-feed-id (elfeed-search-selected :ignore-region)))))
-  ;;   (elfeed-undeclickbait entry))
-  
   (defun my/elfeed-search-by-day (dir)
     (lambda (&optional arg)
       (interactive "p")
       (let* ((entry (elfeed-search-selected :ignore-region))
-             (this-day (or (and entry
+             (this-day (or (and (string-match-p ".*@\\(.+\\)--.*" elfeed-search-filter)
+                                (time-to-seconds
+                                 (encode-time 
+                                  (parse-time-string
+                                   (concat (replace-regexp-in-string
+                                            ".*@.*?--\\([^[:space:]]+?\\)" "\\1"
+                                            elfeed-search-filter)
+                                           " 00:00:00 Z")))))
+                           (and entry
                                 (elfeed-entry-date entry))
-                           (time-to-seconds (parse-time-string
-                                             (concat (replace-regexp-in-string
-                                                      ".*@\\(.+\\)--.*" "\\1"
-                                                      elfeed-search-filter)
-                                                     " 00:00:00 Z")))
-                           (current-time)))
+                           (time-to-seconds
+                            (current-time))))
              (next-day (time-add this-day (days-to-time (or arg 1))))
              (next-next-day (time-add next-day (days-to-time (or arg 1))))
              (prev-day (time-subtract this-day (days-to-time (or arg 1))))
@@ -303,28 +267,6 @@ USE-SINGLE-P) with mpv."
                 (read-from-minibuffer "Filter: " elfeed-search-filter elfeed-search-filter-map)))
       (elfeed-search-update :force)))
 
-  ;; (defun elfeed-search-live-filter ()
-  ;;   "Filter the elfeed-search buffer as the filter is written."
-  ;;   (interactive)
-  ;;   (let* ((keymap (copy-keymap minibuffer-local-map))
-  ;;          (prompt "Filter: ")
-  ;;          (current-query elfeed-search-filter)
-  ;;          (completions
-  ;;           (mapcan (lambda (tag) (list (substring-no-properties (concat "+" (symbol-name tag)))
-  ;;                                  (substring-no-properties (concat "-" (symbol-name tag)))))
-  ;;                   (elfeed-db-get-all-tags)))
-  ;;          (minibuffer-completion-table
-  ;;           (completion-table-dynamic
-  ;;            (lambda (string)
-  ;;              (cond
-  ;;               ((string-match "\\(+[^[:space:]]*\\|-[^[:space:]]*\\)$" string)
-  ;;                (all-completions (match-string-no-properties 1 string) completions))
-  ;;               (t (list string)))))))
-      
-  ;;     (define-key keymap (kbd "TAB") 'minibuffer-complete)
-  ;;     (let ((history-delete-duplicates t))
-  ;;       (read-from-minibuffer prompt elfeed-search-filter keymap))))
-
   (defun my/elfeed-search-tag-filter (plus-minus)
     "Filter `elfeed' by tags using completion."
     (let ((elfeed-search-filter-active nil))
@@ -339,6 +281,7 @@ USE-SINGLE-P) with mpv."
                (tag (completing-read (format "%s %s" elfeed-search-filter plus-minus) db-tags nil t)))
           (insert (concat plus-minus tag " ")))))
     (elfeed-search-update :force))
+  
   ;;----------------------------------------------------------------------
   ;; Faces
   ;;----------------------------------------------------------------------

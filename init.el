@@ -809,12 +809,14 @@ active region use it instead."
             (cond
              ((string-match-p "\\(?:~/\\.config/\\|~/dotfiles/\\)" dd)
               'config)
-             ((locate-dominating-file dd "init.el") 'emacs)
-             ((string-match-p "local/share/git" dd) 'projects)
+             ((or (string-match-p "local/share/git" dd)
+                  (string-match-p "plugins/" dd))
+              'projects)
              ((string-match-p "\\(?:KarthikBa\\|research/\\)" dd)
               'research)
              ((string-match-p "karthinks" dd) 'website)
              ((locate-dominating-file dd "research") 'documents)
+             ((locate-dominating-file dd "init.el") 'emacs)
              (t (popper-group-by-project))))))
   (setq popper-mode-line nil
         popper-reference-buffers
@@ -1597,7 +1599,7 @@ environments."
   :after latex
   :defer
   :config
-  (setq TeX-fold-folded-face '((t (:height 1.1 :foreground "SlateBlue1")))
+  (setq ;; TeX-fold-folded-face '((t (:height 1.0 :foreground "SlateBlue1")))
         TeX-fold-auto t
         TeX-fold-type-list '(env macro comment)))
 
@@ -2866,7 +2868,11 @@ _d_: subtree
   :commands wallabag
   :config
   (setq wallabag-host my-wallabag-host)
-  (setq wallabag-username my-wallabag-username))
+  (setq wallabag-username my-wallabag-username)
+  (with-eval-after-load 'embark
+    (define-key embark-url-map (kbd "R")
+      (defun embark-wallabag (url)
+        (wallabag-post-entry url)))))
 
 ;;;** EWW
 ;;----------------------------------------------------------------------
@@ -4513,6 +4519,7 @@ the mode-line and switches to `variable-pitch-mode'."
     (outline-minor-mode . " [o]";; " ֍"
                         )
     (matlab-functions-have-end-minor-mode . "")
+    (org-roam-ui-mode . " UI")
     ;; Evil modes
     (evil-traces-mode . "")
     (latex-extra-mode . "")

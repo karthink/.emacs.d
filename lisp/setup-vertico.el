@@ -1,7 +1,7 @@
 ;; -*- lexical-binding: t -*-
 ;; Vertico
 (use-package vertico
-  :defer
+  :commands vertico-mode
   :load-path "~/.local/share/git/vertico/"
   :after minibuffer
   :bind (:map vertico-map

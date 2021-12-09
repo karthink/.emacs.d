@@ -1,9 +1,10 @@
 ;; -*- lexical-binding: t -*-
 ;; Vertico
 (use-package vertico
-  :commands vertico-mode
+  ;; :commands vertico-mode
   :load-path "~/.local/share/git/vertico/"
   :after minibuffer
+  :init (vertico-mode 1)
   :bind (:map vertico-map
               ("M-s"     . nil)
               ("M-i"     . vertico-insert)
@@ -32,6 +33,7 @@
   (advice-add #'tmm-add-prompt :after #'minibuffer-hide-completions))
 
 (use-package vertico-grid
+  :disabled
   :load-path "~/.local/share/git/vertico/extensions/"
   :after vertico
   :bind (:map vertico-map
@@ -39,7 +41,7 @@
   :config
   (setq vertico-grid-separator "    ")
   (defvar vertico-grid-view-categories
-    '(symbol command file buffer))
+    '(symbol command buffer))
   (defun vertico-grid-maybe ()
     (let ((category 
            (completion-metadata-get (completion-metadata
@@ -51,12 +53,12 @@
                                     'category)))
       (when (member category vertico-grid-view-categories)
         (vertico-grid-mode 1))))
-  (advice-add #'vertico--setup :after #'vertico-grid-maybe)
+  (advice-add 'vertico--setup :after #'vertico-grid-maybe)
   (add-hook 'minibuffer-exit-hook
             (lambda () (when (bound-and-true-p vertico-grid-mode))
               (vertico-grid-mode -1))))
 
-(use-package vertico-indexed
+(use-package vertico-quick
   :load-path "~/.local/share/git/vertico/extensions/"
   :after vertico
   :bind (:map vertico-map

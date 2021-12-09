@@ -48,6 +48,7 @@ If buffer-or-name is nil return current buffer's mode."
                            shell-mode
                            vterm-mode
                            inferior-python-mode
+                           cider-repl-mode
                            inferior-ess-julia-mode)
   "List of major-modes used in REPL buffers")
 
@@ -57,7 +58,8 @@ If buffer-or-name is nil return current buffer's mode."
                            "\\*MATLAB\\*"
                            "\\*Python\\*"
                            "\\*Inferior .*\\*$"
-                           "^\\*julia\\*$"
+                           "^\\*julia.*\\*$"
+                           "^\\*cider-repl.*\\*$"
                            "\\*ielm\\*")
   "List of buffer names used in REPL buffers")
 
@@ -274,9 +276,10 @@ If buffer-or-name is nil return current buffer's mode."
          (side . bottom)
          (slot . -4)
          ;; (preserve-size . (nil . t))
-         (window-parameters . ((no-other-window . t)
-                               ;; (mode-line-format . (:eval (+helper-window-mode-line-format)))
-                               )))
+         ;; (window-parameters . ((no-other-window . t)
+         ;;                       ;; (mode-line-format . (:eval (+helper-window-mode-line-format)))
+         ;;                       ))
+         )
 
         ("\\*Async Shell Command\\*" display-buffer-in-side-window
          (window-height . 0.20)

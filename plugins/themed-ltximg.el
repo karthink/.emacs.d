@@ -8,11 +8,21 @@
 (defvar my/org-latex-latex-preview-has-been-called nil
   "Tracks if org-latex-preview has ever been called (updated locally).")
 
-(defadvice org-latex-preview (before my/latex-fragments-advice activate)
-  "Keep Org LaTeX fragments in a directory with background color name."
-  (if (not my/org-latex-latex-preview-has-been-called) (my/org-latex-set-options))
-  (setq-local my/org-latex-latex-preview-has-been-called t)
-  (my/org-latex-set-directory-name-to-background))
+(defvar my/org-latex-preview-directory-prefix "")
+
+(advice-add 'org-latex-preview :before
+            (defun my/latex-fragments-advice (&rest _)
+              "Keep Org LaTeX fragments in a directory with background color name."
+              (if (not my/org-latex-latex-preview-has-been-called)
+                  (my/org-latex-set-options)
+                (setq-local my/org-latex-latex-preview-has-been-called t))
+              (my/org-latex-set-directory-name-to-background)))
+
+;; (defadvice org-latex-preview (before my/latex-fragments-advice activate)
+;;   "Keep Org LaTeX fragments in a directory with background color name."
+;;   (if (not my/org-latex-latex-preview-has-been-called) (my/org-latex-set-options))
+;;   (setq-local my/org-latex-latex-preview-has-been-called t)
+;;   (my/org-latex-set-directory-name-to-background))
 
 ;; (defadvice load-theme (after my/load-theme-advice-for-latex activate)
 ;;   "Conditionally update Org LaTeX fragments for current background."
@@ -25,7 +35,8 @@
 (defun my/org-latex-set-directory-name-to-background ()
   "Set Org LaTeX directory name to background color name: c_Red_Green_Blue."
   (setq org-preview-latex-image-directory
-        (concat "ltximg/c"
+        (concat (file-name-as-directory my/org-latex-preview-directory-prefix)
+                "ltximg/c"
                 (let ((color (color-values (alist-get 'background-color (frame-parameters)))))
                   (apply 'concat (mapcar (lambda (x) (concat "_" x)) (mapcar 'int-to-string color))))
                 "/")))

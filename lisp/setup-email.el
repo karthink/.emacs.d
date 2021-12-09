@@ -193,7 +193,7 @@
        (unless arg "tag:inbox date:1d..")))))
 
 (use-package consult
-  :after (notmuch consult)
+  :after (notmuch consult-notmuch)
   :config
   (add-to-list 'consult-buffer-sources 'consult-notmuch-buffer-source))
 

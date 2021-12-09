@@ -598,14 +598,18 @@ command tuxi on it."
                             "tuxi -r "
                             (shell-quote-argument search-string))))))
       (with-current-buffer (get-buffer-create "*Tuxi Output*")
-        (erase-buffer)
+        (goto-char (point-max))
+        (unless (bobp) (insert "\n\n* * *\n"))
+        (insert (capitalize search-string) ":\n\n")
+        (push-mark)
         (insert search-output)
-        ;; (fill-region (point-min) (point-max))
-        (if (<= (count-lines (point-min) (point-max)) 1)
-            (message search-output)
-          (goto-char (point-min))
-          (display-buffer (current-buffer))
-          (goto-address-mode 1)))))
+        (let ((lines (count-lines (or (mark) (point-min)) (point-max))))
+          (if (<= lines 1)
+              (message search-output)
+            (let ((win (display-buffer (current-buffer))))
+              (set-window-start win (mark))
+              (set-window-parameter win 'window-height (min lines 10))
+              (goto-address-mode 1)))))))
   (defun google-search-at-point (&optional beg end)
     "Call the shell command tuxi on the symbol at point. With an
 active region use it instead."
@@ -869,7 +873,8 @@ active region use it instead."
                 "(C)"))
        (t name)))
     (setq popper-echo-transform-function #'popper-message-shorten)
-    (setq popper-echo-dispatch-keys '(?0 ?1 ?2 ?3 ?4 ?5 ?6 ?7 ?8 ?9)))
+    (setq popper-echo-dispatch-keys '(?0 ?1 ?2 ?3 ?4 ?5 ?6 ?7 ?8 ?9)
+          popper-echo-dispatch-actions t))
   
   (popper-mode +1)
 
@@ -954,7 +959,8 @@ active region use it instead."
   :bind
   (("C-x o" . ace-window)
    ("H-o"   . ace-window)
-   ("M-o" . other-window))
+   ("M-o" . other-window)
+   ("M-O" . my/other-window-prev))
   :general
   (:keymaps 'space-menu-map
             "`" 'ace-window)
@@ -977,7 +983,10 @@ active region use it instead."
           (?s aw-split-window-vert "Split Vert Window")
           (?v aw-split-window-horz "Split Horz Window")
           (?o delete-other-windows "Delete Other Windows")
-          (?? aw-show-dispatch-help))))
+          (?? aw-show-dispatch-help)))
+  (defun my/other-window-prev (&optional arg all-frames)
+    (interactive "p")
+    (other-window (if arg (- arg) -1) all-frames)))
 
 (use-package emacs
   :config
@@ -1713,7 +1722,7 @@ environments."
   :bind (:map ortbl-mode-map
               ("<tab>" . lazytab-org-table-next-field-maybe)
               ("TAB" . lazytab-org-table-next-field-maybe))
-  :config
+  :init
   (add-to-list 'cdlatex-command-alist '("smat" "Insert smallmatrix env"
                                        "\\left( \\begin{smallmatrix} ? \\end{smallmatrix} \\right)"
                                        lazytab-position-cursor-and-edit
@@ -2046,7 +2055,8 @@ Return the name of the temporary file."
                                      ))
   :config
   (setq geiser-default-implementation 'mit)
-  (setq geiser-mit-binary "mechanics"))
+  ;; (setq geiser-mit-binary "mechanics")
+  (setq geiser-mit-binary "mit-scheme"))
 
 ;;----------------------------------------------------------------------
 ;;;** EVAL-IN-REPL
@@ -2078,6 +2088,19 @@ and Interpretation of Classical Mechanics) - The book."
 
 ;;######################################################################
 ;;;** JULIA
+(use-package julia-mode
+  :ensure t
+  :bind (:map julia-mode-map
+              ("`" . my/julia-latexsub-or-indent))
+  :config
+  (defun my/julia-latexsub-or-indent ()
+    (interactive)
+    (require 'cdlatex nil t)
+    (cl-letf (((symbol-function 'texmathp)
+               (lambda () t)))
+      (cdlatex-math-symbol)
+      (julia-latexsub-or-indent))))
+
 (use-package julia-repl
   :ensure t
   :commands julia-repl-mode
@@ -2108,8 +2131,22 @@ and Interpretation of Classical Mechanics) - The book."
                (lambda () t)))
       (cdlatex-math-symbol))
     (call-interactively 'completion-at-point)
-    (forward-sexp)))
+    (forward-sexp))
+  (define-key ess-julia-mode-map (kbd "`") 'my/ess-julia-cdlatex-symbol)
+  (define-key inferior-ess-julia-mode-map (kbd "`") 'my/ess-julia-cdlatex-symbol))
 
+;;;** CIDER
+(use-package cider
+  :defer
+  :init
+  (dolist (mode '(cider-mode-hook cider-repl-mode-hook))
+    (add-hook mode #'my/cider-comp-styles)
+    (add-hook mode #'company-mode)
+    (add-hook mode #'smartparens-mode))
+  :config
+  (defun my/cider-comp-styles ()
+    (make-variable-buffer-local 'completion-styles)
+    (add-to-list 'completion-styles 'basic)))
 ;;;* PLUGINS
 ;;######################################################################
 
@@ -3709,7 +3746,7 @@ project, as defined by `vc-root-dir'."
   :commands (avy-goto-word-1 avy-goto-char-2 avy-goto-char-timer)
   :config
   (setq avy-timeout-seconds 0.35)
-  (setq avy-keys '(?a ?s ?d ?f ?g ?j ?l ?\; ?x
+  (setq avy-keys '(?a ?s ?d ?f ?g ?j ?l ?\; ;?x
                    ?v ?b ?n ?, ?/ ?u ?p ?e ?.
                    ?c ?q ?2 ?3 ?'))
   (setq avy-dispatch-alist '((?m . avy-action-mark)
@@ -3721,6 +3758,7 @@ project, as defined by `vc-root-dir'."
                              (67108925 . avy-action-tuxi)
                              ;; (?W . avy-action-tuxi)
                              (?h . avy-action-helpful)
+                             (?x . avy-action-exchange)
                              
                              (11 . avy-action-kill-line)
                              (25 . avy-action-yank-line)
@@ -3766,6 +3804,11 @@ project, as defined by `vc-root-dir'."
                             (select-window (cdr dat))
                             (goto-char (car dat)))))))))
           (easy-kill)))
+  
+  (defun avy-action-exchange (pt)
+  "Exchange sexp at PT with the one at point."
+  (set-mark pt)
+  (transpose-sexps 0))
   
   (defun avy-action-helpful (pt)
     (save-excursion
@@ -3971,10 +4014,14 @@ project, as defined by `vc-root-dir'."
 ;;----------------------------------------------------------------------
 (require 'setup-org nil t)
 ;;----------------------------------------------------------------------
-;;;** ORG-ADDONS (ANKI)
+;;;** ORG-ADDONS
 ;;----------------------------------------------------------------------
+;;;*** ANKI
 (use-package setup-anki
   :after (org-capture org))
+
+;;;*** ROAM
+(use-package setup-roam)
 ;;######################################################################
 ;;;** COMPLETION FRAMEWORKS:
 ;;----------------------------------------------------------------------
@@ -3982,12 +4029,13 @@ project, as defined by `vc-root-dir'."
 ;;----------------------------------------------------------------------
 (use-package setup-marginalia :demand)
 (use-package setup-orderless :demand)
-;; (use-package setup-vertico :demand)
+(use-package setup-vertico :demand)
 (use-package setup-embark :demand)
 (use-package setup-consult :demand)
 
 ;;;**** ELMO - EMBARK-LIVE-MODE
 (use-package elmo
+  :disabled
   :load-path "plugins/elmo/"
   :commands elmo-mode
   :after embark
@@ -4706,21 +4754,20 @@ currently loaded theme first."
 
 (use-package doom-themes
   :ensure t
-  :defer
+  ;; :defer
   :config
-  (progn
-    (setq doom-Iosvkem-brighter-comments nil
-          doom-Iosvkem-comment-bg nil
-          doom-Iosvkem-brighter-modeline nil)
-    ;; (custom-theme-set-faces
-    ;;  'doom-Iosvkem
-    ;;  '(default ((t (:background "#061229")))))
-    (custom-theme-set-faces 'user
-     '(aw-background-face ((t (:background "#061229" :inverse-video nil :weight normal))))
-     '(aw-leading-char-face ((t (:foreground "#bd93f9" :height 2.0 :weight normal))))))
+  ;; (setq doom-Iosvkem-brighter-comments nil
+  ;;       doom-Iosvkem-comment-bg nil
+  ;;       doom-Iosvkem-brighter-modeline nil)
+  ;; (custom-theme-set-faces
+  ;;  'doom-Iosvkem
+  ;;  '(default ((t (:background "#061229")))))
+  (custom-theme-set-faces 'user
+                          '(aw-background-face ((t (:background "#061229" :inverse-video nil :weight normal))))
+                          '(aw-leading-char-face ((t (:foreground "#bd93f9" :height 2.0 :weight normal)))))
 
   (use-package doom-rouge-theme
-    :defer
+    :init (load-theme 'doom-rouge t)
     :config
     (custom-theme-set-faces 'user
                             '(hl-line ((t (:background "#1f2a3f"))))))

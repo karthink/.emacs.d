@@ -469,7 +469,50 @@ has no effect."
             (org-agenda-overriding-header "Habits:")
             (org-habit-show-all-today t)))
           
-          )))
+          ("o" "Overview"
+           ((tags-todo "*"
+               ((org-agenda-skip-function '(org-agenda-skip-if nil '(timestamp)))
+                (org-agenda-skip-function
+                 `(org-agenda-skip-entry-if
+                   'notregexp ,(format "\\[#%s\\]" ;;(char-to-string org-priority-highest)
+                                       "\\(?:A\\|B\\|C\\)")))
+                (org-agenda-block-separator nil)
+                (org-agenda-overriding-header "⛤ Important (not urgent)\n")))
+            (todo "WAITING"
+                  ((org-agenda-overriding-header "\n💤 On Hold\n")
+                   (org-agenda-block-separator nil)))
+            (agenda ""
+                    ((org-agenda-overriding-header "\n🕐 Today\n")
+                     (org-agenda-span 1)
+                     (org-deadline-warning-days 0)
+                     (org-agenda-day-face-function (lambda (date) 'org-agenda-date))
+                     (org-agenda-block-separator nil)))
+            (agenda "" ((org-agenda-start-on-weekday nil)
+                (org-agenda-start-day "+1d")
+                (org-agenda-span 3)
+                (org-deadline-warning-days 0)
+                (org-agenda-block-separator nil)
+                (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
+                (org-agenda-overriding-header "\n📅 Next three days\n")))
+            (agenda ""
+                    ((org-agenda-time-grid nil)
+                     (org-agenda-start-on-weekday nil)
+                     ;; We don't want to replicate the previous section's
+                     ;; three days, so we start counting from the day after.
+                     (org-agenda-start-day "+3d")
+                     (org-agenda-span 14)
+                     (org-agenda-show-all-dates nil)
+                     (org-deadline-warning-days 0)
+                     (org-agenda-block-separator nil)
+                     (org-agenda-entry-types '(:deadline))
+                     (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
+                     (org-agenda-overriding-header "\n🞜 Upcoming deadlines (+14d)\n")))
+            ;; (alltodo ""
+            ;;  ((org-agenda-overriding-header "Project Next Actions")
+            ;;   (org-agenda-skip-function #'my/org-agenda-skip-all-siblings-but-first)))
+            (tags "TODO=\"PROJECT\"&LEVEL>1&CATEGORY=\"Research\""
+                  ((org-agenda-block-separator nil)
+                   (org-agenda-overriding-header "\n⨕ Research\n"))))))))
 
 (use-package org-capture
   :after org

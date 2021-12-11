@@ -3034,37 +3034,68 @@ _d_: subtree
   )
 
 ;;----------------------------------------------------------------------
-;;;** HIDESHOW (built in (DISABLED))
+;;;** HIDESHOW (built in)
 ;;----------------------------------------------------------------------
 (use-package hideshow ; built-in
-  :disabled t
-  :commands (hs-toggle-hiding
-             hs-hide-block
-             hs-hide-level
-             hs-show-all
-             hs-hide-all)
+  :commands (hs-cycle
+             hs-global-cycle)
+  :bind (:map prog-mode-map
+              ("C-<tab>" . hs-cycle)
+              ("<backtab>" . hs-global-cycle)
+              ("C-S-<iso-lefttab>" . hs-global-cycle))
   :config
-  (setq hs-hide-comments-when-hiding-all nil)
-  ;; (setq hs-hide-comments-when-hiding-all nil
-  ;;       ;; Nicer code-folding overlays (with fringe indicators)
-  ;;       hs-set-up-overlay #'+fold-hideshow-set-up-overlay-fn)
+  (setq hs-hide-comments-when-hiding-all nil
+        ;; Nicer code-folding overlays (with fringe indicators)
+        hs-set-up-overlay #'hideshow-set-up-overlay-fn)
 
-  (dolist (hs-command (list #'hs-toggle-hiding
-                            #'hs-hide-block
-                            #'hs-hide-level
-                            #'hs-show-all
-                            #'hs-hide-all))
+  (defface hideshow-folded-face
+    `((t (:inherit font-lock-comment-face :weight light)))
+    "Face to hightlight `hideshow' overlays."
+    :group 'hideshow)
+  
+  (defun hideshow-set-up-overlay-fn (ov)
+    (when (eq 'code (overlay-get ov 'hs))
+      (overlay-put
+       ov 'display (propertize "  [...]  " 'face 'hideshow-folded-face))))
+  
+  (dolist (hs-command (list #'hs-cycle
+                            #'hs-global-cycle))
     (advice-add hs-command :before
                 (lambda (&optional end) "Advice to ensure `hs-minor-mode' is enabled"
                   (unless (bound-and-true-p hs-minor-mode)
                     (hs-minor-mode +1)))))
 
-  ;; (defadvice! +fold--hideshow-ensure-mode-a (&rest _)
-  ;;   "Ensure `hs-minor-mode' is enabled."
-  ;;   :before '(hs-toggle-hiding hs-hide-block hs-hide-level hs-show-all hs-hide-all)
-  ;;   (unless (bound-and-true-p hs-minor-mode)
-  ;;     (hs-minor-mode +1)))
-
+  (defun hs-cycle (&optional level)
+    (interactive "p")
+    (if (= level 1)
+        (pcase last-command
+          ('hs-cycle
+           (hs-hide-level 1)
+           (setq this-command 'hs-cycle-children))
+          ('hs-cycle-children
+           ;;TODO: Fix this case. `hs-show-block' needs to be called twice to
+           ;;open all folds of the parent block.
+           (save-excursion (hs-show-block))
+           (hs-show-block)
+           (setq this-command 'hs-cycle-subtree))
+          ('hs-cycle-subtree
+           (hs-hide-block))
+          (_
+           (if (not (hs-already-hidden-p))
+                 (hs-hide-block)
+               (hs-hide-level 1)
+               (setq this-command 'hs-cycle-children))))
+      (hs-hide-level level)
+      (setq this-command 'hs-hide-level)))
+  
+  (defun hs-global-cycle ()
+    (interactive)
+    (pcase last-command
+      ('hs-global-cycle
+       (save-excursion (hs-show-all))
+       (setq this-command 'hs-global-show))
+      (_ (hs-hide-all))))  
+  
   ;; extra folding support for more languages
   (unless (assq 't hs-special-modes-alist)
     (setq hs-special-modes-alist

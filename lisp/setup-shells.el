@@ -48,6 +48,12 @@
          (eshell-pre-command-hook . my/eshell-history-remove-duplicates)
          (eshell-first-time-mode . my/eshell-first-load-settings))
   :config
+  (setq eshell-banner-message
+        '(format "%s %s\n"
+                 (propertize (format " %s " (string-trim (buffer-name)))
+                             'face 'mode-line-highlight)
+                 (propertize (current-time-string)
+                             'face 'font-lock-keyword-face)))
   (defalias 'eshell/v 'eshell-exec-visual)
   ;; From the Doom emacs config
   (defun my/eshell-default-prompt-fn ()
@@ -186,13 +192,7 @@ Filenames are always matched by eshell."
           eshell-glob-case-insensitive t
           eshell-error-if-no-glob t)
     (setq eshell-prompt-regexp "^.* λ "
-          eshell-prompt-function #'my/eshell-default-prompt-fn
-          eshell-banner-message
-        '(format "%s %s\n"
-                 (propertize (format " %s " (string-trim (buffer-name)))
-                             'face 'mode-line-highlight)
-                 (propertize (current-time-string)
-                             'face 'font-lock-keyword-face)))
+          eshell-prompt-function #'my/eshell-default-prompt-fn)
 
     (defalias 'eshell/x #'eshell/exit)
     ;; (setq eshell-buffer-shorthand t)
@@ -221,7 +221,7 @@ Filenames are always matched by eshell."
     (define-key eshell-mode-map (kbd "H-<return>") 'my/delete-window-or-delete-frame)
     (define-key eshell-mode-map (kbd "M-r") 'my/eshell-previous-matching-input)
     (define-key eshell-mode-map (kbd "M-s") nil)
-    (define-key eshell-mode-map (kbd "C-c M-w") 'eshell-copy-output)
+    (define-key eshell-mode-map (kbd "C-c M-w") 'my/eshell-copy-output)
     (define-key eshell-mode-map (kbd "C-c C-l") 'my/eshell-export)
     (define-key eshell-mode-map (kbd "C-c C-SPC") 'eshell-mark-output)
     (setq-local company-minimum-prefix-length 2)
@@ -239,7 +239,7 @@ Filenames are always matched by eshell."
       (delete-region (save-excursion (eshell-bol)) (point))
       (insert input)))
   
-  (defun eshell-copy-output (&optional arg)
+  (defun my/eshell-copy-output (&optional arg)
   "Copy output of the last command to the kill ring. With prefix
 argument arg, Also copy the prompt and input."
   (interactive "P")
@@ -294,6 +294,15 @@ append to it."
           (insert (concat "ls"))
           (eshell-send-input))))
   
+  (defun eshell/view (&optional file)
+    (if (or (not file)
+            (not (file-exists-p file))
+            (file-directory-p file))
+        (dired-other-window default-directory)
+      (find-file-other-window file)
+      (read-only-mode 1)
+      (view-mode 1)))
+  
   (defun eshell/z (&optional regexp)
     "Navigate to a previously visited directory in eshell."
     (let ((eshell-dirs (delete-dups (mapcar 'abbreviate-file-name
@@ -344,6 +353,6 @@ append to it."
 
 (use-package capf-autosuggest
   :ensure t
-  :hook ((eshell-mode comint-mode) . capf-autosuggest-mode))
+  :hook ((comint-mode) . capf-autosuggest-mode))
 
 (provide 'setup-shells)

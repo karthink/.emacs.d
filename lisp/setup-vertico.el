@@ -4,6 +4,7 @@
   ;; :commands vertico-mode
   :load-path "~/.local/share/git/vertico/"
   :after minibuffer
+  :commands vertico-mode
   :init (vertico-mode 1)
   :bind (:map vertico-map
               ("M-s"     . nil)

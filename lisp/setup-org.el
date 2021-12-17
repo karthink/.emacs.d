@@ -1,9 +1,5 @@
 ;;;; Org mode
-;;(require 'use-package nil t)
 
-;;----------------------------------------------------------------------
-;; ORG
-;;----------------------------------------------------------------------
 (use-package org
   :defer 10
   :bind (("\C-cl" . org-store-link)
@@ -276,8 +272,7 @@ an embedded LaTeX fragment, let `texmathp' do its job.
               ;; (setq ad-return-value t
 	      ;;       texmathp-why '("Org mode embedded math" . 0))
 	      ;; (when p ad-do-it)
-              )))))))
-  )
+              ))))))))
 
 (use-package consult-reftex
   :disabled
@@ -285,12 +280,14 @@ an embedded LaTeX fragment, let `texmathp' do its job.
   :bind (:map org-mode-map
          ("C-c )" . 'consult-reftex-insert-reference)))
 
+;; ** ORG-SRC
 (use-package org-src
   :after org
   :config
   (setq-default
    org-src-tab-acts-natively t))
 
+;; ** ORG-CLOCK
 (use-package org-clock
   :defer
   :after org
@@ -299,6 +296,7 @@ an embedded LaTeX fragment, let `texmathp' do its job.
                 org-clock-out-remove-zero-time-clocks t
                 org-clock-mode-line-total 'today))
 
+;; ** ORG-HABIT
 (use-package org-habit
   :after org-agenda
   :config
@@ -338,6 +336,8 @@ has no effect."
 
   (advice-add #'org-agenda-finalize :before #'my/org-agenda-mark-habits))
 
+
+;; ** ORG-AGENDA
 
 (use-package org-agenda
   :after org
@@ -514,6 +514,7 @@ has no effect."
                   ((org-agenda-block-separator nil)
                    (org-agenda-overriding-header "\n⨕ Research\n"))))))))
 
+;; ** ORG-CAPTURE
 (use-package org-capture
   :after org
   :defer
@@ -592,6 +593,7 @@ has no effect."
     )
   )
 
+;; ORG-CRYPT
 (use-package org-crypt
   :hook (org-mode . my/org-encrypt-entries)
   :config
@@ -601,6 +603,7 @@ has no effect."
               nil t))
   (setq org-crypt-key user-full-name))
 
+;; ORG-EXPORT (OX)
 (use-package ox
   :after org
   :commands org-export-dispatch
@@ -668,9 +671,9 @@ parent."
 (use-package themed-ltximg
   :after org)
 
-;;----------------------------------------------------------------------
-;; ORG-DOWNLOAD
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------------
+;; ** ORG-DOWNLOAD
+;;;----------------------------------------------------------------------
 (use-package org-download
   :ensure t
   :after org
@@ -685,9 +688,9 @@ parent."
         '("#+attr_html: :width 70% :align center"
           "#+attr_latex: :width 0.6\\textwidth")))
 
-;;----------------------------------------------------------------------
-;; ORG-BABEL
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** ORG-BABEL
+;;;----------------------------------------------------------------
 (use-package ob-octave-fix
   :after ob-octave)
 
@@ -766,17 +769,17 @@ parent."
 ;; (with-eval-after-load "eval-in-repl"
 ;;   (setq eir-jump-after-eval nil))
 
-;;----------------------------------------------------------------------
-;; ORG-BULLETS
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** ORG-BULLETS
+;;;----------------------------------------------------------------
 (use-package org-bullets
   :ensure t
   :after org
   :hook (org-mode . org-bullets-mode))
 
-;;----------------------------------------------------------------------
-;; OX-HUGO
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** OX-HUGO
+;;;----------------------------------------------------------------
 (use-package ox-hugo
   :ensure t
   :after (org-capture)
@@ -821,15 +824,15 @@ See `org-capture-templates' for more information."
                 (function org-hugo-new-subtree-post-capture-template)
                 :kill-buffer t))))
 
-;;----------------------------------------------------------------------
-;; OL-NOTMUCH
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** OL-NOTMUCH
+;;;----------------------------------------------------------------
 (use-package ol-notmuch
   :after (notmuch org))
 
-;;----------------------------------------------------------------------
-;; ORG-GCAL
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** ORG-GCAL
+;;;----------------------------------------------------------------
 (use-package org-gcal
   :ensure
   :after org
@@ -875,9 +878,9 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
     (message "Updated gcal.")
     (setq my/org-gcal--last-sync-time now))))
 
-;;----------------------------------------------------------------------
-;; ORG-REVEAL
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** ORG-REVEAL
+;;;----------------------------------------------------------------
 (use-package org-re-reveal
   ;; :disabled
   :ensure t
@@ -900,18 +903,19 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
   (setq org-reveal-root "file:///home/karthik/.local/share/git/reveal.js")
   (setq org-reveal-hlevel 2))
 
-;;----------------------------------------------------------------------
-;; DRAWING INTEGRATION
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** +INKSCAPE-FIGURES+
+;;;----------------------------------------------------------------
 (use-package inkscape-figures
+  :disabled
   :after org
   :bind (:map org-mode-map
               ("C-c i" . #'+inkscape-figures-create-at-point-org)
               ("C-c e" . #'+inkscape-figures-edit)))
 
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
 ;; ORG-REF
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
 (use-package org-ref
   :disabled
   :defer
@@ -930,9 +934,9 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
         org-ref-default-bibliography reftex-default-bibliography
         org-ref-pdf-directory "~/Documents/research/lit/")
   )
-;;----------------------------------------------------------------------
-;; MY ORG PROJECTS
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** MY ORG PROJECTS
+;;;----------------------------------------------------------------
 (use-package ox-publish
   :defer
   :config
@@ -999,9 +1003,9 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
                        :warning)))
   )
 
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
 ;; ORG-ROAM - Disabled for now
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
 (use-package org-roam
   :disabled
   :after org
@@ -1034,9 +1038,10 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
                                   (push 'company-org-roam company-backends)
                                   )))
 
-;;----------------------------------------------------------------
-;; ORG-TREE-SLIDE - Presentations from within org-mode
-;;----------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** ORG-TREE-SLIDE
+;;;----------------------------------------------------------------
+;; Presentations from within org-mode.
 (use-package org-tree-slide
   :ensure t
   :after org
@@ -1084,9 +1089,10 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
          ("<C-left>"  . org-tree-slide-move-previous-tree))
   )
 
-;;----------------------------------------------------------------
-;; ORG-MIME - Compose HTML emails in org-mode
-;;----------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** ORG-MIME 
+;;;----------------------------------------------------------------
+;; Compose HTML emails in org-mode.
 (use-package org-mime
   :ensure t
   :after (notmuch org)
@@ -1109,9 +1115,10 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
             (org-mime-change-element-style
              "blockquote" "border-left: 2px solid gray; padding-left: 4px;"))))
 
-;;----------------------------------------------------------------
-;; ORG-LINK-CUSTOMIZE - Store customize links with org
-;;----------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** ORG-LINK-CUSTOMIZE
+;;;----------------------------------------------------------------
+;; Store customize links with org.
 (use-package ol
   :after org
   :config
@@ -1168,9 +1175,9 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
           (replace-regexp-in-string " " "-" str))
       (error "Cannot create link to this customize page"))))
 
-;;----------------------------------------------------------------
-;; ORG-FRAGTOG (seamless latex fragment preview)
-;;----------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** ORG-FRAGTOG (seamless latex fragment preview)
+;;;----------------------------------------------------------------
 (use-package org-fragtog
   :ensure
   :after org)

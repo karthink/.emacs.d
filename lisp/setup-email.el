@@ -1,6 +1,9 @@
 ;; -*- lexical-binding: t -*-
-;;(require 'use-package nil t)
-;; Outgoing email
+;; 
+;; * SENDMAIL
+;;
+;; We use msmtp. Also of note is automatic selection of the
+;; right from address when replying to email.
 (use-package sendmail
   :after (message notmuch)
   :config
@@ -34,9 +37,8 @@
   (add-hook 'message-send-mail-hook #'cg-feed-msmtp)
   )
 
-;;----------------------------------------------------------------------
-;; NOTMUCH
-;;----------------------------------------------------------------------
+;;* NOTMUCH
+
 (use-package notmuch
   :commands notmuch
   :bind (("C-x m" . notmuch-mua-new-mail)
@@ -117,61 +119,69 @@
   (define-key notmuch-tree-mode-map (kbd "d") (notmuch-tree-make-tagger "trash" "inbox"))
 
   
-  ;; (define-key notmuch-show-mode-map "`" 'notmuch-show-apply-tag-macro)
-  ;; (define-key notmuch-search-mode-map "`" 'notmuch-show-apply-tag-macro)
-
-  ;; (define-prefix-command notmuch-tagger-map)
-  ;; (let ((map notmuch-tagger-map))
-  ;;   (define-key map "")
-  ;;   )
-
-  ;; (defun notmuch-show-apply-tag-macro (key)
-  ;;   (interactive "k")
-  ;;   (let ((macro (assoc key notmuch-show-tag-macro-alist)))
-  ;;     (apply 'notmuch-show-tag-message (cdr macro))))
-  
-  ;; (defun +disable-C-tab (mode-map)
-  ;;   "Disable Control-Tab in mode-map"
-  ;;   (define-key mode-map (kbd "C-TAB") nil)
-  ;;   (define-key mode-map (kbd "C-<tab>") nil))
-
-  ;; (dolist (mode '((notmuch-hello-mode-hook . notmuch-hello-mode-map)
-  ;;                 (notmuch-show-mode-hook . notmuch-show-mode-map)
-  ;;                 (notmuch-message-mode-hook . notmuch-message-mode-map)
-  ;;                 (notmuch-tree-mode-hook . notmuch-tree-mode-map)
-  ;;                 (notmuch-search-mode-hook . notmuch-search-mode-map)))
-  ;;   (let ((mode-hook (car mode))
-  ;;         (mode-map (cdr mode)))
-  ;;     (add-hook mode-hook
-  ;;               (lambda ()
-  ;;                 (+disable-C-tab mode-map)))))
-
-
-  ;; (define-key notmuch-common-keymap (kbd "C-TAB") nil)
-  ;; (define-key notmuch-common-keymap (kbd "C-<tab>") nil)
-
-
-  ;; (add-hook 'notmuch-show-hook #'my-next-unread)
-  ;; (defun my-next-unread ()
-  ;;   (interactive)
-  ;;   (let ((init (point)))
-  ;;     (catch 'break
-  ;;       (while t
-  ;;         (when (member "unread" (notmuch-show-get-tags))
-  ;;           (let ((props (notmuch-show-get-message-properties)))
-  ;;             (notmuch-show-message-visible props t)
-  ;;             (notmuch-show-mark-read)
-  ;;             (throw 'break t)))
-  ;;         (when (not (notmuch-show-goto-message-next))
-  ;;           (message "No more unread messages.")
-  ;;           (goto-char init)
-  ;;           (throw 'break t))))))
+  ;;; (define-key notmuch-show-mode-map "`" 'notmuch-show-apply-tag-macro)
+  ;;; (define-key notmuch-search-mode-map "`" 'notmuch-show-apply-tag-macro)
+    ;
+  ;;; (define-prefix-command notmuch-tagger-map)
+  ;;; (let ((map notmuch-tagger-map))
+  ;;;   (define-key map "")
+  ;;;   )
+    ;
+  ;;; (defun notmuch-show-apply-tag-macro (key)
+  ;;;   (interactive "k")
+  ;;;   (let ((macro (assoc key notmuch-show-tag-macro-alist)))
+  ;;;     (apply 'notmuch-show-tag-message (cdr macro))))
+    ;
+  ;;; (defun +disable-C-tab (mode-map)
+  ;;;   "Disable Control-Tab in mode-map"
+  ;;;   (define-key mode-map (kbd "C-TAB") nil)
+  ;;;   (define-key mode-map (kbd "C-<tab>") nil))
+    ;
+  ;;; (dolist (mode '((notmuch-hello-mode-hook . notmuch-hello-mode-map)
+  ;;;                 (notmuch-show-mode-hook . notmuch-show-mode-map)
+  ;;;                 (notmuch-message-mode-hook . notmuch-message-mode-map)
+  ;;;                 (notmuch-tree-mode-hook . notmuch-tree-mode-map)
+  ;;;                 (notmuch-search-mode-hook . notmuch-search-mode-map)))
+  ;;;   (let ((mode-hook (car mode))
+  ;;;         (mode-map (cdr mode)))
+  ;;;     (add-hook mode-hook
+  ;;;               (lambda ()
+  ;;;                 (+disable-C-tab mode-map)))))
+    ;
+    ;
+  ;;; (define-key notmuch-common-keymap (kbd "C-TAB") nil)
+  ;;; (define-key notmuch-common-keymap (kbd "C-<tab>") nil)
+    ;
+    ;
+  ;;; (add-hook 'notmuch-show-hook #'my-next-unread)
+  ;;; (defun my-next-unread ()
+  ;;;   (interactive)
+  ;;;   (let ((init (point)))
+  ;;;     (catch 'break
+  ;;;       (while t
+  ;;;         (when (member "unread" (notmuch-show-get-tags))
+  ;;;           (let ((props (notmuch-show-get-message-properties)))
+  ;;;             (notmuch-show-message-visible props t)
+  ;;;             (notmuch-show-mark-read)
+  ;;;             (throw 'break t)))
+  ;;;         (when (not (notmuch-show-goto-message-next))
+  ;;;           (message "No more unread messages.")
+  ;;;           (goto-char init)
+  ;;;           (throw 'break t))))))
   )
 
 (use-package notmuch-bookmarks
 :after notmuch
 :config
 (notmuch-bookmarks-mode))
+
+;; * CONSULT-NOTMUCH
+
+;; [[https://melpa.org/#/consult-notmuch][consult-notmuch]] provides consult
+;; commands for live-searching a notmuch database.
+;;
+;; I use a couple of date-oriented custom notmuch search commands instead of the
+;; default, bound to my "search map" (=M-s=) prefix:
 
 (use-package consult-notmuch
   :load-path "~/.local/share/git/consult-notmuch/"
@@ -192,10 +202,19 @@
       (consult-notmuch-tree
        (unless arg "tag:inbox date:1d..")))))
 
+;; Add a notmuch buffer-source to =consult-buffer=. This is provided by
+;; consult-notmuch.
+
 (use-package consult
   :after (notmuch consult-notmuch)
   :config
   (add-to-list 'consult-buffer-sources 'consult-notmuch-buffer-source))
+
+;; Embark actions on =consult-notmuch= search results to add/remove tags, and an
+;; Embark exporter that displays search results in a =notmuch-search= buffer.
+;;
+;; This code [[https://codeberg.org/jao/consult-notmuch/pulls/6][will be part of
+;; consult-notmuch]] soon.
 
 (use-package embark
   :after (notmuch embark)

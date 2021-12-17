@@ -1,3 +1,14 @@
+;; setup-project.el -*- lexical-binding: t -*-
+
+;; Emacs' project library covers all the basic needs, and it's trivial to add
+;; project-specific commands.
+;;
+;; In the following:
+;; - Additional actions in the project dispatch menu
+;; - A fix to the `project-root' generic function (project 0.8.1 is bugged)
+;; - Use =fd= instead of =find= in non-VC projects (when available)
+;; - A function to remove projects from the projects list
+
 (use-package project
     :init
     (setq project-switch-commands
@@ -23,7 +34,6 @@ The directory name must be absolute."
     :config
     (setq project-list-file (dir-concat user-cache-directory "projects"))
 
-    ;; Use =fd= instead of =find= in non-VC projects (if available)
     (when (executable-find "fd")
       (defun my/project-files-in-directory (dir)
         "Use `fd' to list files in DIR`"
@@ -70,6 +80,11 @@ The directory name must be absolute."
            ;; ("M-s f" . my/project-find-file-vc-or-dir)
            ("M-s L" . find-library)))
 
+;; The [[https://github.com/karthink/project-x][project-x]] package adds support
+;; for "local" projects, as well as facilities for periodically saving
+;; project-specific window configurations. It also adds commands to save and
+;; restore project windows.
+
 (use-package project-x
   :load-path "plugins/project-x/"
   :after project
@@ -79,3 +94,4 @@ The directory name must be absolute."
   (project-x-mode 1))
 
 (provide 'setup-project)
+;; setup-project.el ends here

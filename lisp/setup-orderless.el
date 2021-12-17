@@ -1,5 +1,7 @@
 ;; -*- lexical-binding: t -*-
+
 ;; Orderless
+
 (use-package orderless
   :after setup-minibuffer
   :ensure t
@@ -43,3 +45,4 @@
               ("SPC" . self-insert-command)))
 
 (provide 'setup-orderless)
+;; setup-orderless.el ends here

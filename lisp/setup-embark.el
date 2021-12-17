@@ -1,5 +1,4 @@
 ;; -*- lexical-binding: t -*-
-;; Enable richer annotations using the Marginalia package
 
 ;; Embark for actions
 (use-package embark
@@ -45,7 +44,8 @@
          ("5"        . bookmark-jump-other-frame)
          :map embark-url-map
          ("f"        . browse-url-firefox)
-         ("m"        . browse-url-umpv))
+         ("m"        . browse-url-umpv)
+         ("M"        . browse-url-mpv))
   :config
   (setq embark-cycle-key (kbd "s-o"))
   (setq embark-quit-after-action t)
@@ -330,4 +330,4 @@ highlighting."
               ("C-M-j" . avy-embark-collect-act)))
 
 (provide 'setup-embark)
-
+;; setup-embark.el ends here

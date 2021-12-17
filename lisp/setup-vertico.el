@@ -1,4 +1,5 @@
 ;; -*- lexical-binding: t -*-
+
 ;; Vertico
 (use-package vertico
   ;; :commands vertico-mode
@@ -151,3 +152,4 @@
   (setq vertico-buffer-display-action 'display-buffer-reuse-window))
 
 (provide 'setup-vertico)
+;; setup-vertico.el ends here

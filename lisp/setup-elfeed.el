@@ -1,5 +1,20 @@
-;;;** ELFEED  -*- lexical-binding: t; -*-
-;;----------------------------------------------------------------------
+;;; Elfeed  -*- lexical-binding: t; -*-
+
+;; Elfeed, the feed reader for emacs, is the best feed reading experience I've
+;; had since Google reader in the late 2000s. Not the best feed reading
+;; experience in Emacs. Best, period.
+;;
+;; Part of the reason is that it's eminently hackable, see [[https://karthinks.com/software/declickbaiting-elfeed][Declickbaiting Elfeed]] and [[https://karthinks.com/software/lazy-elfeed][Lazy Elfeed]].
+;;
+;; Customizations below include
+;; - Date oriented browsing (browse by date with "f" and "b"). This mimics how
+;;   you move by day in =org-agenda=.
+;; - Single key browsing (space to keep reading)
+;; - Send entries to mpv
+;; - Easy taggers
+;; - De-clickbait title entires
+;; - tag completion
+
 (use-package elfeed
   :commands (elfeed elfeed-update elfeed-search-bookmark-handler)
   :load-path ("~/.local/share/git/elfeed/"
@@ -223,31 +238,7 @@ USE-SINGLE-P) with mpv."
   (define-key elfeed-search-mode-map (kbd "b") (my/elfeed-search-by-day 'next))
   (define-key elfeed-search-mode-map (kbd "f") (my/elfeed-search-by-day 'prev))
         
-  (use-package wallabag
-    :config 
-    (defun elfeed-post-to-wallabag ()
-      "Post current entry (or entry at point) to Wallabag"
-      (interactive)
-      (let ((entries (elfeed-search-selected))
-            (links (pcase major-mode
-                     ('elfeed-show-mode
-                      (list (elfeed-entry-link elfeed-show-entry)))
-                     ('elfeed-search-mode
-                      (mapcar #'elfeed-entry-link (elfeed-search-selected))))))
-        (dolist (link links nil)
-          (wallabag-post-entry link)
-          (when (eq major-mode 'elfeed-search-mode)
-            (elfeed-untag entries 'unread)
-            (mapc #'elfeed-search-update-entry entries)
-            (unless (or elfeed-search-remain-on-entry
-                        (use-region-p))
-              (forward-line))))))
-    :bind (:map elfeed-show-mode-map
-                ("R" . elfeed-post-to-wallabag)
-           :map elfeed-search-mode-map
-                ("R" . elfeed-post-to-wallabag)))
-  
-    (defvar elfeed-search-filter-map
+  (defvar elfeed-search-filter-map
     (let ((map (make-sparse-keymap)))
       (define-key map (kbd "+") (lambda () (interactive) (my/elfeed-search-tag-filter "+")))
       (define-key map (kbd "-") (lambda () (interactive) (my/elfeed-search-tag-filter "-")))
@@ -317,6 +308,7 @@ USE-SINGLE-P) with mpv."
             "W" 'elfeed-search-eww-open
             "x" 'elfeed-search-browse-url))
 
+;; * WALLABAG
 (use-package wallabag
   :load-path "plugins/wallabag"
   :commands wallabag-post-entry
@@ -329,6 +321,38 @@ USE-SINGLE-P) with mpv."
             (client-id      . ,(nth 2 creds))
             (host           . ,(nth 4 creds))))))
 
+;; ** ELFEED + WALLABAG
+
+;; More integration: Send Elfeed entries to my Wallabag instance to read later
+(use-package elfeed
+  :defer
+  :config
+  (use-package wallabag
+    :config 
+    (defun elfeed-post-to-wallabag ()
+      "Post current entry (or entry at point) to Wallabag"
+      (interactive)
+      (let ((entries (elfeed-search-selected))
+            (links (pcase major-mode
+                     ('elfeed-show-mode
+                      (list (elfeed-entry-link elfeed-show-entry)))
+                     ('elfeed-search-mode
+                      (mapcar #'elfeed-entry-link (elfeed-search-selected))))))
+        (dolist (link links nil)
+          (wallabag-post-entry link)
+          (when (eq major-mode 'elfeed-search-mode)
+            (elfeed-untag entries 'unread)
+            (mapc #'elfeed-search-update-entry entries)
+            (unless (or elfeed-search-remain-on-entry
+                        (use-region-p))
+              (forward-line))))))
+    :bind (:map elfeed-show-mode-map
+                ("R" . elfeed-post-to-wallabag)
+                :map elfeed-search-mode-map
+                ("R" . elfeed-post-to-wallabag))))
+
+;; ** ELFEED + ORG-LINK
+;;
 ;; Org-Link handling for Elfeed buffers
 (use-package ol
   :after (elfeed org)
@@ -359,9 +383,10 @@ USE-SINGLE-P) with mpv."
                 (entry (elfeed-db-get-entry (cons url title))))
       (elfeed-show-entry entry))))
 
-;;----------------------------------------------------------------------
-;;*** Autotagging setup
-;;----------------------------------------------------------------------
+
+;; ** +AUTOTAGGING SETUP+
+
+;; Currently disabled: More Elfeed taggers
 (use-package elfeed-custom
   :disabled
   :config
@@ -383,32 +408,32 @@ USE-SINGLE-P) with mpv."
                                   :entry-title '(not "something interesting")
                                   :add 'junk
                                   :remove 'unread))))
-;; Use `M-x elfeed-apply-hooks-now' to apply elfeed-new-entry-hook to all
-;; existing entries. Otherwise hooks will only apply to new entries on
-;; discovery.
-;; ----------------------------------------------------------------------
+;;; Use `M-x elfeed-apply-hooks-now' to apply elfeed-new-entry-hook to all
+;;; existing entries. Otherwise hooks will only apply to new entries on
+;;; discovery.
+;;; ----------------------------------------------------------------------
+ ;;
+;;; (defun elfeed-search-eww-open (&optional use-generic-p)
+;;;   "open with eww"
+;;;   (interactive "P")
+;;;   (let ((entries (elfeed-search-selected)))
+;;;     (cl-loop for entry in entries
+;;;              do (elfeed-untag entry 'unread)
+;;;              when (elfeed-entry-link entry)
+;;;              do (eww-browse-url it t))
+;;;     (mapc #'elfeed-search-update-entry entries)
+;;;     (unless (use-region-p) (forward-line))))
+ ;;
+;;; For quick tagging
+;;; (defvar my-feeds nil)
+;;; (let ((tags '("always" "rare" "sometimes" "junk"))
+;;;       history)
+;;;   (dolist (feed elfeed-feeds)
+;;;     (let ((choices (completing-read-multiple (format "%s: " feed) tags nil nil nil)))
+;;;       (add-to-list 'my-feeds (append (list feed) (mapcar 'make-symbol choices)))
+;;;       (setq tags (delete-dups (append choices tags)))
+;;;       )
+;;;     ))
 
 (provide 'setup-elfeed)
-
-;; (defun elfeed-search-eww-open (&optional use-generic-p)
-;;   "open with eww"
-;;   (interactive "P")
-;;   (let ((entries (elfeed-search-selected)))
-;;     (cl-loop for entry in entries
-;;              do (elfeed-untag entry 'unread)
-;;              when (elfeed-entry-link entry)
-;;              do (eww-browse-url it t))
-;;     (mapc #'elfeed-search-update-entry entries)
-;;     (unless (use-region-p) (forward-line))))
-
-;; For quick tagging
-;; (defvar my-feeds nil)
-;; (let ((tags '("always" "rare" "sometimes" "junk"))
-;;       history)
-;;   (dolist (feed elfeed-feeds)
-;;     (let ((choices (completing-read-multiple (format "%s: " feed) tags nil nil nil)))
-;;       (add-to-list 'my-feeds (append (list feed) (mapcar 'make-symbol choices)))
-;;       (setq tags (delete-dups (append choices tags)))
-;;       )
-;;     ))
-
+;; setup-elfeed.el ends here

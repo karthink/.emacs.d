@@ -225,3 +225,4 @@ When the number of characters in a buffer exceeds this threshold,
   (consult-customize affe-grep :preview-key (kbd "C-M-m")))
 
 (provide 'setup-consult)
+;; setup-consult.el ends here

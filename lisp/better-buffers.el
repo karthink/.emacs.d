@@ -8,24 +8,6 @@
 ;; KEYBINDINGS
 ;;----------------------------------------------------------------------
 
-;;; Use C-` or ` to dismiss *Help* and *info* windows. If there are
-;;; no *Help*/*info* windows open, C-` will cycle between this buffer
-;;; and (other-buffer) instead, and ` will self-insert.
-;; (global-set-key (kbd "C-`") 'bbuf-dismiss-or-switch)
-
-;; (global-set-key (kbd "`") (lambda () (interactive)
-;;                             (bbuf-dismiss-or-insert "`")))
-
-
-(global-set-key (kbd "<C-delete>")
-                (lambda () (interactive)
-                  (funcall (if (string= (buffer-name) "*scratch*")
-                               'bury-buffer
-                             (lambda ()
-                               (and (buffer-file-name) (save-buffer))
-                               (kill-buffer)
-                               (delete-window))))))
-
 (global-set-key [remap kill-buffer] 'kill-this-buffer)
 (global-set-key (kbd "M-`") (lambda (&optional _arg)
                               (interactive)
@@ -164,7 +146,11 @@ The selected window is below.  The newly split-off window is
 below and displays the same buffer.  Return the new window."
   (interactive "P")
   (split-window-right size)
-  (other-window 1))
+  (other-window 1)
+  (when (interactive-p)
+    (if (featurep 'consult)
+        (consult-buffer)
+      (call-interactively #'switch-to-buffer))))
 
 (defun my/split-window-below (&optional size)
   "Split the selected window into two side-by-side windows.
@@ -173,7 +159,11 @@ is on the right and displays the same buffer.  Return the new
 window."
   (interactive "P")
   (split-window-below size)
-  (other-window 1))
+  (other-window 1)
+  (when (interactive-p)
+    (if (featurep 'consult)
+        (consult-buffer)
+      (call-interactively #'switch-to-buffer))))
 
 (defun my/delete-window-or-delete-frame (&optional window)
       "Delete WINDOW using `delete-window'.
@@ -185,9 +175,9 @@ nil."
           (delete-window window)
         (error (delete-frame))))
 
-(global-set-key (kbd "C-x 2") 'my/split-window-below)
-(global-set-key (kbd "C-x 3") 'my/split-window-right)
-(global-set-key (kbd "C-x 0") 'my/delete-window-or-delete-frame)
+(global-set-key [remap split-window-below] 'my/split-window-below)
+(global-set-key [remap split-window-right] 'my/split-window-right)
+(global-set-key [remap delete-window] 'my/delete-window-or-delete-frame)
 (global-set-key (kbd "H-0") 'my/delete-window-or-delete-frame)
 (global-set-key (kbd "H-1") 'delete-other-windows)
 (global-set-key (kbd "H-2") 'my/split-window-below)
@@ -359,85 +349,6 @@ window manager to present the frame in a floating state."
                   (minibuffer . nil)))
     (with-selected-frame (get-other-frame)
       (switch-to-buffer buf))))
-
-;;----------------------------------------------------------------------
-;; DISMISS-WINDOW 
-;;----------------------------------------------------------------------
-;; Code to dismiss *Help* windows and other popups by saving and
-;; restoring window configurations.
-;; DEPRECATED: winner mode handles this better
-
-;; (defvar bbuf-window-configuration nil
-;;   "Variable to store a window configuration to restore later.
-;;   Will be updated when a *Help* window springs up.")
-
-;; (defvar bbuf-bury-buffer-list '("*help*"
-;;                                 "*info*"
-;;                                 "*compile-log*"
-;;                                 "*apropos*"
-;;                                 "*backtrace*"
-;;                                 "*warning*"
-;;                                 "*Warning*"
-;;                                 "*Completions*"
-;;                                 "*helpful")
-;;   "List of buffer names that will be buried (with respective
-;;   windows deleted) by bbuf-dismiss-windows")
-
-;; ;;; Save window-configuration to bbuf-window-configuration
-;; ;;; when a *Help* window pops up. 
-;; ;;; (But only when there are no pre-existing *Help* buffers)
-;; (add-hook 'help-mode-hook
-;;           (lambda () 
-;;             (bbuf-save-window-configuration "*Help*")))
-
-;; (add-hook 'compilation-finish-functions
-;;           (lambda ()
-;;             (bbuf-save-window-configuration "*Compile-Log*")))
-
-;; (add-hook 'apropos-mode-hook
-;;           (lambda ()
-;;             (bbuf-save-window-configuration "*Apropos*")))
-
-
-;; (defun bbuf-save-window-configuration (buffer-name)
-;;   "if buffer-name is not one of the currently displayed buffers,
-;; save the current window configuration"
-;;   (if (not (member buffer-name
-;;                    (mapcar (lambda (w) (buffer-name 
-;;                                         (window-buffer w))) 
-;;                            (window-list))))
-;;       (setq bbuf-window-configuration 
-;;             (current-window-configuration))))
-
-;; (defun bbuf-dismiss-windows (no-dismiss-window-function)
-;;   "Restore the window configuration to the one just before
-;; certain windows/buffers are created. The windows/buffers to
-;; dismiss are given by buffer names in
-;; bbuf-bury-buffer-list. If there are no windows to
-;; dismiss, run no-dismiss-window-function instead.
-
-;; Typically, running this function will bury any open *Help* buffer
-;; and dismiss its window."
-;;   (let ((buf (window-buffer (next-window))))
-;;     (if (member (downcase (buffer-name buf))
-;;                 bbuf-bury-buffer-list)
-;;         (progn (bury-buffer buf)
-;;                (set-window-configuration
-;;                 bbuf-window-configuration))
-;;       (funcall no-dismiss-window-function))))
-
-;; (defun bbuf-dismiss-or-switch (arg)
-;;   "Restore window configuration or cycle (current buffer)"
-;;   (interactive "P")
-;;   (bbuf-dismiss-windows 
-;;    (lambda () (switch-to-buffer 
-;;           (other-buffer (current-buffer) arg)))))
-
-;; (defun bbuf-dismiss-or-insert (char)
-;;   "Restore window configuration or insert a character"
-;;   (bbuf-dismiss-windows
-;;    (lambda () (insert char))))
-;; ;;----------------------------------------------------------------------
 
 (provide 'better-buffers)
 

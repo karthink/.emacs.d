@@ -1,19 +1,40 @@
 ;; -*- lexical-binding: t -*-
-                                        ; my dot emacs grows ;
-                                        ; one day i look inside it ;
-                                        ; singularity ;
 
-(setq gc-cons-threshold most-positive-fixnum)
+;; #+begin_quote
+;;                                       my dot emacs grows
+;;
+;;                                       one day i look inside it
+;;
+;;                                       singularity                  
+;; #+end_quote
 
-;;;* PACKAGE MANAGEMENT
-;;######################################################################
-  ;;; Set load paths for ELPA packages
+;; * PACKAGE MANAGEMENT
+
+;; "Activate" packages, /i.e./ autoload commands, set paths, info-nodes and so
+;; on. Set load paths for ELPA packages. This is unnecessary in Emacs 27 with an
+;; early-init.el, but I haven't checked.
 (package-activate-all)
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
-                                        ;(add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/"))
-                                        ;(add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
-;; (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
 
+;; Package repositories that are no longer used or included by default:
+;; #+begin_src emacs-lisp
+;; (add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/"))
+;; (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
+;; #+end_src
+
+;; This is a workaround for a bug that's probably been fixed by now!
+;; #+begin_src emacs-lisp
+;; (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
+;; #+end_src
+
+;; ** USE PACKAGE
+
+;; =use-package= is a neat wrapper over =with-eval-after-load= and =require=, a
+;; judicious combination of which helps with lazy loading code. It does a lot
+;; more besides, like simplify code to add hooks, bind keys and generate
+;; autoloads.
+;;
+;; The one thing it's not is a package manager!
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
   (package-install 'use-package))
@@ -30,46 +51,23 @@
   ;;       use-package-minimum-reported-time 0.01)
   )
 
-(require 'bind-key)
+;;; (require 'bind-key)
 
 (use-package package
   :hook (package-menu-mode . hl-line-mode))
 
-;;######################################################################
-;;;* PATHS
-;;######################################################################
+;; Packages not managed by package.el: These are packages that for various
+;; reasons I prefer to manage myself instead of installing from ELPA/MELPA. Thus
+;; an ersatz one-function "package manager".
 
-(use-package emacs
-  :config
-  (defun dir-concat (dir file)
-    "join path DIR with filename FILE correctly"
-    (concat (file-name-as-directory dir) file))
-
-  ;; Set directory
-  (setq default-directory
-        (cond ((equal (system-name) "surface")
-               "/cygdrive/c/Users/karth/OneDrive/Documents/")
-              ((equal system-type 'nt)
-               "/cygdrive/c/Users/karth/OneDrive/Documents/")
-              (t "~/")))
-
-  ;; Adds ~/.emacs.d to the load-path
-  (push (dir-concat user-emacs-directory "plugins/") load-path)
-  (push (dir-concat user-emacs-directory "lisp/") load-path))
-
-;; cache directory
-(defvar user-cache-directory "~/.cache/emacs/"
-  "Location where files created by emacs are placed.")
-
-;; Packages not managed by package.el
 (defun my/package-sync-personal ()
   "Download my packages not managed by package.el."
-  (let* ((my/packages-urls-extra)
+  (let* ((my-packages-urls-extra)
          (download-dir "~/.local/share/git/")
          (default-directory (progn (or (file-directory-p download-dir)
                                        (make-directory download-dir))
                                    download-dir)))
-    (setq my/packages-urls-extra
+    (setq my-packages-urls-extra
           '(("https://codeberg.org/jao/consult-notmuch.git")
             ("https://github.com/xFA25E/ytel-show.git")
             ("https://github.com/minad/vertico.git")
@@ -89,7 +87,7 @@
             ;; ("git@github.com:karthink/wallabag.el.git" . "wallabag")
             ;; ("git@github.com:karthink/peep-dired.git")
             ))
-    (dolist (pack my/packages-urls-extra)
+    (dolist (pack my-packages-urls-extra)
       (let* ((packurl (car pack))
              (packdir (or (cdr pack) (file-name-base (car pack))))
              (buf (concat packdir ".out")))
@@ -100,46 +98,147 @@
           (start-process packdir buf "git" "clone" packurl packdir)
           (message (format "Cloning %s to %s" packurl packdir)))))))
 
-;;########################################################################
-;;;* CORE
-;;########################################################################
-(require 'setup-core)
+;; Packages I've authored are not on this list any more as I've taken to
+;; including them as git submodules. They are commented out above in
+;; =my-packages-urls-extra=.
 
-;;;* NATIVE-COMP
-;;########################################################################
-;; Only on Emacs 28
+;; * PATHS
+
+;; I avoid defining too many custom helpers, =dir-concat= is an exception.
+(use-package emacs
+  :config
+  (defun dir-concat (dir file)
+    "join path DIR with filename FILE correctly"
+    (concat (file-name-as-directory dir) file))
+
+  ;; Set directory
+  (setq default-directory
+        (cond ((equal (system-name) "surface")
+               "/cygdrive/c/Users/karth/OneDrive/Documents/")
+              ((equal system-type 'nt)
+               "/cygdrive/c/Users/karth/OneDrive/Documents/")
+              (t "~/")))
+
+  ;; Adds ~/.emacs.d to the load-path
+  (push (dir-concat user-emacs-directory "plugins/") load-path)
+  (push (dir-concat user-emacs-directory "lisp/") load-path)
+  
+  ;; cache directory
+  (defvar user-cache-directory "~/.cache/emacs/"
+  "Location where files created by emacs are placed."))
+
+;; "plugins/" contains downloaded packages or plugins I've written. "lisp/" is
+;; configuration and glue code.
+
+;; * CORE
+
+;; Optimizations to make Emacs more responsive. These are mostly copied from
+;; Doom Emacs. Note that there are better tools for this these days, such as
+;; [[https://gitlab.com/koral/gcmh][gcmh]] that I haven't bothered with.
+(require 'setup-core)
+(use-package gcmh
+  :defer 2
+  :ensure
+  ;; :hook (after-init . gcmh-mode)
+  :config
+  (setq gcmh-idle-delay 'auto  ; default is 15s
+        gcmh-high-cons-threshold (* 32 1024 1024)
+        gcmh-verbose nil)
+  (gcmh-mode 1))
+
+;; setup-core is the first of many concerns to be shunted into its own file.
+;;;----------------------------------------------------------------
+;; #+INCLUDE: "./lisp/setup-core.org"
+;;;----------------------------------------------------------------
+
+;; * NATIVE-COMP
+
+;; I'm still using Emacs 27.2, because it's good enough. This code configures
+;; the native compiler and is in preparation for 28.1.
+;; - Move eln files to a cache dir
+;; - Don't bombard the user with warnings
+;; - Compile packages on install, not at runtime
 (unless (version-list-<
          (version-to-list emacs-version)
          '(28 0 1 0))
   (when (boundp 'native-comp-eln-load-path)
-    (add-to-list 'native-comp-eln-load-path (dir-concat user-cache-directory "eln-cache/"))))
+    (add-to-list 'native-comp-eln-load-path
+                 (dir-concat user-cache-directory "eln-cache/"))
+    (setq native-comp-async-report-warnings-errors 'silent
+          native-comp-deferred-compilation nil)))
 
-;;########################################################################
-;;;* PERSONAL INFO
-;;########################################################################
+;;;################################################################
+;; * DAEMON
+;;;################################################################
+
+;; Hack: When starting a server, silently load all the "heavy" libraries and
+;; goodies I use. There are more elegant approaches to this issue, such as DOOM
+;; Emacs' =:defer-incrementally= =use-package= keyword, but this is good enough.
+;; A regular (non-daemon) Emacs session still launches in ~0.3 seconds.
+(when (daemonp)
+  (add-hook
+   'after-init-hook
+   (defun my/load-packages-eagerly ()
+     (run-at-time 1 nil
+                  (lambda () 
+                    (let ((after-init-time (current-time)))
+                      (dolist (lib '("org" "ob" "ox" "ol" "org-roam"
+                                     "org-capture" "org-agenda" "org-fragtog"
+                                     "org-gcal" "latex" "reftex" "cdlatex"
+                                     "consult" "helpful" "elisp-mode"
+                                     "notmuch" "elfeed" "simple"
+                                     "expand-region" "embrace"
+                                     "ace-window" "avy" "yasnippet"
+                                     "magit" "modus-themes" "diff-hl"
+                                     "dired" "ibuffer" "pdf-tools"))
+                        (with-demoted-errors "Error: %S" (load-library lib)))
+                      (load-theme 'doom-rouge t)
+                      (when (featurep 'pdf-tools) (pdf-tools-install))
+                      (let ((elapsed (float-time (time-subtract (current-time)
+                                                                after-init-time))))
+                        (message "[Pre-loaded packages in %.3fs]" elapsed))))))))
+
+;;;################################################################
+;; * PERSONAL INFO
+;;;################################################################
+;; Store personal information in a GPG encrypted file. This keeps the config
+;; user agnostic. Starting Emacs requires both this file and my GPG keys to be
+;; present. If you want to use this configuration wholesale (a terrible idea),
+;; you'll need to set the my-* variables appropriately.
 (let* ((personal-file (concat user-emacs-directory "lisp/personal.el.gpg"))
        (personal-file-bc (concat personal-file ".elc")))
   (unless (file-exists-p personal-file-bc)
     (epa-file-enable)
     (byte-compile-file personal-file)))
-(load-library "personal.el.gpg")
+(with-demoted-errors "Error (personal info): %S" (load-library "personal.el.gpg"))
 (setq user-full-name my-full-name)
 (setq user-mail-address my-email-address)
 
-;;########################################################################
-;;;* UI FIXES
-;;########################################################################
-(require 'setup-ui)
+;;;################################################################
+;; * UI
+;;;################################################################
 
-;;########################################################################
-;;;* AUTOLOADS
-;;######################################################################
+;; Miscellaneous UI preferences.
+(load-library "setup-ui")
+
+;;;----------------------------------------------------------------
+;; #+INCLUDE: "./lisp/setup-ui.org"
+;;;----------------------------------------------------------------
+
+;; * AUTOLOADS
+
+;; A relic of a past era when I would generate autoloads manually.
+;; #+begin_src emacs-lisp
 ;; (require 'setup-autoloads nil t)
 ;; (require 'plugin-autoloads nil t)
+;; #+end_src
 
-;;######################################################################
-;;;* CUSTOM FILE
-;;######################################################################
+;;;################################################################
+;; * CUSTOM FILE
+;;;################################################################
+
+;; Don't populate the init file with custom-set-variables, create and use a
+;; separate file instead.
 (use-package cus-edit
   :config
   ;; Get custom-set-variables out of init.el
@@ -153,9 +252,15 @@
       (load-file file)))
   :hook (after-init . my/cus-edit))
 
-;;######################################################################
-;;;* KEYBIND SETUP
-;;######################################################################
+;;;################################################################
+;; * KEYBIND SETUP
+;;;################################################################
+
+;; The first of several packages that I no longer use but are too entangled with
+;; everything else to remove safely. So it stays in.
+;;
+;; These are mostly leader based keybindings that make sense to use with
+;; evil-mode... which I don't use.
 (use-package general
   ;; :preface (setq use-package-ignore-unknown-keywords t)
   :ensure t
@@ -350,8 +455,7 @@
                     (message "Not visiting a file!")))
           :wk "Load this file"))
   (general-def :keymaps 'space-menu-help-map
-    "m" '(describe-mode :wk "describe mode"))
-  )
+    "m" '(describe-mode :wk "describe mode")))
 
 (use-package god-mode
   :disabled
@@ -366,9 +470,10 @@
   ;; (global-set-key (kbd "S-SPC") #'god-local-mode)
   (add-hook 'god-mode-enabled-hook #'my-god-mode-update-cursor)
   (add-hook 'god-mode-disabled-hook #'my-god-mode-update-cursor))
-;;######################################################################
-;;;* SAVE AND BACKUP
-;;########################################################################
+
+;;;################################################################
+;; * SAVE AND BACKUP
+;;;################################################################
 ;; Put backups elsewhere:
 (setq auto-save-interval 2400)
 (setq auto-save-timeout 300)
@@ -383,10 +488,9 @@
       kept-old-versions 5 ; Old versions to keep
       )
 
-;;######################################################################
-;;;* MISCELLANEOUS PREFERENCES
-;;######################################################################
-
+;;;################################################################
+;; * MISCELLANEOUS PREFERENCES
+;;;################################################################
 ;; For lazy typists
 (fset 'yes-or-no-p 'y-or-n-p)
 ;; Move the mouse away if the cursor gets close
@@ -431,22 +535,6 @@
 (add-hook 'kill-emacs-hook (lambda () (byte-recompile-file user-init-file)))
 (add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p)
 (global-prettify-symbols-mode 1)
-
-;; Save and resume session
-(use-package desktop
-  :disabled
-  :config
-  (setq desktop-auto-save-timeout 300
-        desktop-path `(,(dir-concat user-cache-directory "desktop"))
-        desktop-dirname (dir-concat user-cache-directory "desktop")
-        desktop-base-file-name "desktop"
-        desktop-globals-to-clear nil
-        desktop-load-locked-desktop t
-        desktop-missing-file-warning nil
-        desktop-restore-eager 4
-        desktop-restore-frames t
-        desktop-save 'ask-if-new)
-  (desktop-save-mode 1))
 
 (use-package emacs
   ;; Hyper bindings for emacs. Why use a pinky when you can use a thumb?
@@ -506,9 +594,9 @@
     (interactive)
     (hyperify-prefix-key [3])))
 
-;;######################################################################
-;;;* INTERFACING WITH THE OS
-;;######################################################################
+;;;######################################################################
+;; * INTERFACING WITH THE OS
+;;;######################################################################
 
 (if IS-WINDOWS
     (setq shell-file-name "C:/cygwin/cygwin.bat"))
@@ -580,62 +668,18 @@ output instead."
   :disabled
   :load-path "~/.local/share/git/melpa/explain-pause-mode/")
 
-(use-package emacs
-  :config
-  (defvar google-search-history nil
-    "List of queries to google-search-string.")
-  (defun google-search-string (search-string)
-    "Read SEARCH-STRING from the minibuffer and call the shell
-command tuxi on it."
-    (interactive (list (read-string "Google: " nil
-                                    google-search-history
-                                    (thing-at-point 'sexp))))
-    (unless (executable-find "tuxi")
-      (user-error "Cannot find shell command: tuxi"))
-    (let ((search-output (string-trim-right
-                          (shell-command-to-string
-                           (concat
-                            "tuxi -r "
-                            (shell-quote-argument search-string))))))
-      (with-current-buffer (get-buffer-create "*Tuxi Output*")
-        (goto-char (point-max))
-        (unless (bobp) (insert "\n\n* * *\n"))
-        (insert (capitalize search-string) ":\n\n")
-        (push-mark)
-        (insert search-output)
-        (let ((lines (count-lines (or (mark) (point-min)) (point-max))))
-          (if (<= lines 1)
-              (message search-output)
-            (let ((win (display-buffer (current-buffer))))
-              (set-window-start win (mark))
-              (set-window-parameter win 'window-height (min lines 10))
-              (goto-address-mode 1)))))))
-  (defun google-search-at-point (&optional beg end)
-    "Call the shell command tuxi on the symbol at point. With an
-active region use it instead."
-    (interactive "r")
-    (if-let ((search-string (if (use-region-p)
-                                (buffer-substring-no-properties beg end)
-                              (thing-at-point 'symbol))))
-        (google-search-string search-string)
-      ;; (message "No symbol to search for at point!")
-      (call-interactively #'google-search-string)))
-  :bind (:map help-map
-              ("g" . google-search-string)
-              ("C-=" . google-search-at-point)))
-
-
 (use-package vterm
   :ensure t
   :defer)
-;;----------------------------------------------------------------------
-;;;** SHELL AND ESHELL PREFERENCES
-;;----------------------------------------------------------------------
+
+;;;----------------------------------------------------------------
+;; ** SHELL AND ESHELL PREFERENCES
+;;;----------------------------------------------------------------
 (use-package setup-shells)
 
-;;######################################################################
-;;;* LINE NUMBERS
-;;######################################################################
+;;;######################################################################
+;; * LINE NUMBERS
+;;;######################################################################
 (line-number-mode 1)
 
 (defvar +addons-enabled-modes (list 'prog-mode-hook
@@ -655,9 +699,9 @@ active region use it instead."
 (setq display-line-numbers-width-start t
       display-line-numbers-type 'relative)
 
-;;######################################################################
-;;;* EDITING
-;;######################################################################
+;;;################################################################
+;; * EDITING
+;;;######################################################################
 (use-package dabbrev
   :commands (dabbrev-expand dabbrev-completion)
   :config
@@ -733,7 +777,7 @@ active region use it instead."
   :config
   (setq set-mark-command-repeat-pop t)
   (global-set-key (kbd "M-r") ctl-x-r-map)
-  (setq undo-limit 1600000)
+  (setq undo-limit (* 80 1024 1024))
   :bind
   (("M-z" . zap-to-char-save)
    ("<C-M-backspace>" . backward-kill-sexp)))
@@ -761,16 +805,59 @@ active region use it instead."
          ("M-i" . goto-last-change)
          ("M-g M-;" . goto-last-change)))
 
-;;######################################################################
-;;;* BUFFER AND WINDOW MANAGEMENT
-;;######################################################################
+;; * MANAGE STATE
+;; ** RECENTF
+;; Keep track of recently opened files. Also feeds into the list of recent
+;; directories used by consult-dir.
 (use-package recentf
   :defer 2
-  :init
+  :config
   (setq recentf-save-file (dir-concat user-cache-directory "recentf")
         recentf-max-saved-items 200)
   (recentf-mode 1))
 
+;; ** SAVEHIST
+;; Save history across various prompts
+(use-package savehist
+  :defer 2
+  :hook (after-init . savehist-mode)
+  :config
+  (setq savehist-file (dir-concat user-cache-directory "savehist"))
+  (setq history-length 1000)
+  (setq history-delete-duplicates t)
+  (setq savehist-save-minibuffer-history t))
+
+;; ** +DESKTOP+
+;; Save and resume Emacs sessions.
+(use-package desktop
+  ;; :hook (kill-emacs . desktop-save-mode)
+  :config
+  (setq desktop-auto-save-timeout 300
+        desktop-path `(,(dir-concat user-cache-directory "desktop"))
+        desktop-dirname (dir-concat user-cache-directory "desktop")
+        desktop-base-file-name "desktop"
+        desktop-restore-forces-onscreen nil
+        desktop-globals-to-clear nil
+        desktop-load-locked-desktop t
+        desktop-missing-file-warning nil
+        desktop-restore-eager 4
+        desktop-restore-frames t
+        desktop-save 'ask-if-new)
+  (when (daemonp)
+    (defun my/restore-desktop (frame)
+      "Restores desktop and cancels hook after first frame opens."
+      (with-selected-frame frame
+        (desktop-save-mode 1)
+        (desktop-read)
+        (remove-hook 'after-make-frame-functions 'my/restore-desktop)))
+    (add-hook 'after-make-frame-functions 'my/restore-desktop)))
+
+;; (require 'desktop)
+;; (setq desktop-restore-forces-onscreen nil)
+
+;;;################################################################
+;; * BUFFER AND WINDOW MANAGEMENT
+;;;################################################################
 (use-package setup-windows
   :demand t
   :hook ((help-mode . visual-line-mode)
@@ -785,15 +872,17 @@ active region use it instead."
   :general
   (:keymaps 'space-menu-window-map
             :wk-full-keys nil
-            "w" '(window-toggle-side-windows :wk "toggle side windows"))
-  )
+            "w" '(window-toggle-side-windows :wk "toggle side windows")))
 
 (use-package window
   :bind ("H-+" . balance-windows-area))
 
 (require 'better-buffers nil t)
 
-;;;** POPPER
+;;----------------------------------------------------------------
+;; ** Popper
+;;----------------------------------------------------------------
+;; Designated buffers to popup status and toggle or cycle through them
 (use-package popper
   :load-path "plugins/popper/"
   :after (setup-windows setup-project)
@@ -912,7 +1001,9 @@ active region use it instead."
             "^" '(+popup-raise-popup :wk "raise popup")
             "_" '(+popup-lower-to-popup :wk "lower to popup")))
 
-;;;** Winum - window numbers
+;;----------------------------------------------------------------
+;; ** Winum - window numbers
+;;----------------------------------------------------------------
 (use-package winum
   :ensure
   :init
@@ -937,7 +1028,10 @@ active region use it instead."
   (unless (bound-and-true-p evil-mode)
     (winum-mode 1)))
 
-;;;** Winner mode
+;;----------------------------------------------------------------
+;; ** Winner mode
+;;----------------------------------------------------------------
+
 (use-package winner
   :disabled
   :commands winner-undo
@@ -953,7 +1047,10 @@ active region use it instead."
   :config
   (winner-mode +1))
 
-;;;** Ace-window
+;;----------------------------------------------------------------
+;; ** Ace-window
+;;----------------------------------------------------------------
+
 (use-package ace-window
   :ensure t
   :bind
@@ -1016,7 +1113,10 @@ active region use it instead."
    ("<C-S-up>"    . my/enlarge-window)
    ("<C-S-down>"  . my/shrink-window)))
 
-;;;** Windmove
+;;----------------------------------------------------------------
+;; ** Windmove
+;;----------------------------------------------------------------
+
 (use-package windmove
   :bind
   (("H-<right>" . windmove-swap-states-right)
@@ -1025,7 +1125,11 @@ active region use it instead."
    ("H-<left>" . windmove-swap-states-left))
   :config
   (use-package emacs-i3))
-;;;** Transpose-frame
+
+;;----------------------------------------------------------------
+;; ** Transpose-frame
+;;----------------------------------------------------------------
+
 (use-package transpose-frame
   :ensure t
   :bind (("H-\\" . rotate-frame-anticlockwise)
@@ -1033,15 +1137,21 @@ active region use it instead."
          ("|" . flop-frame)
          ("_" . flip-frame)
          ("\\" . rotate-frame-anticlockwise)))
-;;######################################################################
-;;;** Auto-revert
+
+;;----------------------------------------------------------------
+;; ** Auto-revert
+;;----------------------------------------------------------------
+
 (use-package autorevert
   :hook ((prog-mode
           text-mode
           tex-mode
           org-mode
           conf-mode) . auto-revert-mode))
-;;;** Re-Builder
+
+;;----------------------------------------------------------------
+;; ** Re-Builder
+;;----------------------------------------------------------------
 (use-package re-builder
   :bind (("C-M-5" . re-builder)
          ("C-M-%" . re-builder)
@@ -1090,8 +1200,8 @@ surrounded by word boundaries."
       (setq my/re-builder-positions nil)
       (reb-quit)
       (query-replace-regexp re replacement delimited beg end)))))
-;;;* UTILITY
-;;######################################################################
+;; * UTILITY
+;;;################################################################
 ;; Count words, print ASCII table, etc
 (require 'utilities nil t)
 
@@ -1315,9 +1425,9 @@ If region is active, add its contents to the new buffer."
 ;;                                       (replace-regexp-in-string regex replacement
 ;;                                                                 string rest)))))
 
-;;######################################################################
-;;;* COMPILATION
-;;######################################################################
+;;;################################################################
+;; * COMPILATION
+;;;################################################################
 
 ;; compile!
 (use-package compile
@@ -1355,13 +1465,13 @@ If region is active, add its contents to the new buffer."
 ;;             (run-at-time 3 nil
 ;;                          (lambda () (delete-windows-on (get-buffer "*Compile-Log*"))))))
 
-;;######################################################################
-;;;* LANGUAGE MODES
-;;######################################################################
+;;;################################################################
+;; * LANGUAGE MODES
+;;;################################################################
 
-;;----------------------------------------------------------------------
-;;;** LSP SUPPORT
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** LSP SUPPORT
+;;;----------------------------------------------------------------
 (use-package lsp-mode
   :disabled
   ;; :hook (python-mode . lsp-deferred)
@@ -1406,9 +1516,9 @@ If region is active, add its contents to the new buffer."
   )
 
 
-;;----------------------------------------------------------------------
-;;;** EGLOT - LSP
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** EGLOT - LSP
+;;;----------------------------------------------------------------
 (use-package eglot
   ;; :disabled t
   :ensure t
@@ -1420,9 +1530,9 @@ If region is active, add its contents to the new buffer."
   (add-to-list 'eglot-server-programs
                '(matlab-mode . ("~/.local/share/git/matlab-langserver/matlab-langserver.sh" ""))))
 
-;;----------------------------------------------------------------------
-;;;** EMACS-LISP
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** EMACS-LISP
+;;;----------------------------------------------------------------
 (use-package pp
   :bind ([remap eval-last-sexp] . eval-sexp-maybe-pp)
   :config
@@ -1433,9 +1543,9 @@ If region is active, add its contents to the new buffer."
           (call-interactively #'pp-eval-last-sexp))
       (call-interactively #'eval-last-sexp))))
 
-;;----------------------------------------------------------------------
-;;;** AUCTEX-MODE & ADDITIONS
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** AUCTEX-MODE & ADDITIONS
+;;;----------------------------------------------------------------
 (use-package latex
   :defer 5
   :after tex
@@ -1752,7 +1862,7 @@ environments."
   :after latex
   :commands (ink-make-figure ink-edit-figure))
 
-;;;*** BIBTEX
+;; *** BIBTEX
 (use-package bibtex-actions
   :after latex
   :bind (:map LaTeX-mode-map
@@ -1782,9 +1892,9 @@ environments."
           '("Make a citation interactively"
             "cite{" my/cdlatex-bibtex-action nil t nil))))
 
-;;----------------------------------------------------------------------
-;;;** MATLAB
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** MATLAB
+;;;----------------------------------------------------------------
 (use-package matlab
   :load-path "~/.local/share/git/matlab-emacs-src/"
   :commands (matlab-shell matlab-mode)
@@ -1989,9 +2099,9 @@ Return the name of the temporary file."
 
   )
 
-;;----------------------------------------------------------------------
-;;;** PYTHON-MODE
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** PYTHON-MODE
+;;;----------------------------------------------------------------
 
 (use-package pyvenv
   :disabled t
@@ -2039,9 +2149,9 @@ Return the name of the temporary file."
   ;;            ("Union" .    #x22c3)))))
   )
 
-;;----------------------------------------------------------------------
-;;;** GEISER
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** GEISER
+;;;----------------------------------------------------------------
 (use-package geiser
   :defer
   :if (not (version-list-<
@@ -2058,9 +2168,9 @@ Return the name of the temporary file."
   ;; (setq geiser-mit-binary "mechanics")
   (setq geiser-mit-binary "mit-scheme"))
 
-;;----------------------------------------------------------------------
-;;;** EVAL-IN-REPL
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** EVAL-IN-REPL
+;;;----------------------------------------------------------------
 (use-package eval-in-repl
   :disabled
   :ensure t
@@ -2070,9 +2180,9 @@ Return the name of the temporary file."
             '(lambda ()
                (local-set-key (kbd "<C-return>") 'eir-eval-in-geiser))))
 
-;;----------------------------------------------------------------------
-;;;** SCHEME - SICM
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** SCHEME - SICM
+;;;----------------------------------------------------------------
 
 ;; Make sure mit-scheme (from repos) and scmutils (from internet + sudo ./install.sh)are installed
 ;;;###autoload
@@ -2086,8 +2196,8 @@ and Interpretation of Classical Mechanics) - The book."
    "/usr/bin/mit-scheme --library /opt/mit-scheme/lib/mit-scheme-x86-64/")
   )
 
-;;######################################################################
-;;;** JULIA
+;;;################################################################
+;; ** JULIA
 (use-package julia-mode
   :ensure t
   :bind (:map julia-mode-map
@@ -2113,7 +2223,7 @@ and Interpretation of Classical Mechanics) - The book."
   :config
   (cl-defmethod project-root ((project (head julia)))
     (cdr project)))
-;;;** ESS
+;; ** ESS
 ;; Need this for ob-julia
 (use-package ess-julia
   :ensure ess
@@ -2135,7 +2245,7 @@ and Interpretation of Classical Mechanics) - The book."
   (define-key ess-julia-mode-map (kbd "`") 'my/ess-julia-cdlatex-symbol)
   (define-key inferior-ess-julia-mode-map (kbd "`") 'my/ess-julia-cdlatex-symbol))
 
-;;;** CIDER
+;; ** CIDER
 (use-package cider
   :defer
   :init
@@ -2147,90 +2257,12 @@ and Interpretation of Classical Mechanics) - The book."
   (defun my/cider-comp-styles ()
     (make-variable-buffer-local 'completion-styles)
     (add-to-list 'completion-styles 'basic)))
-;;;* PLUGINS
-;;######################################################################
+;; * PLUGINS
+;;;################################################################
 
-;;----------------------------------------------------------------------
-;;;** ERC
-(use-package erc
-  :commands (erc-tls erc)
-  :hook (erc-mode . erc-hl-nicks-mode)
-  :config
-  (setq erc-server "irc.karthinks.com"
-        erc-port 7078
-        erc-nick "karthik"
-        erc-user-full-name "Karthik"
-        erc-prompt-for-password nil
-        erc-track-shorten-start 6
-        erc-autojoin-channels-alist '(("irc.libera.chat" "#systemcrafters"
-                                       "#org-mode" "#factorio" "nyxt"
-                                       "#gamingonlinux" "#emacs"))
-        erc-kill-buffer-on-part t
-        erc-lurker-threshold-time 1800
-        erc-hide-list '("NICK")
-        erc-lurker-hide-list '("JOIN" "PART" "QUIT" "NICK")
-        erc-track-exclude-types '("JOIN" "MODE" "NICK" "PART" "QUIT"
-                                  "324" "329" "332" "333" "353" "477")
-        ;; erc-track-visibility t
-        ;; erc-track-when-inactive t
-        erc-format-nick-function 'erc-format-@nick
-        erc-auto-query 'bury
-        erc-keywords nil))
-
-(use-package erc-image
-  :after erc
-  :ensure
-  :init
-  (setq erc-image-inline-rescale 350)
-  (add-to-list 'erc-modules 'image)
-  (push 'button erc-modules)
-  (push 'completion erc-modules)
-  (erc-update-modules)
-  :config
-  (defun erc-image-create-image (file-name)
-  "Create an image suitably scaled according to the setting of
-'ERC-IMAGE-RESCALE."
-  (let* ((positions (window-inside-absolute-pixel-edges))
-         (width (- (nth 2 positions) (nth 0 positions)))
-         (height (- (nth 3 positions) (nth 1 positions)))
-         (image (create-image file-name))
-         (dimensions (image-size image t))
-         (imagemagick-p (and (fboundp 'imagemagick-types) 'imagemagick)))
-                                        ; See if we want to rescale the image
-    (if (and erc-image-inline-rescale
-             (not (image-multi-frame-p image)))
-        ;; Rescale based on erc-image-rescale
-        (cond (;; Numeric: scale down to that size
-               (numberp erc-image-inline-rescale)
-               (let ((max-height (min (cdr dimensions)
-                                      erc-image-inline-rescale
-                                      (floor (* width (cdr dimensions))
-                                             (car dimensions)))))
-                 (if (> (floor (* max-height (car dimensions))
-                               (cdr dimensions))
-                        width)
-                     (create-image file-name imagemagick-p nil :width width)
-                   (create-image file-name imagemagick-p nil :height max-height))))
-              (;; 'window: scale down to window size, if bigger
-               (eq erc-image-inline-rescale 'window)
-               ;; But only if the image is greater than the window size
-               (if (or (> (car dimensions) width)
-                       (> (cdr dimensions) height))
-                   ;; Figure out in which direction we need to scale
-                   (if (> width height)
-                       (create-image file-name imagemagick-p nil :height  height)
-                     (create-image file-name imagemagick-p nil :width width))
-                 ;; Image is smaller than window, just give that back
-                 image))
-              (t (progn (message "Error: none of the rescaling options matched") image)))
-      ;; No rescale
-      image))))
-(use-package erc-hl-nicks
-  :ensure
-  :after erc)
-
-;;;** EMBRACE
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** EMBRACE
+;;;----------------------------------------------------------------
 (use-package embrace
   :ensure t
   :hook ((org-mode . embrace-org-mode-hook)
@@ -2318,18 +2350,18 @@ and Interpretation of Classical Mechanics) - The book."
               (text "\\%s")) ;; (if (sp-point-in-string) "\\\\%s" "\\%s")
           (cons (format text (car pair))
                 (format text (cdr pair))))))))
-;;----------------------------------------------------------------------
-;;;** STROKES
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** STROKES
+;;;----------------------------------------------------------------
 (use-package strokes
   :bind ("<down-mouse-2>" . strokes-do-stroke)
   :config
   (setq strokes-file (dir-concat user-cache-directory "strokes"))
   (setq strokes-use-strokes-buffer t))
 
-;;----------------------------------------------------------------------
-;;;** ERRORS
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** ERRORS
+;;;----------------------------------------------------------------
 (use-package simple
   :bind (("M-g n" . my/next-error)
          ("M-g p" . my/next-error)
@@ -2352,9 +2384,9 @@ and Interpretation of Classical Mechanics) - The book."
          (define-key map (kbd "n") 'my/next-error)
          (define-key map (kbd "p") 'my/next-error)
          map)))))
-;;----------------------------------------------------------------------
-;;;** DUMB-JUMP
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** DUMB-JUMP
+;;;----------------------------------------------------------------
 ;; Even dumber jump
 (use-package buffer-local-xref
   ;; :after xref
@@ -2377,17 +2409,17 @@ and Interpretation of Classical Mechanics) - The book."
   ;;                               20 t)))
   )
 
-;;----------------------------------------------------------------------
-;;;** UNDO-TREE
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** UNDO-TREE
+;;;----------------------------------------------------------------
 (use-package undo-tree
   :disabled
   :defer
   :config (setq undo-tree-enable-undo-in-region  t))
 
-;;----------------------------------------------------------------------
-;;;** FLYMAKE
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** FLYMAKE
+;;;----------------------------------------------------------------
 (use-package flymake
   :defer
   :config
@@ -2435,9 +2467,9 @@ is not visible. Otherwise delegates to regular Emacs next-error."
   :after flymake
   :hook ((markdown-mode org-mode text-mode) . flymake-proselint-setup))
 
-;;----------------------------------------------------------------------
-;;;** BROWSE-URL
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** BROWSE-URL
+;;;----------------------------------------------------------------
 (use-package browse-url
   :commands (browse-url-at-point-umpv browse-url-umpv)
   :config
@@ -2446,6 +2478,9 @@ is not visible. Otherwise delegates to regular Emacs next-error."
       (start-process "mpv" nil (if single "mpv" "umpv")
                      (shell-quote-wildcard-pattern url)))
 
+    (defun browse-url-mpv (url)
+      (browse-url-umpv url t))
+    
     (defun browse-url-at-point-umpv (&optional single)
       "Open link in mpv"
       (interactive "P")
@@ -2461,9 +2496,9 @@ is not visible. Otherwise delegates to regular Emacs next-error."
     ;;         ("." . browse-url-generic)))
     ))
 
-;;----------------------------------------------------------------------
-;;;** TRANSIENT
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** TRANSIENT
+;;;----------------------------------------------------------------
 (use-package transient
   :defer
   :config
@@ -2472,9 +2507,9 @@ is not visible. Otherwise delegates to regular Emacs next-error."
         transient-levels-file (dir-concat user-cache-directory "transient/levels.el")
         transient-values-file (dir-concat user-cache-directory "transient/values.el")))
 
-;;----------------------------------------------------------------------
-;;;** HYDRAS
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** HYDRAS
+;;;----------------------------------------------------------------
 (use-package hydra
   :defer
   :ensure t
@@ -2643,10 +2678,10 @@ _d_: subtree
             "=" 'hydra-ediff/body)
   )
 
-;;----------------------------------------------------------------------
-;;;** TABS!TABS!TABS!
-;;;*** TAB-BAR
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** TABS!TABS!TABS!
+;; *** TAB-BAR
+;;;----------------------------------------------------------------
 (use-package tab-bar
   :if (not (version-list-<
             (version-to-list emacs-version)
@@ -2712,9 +2747,9 @@ _d_: subtree
   (defvar tab-bar-format nil "Format for tab-bar-echo-area-mode")
   :config
   (tab-bar-echo-area-mode 1))
-;;----------------------------------------------------------------------
-;;;*** EYEBROWSE
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; *** EYEBROWSE
+;;;----------------------------------------------------------------
 ;; This is superceded by native tabs (tab-bar-mode) in Emacs 27, only
 ;; load if running a lower Emacs version
 (use-package eyebrowse
@@ -2754,9 +2789,9 @@ _d_: subtree
         (setq frame-title-format
               '(:eval (my-title-bar-format))))))
 
-;;----------------------------------------------------------------------
-;;;** HIGHLIGHTS
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** HIGHLIGHTS
+;;;----------------------------------------------------------------
 ;; Flash lines
 (use-package pulse
   :ensure nil
@@ -2884,20 +2919,10 @@ _d_: subtree
       (add-hook 'magit-post-refresh-hook #'diff-hl-magit-post-refresh))
   )
 
-;;----------------------------------------------------------------------
-;;;** NOTMUCH
-;;----------------------------------------------------------------------
-;; Left unchecked, every program grows to the point where it can be
-;; used to manage your email
-(require 'setup-email)
+;;;----------------------------------------------------------------
+;; ** WALLABAG
+;;;----------------------------------------------------------------
 
-;;----------------------------------------------------------------------
-;;;** ELFEED
-;;----------------------------------------------------------------------
-(require 'setup-elfeed)
-;;----------------------------------------------------------------------
-;;;** WALLABAG
-;;----------------------------------------------------------------------
 (use-package wallabag
   :disabled
   :defer t
@@ -2911,18 +2936,14 @@ _d_: subtree
       (defun embark-wallabag (url)
         (wallabag-post-entry url)))))
 
-;;;** EWW
-;;----------------------------------------------------------------------
-(require 'setup-eww)
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** +NAV-FLASH+
+;;;----------------------------------------------------------------
+(use-package nav-flash :disabled)
 
-;;;** NAV-FLASH
-;;----------------------------------------------------------------------
-;; (use-package nav-flash)
-
-;;----------------------------------------------------------------------
-;;;** YASNIPPET
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** YASNIPPET
+;;;----------------------------------------------------------------
 
 (use-package yasnippet
   :ensure t
@@ -3033,9 +3054,9 @@ _d_: subtree
   ;; (global-set-key (kbd "M-S-SPC") 'company-yasnippet)
   )
 
-;;----------------------------------------------------------------------
-;;;** HIDESHOW (built in)
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** HIDESHOW (built in)
+;;;----------------------------------------------------------------
 (use-package hideshow ; built-in
   :commands (hs-cycle
              hs-global-cycle)
@@ -3123,9 +3144,9 @@ _d_: subtree
            hs-special-modes-alist
            '((t))))))
 
-;;----------------------------------------------------------------------
-;;;** EDIFF (built-in)
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** EDIFF (built-in)
+;;;----------------------------------------------------------------
 (use-package ediff
   :defer t
   :functions ediff-setup-windows-plain
@@ -3149,9 +3170,9 @@ fully before starting comparison."
     (when (window-configuration-p my/ediff-saved-wconf)
       (set-window-configuration my/ediff-saved-wconf))))
 
-;;----------------------------------------------------------------------
-;;;** HELPFUl
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** HELPFUl
+;;;----------------------------------------------------------------
 (use-package helpful
   :ensure t
   :commands (helpful-callable helpful-variable)
@@ -3184,16 +3205,16 @@ fully before starting comparison."
   :bind (("C-h A" . info-apropos)
          ("C-h C-a" . customize-apropos)))
 
-;;----------------------------------------------------------------------
-;;;** SHACKLE
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** SHACKLE
+;;;----------------------------------------------------------------
 (use-package shackle
   :disabled t
   :init (shackle-mode))
 
-;;----------------------------------------------------------------------
-;;;** VERSION CONTROL
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** VERSION CONTROL
+;;;----------------------------------------------------------------
 (use-package vc
   :defer
   :config
@@ -3426,9 +3447,9 @@ project, as defined by `vc-root-dir'."
                                            (dired project-dir))
                                        (user-error (format "%s\n%s" command output))))))
       (set-process-filter proc #'comint-output-filter))))
-;;----------------------------------------------------------------------
-;;;** WHICH-KEY
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** WHICH-KEY
+;;;----------------------------------------------------------------
 (use-package which-key
   :ensure t
   :defer 1
@@ -3469,9 +3490,9 @@ project, as defined by `vc-root-dir'."
   (which-key-mode +1)
   :diminish "")
 
-;;----------------------------------------------------------------------
-;;;** CALC
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** CALC
+;;;----------------------------------------------------------------
 ;;;###autoload
 (global-set-key (kbd "H-*") 'calc-dispatch)
 (global-set-key (kbd "H-C") 'calc)
@@ -3518,14 +3539,14 @@ project, as defined by `vc-root-dir'."
     (let ((default-directory (file-name-directory calctex-dvichop-bin)))
       (call-process "make" nil nil nil))))
 
-;;----------------------------------------------------------------------
-;;;** ISEARCH
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** ISEARCH
+;;;----------------------------------------------------------------
 (require 'setup-isearch)
 
-;;----------------------------------------------------------------------
-;;;** ABBREV MODE
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** ABBREV MODE
+;;;----------------------------------------------------------------
 (use-package abbrev
   :defer
   :config
@@ -3533,9 +3554,9 @@ project, as defined by `vc-root-dir'."
   (if (file-exists-p abbrev-file-name)
       (quietly-read-abbrev-file)))
 
-;;----------------------------------------------------------------------
-;;;** COMPANY-MODE
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** COMPANY-MODE
+;;;----------------------------------------------------------------
 (use-package company
   :ensure t
   :defer 3
@@ -3637,9 +3658,9 @@ project, as defined by `vc-root-dir'."
                                          (file-name-as-directory "~/.cache"))
                                         "company-statistics-cache.el")))
 
-;;----------------------------------------------------------------------
-;;;** SMARTPARENS-MODE
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** SMARTPARENS-MODE
+;;;----------------------------------------------------------------
 (use-package elec-pair
        :defer
        :config
@@ -3678,9 +3699,9 @@ project, as defined by `vc-root-dir'."
     ;; disable ', it's the quote character!
     (sp-local-pair "'" nil :actions nil)))
 
-;;----------------------------------------------------------------------
-;;;** EXPAND-REGION
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** EXPAND-REGION
+;;;----------------------------------------------------------------
 (use-package expand-region
   :ensure t
   :commands expand-region
@@ -3769,9 +3790,9 @@ project, as defined by `vc-root-dir'."
       ;;  er/mark-method-call 
 )))
 
-;;----------------------------------------------------------------------
-;;;** AVY
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** AVY
+;;;----------------------------------------------------------------
 (use-package avy
   :ensure t
   :commands (avy-goto-word-1 avy-goto-char-2 avy-goto-char-timer)
@@ -4024,47 +4045,332 @@ project, as defined by `vc-root-dir'."
          ("C-'" . my/avy-isearch)
          ("M-j" . my/avy-isearch)))
 
-;;----------------------------------------------------------------------
-;;;** IY-GO-TO-CHAR
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** IY-GO-TO-CHAR
+;;;----------------------------------------------------------------
 (use-package iy-go-to-char
   :disabled
   :bind (("M-j" . iy-go-to-char)
          ("M-r" . iy-go-to-char-key-backward)))
 
-;;----------------------------------------------------------------------
-;;;** WRAP-REGION MODE
-;;----------------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** WRAP-REGION MODE
+;;;----------------------------------------------------------------
 (use-package wrap-region
   :ensure t
   :init (wrap-region-mode 1))
 ;; (add-hook 'text-mode-hook 'wrap-region-mode)
 
-;;----------------------------------------------------------------------
-;;;** ORG-MODE
-;;----------------------------------------------------------------------
-(require 'setup-org nil t)
-;;----------------------------------------------------------------------
-;;;** ORG-ADDONS
-;;----------------------------------------------------------------------
-;;;*** ANKI
+;;;----------------------------------------------------------------
+;; ** ORG-MODE
+;;;----------------------------------------------------------------
+(load-library "setup-org")
+
+;; --------------------
+;; #+INCLUDE: "./lisp/setup-org.org" :minlevel 2
+;; --------------------
+
+;;;----------------------------------------------------------------
+;; ** ORG-ADDONS
+;;;----------------------------------------------------------------
+;; *** ANKI
 (use-package setup-anki
   :after (org-capture org))
 
-;;;*** ROAM
+;; *** ROAM
 (use-package setup-roam)
-;;######################################################################
-;;;** COMPLETION FRAMEWORKS:
-;;----------------------------------------------------------------------
-;;;*** MOVEC: MARGINALIA/ORDERLESS/VERTICO/EMBARK/CONSULT
-;;----------------------------------------------------------------------
+;;;################################################################
+;; ** TRAMP
+;;;----------------------------------------------------------------
+;; Tramp ssh'es into root@host to edit files. The emacs sudo, kindof.
+(use-package tramp
+  :defer
+  :config
+  (setq remote-file-name-inhibit-cache 86400)
+  (setq tramp-persistency-file-name
+        (dir-concat user-cache-directory "tramp"))
+  (setq tramp-verbose 1)
+  (with-eval-after-load 'vc
+    (setq vc-ignore-dir-regexp
+          (format "%s\\|%s"
+                  vc-ignore-dir-regexp
+                  tramp-file-name-regexp))))
+;;;----------------------------------------------------------------
+;; ** DOT MODE
+(use-package dot-mode
+  :ensure t
+  :commands dot-mode
+  :bind (:map dot-mode-map
+         ("C-c ." . nil)
+         ("C-M-." . nil))
+  :hook ((prog-mode conf-mode text-mode tex-mode) . 'dot-mode-on)
+  ;; :bind ("C-." . (lambda () (interactive)
+  ;;                  (dot-mode 1)
+  ;;                  (message "Dot mode activated.")))
+  )
+;; ** BOOKMARKS
+(use-package bookmark
+  :config
+  (setq bookmark-default-file (dir-concat user-cache-directory "bookmarks")))
+;; * APPLICATIONS
+;; ** DIRED
+;;;----------------------------------------------------------------
+(require 'setup-dired nil t)
+(use-package emacs
+  :after dired
+  :config
+  (use-package ffmpeg-crop
+    :load-path "plugins/ffmpeg-crop/"
+    :commands (ffmpeg-crop ffmpeg-crop-dired)))
+
+;; ** ERC
+(use-package erc
+  :commands (erc-tls erc)
+  :hook (erc-mode . erc-hl-nicks-mode)
+  :config
+  (setq erc-server "irc.karthinks.com"
+        erc-port 7078
+        erc-nick "karthik"
+        erc-user-full-name "Karthik"
+        erc-prompt-for-password nil
+        erc-track-shorten-start 6
+        erc-autojoin-channels-alist '(("irc.libera.chat" "#systemcrafters"
+                                       "#org-mode" "#factorio" "nyxt"
+                                       "#gamingonlinux" "#emacs"))
+        erc-kill-buffer-on-part t
+        erc-lurker-threshold-time 1800
+        erc-hide-list '("NICK")
+        erc-lurker-hide-list '("JOIN" "PART" "QUIT" "NICK")
+        erc-track-exclude-types '("JOIN" "MODE" "NICK" "PART" "QUIT"
+                                  "324" "329" "332" "333" "353" "477")
+        ;; erc-track-visibility t
+        ;; erc-track-when-inactive t
+        erc-format-nick-function 'erc-format-@nick
+        erc-auto-query 'bury
+        erc-keywords nil))
+
+(use-package erc-image
+  :after erc
+  :ensure
+  :init
+  (setq erc-image-inline-rescale 350)
+  (add-to-list 'erc-modules 'image)
+  (push 'button erc-modules)
+  (push 'completion erc-modules)
+  (erc-update-modules)
+  :config
+  (defun erc-image-create-image (file-name)
+  "Create an image suitably scaled according to the setting of
+'ERC-IMAGE-RESCALE."
+  (let* ((positions (window-inside-absolute-pixel-edges))
+         (width (- (nth 2 positions) (nth 0 positions)))
+         (height (- (nth 3 positions) (nth 1 positions)))
+         (image (create-image file-name))
+         (dimensions (image-size image t))
+         (imagemagick-p (and (fboundp 'imagemagick-types) 'imagemagick)))
+                                        ; See if we want to rescale the image
+    (if (and erc-image-inline-rescale
+             (not (image-multi-frame-p image)))
+        ;; Rescale based on erc-image-rescale
+        (cond (;; Numeric: scale down to that size
+               (numberp erc-image-inline-rescale)
+               (let ((max-height (min (cdr dimensions)
+                                      erc-image-inline-rescale
+                                      (floor (* width (cdr dimensions))
+                                             (car dimensions)))))
+                 (if (> (floor (* max-height (car dimensions))
+                               (cdr dimensions))
+                        width)
+                     (create-image file-name imagemagick-p nil :width width)
+                   (create-image file-name imagemagick-p nil :height max-height))))
+              (;; 'window: scale down to window size, if bigger
+               (eq erc-image-inline-rescale 'window)
+               ;; But only if the image is greater than the window size
+               (if (or (> (car dimensions) width)
+                       (> (cdr dimensions) height))
+                   ;; Figure out in which direction we need to scale
+                   (if (> width height)
+                       (create-image file-name imagemagick-p nil :height  height)
+                     (create-image file-name imagemagick-p nil :width width))
+                 ;; Image is smaller than window, just give that back
+                 image))
+              (t (progn (message "Error: none of the rescaling options matched") image)))
+      ;; No rescale
+      image))))
+(use-package erc-hl-nicks
+  :ensure
+  :after erc)
+
+
+;; ** EMAIL
+;;;----------------------------------------------------------------
+
+;; Left unchecked, every program grows to the point where it can be
+;; used to manage your email.
+(load-library "setup-email")
+
+;;;----------------------------------------------------------------
+;; #+INCLUDE: "./lisp/setup-email.org" :minlevel 3
+;;;----------------------------------------------------------------
+
+;;;----------------------------------------------------------------
+;; ** ELFEED
+;;;----------------------------------------------------------------
+
+(load-library "setup-elfeed")
+
+;;;----------------------------------------------------------------
+;; #+INCLUDE: "./lisp/setup-elfeed.org" :minlevel 2
+;;;----------------------------------------------------------------
+
+;;;----------------------------------------------------------------
+;; ** EWW
+;;;----------------------------------------------------------------
+(require 'setup-eww)
+
+;;;----------------------------------------------------------------
+;; ** NOV.EL
+;;;----------------------------------------------------------------
+(use-package nov
+  :ensure t
+  :init
+  (add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode))
+  :hook ((nov-mode . my/nov-font-setup)
+         (nov-mode . er/add-text-mode-expansions))
+  :config
+  (setq nov-text-width 80
+        nov-save-place-file (dir-concat user-cache-directory "nov-places"))
+  (defun my/nov-font-setup ()
+    (face-remap-add-relative 'variable-pitch
+                             :family "Noto Serif"
+                             :height 1.0)))
+
+
+;;;################################################################
+
+;; ** LOOK UP
+
+;; *** GOOGLE ANSWERS
+;; Query Google's knowledge graph. This is the answer that shows up before the
+;; first result in Google searches. For this purpose we use tuxi, an external
+;; tool that queries Google.
+(use-package emacs
+  :config
+  (defvar google-search-history nil
+    "List of queries to google-search-string.")
+  (defun google-search-string (search-string)
+    "Read SEARCH-STRING from the minibuffer and call the shell
+command tuxi on it."
+    (interactive (list (read-string "Google: " nil
+                                    google-search-history
+                                    (thing-at-point 'sexp))))
+    (unless (executable-find "tuxi")
+      (user-error "Cannot find shell command: tuxi"))
+    (let ((search-output (string-trim-right
+                          (shell-command-to-string
+                           (concat
+                            "tuxi -r "
+                            (shell-quote-argument search-string))))))
+      (with-current-buffer (get-buffer-create "*Tuxi Output*")
+        (goto-char (point-max))
+        (unless (bobp) (insert "\n\n* * *\n"))
+        (insert (capitalize search-string) ":\n\n")
+        (push-mark)
+        (insert search-output)
+        (let ((lines (count-lines (or (mark) (point-min)) (point-max))))
+          (if (<= lines 1)
+              (message search-output)
+            (let ((win (display-buffer (current-buffer))))
+              (set-window-start win (mark))
+              (set-window-parameter win 'window-height (min lines 10))
+              (goto-address-mode 1)))))))
+  (defun google-search-at-point (&optional beg end)
+    "Call the shell command tuxi on the symbol at point. With an
+active region use it instead."
+    (interactive "r")
+    (if-let ((search-string (if (use-region-p)
+                                (buffer-substring-no-properties beg end)
+                              (thing-at-point 'symbol))))
+        (google-search-string search-string)
+      ;; (message "No symbol to search for at point!")
+      (call-interactively #'google-search-string)))
+  :bind (:map help-map
+              ("g" . google-search-string)
+              ("C-=" . google-search-at-point)))
+;; *** DICTIONARY
+(use-package sdcv
+  :disabled
+  :ensure nil
+  :commands (sdcv-search-input)
+  :bind (("C-x M-=" . sdcv-search-input)
+         :map sdcv-mode-map
+              ("M-n" . sdcv-next-dictionary)
+              ("M-p" . sdcv-previous-dictionary)))
+(use-package dictionary
+  :ensure t
+  :commands (dictionary-lookup-definition dictionary-search)
+  :config
+  (define-key help-map (kbd "C-d") 'apropos-documentation)
+  (setq dictionary-use-single-buffer t)
+  (defun dictionary-search-dwim (&optional arg)
+    "Search for definition of word at point. If region is active,
+search for contents of region instead. If called with a prefix
+argument, query for word to search."
+    (interactive "P")
+    (if arg
+        (dictionary-search nil)
+      (if (use-region-p)
+          (dictionary-search (buffer-substring-no-properties
+                              (region-beginning)
+                              (region-end)))
+        (if (thing-at-point 'word)
+            (dictionary-lookup-definition)
+          (dictionary-search-dwim '(4))))))
+  :bind (("C-M-=" . dictionary-search-dwim)
+         :map help-map
+         ("=" . dictionary-search-dwim)
+         ("d" . dictionary-search)))
+
+
+;; * COMPLETION FRAMEWORKS:
+;;;################################################################
+
+;;;----------------------------------------------------------------
+;; ** M O V E C
+;;;----------------------------------------------------------------
 (use-package setup-marginalia :demand)
 (use-package setup-orderless :demand)
 (use-package setup-vertico :demand)
 (use-package setup-embark :demand)
 (use-package setup-consult :demand)
 
-;;;**** ELMO - EMBARK-LIVE-MODE
+;;;----------------------------------------------------------------
+;; *** MARGINALIA
+;;;----------------------------------------------------------------
+
+;; #+INCLUDE: "./lisp/setup-marginalia.org" :minlevel 2
+;;;----------------------------------------------------------------
+;; *** ORDERLESS
+;;;----------------------------------------------------------------
+
+;; #+INCLUDE: "./lisp/setup-orderless.org" :minlevel 2
+;;;----------------------------------------------------------------
+;; *** VERTICO
+;;;----------------------------------------------------------------
+
+;; #+INCLUDE: "./lisp/setup-vertico.org" :minlevel 2
+;;;----------------------------------------------------------------
+;; *** EMBARK
+;;;----------------------------------------------------------------
+
+;; #+INCLUDE: "./lisp/setup-embark.org" :minlevel 2
+;;;----------------------------------------------------------------
+;; *** CONSULT
+;;;----------------------------------------------------------------
+
+;; #+INCLUDE: "./lisp/setup-consult.org" :minlevel 2
+
+;; *** ELMO - EMBARK-LIVE-MODE
 (use-package elmo
   :disabled
   :load-path "plugins/elmo/"
@@ -4086,10 +4392,10 @@ project, as defined by `vc-root-dir'."
           embark-prefix-help-command
           consult-yank-pop)))
 
-;;----------------------------------------------------------------------
-;;;*** IVY/COUNSEL/SWIPER
-;;----------------------------------------------------------------------
-;; (require 'setup-ivy)
+;;;----------------------------------------------------------------
+;; ** +IVY COUNSEL SWIPER+
+;;;----------------------------------------------------------------
+(use-package setup-ivy :disabled)
 
 ;;; Bibtex management from ivy. Call ivy-bibtex.
 (use-package ivy-bibtex
@@ -4151,101 +4457,17 @@ project, as defined by `vc-root-dir'."
         counsel-spotify-client-secret my-counsel-spotify-client-secret
         counsel-spotify-use-notifications nil))
 
-;;----------------------------------------------------------------------
-;;;** TRAMP
-;;----------------------------------------------------------------------
-;; Tramp ssh'es into root@host to edit files. The emacs sudo, kindof.
-(use-package tramp
-  :defer
-  :config
-  (setq remote-file-name-inhibit-cache 86400)
-  (setq tramp-persistency-file-name
-        (dir-concat user-cache-directory "tramp"))
-  (setq tramp-verbose 1)
-  (with-eval-after-load 'vc
-    (setq vc-ignore-dir-regexp
-          (format "%s\\|%s"
-                  vc-ignore-dir-regexp
-                  tramp-file-name-regexp))))
-;;----------------------------------------------------------------------
-;;;** DIRED
-;;----------------------------------------------------------------------
-(require 'setup-dired nil t)
-(use-package emacs
-  :after dired
-  :config
-  (use-package ffmpeg-crop
-    :load-path "plugins/ffmpeg-crop/"
-    :commands (ffmpeg-crop ffmpeg-crop-dired)))
+;;;----------------------------------------------------------------
 
-;;;** DICTIONARY AND SPELLING
-(use-package sdcv
-  :disabled
-  :ensure nil
-  :commands (sdcv-search-input)
-  :bind (("C-x M-=" . sdcv-search-input)
-         :map sdcv-mode-map
-              ("M-n" . sdcv-next-dictionary)
-              ("M-p" . sdcv-previous-dictionary)))
-(use-package dictionary
-  :ensure t
-  :commands (dictionary-lookup-definition dictionary-search)
-  :config
-  (define-key help-map (kbd "C-d") 'apropos-documentation)
-  (setq dictionary-use-single-buffer t)
-  (defun dictionary-search-dwim (&optional arg)
-    "Search for definition of word at point. If region is active,
-search for contents of region instead. If called with a prefix
-argument, query for word to search."
-    (interactive "P")
-    (if arg
-        (dictionary-search nil)
-      (if (use-region-p)
-          (dictionary-search (buffer-substring-no-properties
-                              (region-beginning)
-                              (region-end)))
-        (if (thing-at-point 'word)
-            (dictionary-lookup-definition)
-          (dictionary-search-dwim '(4))))))
-  :bind (("C-M-=" . dictionary-search-dwim)
-         :map help-map
-         ("=" . dictionary-search-dwim)
-         ("d" . dictionary-search)))
-;;;** DOT MODE
-(use-package dot-mode
-  :ensure t
-  :commands dot-mode
-  :bind (:map dot-mode-map
-         ("C-c ." . nil)
-         ("C-M-." . nil))
-  :hook ((prog-mode conf-mode text-mode tex-mode) . 'dot-mode-on)
-  ;; :bind ("C-." . (lambda () (interactive)
-  ;;                  (dot-mode 1)
-  ;;                  (message "Dot mode activated.")))
-  )
-;;;** BOOKMARKS
-(use-package bookmark
-  :config
-  (setq bookmark-default-file (dir-concat user-cache-directory "bookmarks")))
-;;;** NOV.EL
-(use-package nov
-  :ensure t
-  :init
-  (add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode))
-  :hook ((nov-mode . my/nov-font-setup)
-         (nov-mode . er/add-text-mode-expansions))
-  :config
-  (setq nov-text-width 80
-        nov-save-place-file (dir-concat user-cache-directory "nov-places"))
-  (defun my/nov-font-setup ()
-    (face-remap-add-relative 'variable-pitch
-                             :family "Noto Serif"
-                             :height 1.0)))
+;; * PROJECTS
+(load-library "setup-project")
 
-;;;* PROJECTS
-(require 'setup-project)
-;;----------------------------------------------------------------------
-;;;** RG, GREP AND WGREP
+;; ---------------------------
+;; #+INCLUDE: "./lisp/setup-project.org" :minlevel 2
+;; ---------------------------
+
+;;;----------------------------------------------------------------
+;; ** RG, GREP AND WGREP
 (use-package rg
   :disabled ;;consult-ripgrep handles this
   :config
@@ -4307,8 +4529,8 @@ This function is meant to be mapped to a key in `rg-mode-map'."
    :keymaps '(grep-mode-map rg-mode-map)
            "i" 'wgrep-change-to-wgrep-mode))
 
-;;;* VISUALS AND PRESENTATION
-;;;*** MONOCLE-MODE
+;; * VISUALS AND PRESENTATION
+;; ** MONOCLE-MODE
 (use-package emacs
   :bind (("H-m" . my/monocle-mode)
          ("C-x C-m" . my/monocle-mode))
@@ -4333,15 +4555,15 @@ managers such as DWM, BSPWM refer to this state as 'monocle'."
               (other-window 1)
               (switch-to-buffer buf)))
         (delete-other-windows)))))
-;;;*** MIXED-PITCH-MODE
-;;----------------------------------------------------------------------
+;; ** MIXED-PITCH-MODE
+;;;----------------------------------------------------------------
 (use-package mixed-pitch
   :defer
   :ensure t
   :config (add-to-list 'mixed-pitch-fixed-pitch-faces 'line-number))
 
-;;----------------------------------------------------------------------
-;;;*** OLIVETTI
+;;;----------------------------------------------------------------
+;; ** OLIVETTI
 (use-package olivetti
   :commands (my/olivetti-mode)
   :ensure t
@@ -4402,7 +4624,7 @@ the mode-line and switches to `variable-pitch-mode'."
   ("C-c R" . my/reader-mode))
 
 
-;;;*** PRESENTATION (BIG) MODE
+;; ** PRESENTATION (BIG) MODE
 (use-package presentation
   :ensure t
   :commands presentation-mode
@@ -4410,7 +4632,7 @@ the mode-line and switches to `variable-pitch-mode'."
   (setq presentation-default-text-scale 1.50
         presentation-mode-lighter " BIG"
         presentation-keep-last-text-scale nil))
-;;;*** SCREENCAST
+;; ** SCREENCAST
 ;; Presentation-mode will embiggen everything. Keycast-mode shows the keys being
 ;; pressed. Gif-screencast will screenshot each user action and compile them
 ;; into a gif.
@@ -4469,33 +4691,14 @@ the mode-line and switches to `variable-pitch-mode'."
   :bind
   ("C-c S" . my/screencast-mode))
 
-;;;* NAVIGATION
+;; * NAVIGATION
 (use-package emacs
   :config
   (setq view-read-only t))
-;;;* MODELINE:
-;;######################################################################
 
-;; (use-package telephone-line
-;;   :ensure t
-;;   :init
-;;   (setq telephone-line-primary-left-separator 'telephone-line-cubed-left
-;;         telephone-line-secondary-left-separator 'telephone-line-cubed-hollow-left
-;;         telephone-line-primary-right-separator 'telephone-line-cubed-right
-;;         telephone-line-secondary-right-separator 'telephone-line-cubed-hollow-right)
-;;   (setq telephone-line-height 24
-;;         telephone-line-evil-use-short-tag t)
-;;   (telephone-line-mode 1))
-
-;; (use-package spaceline
-;;   :ensure t
-;;   :init
-;;   (require 'spaceline-config)
-;;   (setq powerline-default-separator 'contour
-;;         spaceline-buffer-encoding-abbrev-p nil
-;;         spaceline-buffer-size-p nil
-;;         spaceline-line-column-p t)
-;;   (spaceline-emacs-theme))
+;;;################################################################
+;; * MODELINE
+;;;################################################################
 
 (define-minor-mode my/mode-line-hidden-mode
     "Toggle modeline visibility in the current buffer."
@@ -4506,9 +4709,43 @@ the mode-line and switches to `variable-pitch-mode'."
       (kill-local-variable 'mode-line-format)
       (force-mode-line-update)))
 
+;;----------------------------------------------------------------
+;; ** +EXPERIMENTAL MODELINES+
+;;----------------------------------------------------------------
+
+;; A few custom modelines I've tried in the past only to rediscover the merits
+;; of the original design.
+
+(use-package telephone-line
+  :disabled
+  :init
+  (setq telephone-line-primary-left-separator 'telephone-line-cubed-left
+        telephone-line-secondary-left-separator 'telephone-line-cubed-hollow-left
+        telephone-line-primary-right-separator 'telephone-line-cubed-right
+        telephone-line-secondary-right-separator 'telephone-line-cubed-hollow-right)
+  (setq telephone-line-height 24
+        telephone-line-evil-use-short-tag t)
+  (telephone-line-mode 1))
+
+(use-package spaceline
+  :disabled
+  :init
+  (require 'spaceline-config)
+  (setq powerline-default-separator 'contour
+        spaceline-buffer-encoding-abbrev-p nil
+        spaceline-buffer-size-p nil
+        spaceline-line-column-p t)
+  (spaceline-emacs-theme))
+
 (use-package doom-modeline
   :disabled
   :init (doom-modeline-mode 1))
+
+;;----------------------------------------------------------------
+;; ** SMART MODE LINE
+;;----------------------------------------------------------------
+
+;; Smart mode line hews close to Emacs' default modeline set up.
 
 (use-package smart-mode-line
   :ensure t
@@ -4516,44 +4753,44 @@ the mode-line and switches to `variable-pitch-mode'."
   :commands sml/setup
   :init
   (setq sml/theme nil)
-  (sml/setup)
-  ;; :config
-  ;; (defun sml/fix-mode-line-a (_theme &rest _args)
-  ;;   "Advice to `load-theme' to fix the mode-line height after activating/deactivating theme"
-  ;;   (set-face-attribute 'mode-line nil
-  ;;                       :box `(:line-width 3 :color ,(plist-get
-  ;;                                                     (custom-face-attributes-get 'mode-line nil)
-  ;;                                                     :background))))
+  (sml/setup))
 
-  ;; (advice-add 'disable-theme :after #'sml/fix-mode-line-a)
-  ;; (advice-add 'load-theme :after #'sml/fix-mode-line-a)
+;; Some advice to add support for Evil to smart-mode-line, long since
+;; deprecated.
 
-  ;; (custom-set-faces
-  ;;  '(mode-line ((t (:box (:line-width 4 :color ))))))
+(use-package smart-mode-line
+  :disabled
+  :config
+    
+  (defun sml/fix-mode-line-a (_theme &rest _args)
+    "Advice to `load-theme' to fix the mode-line height after activating/deactivating theme"
+    (set-face-attribute 'mode-line nil
+                        :box `(:line-width 3 :color ,(plist-get
+                                                      (custom-face-attributes-get 'mode-line nil)
+                                                      :background))))
 
-  ;;         (lexical-let ((default-color (cons (face-background 'mode-line)
-  ;;                                            (face-foreground 'mode-line))))
-  ;;           (add-hook 'post-command-hook
-  ;;                     (lambda ()
-  ;;                       (let ((color (cond ((minibufferp) default-color)
-  ;;                                          ((evil-insert-state-p) '("DarkGoldenrod2" . "black"))
-  ;;                                          ((evil-emacs-state-p)  '("SkyBlue2" . "black"))
-  ;;                                          ;; ((buffer-modified-p)   '("#006fa0" . "#ffffff"))
-  ;;                                          (t default-color))))
-  ;;                         (set-face-background 'mode-line (car color))
-  ;;                         (set-face-foreground 'mode-line (cdr color)))))))
-  ;;   )
-  )
+  (advice-add 'disable-theme :after #'sml/fix-mode-line-a)
+  (advice-add 'load-theme :after #'sml/fix-mode-line-a)
 
+  (custom-set-faces
+   '(mode-line ((t (:box (:line-width 4 :color ))))))
+
+          (lexical-let ((default-color (cons (face-background 'mode-line)
+                                             (face-foreground 'mode-line))))
+            (add-hook 'post-command-hook
+                      (lambda ()
+                        (let ((color (cond ((minibufferp) default-color)
+                                           ((evil-insert-state-p) '("DarkGoldenrod2" . "black"))
+                                           ((evil-emacs-state-p)  '("SkyBlue2" . "black"))
+                                           ;; ((buffer-modified-p)   '("#006fa0" . "#ffffff"))
+                                           (t default-color))))
+                          (set-face-background 'mode-line (car color))
+                          (set-face-foreground 'mode-line (cdr color)))))))
+    
 ;; Disable help mouse-overs for mode-line segments (i.e. :help-echo text).
 ;; They're generally unhelpful and only add confusing visual clutter.
 (setq mode-line-default-help-echo nil
       show-help-function nil)
-
-;; Try really hard to keep the cursor from getting stuck in the read-only prompt
-;; portion of the minibuffer.
-(setq minibuffer-prompt-properties '(read-only t intangible t cursor-intangible t face minibuffer-prompt))
-(add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
 
 (defvar mode-line-cleaner-alist
   `((company-mode . " ⇝")
@@ -4625,7 +4862,7 @@ the mode-line and switches to `variable-pitch-mode'."
 
 (add-hook 'after-change-major-mode-hook 'clean-mode-line)
 
-;; (display-time-mode 0)
+;; (display-time-mode 1)
 
 (use-package custom
   ;; :general
@@ -4651,15 +4888,21 @@ currently loaded theme first."
   ;; (load-theme 'atom-one-dark t)
   )
 
-;;######################################################################
-;;;* MINIBUFFER
-;;######################################################################
+;;;################################################################
+;; * MINIBUFFER
+;;;################################################################
 (use-package minibuffer
   :config
  (require 'setup-minibuffer nil t))
 
-;;;* FONTS AND COLORS
-;;######################################################################
+;; Try really hard to keep the cursor from getting stuck in the read-only prompt
+;; portion of the minibuffer.
+(setq minibuffer-prompt-properties '(read-only t intangible t cursor-intangible t face minibuffer-prompt))
+(add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
+
+;;;################################################################
+;; * FONTS AND COLORS
+;;;################################################################
 (use-package cus-face
   :config
   (cond (IS-LINUX
@@ -4798,7 +5041,7 @@ currently loaded theme first."
                           '(aw-leading-char-face ((t (:foreground "#bd93f9" :height 2.0 :weight normal)))))
 
   (use-package doom-rouge-theme
-    :init (load-theme 'doom-rouge t)
+    ;; :init (load-theme 'doom-rouge t)
     :config
     (custom-theme-set-faces 'user
                             '(hl-line ((t (:background "#1f2a3f"))))))
@@ -4811,14 +5054,14 @@ currently loaded theme first."
   ;;       doom-one-light-comment-bg t)
 )
 
-;;######################################################################
-;;;* EVIL-MODE
-;;######################################################################
+;;;################################################################
+;; * EVIL-MODE
+;;;################################################################
 ;;(require 'setup-evil)
 
-;;######################################################################
-;;;* MISC SETTINGS
-;;######################################################################
+;;;################################################################
+;; * MISC SETTINGS
+;;;################################################################
 ;; Settings that I'm not sure where to put:
 (use-package shr
   :defer
@@ -4846,18 +5089,10 @@ currently loaded theme first."
   :config
   (setq srecode-map-save-file (dir-concat user-cache-directory "srecode-map.el")))
 
-(use-package savehist
-  :defer 2
-  :hook (after-init . savehist-mode)
-  :config
-  (setq savehist-file (dir-concat user-cache-directory "savehist"))
-  (setq history-length 1000)
-  (setq history-delete-duplicates t)
-  (setq savehist-save-minibuffer-history t))
-;;;* LOCAL-VARIABLES
+;; * LOCAL-VARIABLES
 ;; Local Variables:
-;; outline-regexp: ";;;\\*+"
-;; page-delimiter: ";;;\\**"
+;; outline-regexp: ";; \\*+"
+;; page-delimiter: ";; \\**"
 ;; eval:(outline-minor-mode 1)
 ;; eval:(outline-hide-sublevels 5)
 ;; End:

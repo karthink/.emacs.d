@@ -224,6 +224,7 @@ Filenames are always matched by eshell."
     (define-key eshell-mode-map (kbd "C-c M-w") 'my/eshell-copy-output)
     (define-key eshell-mode-map (kbd "C-c C-l") 'my/eshell-export)
     (define-key eshell-mode-map (kbd "C-c C-SPC") 'eshell-mark-output)
+    (define-key eshell-mode-map (kbd "C-<return>") 'my/eshell-send-detached-input)
     (setq-local company-minimum-prefix-length 2)
     ;; (setq-local completion-in-region-function #'consult-completion-in-region)
     (setq eshell-cmpl-cycle-cutoff-length 2))
@@ -250,7 +251,6 @@ argument arg, Also copy the prompt and input."
              "Copied last output to kill ring.")))
   
   ;; From https://protesilaos.com/dotemacs
-  
   (defcustom my/eshell-output-buffer "*Eshell Export*"
     "Name of buffer with the last output of Eshell command.
 Used by `my/eshell-export'."
@@ -317,10 +317,44 @@ append to it."
                (consult-dir-sources (cons consult-dir--source-eshell consult-dir-sources)))
           (eshell/cd (substring-no-properties (consult-dir--pick "Switch directory: ")))))
        (t (eshell/cd (if regexp (eshell-find-previous-directory regexp)
-                            (completing-read "cd: " eshell-dirs))))))))
+                       (completing-read "cd: " eshell-dirs)))))))
+  
+  ;;From https://github.com/nbarrientos/dotfiles/.emacs.d/init.el
+  (defun my/eshell-send-detached-input (&optional arg)
+    "Send the current Eshell input to a compilation buffer.
+With universal prefix argument bury the compilation buffer and
+send a notification when the process has exited."
+    (interactive "p")
+    (let* ((cmd (buffer-substring
+                 eshell-last-output-end (point-max)))
+           (hostname (car (split-string
+                           (or
+                            (file-remote-p default-directory 'host)
+                            (system-name))
+                           "\\.")))
+           (compile-command nil)
+           (compilation-buffer-name-function
+            (lambda (_major-mode)
+              (format "D# %s (%s)" cmd hostname)))
+           (compilation-buffer (compile cmd)))
+      (when (equal arg 4)
+        (with-current-buffer compilation-buffer
+          (switch-to-prev-buffer (get-buffer-window (current-buffer)))
+          (setq-local compilation-finish-functions
+                      `((lambda (buffer str)
+                          (notifications-notify
+                           :body ,cmd
+                           :timeout 8000
+                           :category "detached_process"
+                           :actions '("default" "Switch to buffer")
+                           :on-action (lambda (id key) (switch-to-buffer-other-window ,(buffer-name compilation-buffer)))
+                           :title (format "Process running in '%s' finished!" ,hostname)
+                           :urgency (if (string-prefix-p "finished" str) 'normal 'critical)))))))
+      (eshell-add-input-to-history cmd)
+      (eshell-reset))))
 
 (use-package eshell-bookmark
-  :ensure
+  :disabled
   :hook (eshell-mode . eshell-bookmark-setup))
 
 (use-package em-alias

@@ -5,7 +5,7 @@
 ;;
 ;;                                       one day i look inside it
 ;;
-;;                                       singularity                  
+;;                                       singularity
 ;; #+end_quote
 
 ;; * PACKAGE MANAGEMENT
@@ -13,6 +13,7 @@
 ;; "Activate" packages, /i.e./ autoload commands, set paths, info-nodes and so
 ;; on. Set load paths for ELPA packages. This is unnecessary in Emacs 27 with an
 ;; early-init.el, but I haven't checked.
+(package-initialize)
 (package-activate-all)
 (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
 
@@ -75,7 +76,8 @@
             ("https://github.com/skeeto/elfeed.git")
             ("git@github.com:karthink/ffmpeg-dispatch.git" . "ffmpeg")
             ("https://git.code.sf.net/p/matlab-emacs/src" . "matlab-emacs-src")
-            ("https://git.nixo.xyz/nixo/ob-julia.git")
+            ("https://github.com/nico202/ob-julia.git")
+            ("https://github.com/tecosaur/screenshot.git" . "emacs-screenshot")
             ("git@github.com:karthink/sicp.git")
             ("https://github.com/chenyanming/wallabag.el.git")
             ;; ("git@github.com:karthink/lazytab.git")
@@ -133,41 +135,27 @@
 ;; * CORE
 
 ;; Optimizations to make Emacs more responsive. These are mostly copied from
-;; Doom Emacs. Note that there are better tools for this these days, such as
-;; [[https://gitlab.com/koral/gcmh][gcmh]] that I haven't bothered with.
+;; Doom Emacs.
 (require 'setup-core)
-(use-package gcmh
-  :defer 2
-  :ensure
-  ;; :hook (after-init . gcmh-mode)
-  :config
-  (setq gcmh-idle-delay 'auto  ; default is 15s
-        gcmh-high-cons-threshold (* 32 1024 1024)
-        gcmh-verbose nil)
-  (gcmh-mode 1))
+
+;; Trying out [[https://gitlab.com/koral/gcmh][gcmh]] on an experimental basis.
+(condition-case-unless-debug nil 
+    (use-package gcmh
+      :defer 2
+      :ensure
+      ;; :hook (after-init . gcmh-mode)
+      :config
+      (setq gcmh-idle-delay 'auto  ; default is 15s
+            gcmh-high-cons-threshold (* 32 1024 1024)
+            gcmh-verbose nil)
+      (gcmh-mode 1))
+  (error (setq gc-cons-threshold (* 16 1024 1024))))
 
 ;; setup-core is the first of many concerns to be shunted into its own file.
 ;;;----------------------------------------------------------------
 ;; #+INCLUDE: "./lisp/setup-core.org"
 ;;;----------------------------------------------------------------
 
-;; * NATIVE-COMP
-
-;; I'm still using Emacs 27.2, because it's good enough. This code configures
-;; the native compiler and is in preparation for 28.1.
-;; - Move eln files to a cache dir
-;; - Don't bombard the user with warnings
-;; - Compile packages on install, not at runtime
-(unless (version-list-<
-         (version-to-list emacs-version)
-         '(28 0 1 0))
-  (when (boundp 'native-comp-eln-load-path)
-    (add-to-list 'native-comp-eln-load-path
-                 (dir-concat user-cache-directory "eln-cache/"))
-    (setq native-comp-async-report-warnings-errors 'silent
-          native-comp-deferred-compilation nil)))
-
-;;;################################################################
 ;; * DAEMON
 ;;;################################################################
 
@@ -514,6 +502,58 @@
         show-paren-highlight-openparen t
         show-paren-when-point-inside-paren t))
 
+(use-package repeat
+  :if (version< "28.0" emacs-version)
+  :bind ("H-z" . repeat)
+  :hook (after-init . my/repeat-mode)
+  :config
+  (defun my/repeat-mode ()
+    (let ((inhibit-message t)
+          (message-log-max nil))
+      (repeat-mode)))
+  
+  (use-package which-key
+    :after which-key
+    :config
+    ;; (advice-add 'repeat-post-hook :after
+    ;;             (defun my/which-key-repeat ()
+    ;;               (when-let ((cmd (or this-command real-this-command))
+    ;;                          (keymap (repeat--command-property 'repeat-map)))
+    ;;                 (run-at-time
+    ;;                  which-key-idle-delay nil
+    ;;                  (lambda () 
+    ;;                    (which-key--create-buffer-and-show
+    ;;                     nil (symbol-value keymap)))))))
+
+    (defun my/which-key-repeat-mode-dispatch ()
+      (interactive)
+      (setq this-command last-command)
+      (when-let (keymap (repeat--command-property 'repeat-map))
+        (which-key--create-buffer-and-show
+         nil (symbol-value keymap))))
+    
+    ;; (defun my/which-key-repeat-mode-binding ()
+    ;;   (when repeat-mode
+    ;;     (when-let* ((rep-map-sym (or repeat-map (repeat--command-property 'repeat-map)))
+    ;;                 (keymap (and (symbolp rep-map-sym) (symbol-value rep-map-sym))))
+    ;;       (set-transient-map
+    ;;        (make-composed-keymap
+    ;;         (let ((map (make-sparse-keymap)))
+    ;;           (define-key map (kbd "C-h") #'my/which-key-repeat-mode-dispatch)
+    ;;           map)
+    ;;         keymap)))))
+    
+    (defun my/which-key-repeat-mode-binding ()
+      (when repeat-mode
+        (when-let* ((rep-map-sym (or repeat-map (repeat--command-property 'repeat-map)))
+                    (keymap (and (symbolp rep-map-sym) (symbol-value rep-map-sym))))
+          (set-transient-map
+           (let ((map (make-sparse-keymap)))
+             (set-keymap-parent map keymap)
+             (define-key map (kbd "C-h") #'my/which-key-repeat-mode-dispatch)
+             map)))))
+    (advice-add 'repeat-post-hook :after #'my/which-key-repeat-mode-binding)))
+
 ;; Underline looks a bit better when drawn lower
 (setq x-underline-at-descent-line t)
 
@@ -536,8 +576,8 @@
 (add-hook 'after-save-hook 'executable-make-buffer-file-executable-if-script-p)
 (global-prettify-symbols-mode 1)
 
+;; Hyper bindings for emacs. Why use a pinky when you can use a thumb?
 (use-package emacs
-  ;; Hyper bindings for emacs. Why use a pinky when you can use a thumb?
   :bind-keymap (("H-f" . space-menu-file-map)
                 ("H-b" . space-menu-buffer-map)
                 ("H-r" . ctl-x-r-map))
@@ -702,19 +742,6 @@ output instead."
 ;;;################################################################
 ;; * EDITING
 ;;;######################################################################
-(use-package dabbrev
-  :commands (dabbrev-expand dabbrev-completion)
-  :config
-  (setq dabbrev-abbrev-char-regexp "\\sw\\|\\s_")
-  (setq dabbrev-abbrev-skip-leading-regexp "\\$\\|\\*\\|/\\|=")
-  (setq dabbrev-backward-only nil)
-  (setq dabbrev-case-distinction nil)
-  (setq dabbrev-case-fold-search t)
-  (setq dabbrev-case-replace nil)
-  (setq dabbrev-check-other-buffers t)
-  (setq dabbrev-eliminate-newlines nil)
-  (setq dabbrev-upcase-means-case-search t))
-
 (use-package visual-fill-column-mode
   :disabled
   :commands visual-fill-column-mode
@@ -734,31 +761,11 @@ output instead."
     :config
     (defun my/outline-mode-diff ()
       (setq-local outline-regexp "---\\|\\+\\+\\|@@ ")
-      (outline-minor-mode 1))
-    )
-  )
+      (outline-minor-mode 1))))
 
 (use-package iedit
-  :commands iedit-dwim
   :ensure t
-  :bind ("C-M-;" . iedit-dwim)
-  :config
-  (defun iedit-dwim (arg)
-    "Starts iedit but uses \\[narrow-to-defun] to limit its scope."
-    (interactive "P")
-    (if arg
-        (iedit-mode)
-      (save-excursion
-        (save-restriction
-          (widen)
-          ;; this function determines the scope of `iedit-start'.
-          (if iedit-mode
-              (iedit-done)
-            ;; `current-word' can of course be replaced by other
-            ;; functions.
-            (when (region-active-p)
-              (narrow-to-region (region-beginning) (region-end)))
-            (iedit-start (current-word) (point-min) (point-max))))))))
+  :bind ("C-M-;" . iedit-mode))
 
 (use-package replace
   :defer
@@ -769,8 +776,8 @@ output instead."
             :states '(normal motion)
             "gc" 'next-error-follow-minor-mode
             :states 'motion
-            "f" 'next-error-follow-minor-mode)
-  )
+            "f" 'next-error-follow-minor-mode))
+
 (require 'better-editing nil t)
 
 (use-package emacs
@@ -800,8 +807,7 @@ output instead."
 
 (use-package goto-chg
   :ensure t
-  :bind (("C-;" . goto-last-change)
-         ("M-g ;" . goto-last-change)
+  :bind (("M-g ;" . goto-last-change)
          ("M-i" . goto-last-change)
          ("M-g M-;" . goto-last-change)))
 
@@ -827,11 +833,19 @@ output instead."
   (setq history-delete-duplicates t)
   (setq savehist-save-minibuffer-history t))
 
-;; ** +DESKTOP+
+;; ** DESKTOP
 ;; Save and resume Emacs sessions.
 (use-package desktop
-  ;; :hook (kill-emacs . desktop-save-mode)
+  :hook (kill-emacs . desktop-save-in-desktop-dir)
   :config
+  ;; (when (daemonp)
+  ;;   (defun my/restore-desktop (frame)
+  ;;     "Restores desktop and cancels hook after first frame opens."
+  ;;     (with-selected-frame frame
+  ;;       (desktop-save-mode 1)
+  ;;       (desktop-read)
+  ;;       (remove-hook 'after-make-frame-functions 'my/restore-desktop)))
+  ;;   (add-hook 'after-make-frame-functions 'my/restore-desktop))
   (setq desktop-auto-save-timeout 300
         desktop-path `(,(dir-concat user-cache-directory "desktop"))
         desktop-dirname (dir-concat user-cache-directory "desktop")
@@ -840,24 +854,55 @@ output instead."
         desktop-globals-to-clear nil
         desktop-load-locked-desktop t
         desktop-missing-file-warning nil
-        desktop-restore-eager 4
+        desktop-restore-eager 20
         desktop-restore-frames t
-        desktop-save 'ask-if-new)
-  (when (daemonp)
-    (defun my/restore-desktop (frame)
-      "Restores desktop and cancels hook after first frame opens."
-      (with-selected-frame frame
-        (desktop-save-mode 1)
-        (desktop-read)
-        (remove-hook 'after-make-frame-functions 'my/restore-desktop)))
-    (add-hook 'after-make-frame-functions 'my/restore-desktop)))
-
-;; (require 'desktop)
-;; (setq desktop-restore-forces-onscreen nil)
+        desktop-save 'ask-if-new))
 
 ;;;################################################################
-;; * BUFFER AND WINDOW MANAGEMENT
+;; ** UNDO HISTORY
+
+;; The =undo-fu-session= package saves and restores the undo states of buffers
+;; across Emacs sessions.
+(use-package undo-fu-session
+  :ensure t
+  :hook ((prog-mode conf-mode text-mode tex-mode) . undo-fu-session-mode)
+  :config
+  (setq undo-fu-session-directory
+        (dir-concat user-cache-directory "undo-fu-session/")))
+
+;; * BUFFER MANAGEMENT
+(load-library "better-buffers")
+
+;;;----------------------------------------------------------------
+;; #+INCLUDE: "./lisp/better-buffers.org" :minlevel 2
+;;;----------------------------------------------------------------
+
+;; ** IBUFFER
+(load-library "setup-ibuffer")
+
+;;;----------------------------------------------------------------
+;; #+INCLUDE: "./lisp/setup-ibuffer.org" :minlevel 3
+;;;----------------------------------------------------------------
+
+;; * WINDOW MANAGEMENT
 ;;;################################################################
+
+;;;----------------------------------------------------------------
+;; ** +SHACKLE+
+;;;----------------------------------------------------------------
+
+;; Wasamasa's Shackle package simplifies Emacs' rather arcane display-buffer
+;; rules so you don't have to tear your hair out understanding how to configure
+;; it. Unfortunately I did, see [[*SETUP-WINDOWS][setup-windows]].
+(use-package shackle
+  :disabled t
+  :init (shackle-mode))
+
+;;;----------------------------------------------------------------
+;; ** SETUP-WINDOWS
+;;;----------------------------------------------------------------
+
+;; Setup-windows defines window rules for displaying various kinds of buffers.
 (use-package setup-windows
   :demand t
   :hook ((help-mode . visual-line-mode)
@@ -875,14 +920,17 @@ output instead."
             "w" '(window-toggle-side-windows :wk "toggle side windows")))
 
 (use-package window
-  :bind ("H-+" . balance-windows-area))
+  :bind (("H-+" . balance-windows-area)
+         ("C-x q" . kill-buffer-and-window)))
 
-(require 'better-buffers nil t)
+;; setup-windows:
+;; #+INCLUDE: "./lisp/setup-windows.org" :minlevel 2
 
-;;----------------------------------------------------------------
-;; ** Popper
-;;----------------------------------------------------------------
-;; Designated buffers to popup status and toggle or cycle through them
+;;;----------------------------------------------------------------
+;; ** POPUPS
+;;;----------------------------------------------------------------
+
+;; Designate buffers to popup status and toggle or cycle through them
 (use-package popper
   :load-path "plugins/popper/"
   :after (setup-windows setup-project)
@@ -913,10 +961,10 @@ output instead."
              (t (popper-group-by-project))))))
   (setq popper-mode-line nil
         popper-reference-buffers
-        (append +help-modes-list
-                +repl-modes-list
-                +occur-grep-modes-list
-                ;; +man-modes-list
+        (append my/help-modes-list
+                my/repl-modes-list
+                my/occur-grep-modes-list
+                ;; my/man-modes-list
                 '(Custom-mode
                   (compilation-mode . hide)
                   messages-buffer-mode)
@@ -938,7 +986,6 @@ output instead."
                   "[Oo]utput\\*")))
 
   (use-package popper-echo
-    :hook (popper-mode . popper-echo-mode)
     :config
     (defun popper-message-shorten (name)
       (cond
@@ -963,23 +1010,27 @@ output instead."
        (t name)))
     (setq popper-echo-transform-function #'popper-message-shorten)
     (setq popper-echo-dispatch-keys '(?0 ?1 ?2 ?3 ?4 ?5 ?6 ?7 ?8 ?9)
-          popper-echo-dispatch-actions t))
-  
-  (popper-mode +1)
+          popper-echo-dispatch-actions t)
+    (advice-add 'popper-echo :around
+                (defun my/popper-echo-no-which-key (orig-fn)
+                  (let ((which-key-show-transient-maps nil))
+                    (funcall orig-fn)))))
+  (popper-echo-mode +1)
 
   :config
   (setq popper-display-control 'user)
-  (defun +popup-raise-popup ()
+  (defun my/popup-raise-popup ()
     "Choose a popup-window to raise as a regular window"
     (interactive)
     (popper-raise-popup
      (completing-read "Raise popup: "
                       (mapcar (lambda (win-and-buf) (buffer-name (cdr win-and-buf)))
-                              (append popper-open-buffer-window-alist
-                                      popper-buried-buffer-window-alist))
+                              (cl-mapcan (lambda (group) )
+                                         (append popper-open-popup-alist
+                                                popper-buried-popup-alist)))
                       nil t)))
 
-  (defun +popup-lower-to-popup ()
+  (defun my/popup-lower-to-popup ()
     "Choose a regular window to make a popup"
     (interactive)
     (let ((window-list (cl-set-difference
@@ -998,16 +1049,18 @@ output instead."
            "C-w ^" '(popper-raise-popup :wk "raise popup")
            "C-w _" '(popper-lower-to-popup :wk "lower to popup"))
   (:keymaps 'space-menu-window-map
-            "^" '(+popup-raise-popup :wk "raise popup")
-            "_" '(+popup-lower-to-popup :wk "lower to popup")))
+            "^" '(my/popup-raise-popup :wk "raise popup")
+            "_" '(my/popup-lower-to-popup :wk "lower to popup")))
 
 ;;----------------------------------------------------------------
-;; ** Winum - window numbers
+;; ** WINUM
 ;;----------------------------------------------------------------
+
+;; Add window numbers and use them to switch windows
 (use-package winum
   :ensure
   :init
-  (defun +winum-select (num)
+  (defun my/winum-select (num)
     (lambda (&optional arg) (interactive "P")
       (if arg
           (winum-select-window-by-number (- 0 num))
@@ -1020,7 +1073,7 @@ output instead."
           (define-key map (kbd "C-M-0") 'winum-select-window-0-or-10)
           (dolist (num '(1 2 3 4 5 6 7 8 9) nil)
             (define-key map (kbd (concat "C-M-" (int-to-string num)))
-              (+winum-select num)))
+              (my/winum-select num)))
           map))
 
   ;; If evil-mode is enabled further mode-line customization is needed before
@@ -1029,9 +1082,12 @@ output instead."
     (winum-mode 1)))
 
 ;;----------------------------------------------------------------
-;; ** Winner mode
+;; ** +WINNER+
 ;;----------------------------------------------------------------
 
+;; Winner mode is disabled in favor of =tab-bar-history-mode=, which does the
+;; same but with a separate window configuration history for each tab. This is
+;; usually what I want.
 (use-package winner
   :disabled
   :commands winner-undo
@@ -1200,10 +1256,21 @@ surrounded by word boundaries."
       (setq my/re-builder-positions nil)
       (reb-quit)
       (query-replace-regexp re replacement delimited beg end)))))
+
+;;;----------------------------------------------------------------
+;; #+INCLUDE: "./lisp/reb-fix.org" 
+;;;----------------------------------------------------------------
+
 ;; * UTILITY
 ;;;################################################################
 ;; Count words, print ASCII table, etc
 (require 'utilities nil t)
+
+(use-package async
+  :hook (package-menu-mode . my/async-bytecomp-ensure)
+  :config
+  (defun my/async-bytecomp-ensure ()
+    (async-bytecomp-package-mode 1)))
 
 (use-package dashboard
   :disabled
@@ -1221,11 +1288,16 @@ surrounded by word boundaries."
                           ;; (registers . 5)
                           )))
 
+(use-package screenshot
+  :load-path "~/.local/share/git/emacs-screenshot"
+  :commands screenshot
+  :requires posframe)
+
 ;; Colorize color names and parens in buffers
 (use-package rainbow-mode
   :commands rainbow-mode
   :ensure t
-  :config
+  ;; :config
   ;; (setq rainbow-delimiters-max-face-count 3)
   )
 
@@ -1338,10 +1410,23 @@ Essentially a much simplified version of `next-line'."
            (let ((normal-binding (let ((outline-minor-mode nil))
                                     (key-binding (this-command-keys-vector)))))
              (if normal-binding
-                 (call-interactively normal-binding)
-               (indent-according-to-mode)))
-           )))
-  )
+                 (progn
+                   (setq this-command normal-binding)
+                   (call-interactively normal-binding))
+               (indent-according-to-mode)))))))
+
+(use-package outline
+  :when (version< "28.0" emacs-version)
+  :defer
+  :bind (:map outline-navigation-repeat-map
+              ("TAB" . outline-cycle)
+              ("<tab>" . outline-cycle)
+              ("C-n" . nil)
+              ("C-p" . nil)
+              ("C-f" . nil)
+              ("C-b" . nil))
+  :config
+  (put 'outline-cycle 'repeat-map 'outline-navigation-repeat-map))
 
 (use-package imenu
   :hook (imenu-after-jump . my/imenu-show-entry)
@@ -1439,26 +1524,27 @@ If region is active, add its contents to the new buffer."
   (global-set-key [(f9)] 'compile)
   (global-set-key [(f10)] 'recompile)
 
-  (defun +apply-ansi-color-to-compilation-buffer-h ()
+  (defun my/apply-ansi-color-to-compilation-buffer-h ()
     "Applies ansi codes to the compilation buffers. Meant for
   `compilation-filter-hook'."
     (with-silent-modifications
       (ansi-color-apply-on-region compilation-filter-start (point))))
 
-  (add-hook 'compilation-filter-hook #'+apply-ansi-color-to-compilation-buffer-h)
-  (add-hook 'compilation-finish-functions
-            (lambda (buf str)
+  (add-hook 'compilation-filter-hook #'my/apply-ansi-color-to-compilation-buffer-h)
+  ;; (add-hook 'compilation-finish-functions
+  ;;           (lambda (buf str)
 
-              (if (or
-                   (string-match "exited abnormally" str)
-                   (string-match "matches found" str))
-                  ;;there were errors
-                  (message "Press M-g n/p to visit")
+  ;;             (if (or
+  ;;                  (string-match "exited abnormally" str)
+  ;;                  (string-match "matches found" str))
+  ;;                 ;;there were errors
+  ;;                 (message "Press M-g n/p to visit")
 
-                ;;no errors, make the compilation window go away in 0.5 seconds
-                (save-excursion
-                  (run-at-time 1.0 nil 'bury-buffer buf))
-                (message "NO COMPILATION ERRORS!")))))
+  ;;               ;;no errors, make the compilation window go away in 0.5 seconds
+  ;;               (save-excursion
+  ;;                 (run-at-time 1.0 nil 'bury-buffer buf))
+  ;;               (message "NO COMPILATION ERRORS!"))))
+  )
 
 ;; (add-hook 'compilation-mode-hook
 ;;           (lambda (&optional args)
@@ -1898,89 +1984,9 @@ environments."
 (use-package matlab
   :load-path "~/.local/share/git/matlab-emacs-src/"
   :commands (matlab-shell matlab-mode)
+  :functions my/matlab-shell-help-at-point
   ;; :ensure matlab-mode
-  ;; :after 'evil
   ;; :commands (matlab-mode matlab-shell matlab-shell-run-block)
-  :init
-  (use-package matlab-shell
-    :after matlab
-    :config
-    (advice-add 'matlab-shell-run-region :around #'my-matlab-shell-no-display)
-    (defun my-matlab-shell-no-display (orig-fn beg end &optional noshow)
-      "Do not display the matlab-shell buffer after sending commands."
-      (interactive "r")
-      (cl-letf ((display-buffer-alist nil)
-                ((symbol-function 'display-buffer-reuse-window) #'display-buffer-no-window)
-                ((symbol-function 'display-buffer-at-bottom) #'display-buffer-no-window))
-        (save-window-excursion (funcall orig-fn beg end noshow)))))
-  
-  (defun matlab-shell-region->script (beg end &optional noshow)
-    "Extract region between BEG & END into a temporary M file.
-The tmp file name is based on the name of the current buffer.
-The extracted region is unmodified from src buffer unless NOSHOW is non-nil,
-in which case ; are added to quiesce the buffer.
-Scan the extracted region for any functions that are in the original
-buffer,and include them.
-Return the name of the temporary file."
-    (interactive "r")
-    (require 'semantic-matlab)
-    (let* ((start (count-lines (point-min) beg))
-           (len (count-lines beg end))
-           (stem (file-name-sans-extension (file-name-nondirectory
-                                            (buffer-file-name))))
-           (orig (current-buffer))
-           (newf (concat stem "_" (number-to-string start) "_"
-                         (number-to-string len)))
-           (bss (buffer-substring-no-properties beg end))
-           (buff (find-file-noselect (concat newf ".m")))
-           (intro "%% Automatically created temporary file created to run-region")
-           ;; These variables are for script / fcn tracking
-           (functions (matlab-semantic-get-local-functions-for-script (current-buffer)))
-           )
-
-      ;; TODO : if the directory in which the current buffer is in is READ ONLY
-      ;; we should write our tmp buffer to /tmp instead.
-      
-      (with-current-buffer buff
-
-        (goto-char (point-min))
-        
-        ;; Clean up old extracted regions.
-        (when (looking-at intro) (delete-region (point-min) (point-max)))
-        ;; Don't stomp on old code.
-        (when (not (= (point-min) (point-max)))
-          (error "Region extract to tmp file: Temp file not empty!"))
-
-        (insert intro "\n\n" bss "\n%%\n")
-
-        ;; Some scripts call local functions from the script.  Find them
-        ;; and copy those local scripts over.
-        (goto-char (point-min))
-        (dolist (F functions)
-          (save-excursion
-            ;; Copy ALL local functions in the script to the buffer.
-            (let ((ft (matlab-semantic-tag-text F orig)))
-              (goto-char (point-max))
-              (insert "% Copy of " (semantic-tag-name F) "\n\n")
-              (insert ft)
-              (insert "\n%%\n")))
-          )
-
-        ;; Save buffer, and setup ability to run this new script.
-        (save-buffer)
-
-        ;; Flush any pending MATLAB stuff.
-        (accept-process-output)
-        
-        ;; This sets us up to cleanup our file after it's done running.
-        (add-hook 'matlab-shell-prompt-appears-hook `(lambda () (matlab-shell-cleanup-extracted-region ,(buffer-file-name buff))))
-
-        (kill-buffer)
-        )
-
-      ;; Return the command.
-      (concat "run('" (expand-file-name newf) "')\n")))
-
   :mode ("\\.m\\'" . matlab-mode)
   :hook ((matlab-mode . company-mode-on)
          (matlab-mode . (lambda ()
@@ -1995,22 +2001,15 @@ Return the name of the temporary file."
                           ))
          (org-mode . (lambda ()
                        (when (require 'matlab-xref nil t)
-                         (add-hook 'xref-backend-functions #'matlab-shell-xref-activate 10 t))))
-         (matlab-shell-mode . (lambda ()
-                                (buffer-disable-undo)
-                                (setq comint-process-echoes t)
-                                (setq-local company-idle-delay 0.1)
-                                (company-mode-on)
-                                (define-key matlab-shell-mode-map (kbd "C-h .") '+matlab-shell-help-at-point))))
+                         (add-hook 'xref-backend-functions #'matlab-shell-xref-activate 10 t)))))
   :bind (:map matlab-mode-map
               ("M-j" . nil)
               ("C-c C-n" . 'outline-next-heading)
               ("C-c C-p" . 'outline-previous-heading)
               ("C-c C-b" . 'matlab-shell-run-block)
-              ("C-h ." . '+matlab-shell-help-at-point)
+              ("C-h ." . 'my/matlab-shell-help-at-point)
               ("M-s" . nil)
-              ("C-c C-z" . 'matlab-show-matlab-shell-buffer)
-              )
+              ("C-c C-z" . 'matlab-show-matlab-shell-buffer))
   :config
   ;; (load-library "matlab-load")
   ;; (matlab-cedet-setup)
@@ -2047,19 +2046,12 @@ Return the name of the temporary file."
   (add-hook 'matlab-shell-mode-hook (lambda () (interactive)
                                       (define-key matlab-shell-mode-map (kbd "C-<tab>") nil)))
 
-  (defun +matlab-shell-help-at-point (&optional arg)
-    (interactive "P")
-    (let ((fcn (matlab-read-word-at-point)))
-      (if (and fcn (not (equal fcn "")))
-          (matlab-shell-describe-command fcn))))
-
-;; ;;;###autoload
+  ;; ;;;###autoload
   ;; (defun +matlab-shell-no-select-a (&rest _args)
   ;;   "Switch back to matlab file buffer after evaluating region"
   ;;   (other-window -1))
   ;; (advice-add 'matlab-shell-run-region :after #'+matlab-shell-no-select-a)
 
-;;;###autoload
   (defun matlab-select-block ()
     (save-excursion
       (let ((block-beg (search-backward-regexp "^%%" nil t))
@@ -2068,7 +2060,6 @@ Return the name of the temporary file."
                                              (- block-end 2)
                                            (point-max))))))
 
-;;;###autoload
   (defun matlab-shell-run-block (&optional prefix)
     "Run a block of code around point separated by %% and display
   result in MATLAB shell. If prefix argument is non-nil, replace
@@ -2098,6 +2089,60 @@ Return the name of the temporary file."
   ;;   (match-beginning 0))
 
   )
+
+;; Company-specific setup for Matlab-mode
+(use-package matlab
+  :load-path "~/.local/share/git/matlab-emacs-src/"
+  :init
+  (use-package company
+    :if (featurep 'company)
+    :hook (matlab-mode . my/matlab-company-settings)
+    :config
+    ;; (add-to-list 'company-backends 'company-matlab 'company-semantic)
+    ;; (add-to-list 'company-backends 'company-matlab-shell)
+    
+    (defun my/matlab-company-settings ()
+      ;; (unless (featurep 'company-matlab)
+      ;;   (require 'company-matlab))
+      (make-local-variable 'company-backends)
+      (setq-local company-backends '((company-files company-capf)))
+      (company-mode-on))))
+
+;; Some helpers for =matlab-shell=.
+;; - Matlab-shell's window focus behavior is annoying.
+;; - A help-at-point function
+;; - Company customizations
+
+(use-package matlab-shell
+  :load-path "~/.local/share/git/matlab-emacs-src/"
+  :defer
+  :after matlab
+  :hook ((matlab-shell-mode . my/matlab-shell-company-settings)
+         (matlab-shell-mode . (lambda ()
+                                (buffer-disable-undo)
+                                (setq comint-process-echoes t)
+                                (define-key matlab-shell-mode-map (kbd "C-h .")
+                                  'my/matlab-shell-help-at-point))))
+  :config
+  (defun my/matlab-shell-company-settings ()
+    (make-local-variable 'company-backends)
+    (setq-local company-idle-delay 0.3)
+    (company-mode-on))
+  
+  (defun my/matlab-shell-help-at-point (&optional arg)
+    (interactive "P")
+    (let ((fcn (matlab-read-word-at-point)))
+      (if (and fcn (not (equal fcn "")))
+          (matlab-shell-describe-command fcn))))
+
+  (advice-add 'matlab-shell-run-region :around #'my-matlab-shell-no-display)
+  (defun my-matlab-shell-no-display (orig-fn beg end &optional noshow)
+    "Do not display the matlab-shell buffer after sending commands."
+    (interactive "r")
+    (cl-letf ((display-buffer-alist nil)
+              ((symbol-function 'display-buffer-reuse-window) #'display-buffer-no-window)
+              ((symbol-function 'display-buffer-at-bottom) #'display-buffer-no-window))
+      (save-window-excursion (funcall orig-fn beg end noshow)))))
 
 ;;;----------------------------------------------------------------
 ;; ** PYTHON-MODE
@@ -2186,15 +2231,27 @@ Return the name of the temporary file."
 
 ;; Make sure mit-scheme (from repos) and scmutils (from internet + sudo ./install.sh)are installed
 ;;;###autoload
-(defun mechanics ()
-  "Run mit-scheme with SCMUTILS loaded, to work with (Structure
+;; (defun mechanics ()
+;;   "Run mit-scheme with SCMUTILS loaded, to work with (Structure
+;; and Interpretation of Classical Mechanics) - The book."
+;;   (interactive)
+;;   (setenv "MITSCHEME_BAND" "mechanics.com")
+;;   (setenv "MITSCHEME_HEAP_SIZE" "100000")
+;;   (run-scheme
+;;    "/usr/bin/mit-scheme --library /opt/mit-scheme/lib/mit-scheme-x86-64/"))
+
+(use-package geiser
+  :commands mechanics
+  :config
+  (defun mechanics ()
+    "Run mit-scheme with SCMUTILS loaded, to work with (Structure
 and Interpretation of Classical Mechanics) - The book."
-  (interactive)
-  (setenv "MITSCHEME_BAND" "mechanics.com")
-  (setenv "MITSCHEME_HEAP_SIZE" "100000")
-  (run-scheme
-   "/usr/bin/mit-scheme --library /opt/mit-scheme/lib/mit-scheme-x86-64/")
-  )
+    (interactive)
+    (setenv "MITSCHEME_BAND" "mechanics.com")
+    (setenv "MITSCHEME_HEAP_SIZE" "100000")
+    (let ((geiser-repl-skip-version-check-p t))
+      (run-geiser 'mit))))
+
 
 ;;;################################################################
 ;; ** JULIA
@@ -2222,7 +2279,10 @@ and Interpretation of Classical Mechanics) - The book."
   :commands eglot-jl-init
   :config
   (cl-defmethod project-root ((project (head julia)))
-    (cdr project)))
+    (cdr project))
+  ;; Workaround until LanguageServer.jl is fixed
+  (setq eglot-jl-language-server-project
+        (dir-concat user-cache-directory "eglot-jl-project")))
 ;; ** ESS
 ;; Need this for ob-julia
 (use-package ess-julia
@@ -2234,6 +2294,7 @@ and Interpretation of Classical Mechanics) - The book."
   ;;        ("`" . my/ess-julia-cdlatex-symbol))
   :mode ("\\.jl\\'" . ess-julia-mode)
   :config
+  (setq inferior-julia-args "-t8")
   (defun my/ess-julia-cdlatex-symbol ()
     (interactive)
     (require 'cdlatex)
@@ -2362,7 +2423,11 @@ and Interpretation of Classical Mechanics) - The book."
 ;;;----------------------------------------------------------------
 ;; ** ERRORS
 ;;;----------------------------------------------------------------
+
+;; This code makes it easy to repeat navigation to the next/previous error.
+;; Emacs 28 has repeat-mode that does this by default.
 (use-package simple
+  :if (version<= emacs-version "28.0")
   :bind (("M-g n" . my/next-error)
          ("M-g p" . my/next-error)
          ;; ("M-n" . next-error)
@@ -2384,6 +2449,7 @@ and Interpretation of Classical Mechanics) - The book."
          (define-key map (kbd "n") 'my/next-error)
          (define-key map (kbd "p") 'my/next-error)
          map)))))
+
 ;;;----------------------------------------------------------------
 ;; ** DUMB-JUMP
 ;;;----------------------------------------------------------------
@@ -2691,20 +2757,47 @@ _d_: subtree
   :bind-keymap ("H-t" . tab-prefix-map)
   :bind
   (("C-M-<tab>" . tab-bar-switch-to-next-tab)
-   ("C-M-S-<tab>" . tab-bar-switch-to-prev-tab)
+   ("C-M-<iso-lefttab>" . tab-bar-switch-to-prev-tab)
    ("H-<tab>" . tab-bar-switch-to-next-tab)
    ("H-<iso-lefttab>" . tab-bar-switch-to-prev-tab)
    ("s-u" . tab-bar-history-back)
-   ("C-c u" . tab-bar-history-back)
-   ("s-S-U" . tab-bar-history-forward)
+   ;; ("C-c u" . tab-bar-history-back)
+   ;; ("s-S-U" . tab-bar-history-forward)
    :map tab-prefix-map
    ("h" . my/tab-bar-show-hide-tabs)
    ("H-t" . tab-bar-select-tab-by-name))
 
   :config
   (tab-bar-history-mode 1)
+  (when (version< "28.0" emacs-version)
+    (defun tab-bar-format-menu-bar ()
+      "Produce the Menu button for the tab bar that shows the menu bar."
+      `((menu-bar menu-item (propertize " 𝝺 " 'face 'tab-bar-tab-inactive)
+                  tab-bar-menu-bar :help "Menu Bar")))
+    (defun tab-bar-tab-name-format-default (tab i)
+      (let ((current-p (eq (car tab) 'current-tab)))
+        (propertize
+         (concat " "
+                 (if tab-bar-tab-hints (format "%d " i) "")
+                 (alist-get 'name tab)
+                 (or (and tab-bar-close-button-show
+                          (not (eq tab-bar-close-button-show
+                                   (if current-p 'non-selected 'selected)))
+                          tab-bar-close-button)
+                     "")
+                 " ")
+         'face (funcall tab-bar-tab-face-function tab))))
+    (setq tab-bar-format '(tab-bar-format-menu-bar
+                           ;; tab-bar-format-history
+                           tab-bar-format-tabs
+                           tab-bar-separator
+                           tab-bar-format-add-tab
+                           tab-bar-format-align-right
+                           tab-bar-format-global)
+          tab-bar-close-button-show nil))
+  
   (setq  tab-bar-close-last-tab-choice 'tab-bar-mode-disable
-         tab-bar-show                   nil
+         tab-bar-show                   (when (version< "28.0" emacs-version) 1)
          tab-bar-tab-name-truncated-max 14
          tab-bar-new-tab-choice        'ibuffer
          tab-bar-tab-name-function '(lambda nil
@@ -2719,6 +2812,8 @@ _d_: subtree
          ;; tab-bar-tab-name-function '(lambda nil (upcase (tab-bar-tab-name-truncated)))
          )
 
+  (setq tab-bar-select-tab-modifiers '(meta hyper))
+
   (defun my/tab-bar-show-hide-tabs ()
     "Show or hide tabs."
     (interactive)
@@ -2729,29 +2824,32 @@ _d_: subtree
    ;; '(tab-bar-tab ((t (:inherit tab-bar :underline t :weight bold))))
    ;; )
 
-  ;; (advice-add 'tab-bar-rename-tab
-  ;;             :after
-  ;;             (defun +tab-bar-name-upcase (_name &optional _arg)
-  ;;               "Upcase current tab name"
-  ;;               (let* ((tab (assq 'current-tab (frame-parameter nil 'tabs)))
-  ;;                      (tab-name (alist-get 'name tab)))
-  ;;                 (setf (alist-get 'name tab) (upcase tab-name)
-  ;;                       (alist-get 'explicit-name tab) t))
-  ;;               ))
-  )
+  (advice-add 'tab-bar-rename-tab
+              :after
+              (defun my/tab-bar-name-upcase (_name &optional _arg)
+                "Upcase current tab name"
+                (let* ((tab (assq 'current-tab (frame-parameter nil 'tabs)))
+                       (tab-name (alist-get 'name tab)))
+                  (setf (alist-get 'name tab) (upcase tab-name)
+                        (alist-get 'explicit-name tab) t)))))
 
+;; Show a list of the tabs in the echo area when switching tabs. Disabled since
+;; I've taken to showing the tab-bar instead
 (use-package tab-bar-echo-area
-  :ensure
+  :disabled
+  ;; :ensure
   :after tab-bar
   :init
-  (defvar tab-bar-format nil "Format for tab-bar-echo-area-mode")
+  (if (version< emacs-version "28.0")
+      (defvar tab-bar-format nil "Format for tab-bar-echo-area-mode"))
   :config
   (tab-bar-echo-area-mode 1))
 ;;;----------------------------------------------------------------
-;; *** EYEBROWSE
+;; *** +EYEBROWSE+
 ;;;----------------------------------------------------------------
-;; This is superceded by native tabs (tab-bar-mode) in Emacs 27, only
-;; load if running a lower Emacs version
+
+;; This is superceded by native tabs (tab-bar-mode) in Emacs 27. I keep this
+;; around in case I find myself using Emacs 26.3 or lower.
 (use-package eyebrowse
   :disabled
   :if (version-list-<
@@ -2794,7 +2892,6 @@ _d_: subtree
 ;;;----------------------------------------------------------------
 ;; Flash lines
 (use-package pulse
-  :ensure nil
   :custom-face
   (pulse-highlight-start-face ((t (:inherit region))))
   (pulse-highlight-face ((t (:inherit region))))
@@ -2804,6 +2901,10 @@ _d_: subtree
            magit-diff-visit-file
            next-error) . my/recenter-and-pulse-line))
   :init
+  (add-hook 'after-make-frame-functions
+            (defun my/pulse-type (_frame)
+              (when window-system (setq pulse-flag t))))
+  
   (with-no-warnings
     (defun my/pulse-momentary-line (&rest _)
       "Pulse the current line."
@@ -2868,16 +2969,20 @@ _d_: subtree
   (dolist (mode-hook +addons-enabled-modes)
     (add-hook mode-hook #'diff-hl-mode))
   :bind
-  (:map diff-hl-mode-map
-   ("C-x v n" . nil)
-   :map vc-prefix-map
-   ("SPC" . diff-hl-mark-hunk)
-   ("n"   . diff-hl-next-hunk)
-   ("p"   . diff-hl-previous-hunk)
-   ("["   . nil)
-   ("]"   . nil)
+  (:map diff-hl-command-map
+   ("n" . diff-hl-next-hunk)
+   ("p" . diff-hl-previous-hunk)
+   ("[" . nil)
+   ("]" . nil)
    ("DEL"   . diff-hl-revert-hunk)
-   ("<delete>" . diff-hl-revert-hunk))
+   ("<delete>" . diff-hl-revert-hunk)
+   ("SPC" . diff-hl-mark-hunk)
+   :map vc-prefix-map
+   ("n" . diff-hl-next-hunk)
+   ("p" . diff-hl-previous-hunk)
+   ("DEL"   . diff-hl-revert-hunk)
+   ("<delete>" . diff-hl-revert-hunk)
+   ("SPC" . diff-hl-mark-hunk))
   :general
   (:states '(normal visual)
            "]d"   'diff-hl-next-hunk
@@ -2940,119 +3045,6 @@ _d_: subtree
 ;; ** +NAV-FLASH+
 ;;;----------------------------------------------------------------
 (use-package nav-flash :disabled)
-
-;;;----------------------------------------------------------------
-;; ** YASNIPPET
-;;;----------------------------------------------------------------
-
-(use-package yasnippet
-  :ensure t
-  ;; :defer 5
-  ;; :after warnings
-  :hook ((prog-mode LaTeX-mode org-mode) . yas-minor-mode)
-  :config
-  ;; (use-package yasnippet-snippets
-  ;;   :ensure t)
-  ;; (yas-reload-all)
-  ;; Redefine yas expand key from TAB because company-mode uses TAB.
-
-  ;; (push '(yasnippet backquote-change) warning-suppress-types)
-
-  ;; Don't throw a warning if lisp code in a snippet modifies the
-  ;; buffer. We need this for auto expanded snippets in latex/org.
-
-  (let ((ydus yas--default-user-snippets-dir))
-    (and (member ydus yas-snippet-dirs)
-         (yas-load-directory ydus)))
-
-  (use-package warnings
-    :config
-    (cl-pushnew '(yasnippet backquote-change) warning-suppress-types
-                :test 'equal))
-
-  (with-eval-after-load 'cdlatex
-    ;; Allow cdlatex tab to work inside Yas fields
-    (defun cdlatex-in-yas-field ()
-      ;; Check if we're at the end of the Yas field
-      (when-let* ((_ (overlayp yas--active-field-overlay))
-                  (end (overlay-end yas--active-field-overlay)))
-        (if (>= (point) end)
-            ;; Call yas-next-field if cdlatex can't expand here
-            (let ((s (thing-at-point 'sexp)))
-              (unless (and s (assoc (substring-no-properties s)
-                                    cdlatex-command-alist-comb))
-                (yas-next-field-or-maybe-expand)
-                t))
-          ;; otherwise expand and jump to the correct location
-          (let (cdlatex-tab-hook minp)
-            (setq minp
-                  (min (save-excursion (cdlatex-tab)
-                                       (point))
-                       (overlay-end yas--active-field-overlay)))
-            (goto-char minp) t))))
-
-    (add-hook 'cdlatex-tab-hook #'yas-expand)
-    (add-hook 'cdlatex-tab-hook #'cdlatex-in-yas-field)
-    (define-key yas-keymap (kbd "TAB")
-      (defun yas-next-field-or-cdlatex ()
-        (interactive)
-        "Jump to the next Yas field correctly with cdlatex active."
-        (if (bound-and-true-p cdlatex-mode)
-            (cdlatex-tab)
-          (yas-next-field-or-maybe-expand))))
-    (define-key yas-keymap [tab] 'yas-next-field-or-cdlatex))
-
-  (setq yas-wrap-around-region t
-        yas-triggers-in-field t)
-
-  (defun my/yas-try-expanding-auto-snippets ()
-    (when (and (boundp 'yas-minor-mode) yas-minor-mode)
-      (let ((yas-buffer-local-condition ''(require-snippet-condition . auto)))
-        (yas-expand))))
-  (add-hook 'post-self-insert-hook #'my/yas-try-expanding-auto-snippets)
-
-(with-eval-after-load 'company
-  ;; (defun my/yas-company-next-field ()
-  ;;     "company-complete-common or yas-next-field-or-maybe-expand."
-  ;;     (interactive)
-  ;;     (if company-candidates (company-complete-common)
-  ;;       (yas-next-field-or-maybe-expand)))
-
-  ;;   (define-key yas-keymap [tab] #'my/yas-company-next-field)
-  ;;   (define-key yas-keymap (kbd "TAB") #'my/yas-company-next-field)
-
-;;;###autoload
-    (defun my/yas-company-cancel ()
-      "company-abort or yas-abort-snippet."
-      (interactive)
-      (if company-candidates
-          (company-abort)
-        (yas-abort-snippet)))
-
-    (define-key yas-keymap (kbd "C-g") #'my/yas-company-cancel))
-
-
-  ;; (when (fboundp 'smartparens)
-  ;;   (with-eval-after-load 'smartparens
-  ;;     (defvar yas--smartparen-flag nil)
-  ;;     (add-hook 'yas-before-expand-snippet-hook (lambda () (when smartparens-mode
-  ;;                                                       (smartparens-mode -1)
-  ;;                                                       (setq-local yas--smartparen-flag t))))
-  ;;     (add-hook 'yas-after-exit-snippet-hook (lambda () (when yas--smartparen-flag)
-  ;;                                              (smartparens-mode +1)
-  ;;                                              (setq-local yas--smartparen-flag nil)))))
-
-  ;; (define-key yas-minor-mode-map (kbd "S-SPC") (lambda (&optional num) (interactive "P")
-  ;;                                                (or (yas-expand)
-  ;;                                                    (insert (kbd "SPC")))))
-  ;; (define-key yas-keymap (kbd "S-SPC") (lambda (&optional num) (interactive "P")
-  ;;                                        (or (yas-next-field-or-maybe-expand)
-  ;;                                            (insert (kbd "SPC")))))
-  ;; (dolist (keymap (list yas-minor-mode-map yas-keymap))
-  ;;   (define-key keymap (kbd "TAB") nil)
-  ;;   (define-key keymap [(tab)] nil))
-  ;; (global-set-key (kbd "M-S-SPC") 'company-yasnippet)
-  )
 
 ;;;----------------------------------------------------------------
 ;; ** HIDESHOW (built in)
@@ -3206,13 +3198,7 @@ fully before starting comparison."
          ("C-h C-a" . customize-apropos)))
 
 ;;;----------------------------------------------------------------
-;; ** SHACKLE
-;;;----------------------------------------------------------------
-(use-package shackle
-  :disabled t
-  :init (shackle-mode))
 
-;;;----------------------------------------------------------------
 ;; ** VERSION CONTROL
 ;;;----------------------------------------------------------------
 (use-package vc
@@ -3385,6 +3371,15 @@ project, as defined by `vc-root-dir'."
   :bind (:map vc-annotate-mode-map
         ("<tab>" . vc-annotate-toggle-annotation-visibility)))
 
+(use-package smerge-mode
+  :defer
+  :config
+  (map-keymap
+   (lambda (_key cmd)
+     (when (symbolp cmd)
+       (put cmd 'repeat-map 'smerge-basic-map)))
+   smerge-basic-map))
+
 (use-package magit
   :defer t
   ;; :commands magit-status
@@ -3551,112 +3546,9 @@ project, as defined by `vc-root-dir'."
   :defer
   :config
   ;; (setq abbrev-file-name (expand-file-name (dir-concat user-cache-directory "abbvev-defs")))
+  (setq abbrev-file-name (dir-concat user-emacs-directory "abbrev_defs"))
   (if (file-exists-p abbrev-file-name)
       (quietly-read-abbrev-file)))
-
-;;;----------------------------------------------------------------
-;; ** COMPANY-MODE
-;;;----------------------------------------------------------------
-(use-package company
-  :ensure t
-  :defer 3
-  :general
-  ("M-s <tab>"      'company-yasnippet)
-  
-  (:keymaps   'company-active-map
-  "C-p"       nil
-  "C-n"       nil
-  "C-;"       'company-other-backend
-  "C-w" nil
-  "C-]"       'company-show-location
-  "M-."       'company-show-location)
-
-  (:keymaps   'company-search-map
-   [return]   'company-complete-selection
-   "RET"      'company-complete-selection
-   "S-SPC"    'company-search-toggle-filtering)
-
-  ;; (:keymaps   'company-active-map
-  ;; "<tab>"     'company-complete-common-or-cycle
-  ;; "TAB"       'company-complete-common-or-cycle
-  ;; "<backtab>" 'company-select-previous
-  ;; "S-TAB"     'company-select-previous
-  ;; "M-n"        nil
-  ;; "M-p"        nil
-  ;; "C-n"       'company-select-next
-  ;; "C-p"       'company-select-previous)
-
-  :config
-  ;; (add-to-list 'company-backends 'company-files)
-  ;; (add-to-list 'company-backends 'company-dabbrev)
-  ;; (add-to-list 'company-backends 'company-jedi)
-  ;; (add-to-list 'company-backends 'company-dict)
-  (setq company-idle-delay 0.2
-        company-dabbrev-downcase 0
-        company-minimum-prefix-length 3
-        company-selection-wrap-around t
-        company-tooltip-align-annotations t
-        company-require-match 'never
-        company-dabbrev-downcase nil
-        company-dabbrev-code-other-buffers t
-        company-dabbrev-ignore-case nil
-        ;;company-tooltip-flip-when-above t
-        ;; company-transformers '(company-sort-by-occurrence)
-        ;; company-transformers '(company-sort-by-backend-importance)
-        ;; company-transformers '(company-sort-by-statistics)
-        company-global-modes '(latex-mode matlab-mode emacs-lisp-mode lisp-interaction-mode
-                               python-mode sh-mode fish-mode conf-mode text-mode org-mode)
-        company-backends '((company-files company-capf))) ;;company-keywords
-  (setq tab-always-indent 'complete)
-  (add-hook 'matlab-mode-hook (lambda ()
-                                ;; (unless (featurep 'company-matlab)
-                                ;;   (require 'company-matlab))
-                                (make-local-variable 'company-backends)
-                                (setq-local company-backends '((company-files company-capf company-dabbrev)))
-                                ;; (add-to-list 'company-backends
-                                ;;              ;; 'company-matlab
-                                ;;              'company-semantic
-                                ;;              )
-                                ))
-  (add-hook 'matlab-shell-mode-hook (lambda ()
-                                      (make-local-variable 'company-backends)
-                                      (setq-local company-idle-delay 0.3)
-                                      ;; (add-to-list 'company-backends 'company-matlab-shell)
-                                      ))
-
-  (add-hook 'LaTeX-mode-hook (lambda ()
-                               (make-local-variable 'company-idle-delay)
-                               (setq-local company-idle-delay 0.5)))
-  (use-package company-tng
-    :ensure company
-    :config (company-tng-mode))
-  
-  ;; Not needed. cdlatex mode handles completion just fine
-  (use-package company-auctex
-    :disabled
-    :defer t
-    :config
-    (add-to-list 'company-backends 'company-auctex)
-    (company-auctex-init))
-
-  (global-company-mode))
-
-(use-package company-prescient
-  :after company
-  :defer 3
-  :ensure t
-  :init (company-prescient-mode))
-(use-package company-statistics
-  :disabled
-  :after company
-  :defer 5
-  :ensure t
-  ;; :hook (after-init . company-statistics-mode)
-  :init  (company-statistics-mode)
-  :config
-  (setq company-statistics-file (concat (expand-file-name
-                                         (file-name-as-directory "~/.cache"))
-                                        "company-statistics-cache.el")))
 
 ;;;----------------------------------------------------------------
 ;; ** SMARTPARENS-MODE
@@ -4112,6 +4004,400 @@ project, as defined by `vc-root-dir'."
 (use-package bookmark
   :config
   (setq bookmark-default-file (dir-concat user-cache-directory "bookmarks")))
+;; * COMPLETION
+;;;################################################################
+
+;;;----------------------------------------------------------------
+;; ** DABBREV
+;;;----------------------------------------------------------------
+
+(use-package dabbrev
+  :commands (dabbrev-expand dabbrev-completion)
+  :config
+  (setq dabbrev-abbrev-char-regexp "\\sw\\|\\s_")
+  (setq dabbrev-abbrev-skip-leading-regexp "\\$\\|\\*\\|/\\|=")
+  (setq dabbrev-backward-only nil)
+  (setq dabbrev-case-distinction nil)
+  (setq dabbrev-case-fold-search t)
+  (setq dabbrev-case-replace nil)
+  (setq dabbrev-check-other-buffers t)
+  (setq dabbrev-eliminate-newlines nil)
+  (setq dabbrev-upcase-means-case-search t))
+
+;;;----------------------------------------------------------------
+;; ** HIPPIE-EXPAND
+;;;----------------------------------------------------------------
+;; Supercharge the way hippie-expand behaves, expand as little as
+;; possible
+(setq hippie-expand-try-functions-list 
+      '(try-expand-dabbrev-visible
+        try-expand-dabbrev
+        try-expand-dabbrev-all-buffers
+        try-complete-file-name-partially
+        try-complete-file-name
+        try-expand-all-abbrevs
+        try-expand-list
+        try-expand-line
+        try-expand-dabbrev-from-kill
+        try-complete-lisp-symbol-partially
+        try-complete-lisp-symbol))
+
+;;;----------------------------------------------------------------
+;; ** COMPANY-MODE
+;;;----------------------------------------------------------------
+(use-package company
+  :disabled
+  :ensure t
+  :defer 3
+  :general
+  ("M-s <tab>"      'company-yasnippet)
+  
+  (:keymaps   'company-active-map
+  "C-p"       nil
+  "C-n"       nil
+  "C-;"       'company-other-backend
+  "C-w"       nil
+  "C-]"       'company-show-location
+  "M-."       'company-show-location)
+
+  (:keymaps   'company-search-map
+   [return]   'company-complete-selection
+   "RET"      'company-complete-selection
+   "S-SPC"    'company-search-toggle-filtering)
+
+  ;; (:keymaps   'company-active-map
+  ;; "<tab>"     'company-complete-common-or-cycle
+  ;; "TAB"       'company-complete-common-or-cycle
+  ;; "<backtab>" 'company-select-previous
+  ;; "S-TAB"     'company-select-previous
+  ;; "M-n"        nil
+  ;; "M-p"        nil
+  ;; "C-n"       'company-select-next
+  ;; "C-p"       'company-select-previous)
+
+  :config
+  ;; (add-to-list 'company-backends 'company-files)
+  ;; (add-to-list 'company-backends 'company-dabbrev)
+  ;; (add-to-list 'company-backends 'company-jedi)
+  ;; (add-to-list 'company-backends 'company-dict)
+  (setq company-idle-delay 0.2
+        company-dabbrev-downcase 0
+        company-minimum-prefix-length 3
+        company-selection-wrap-around t
+        company-tooltip-align-annotations t
+        company-require-match 'never
+        company-dabbrev-downcase nil
+        company-dabbrev-other-buffers nil
+        company-dabbrev-ignore-case nil
+        ;;company-tooltip-flip-when-above t
+        ;; company-transformers '(company-sort-by-occurrence)
+        ;; company-transformers '(company-sort-by-backend-importance)
+        ;; company-transformers '(company-sort-by-statistics)
+        company-global-modes '(latex-mode matlab-mode emacs-lisp-mode lisp-interaction-mode
+                                          python-mode sh-mode fish-mode conf-mode text-mode org-mode)
+        company-auto-commit nil
+        company-backends '((company-files company-capf))) ;;company-keywords
+  (setq tab-always-indent 'complete)
+  
+  (add-hook 'LaTeX-mode-hook (lambda ()
+                               (make-local-variable 'company-idle-delay)
+                               (setq-local company-idle-delay 0.5)))
+  
+  (use-package eldoc
+    :config
+    (eldoc-add-command 'company-complete-selection
+                       'company-complete-common
+                       'company-capf
+                       'company-abort))
+  
+  (use-package company-tng
+    :ensure company
+    :config (company-tng-mode))
+  
+  (global-company-mode))
+
+;; Not needed. the capf backend handles completion just fine
+(use-package company-auctex
+  :disabled
+  :defer t
+  :config
+  (add-to-list 'company-backends 'company-auctex)
+  (company-auctex-init))
+
+(use-package company-prescient
+  :disabled
+  :after company
+  :defer 3
+  ;; :ensure t
+  :init (company-prescient-mode))
+
+(use-package company-statistics
+  :disabled
+  :after company
+  :defer 5
+  :ensure t
+  ;; :hook (after-init . company-statistics-mode)
+  :init  (company-statistics-mode)
+  :config
+  (setq company-statistics-file (concat (expand-file-name
+                                         (file-name-as-directory "~/.cache"))
+                                        "company-statistics-cache.el")))
+
+;;;----------------------------------------------------------------
+;; ** CORFU + CAPE
+(load-library "setup-corfu")
+;; ** YASNIPPET
+;;;----------------------------------------------------------------
+
+(use-package yasnippet
+  :ensure t
+  ;; :defer 5
+  ;; :after warnings
+  :hook ((prog-mode LaTeX-mode org-mode) . yas-minor-mode)
+  :config
+  ;; (use-package yasnippet-snippets
+  ;;   :ensure t)
+  ;; (yas-reload-all)
+  ;; Redefine yas expand key from TAB because company-mode uses TAB.
+
+  ;; (push '(yasnippet backquote-change) warning-suppress-types)
+
+  ;; Don't throw a warning if lisp code in a snippet modifies the
+  ;; buffer. We need this for auto expanded snippets in latex/org.
+
+  (let ((ydus yas--default-user-snippets-dir))
+    (and (member ydus yas-snippet-dirs)
+         (yas-load-directory ydus)))
+
+  (setq yas-wrap-around-region t
+        yas-triggers-in-field t)
+
+  (defun my/yas-try-expanding-auto-snippets ()
+    (when (and (boundp 'yas-minor-mode) yas-minor-mode)
+      (let ((yas-buffer-local-condition ''(require-snippet-condition . auto)))
+        (yas-expand))))
+  (add-hook 'post-self-insert-hook #'my/yas-try-expanding-auto-snippets)
+
+(with-eval-after-load 'company
+  ;; (defun my/yas-company-next-field ()
+  ;;     "company-complete-common or yas-next-field-or-maybe-expand."
+  ;;     (interactive)
+  ;;     (if company-candidates (company-complete-common)
+  ;;       (yas-next-field-or-maybe-expand)))
+
+  ;;   (define-key yas-keymap [tab] #'my/yas-company-next-field)
+  ;;   (define-key yas-keymap (kbd "TAB") #'my/yas-company-next-field)
+
+;;;###autoload
+    (defun my/yas-company-cancel ()
+      "company-abort or yas-abort-snippet."
+      (interactive)
+      (if company-candidates
+          (company-abort)
+        (yas-abort-snippet)))
+
+    (define-key yas-keymap (kbd "C-g") #'my/yas-company-cancel))
+
+
+  ;; (when (fboundp 'smartparens)
+  ;;   (with-eval-after-load 'smartparens
+  ;;     (defvar yas--smartparen-flag nil)
+  ;;     (add-hook 'yas-before-expand-snippet-hook (lambda () (when smartparens-mode
+  ;;                                                       (smartparens-mode -1)
+  ;;                                                       (setq-local yas--smartparen-flag t))))
+  ;;     (add-hook 'yas-after-exit-snippet-hook (lambda () (when yas--smartparen-flag)
+  ;;                                              (smartparens-mode +1)
+  ;;                                              (setq-local yas--smartparen-flag nil)))))
+
+  ;; (define-key yas-minor-mode-map (kbd "S-SPC") (lambda (&optional num) (interactive "P")
+  ;;                                                (or (yas-expand)
+  ;;                                                    (insert (kbd "SPC")))))
+  ;; (define-key yas-keymap (kbd "S-SPC") (lambda (&optional num) (interactive "P")
+  ;;                                        (or (yas-next-field-or-maybe-expand)
+  ;;                                            (insert (kbd "SPC")))))
+  ;; (dolist (keymap (list yas-minor-mode-map yas-keymap))
+  ;;   (define-key keymap (kbd "TAB") nil)
+  ;;   (define-key keymap [(tab)] nil))
+  ;; (global-set-key (kbd "M-S-SPC") 'company-yasnippet)
+  )
+
+(use-package warnings
+    :config
+    (cl-pushnew '(yasnippet backquote-change) warning-suppress-types
+                :test 'equal))
+
+(use-package yasnippet
+  :defer
+  :config
+  (use-package cdlatex
+    :if (featurep 'cdlatex)
+    :hook ((cdlatex-tab . yas-expand)
+           (cdlatex-tab . cdlatex-in-yas-field))
+    :bind (:map yas-keymap
+                ("TAB" . yas-next-field-or-cdlatex)
+                ([tab] . yas-next-field-or-cdlatex))
+    :config
+    ;; Allow cdlatex tab to work inside Yas fields
+    (defun cdlatex-in-yas-field ()
+      ;; Check if we're at the end of the Yas field
+      (when-let* ((_ (overlayp yas--active-field-overlay))
+                  (end (overlay-end yas--active-field-overlay)))
+        (if (>= (point) end)
+            ;; Call yas-next-field if cdlatex can't expand here
+            (let ((s (thing-at-point 'sexp)))
+              (unless (and s (assoc (substring-no-properties s)
+                                    cdlatex-command-alist-comb))
+                (yas-next-field-or-maybe-expand)
+                t))
+          ;; otherwise expand and jump to the correct location
+          (let (cdlatex-tab-hook minp)
+            (setq minp
+                  (min (save-excursion (cdlatex-tab)
+                                       (point))
+                       (overlay-end yas--active-field-overlay)))
+            (goto-char minp) t))))
+
+    ;; (add-hook 'cdlatex-tab-hook #'yas-expand)
+    ;; (add-hook 'cdlatex-tab-hook #'cdlatex-in-yas-field)
+    ;; (define-key yas-keymap (kbd "TAB")
+    ;; (define-key yas-keymap [tab] 'yas-next-field-or-cdlatex)
+    (defun yas-next-field-or-cdlatex nil
+      (interactive)
+      "Jump to the next Yas field correctly with cdlatex active."
+      (if
+          (or (bound-and-true-p cdlatex-mode)
+              (bound-and-true-p org-cdlatex-mode))
+          (cdlatex-tab)
+        (yas-next-field-or-maybe-expand)))))
+
+
+
+;;;----------------------------------------------------------------
+;; ** M O V E C
+;;;----------------------------------------------------------------
+(load-library "setup-marginalia")
+(load-library "setup-orderless")
+(load-library "setup-vertico")
+(load-library "setup-embark")
+(load-library "setup-consult")
+
+;;;----------------------------------------------------------------
+;; *** MARGINALIA
+;;;----------------------------------------------------------------
+
+;; #+INCLUDE: "./lisp/setup-marginalia.org" :minlevel 2
+;;;----------------------------------------------------------------
+;; *** ORDERLESS
+;;;----------------------------------------------------------------
+
+;; #+INCLUDE: "./lisp/setup-orderless.org" :minlevel 2
+;;;----------------------------------------------------------------
+;; *** VERTICO
+;;;----------------------------------------------------------------
+
+;; #+INCLUDE: "./lisp/setup-vertico.org" :minlevel 2
+;;;----------------------------------------------------------------
+;; *** EMBARK
+;;;----------------------------------------------------------------
+
+;; #+INCLUDE: "./lisp/setup-embark.org" :minlevel 2
+;;;----------------------------------------------------------------
+;; *** CONSULT
+;;;----------------------------------------------------------------
+
+;; #+INCLUDE: "./lisp/setup-consult.org" :minlevel 2
+
+;; *** ELMO
+
+;; Embark-live-mode
+(use-package elmo
+  :disabled
+  :load-path "plugins/elmo/"
+  :commands elmo-mode
+  :after embark
+  :init (elmo-mode 1)
+  :bind (:map elmo-minibuffer-local-completion-map
+         ("C-<tab>" . #'embark-act-with-completing-read))
+  :config
+  (setq elmo-always-show-list
+        '(consult-line consult-outline 
+          ;; consult-line-symbol-at-point 
+          consult-completion-in-region             
+          consult-imenu consult-imenu-all
+          consult-xref consult-org-heading
+          embark-completing-read-prompter
+          embark-act-with-completing-read
+          embark-act
+          embark-prefix-help-command
+          consult-yank-pop)))
+
+;;;----------------------------------------------------------------
+;; ** +IVY COUNSEL SWIPER+
+;;;----------------------------------------------------------------
+(use-package setup-ivy :disabled)
+
+;;; Bibtex management from ivy. Call ivy-bibtex.
+(use-package ivy-bibtex
+  :disabled
+  :after ivy
+  :functions bibtex-completion-open-pdf
+  :commands ivy-bibtex
+  :config
+  (setq ivy-bibtex-default-action 'ivy-bibtex-insert-citation
+        bibtex-completion-cite-prompt-for-optional-arguments nil
+        bibtex-completion-cite-default-as-initial-input t
+        ivy-re-builders-alist '((ivy-bibtex . ivy--regex-ignore-order)
+                                (t . ivy--regex-plus))
+        bibtex-completion-bibliography (getenv "BIB")
+        bibtex-completion-library-path '("~/Documents/research/lit")
+        bibtex-completion-pdf-field "File"
+        bibtex-completion-additional-search-fields '(keywords)
+        bibtex-completion-pdf-symbol "⌘"
+        bibtex-completion-notes-symbol "✎")
+
+  (defun bibtex-completion-open-pdf-external (keys &optional fallback-action)
+    (let* ((pdf-reader (getenv "READER"))
+           (bibtex-completion-pdf-open-function
+            (lambda (fpath) (start-process pdf-reader "*ivy-bibtex-evince*" pdf-reader fpath))))
+      (bibtex-completion-open-pdf keys fallback-action)))
+
+  (ivy-bibtex-ivify-action bibtex-completion-open-pdf-external ivy-bibtex-open-pdf-external)
+
+  (ivy-add-actions
+   'ivy-bibtex
+   '(("P" ivy-bibtex-open-pdf-external "Open PDF file in external viewer (if present)"))))
+
+(use-package ivy-youtube
+  :disabled
+  :after ivy
+  :general
+  (:keymaps 'space-menu-map
+    "Y" '(ivy-youtube :wk "Youtube search"))
+  :config
+  (setq ivy-youtube-history-file
+        (dir-concat user-cache-directory "ivy-youtube-history"))
+  (setq ivy-youtube-key my-ivy-youtube-key
+        ivy-youtube-play-at (expand-file-name
+                             "~/.local/bin/i3cmds/umpv")))
+
+(use-package counsel-spotify
+  :disabled
+  :commands counsel-spotify-start-search
+  :after counsel
+  :general
+  (:keymaps 'space-menu-map
+    "U" '(counsel-spotify-start-search :wk "spotify"))
+  :config
+  (defun counsel-spotify-start-search ()
+    (interactive)
+    (counsel-M-x "counsel-spotify-search-"))
+  (setq counsel-spotify-service-name "spotify")
+  (setq counsel-spotify-client-id my-counsel-spotify-client-id
+        counsel-spotify-client-secret my-counsel-spotify-client-secret
+        counsel-spotify-use-notifications nil))
+
+;;;----------------------------------------------------------------
+
 ;; * APPLICATIONS
 ;; ** DIRED
 ;;;----------------------------------------------------------------
@@ -4126,17 +4412,15 @@ project, as defined by `vc-root-dir'."
 ;; ** ERC
 (use-package erc
   :commands (erc-tls erc)
-  :hook (erc-mode . erc-hl-nicks-mode)
   :config
   (setq erc-server "irc.karthinks.com"
         erc-port 7078
         erc-nick "karthik"
         erc-user-full-name "Karthik"
         erc-prompt-for-password nil
-        erc-track-shorten-start 6
-        erc-autojoin-channels-alist '(("irc.libera.chat" "#systemcrafters"
-                                       "#org-mode" "#factorio" "nyxt"
-                                       "#gamingonlinux" "#emacs"))
+        ;; erc-track-shorten-start 6
+        ;; erc-autojoin-channels-alist '(("irc.libera.chat" "#systemcrafters"
+        ;;                                "#org-mode" "#emacs"))
         erc-kill-buffer-on-part t
         erc-lurker-threshold-time 1800
         erc-hide-list '("NICK")
@@ -4150,6 +4434,7 @@ project, as defined by `vc-root-dir'."
         erc-keywords nil))
 
 (use-package erc-image
+  :disabled
   :after erc
   :ensure
   :init
@@ -4160,46 +4445,48 @@ project, as defined by `vc-root-dir'."
   (erc-update-modules)
   :config
   (defun erc-image-create-image (file-name)
-  "Create an image suitably scaled according to the setting of
+    "Create an image suitably scaled according to the setting of
 'ERC-IMAGE-RESCALE."
-  (let* ((positions (window-inside-absolute-pixel-edges))
-         (width (- (nth 2 positions) (nth 0 positions)))
-         (height (- (nth 3 positions) (nth 1 positions)))
-         (image (create-image file-name))
-         (dimensions (image-size image t))
-         (imagemagick-p (and (fboundp 'imagemagick-types) 'imagemagick)))
+    (let* ((positions (window-inside-absolute-pixel-edges))
+           (width (- (nth 2 positions) (nth 0 positions)))
+           (height (- (nth 3 positions) (nth 1 positions)))
+           (image (create-image file-name))
+           (dimensions (image-size image t))
+           (imagemagick-p (and (fboundp 'imagemagick-types) 'imagemagick)))
                                         ; See if we want to rescale the image
-    (if (and erc-image-inline-rescale
-             (not (image-multi-frame-p image)))
-        ;; Rescale based on erc-image-rescale
-        (cond (;; Numeric: scale down to that size
-               (numberp erc-image-inline-rescale)
-               (let ((max-height (min (cdr dimensions)
-                                      erc-image-inline-rescale
-                                      (floor (* width (cdr dimensions))
-                                             (car dimensions)))))
-                 (if (> (floor (* max-height (car dimensions))
-                               (cdr dimensions))
-                        width)
-                     (create-image file-name imagemagick-p nil :width width)
-                   (create-image file-name imagemagick-p nil :height max-height))))
-              (;; 'window: scale down to window size, if bigger
-               (eq erc-image-inline-rescale 'window)
-               ;; But only if the image is greater than the window size
-               (if (or (> (car dimensions) width)
-                       (> (cdr dimensions) height))
-                   ;; Figure out in which direction we need to scale
-                   (if (> width height)
-                       (create-image file-name imagemagick-p nil :height  height)
-                     (create-image file-name imagemagick-p nil :width width))
-                 ;; Image is smaller than window, just give that back
-                 image))
-              (t (progn (message "Error: none of the rescaling options matched") image)))
-      ;; No rescale
-      image))))
+      (if (and erc-image-inline-rescale
+               (not (image-multi-frame-p image)))
+          ;; Rescale based on erc-image-rescale
+          (cond (;; Numeric: scale down to that size
+                 (numberp erc-image-inline-rescale)
+                 (let ((max-height (min (cdr dimensions)
+                                        erc-image-inline-rescale
+                                        (floor (* width (cdr dimensions))
+                                               (car dimensions)))))
+                   (if (> (floor (* max-height (car dimensions))
+                                 (cdr dimensions))
+                          width)
+                       (create-image file-name imagemagick-p nil :width width)
+                     (create-image file-name imagemagick-p nil :height max-height))))
+                (;; 'window: scale down to window size, if bigger
+                 (eq erc-image-inline-rescale 'window)
+                 ;; But only if the image is greater than the window size
+                 (if (or (> (car dimensions) width)
+                         (> (cdr dimensions) height))
+                     ;; Figure out in which direction we need to scale
+                     (if (> width height)
+                         (create-image file-name imagemagick-p nil :height  height)
+                       (create-image file-name imagemagick-p nil :width width))
+                   ;; Image is smaller than window, just give that back
+                   image))
+                (t (progn (message "Error: none of the rescaling options matched") image)))
+        ;; No rescale
+        image))))
+
 (use-package erc-hl-nicks
   :ensure
-  :after erc)
+  :after erc
+  :hook (erc-mode . erc-hl-nicks-mode))
 
 
 ;; ** EMAIL
@@ -4297,6 +4584,7 @@ active region use it instead."
   :bind (:map help-map
               ("g" . google-search-string)
               ("C-=" . google-search-at-point)))
+
 ;; *** DICTIONARY
 (use-package sdcv
   :disabled
@@ -4306,6 +4594,7 @@ active region use it instead."
          :map sdcv-mode-map
               ("M-n" . sdcv-next-dictionary)
               ("M-p" . sdcv-previous-dictionary)))
+
 (use-package dictionary
   :ensure t
   :commands (dictionary-lookup-definition dictionary-search)
@@ -4330,134 +4619,6 @@ argument, query for word to search."
          :map help-map
          ("=" . dictionary-search-dwim)
          ("d" . dictionary-search)))
-
-
-;; * COMPLETION FRAMEWORKS:
-;;;################################################################
-
-;;;----------------------------------------------------------------
-;; ** M O V E C
-;;;----------------------------------------------------------------
-(use-package setup-marginalia :demand)
-(use-package setup-orderless :demand)
-(use-package setup-vertico :demand)
-(use-package setup-embark :demand)
-(use-package setup-consult :demand)
-
-;;;----------------------------------------------------------------
-;; *** MARGINALIA
-;;;----------------------------------------------------------------
-
-;; #+INCLUDE: "./lisp/setup-marginalia.org" :minlevel 2
-;;;----------------------------------------------------------------
-;; *** ORDERLESS
-;;;----------------------------------------------------------------
-
-;; #+INCLUDE: "./lisp/setup-orderless.org" :minlevel 2
-;;;----------------------------------------------------------------
-;; *** VERTICO
-;;;----------------------------------------------------------------
-
-;; #+INCLUDE: "./lisp/setup-vertico.org" :minlevel 2
-;;;----------------------------------------------------------------
-;; *** EMBARK
-;;;----------------------------------------------------------------
-
-;; #+INCLUDE: "./lisp/setup-embark.org" :minlevel 2
-;;;----------------------------------------------------------------
-;; *** CONSULT
-;;;----------------------------------------------------------------
-
-;; #+INCLUDE: "./lisp/setup-consult.org" :minlevel 2
-
-;; *** ELMO - EMBARK-LIVE-MODE
-(use-package elmo
-  :disabled
-  :load-path "plugins/elmo/"
-  :commands elmo-mode
-  :after embark
-  :init (elmo-mode 1)
-  :bind (:map elmo-minibuffer-local-completion-map
-         ("C-<tab>" . #'embark-act-with-completing-read))
-  :config
-  (setq elmo-always-show-list
-        '(consult-line consult-outline 
-          ;; consult-line-symbol-at-point 
-          consult-completion-in-region             
-          consult-imenu consult-imenu-all
-          consult-xref consult-org-heading
-          embark-completing-read-prompter
-          embark-act-with-completing-read
-          embark-act
-          embark-prefix-help-command
-          consult-yank-pop)))
-
-;;;----------------------------------------------------------------
-;; ** +IVY COUNSEL SWIPER+
-;;;----------------------------------------------------------------
-(use-package setup-ivy :disabled)
-
-;;; Bibtex management from ivy. Call ivy-bibtex.
-(use-package ivy-bibtex
-  :disabled
-  :after ivy
-  :functions bibtex-completion-open-pdf
-  :commands ivy-bibtex
-  :config
-  (setq ivy-bibtex-default-action 'ivy-bibtex-insert-citation
-        bibtex-completion-cite-prompt-for-optional-arguments nil
-        bibtex-completion-cite-default-as-initial-input t
-        ivy-re-builders-alist '((ivy-bibtex . ivy--regex-ignore-order)
-                                (t . ivy--regex-plus))
-        bibtex-completion-bibliography (getenv "BIB")
-        bibtex-completion-library-path '("~/Documents/research/lit")
-        bibtex-completion-pdf-field "File"
-        bibtex-completion-additional-search-fields '(keywords)
-        bibtex-completion-pdf-symbol "⌘"
-        bibtex-completion-notes-symbol "✎")
-
-  (defun bibtex-completion-open-pdf-external (keys &optional fallback-action)
-    (let* ((pdf-reader (getenv "READER"))
-           (bibtex-completion-pdf-open-function
-            (lambda (fpath) (start-process pdf-reader "*ivy-bibtex-evince*" pdf-reader fpath))))
-      (bibtex-completion-open-pdf keys fallback-action)))
-
-  (ivy-bibtex-ivify-action bibtex-completion-open-pdf-external ivy-bibtex-open-pdf-external)
-
-  (ivy-add-actions
-   'ivy-bibtex
-   '(("P" ivy-bibtex-open-pdf-external "Open PDF file in external viewer (if present)"))))
-
-(use-package ivy-youtube
-  :disabled
-  :after ivy
-  :general
-  (:keymaps 'space-menu-map
-    "Y" '(ivy-youtube :wk "Youtube search"))
-  :config
-  (setq ivy-youtube-history-file
-        (dir-concat user-cache-directory "ivy-youtube-history"))
-  (setq ivy-youtube-key my-ivy-youtube-key
-        ivy-youtube-play-at (expand-file-name
-                             "~/.local/bin/i3cmds/umpv")))
-
-(use-package counsel-spotify
-  :disabled
-  :commands counsel-spotify-start-search
-  :after counsel
-  :general
-  (:keymaps 'space-menu-map
-    "U" '(counsel-spotify-start-search :wk "spotify"))
-  :config
-  (defun counsel-spotify-start-search ()
-    (interactive)
-    (counsel-M-x "counsel-spotify-search-"))
-  (setq counsel-spotify-service-name "spotify")
-  (setq counsel-spotify-client-id my-counsel-spotify-client-id
-        counsel-spotify-client-secret my-counsel-spotify-client-secret
-        counsel-spotify-use-notifications nil))
-
-;;;----------------------------------------------------------------
 
 ;; * PROJECTS
 (load-library "setup-project")
@@ -4745,20 +4906,30 @@ the mode-line and switches to `variable-pitch-mode'."
 ;; ** SMART MODE LINE
 ;;----------------------------------------------------------------
 
-;; Smart mode line hews close to Emacs' default modeline set up.
+;; Smart mode line hews close to Emacs' default modeline set up. The only change
+;; we make is to disable display of the global-mode-string when on Emacs 28 or
+;; higher, we show this info in the less crowded tab-bar instead.
 
 (use-package smart-mode-line
   :ensure t
-  :defines sml/fix-mode-line-a
   :commands sml/setup
   :init
   (setq sml/theme nil)
-  (sml/setup))
+  (sml/setup)
+  (unless (version< emacs-version "28.0")
+    (setq mode-line-misc-info
+          '((which-function-mode
+            (which-func-mode
+             ("" which-func-format " ")))
+           ;; (global-mode-string
+           ;;  ("" global-mode-string))
+            ))))
 
 ;; Some advice to add support for Evil to smart-mode-line, long since
 ;; deprecated.
 
 (use-package smart-mode-line
+  :defines sml/fix-mode-line-a
   :disabled
   :config
     
@@ -4787,6 +4958,8 @@ the mode-line and switches to `variable-pitch-mode'."
                           (set-face-background 'mode-line (car color))
                           (set-face-foreground 'mode-line (cdr color)))))))
     
+;; ** MINOR MODE HIDING
+
 ;; Disable help mouse-overs for mode-line segments (i.e. :help-echo text).
 ;; They're generally unhelpful and only add confusing visual clutter.
 (setq mode-line-default-help-echo nil
@@ -4834,6 +5007,7 @@ the mode-line and switches to `variable-pitch-mode'."
     ;; (projectile-mode . " ϸ")
     (outline-minor-mode . " [o]";; " ֍"
                         )
+    (hs-minor-mode . "")
     (matlab-functions-have-end-minor-mode . "")
     (org-roam-ui-mode . " UI")
     ;; Evil modes
@@ -4841,7 +5015,8 @@ the mode-line and switches to `variable-pitch-mode'."
     (latex-extra-mode . "")
     (strokes-mode . "")
     (flymake-mode . "fly")
-    (god-mode . ,(propertize "God" 'face 'success)))
+    (god-mode . ,(propertize "God" 'face 'success))
+    (gcmh-mode . ""))
   "Alist for `clean-mode-line'.
 
   ; ;; When you add a new element to the alist, keep in mind that you
@@ -4951,7 +5126,7 @@ currently loaded theme first."
                             '(org-level-1 ((t (:foreground "#0072b2" :inherit bold :height 1.3))))
                             '(org-level-2 ((t (:foreground "#d55e00" :inherit bold :height 1.1))))
                             '(org-document-title ((t (:inherit bold :height 1.5))))
-                            ))
+                            )))
 
 ;;   (use-package gruvbox-theme
 ;;     :disabled
@@ -4963,60 +5138,118 @@ currently loaded theme first."
 ;;                             '(org-level-1 ((t (:height 1.3 :foreground "#83a598" :inherit (bold) ))))
 ;;                             '(org-level-2 ((t (:height 1.1 ;; 
 
-  (use-package modus-themes
-    :ensure
-    :defer
+;; Protesilaos Stavrou's excellent high contrast themes, perfect for working in
+;; bright sunlight (especially on a dim laptop screen).
+(use-package modus-themes
+  ;; :ensure
+  :defer
+  ;; :config
+  ;; (custom-set-faces '(aw-background-face ((t nil))))
+  ;; (custom-set-faces '(aw-leading-char-face ((t nil))))
+  ;; (custom-set-faces '(org-level-1 ((t nil))))
+  ;; (custom-set-faces '(org-level-2 ((t nil))))
+  ;; (custom-set-faces '(org-level-3 ((t nil))))
+  ;; (custom-set-faces '(tab-bar-tab ((t nil))))
+  ;; (custom-set-faces '(tab-bar-tab-inactive ((t nil))))
+  ;; (custom-set-faces '(tab-bar ((t nil))))
+  ;; (custom-set-faces '(hl-line ((t nil))))
+  ;; (custom-set-faces '(default ((t nil))))
+  :init
+  (setq modus-themes-org-blocks nil
+        modus-themes-intense-hl-line t
+        modus-themes-org-blocks 'grayscale
+        modus-themes-fringes 'subtle
+        modus-themes-scale-headings t
+        modus-themes-section-headings nil
+        modus-themes-variable-pitch-headings nil
+        modus-themes-intense-paren-match t
+        modus-themes-bold-constructs t
+        modus-themes-completions 'opinionated
+        modus-themes-diffs 'desaturated ;'fg-only-deuteranopia
+        modus-themes-syntax nil ;'faint
+        modus-themes-links '(faint neutral-underline)
+        modus-themes-hl-line '(intense)
+        modus-themes-prompts '(bold background)
+        modus-themes-mode-line '(accented borderless)
+        ;; modus-themes-org-habit 'simplified
+        modus-themes-subtle-line-numbers t
+        modus-themes-tabs-accented t
+        modus-themes-inhibit-reload t
+        modus-themes-paren-match '(underline)
+        modus-themes-region '(no-extend accented)
+        modus-themes-org-agenda ; this is an alist: read the manual or its doc string
+        '((header-block . (variable-pitch scale-title))
+          (header-date . (bold-today grayscale scale))
+          (scheduled . rainbow)
+          (habit . traffic-light-deuteranopia))
+        modus-themes-headings  '((t . (background overline rainbow)))
+        modus-themes-variable-pitch-ui nil
+        modus-themes-scale-headings t)
+  ;; (setq modus-themes-operandi-color-overrides
+  ;;       '((bg-main . "#ededed")))
+  (setq modus-themes-vivendi-color-overrides
+        '((bg-main . "#100b17")
+          (bg-dim . "#161129")
+          (bg-alt . "#181732")
+          (bg-hl-line . "#191628")
+          (bg-active . "#282e46")
+          (bg-inactive . "#1a1e39")
+          (bg-region . "#393a53")
+          (bg-header . "#202037")
+          (bg-tab-bar . "#262b41")
+          (bg-tab-active . "#120f18")
+          (bg-tab-inactive . "#3a3a5a")
+          (fg-unfocused . "#9a9aab"))))
+
+
+;; Henrik Lissner's Doom themes are a mainstay, mostly doom-rouge:
+;;
+;; [[file:/img/dotemacs/doom-rouge-demo.png]]
+(use-package doom-themes
+  :ensure t
+  :defer
+  :init
+  (defun my/doom-theme-settings (theme &rest args)
+    "Additional face settings for doom themes"
+    (when (member theme '(doom-iosvkem doom-rouge))
+      (dolist (face-spec
+               '((aw-background-face (:background "#061229" :inverse-video nil :weight normal)
+                                     ace-window)
+                 (org-level-1        (:height 1.20 :inherit outline-1) org)
+                 (org-level-2        (:height 1.15 :inherit outline-2) org)
+                 (org-level-3        (:height 1.10 :inherit outline-3) org)
+                 (hl-line            (:background "#1f2a3f") hl-line)
+                 (tab-bar            (:background "black" :height 1.0 :foreground "white")
+                                     tab-bar)
+                 (tab-bar-tab
+                  (:foreground "#B16E75" :bold t :height 1.10 :background "#172030")
+                  tab-bar)
+                 (tab-bar-tab-inactive
+                  (:inherit 'mode-line-inactive :height 1.10 :background "black")
+                  tab-bar)))
+        (cl-destructuring-bind (face spec library) face-spec
+          (if (featurep library)
+              (apply #'set-face-attribute face nil spec)
+            (with-eval-after-load library
+              (when (member 'doom-rouge custom-enabled-themes)
+                  (apply #'set-face-attribute face nil spec))))))))
+
+  (advice-add 'load-theme :after #'my/doom-theme-settings)
+  
+  :config
+  (doom-themes-org-config)
+  (use-package doom-rouge-theme
     :config
-    (setq modus-themes-org-blocks nil
-          modus-themes-intense-hl-line t
-          modus-themes-org-blocks 'grayscale
-          modus-themes-fringes 'subtle
-          modus-themes-scale-headings t
-          modus-themes-section-headings nil
-          modus-themes-variable-pitch-headings nil
-          modus-themes-intense-paren-match t
-          modus-themes-bold-constructs t
-          modus-themes-completions 'opinionated
-          modus-themes-diffs 'desaturated ;'fg-only-deuteranopia
-          modus-themes-syntax nil ;'faint
-          modus-themes-links '(faint neutral-underline)
-          modus-themes-hl-line '(intense)
-          modus-themes-prompts '(bold background)
-          modus-themes-mode-line '(accented borderless)
-          ;; modus-themes-org-habit 'simplified
-          modus-themes-subtle-line-numbers t
-          modus-themes-tabs-accented t
-          modus-themes-inhibit-reload t
-          modus-themes-paren-match '(underline)
-          modus-themes-region '(no-extend accented)
-          modus-themes-org-agenda ; this is an alist: read the manual or its doc string
-          '((header-block . (variable-pitch scale-title))
-            (header-date . (bold-today grayscale scale))
-            (scheduled . rainbow)
-            (habit . traffic-light-deuteranopia))
-          modus-themes-headings  '((t . (background overline rainbow)))
-          modus-themes-variable-pitch-ui nil
-          modus-themes-scale-headings t
-          modus-themes-scale-1 1.1
-          modus-themes-scale-2 1.15
-          modus-themes-scale-3 1.20
-          modus-themes-scale-4 1.25
-          modus-themes-scale-title 1.30)
-    ;; (setq modus-themes-operandi-color-overrides
-    ;;       '((bg-main . "#ededed")))
-    (setq modus-themes-vivendi-color-overrides
-          '((bg-main . "#100b17")
-            (bg-dim . "#161129")
-            (bg-alt . "#181732")
-            (bg-hl-line . "#191628")
-            (bg-active . "#282e46")
-            (bg-inactive . "#1a1e39")
-            (bg-region . "#393a53")
-            (bg-header . "#202037")
-            (bg-tab-bar . "#262b41")
-            (bg-tab-active . "#120f18")
-            (bg-tab-inactive . "#3a3a5a")
-            (fg-unfocused . "#9a9aab")))))
+    (setq doom-rouge-padded-modeline t))
+
+  (use-package doom-iosvkem-theme
+    :disabled
+    ;; :custom-face
+    ;; (default ((t (:background "#061229"))))
+    :config
+    (setq doom-Iosvkem-brighter-comments nil
+          doom-Iosvkem-comment-bg nil
+          doom-Iosvkem-brighter-modeline nil)))
 
 (use-package moody
   :disabled
@@ -5025,34 +5258,6 @@ currently loaded theme first."
   (setq x-underline-at-descent-line t)
   (moody-replace-sml/mode-line-buffer-identification)
   (moody-replace-vc-mode))
-
-(use-package doom-themes
-  :ensure t
-  ;; :defer
-  :config
-  ;; (setq doom-Iosvkem-brighter-comments nil
-  ;;       doom-Iosvkem-comment-bg nil
-  ;;       doom-Iosvkem-brighter-modeline nil)
-  ;; (custom-theme-set-faces
-  ;;  'doom-Iosvkem
-  ;;  '(default ((t (:background "#061229")))))
-  (custom-theme-set-faces 'user
-                          '(aw-background-face ((t (:background "#061229" :inverse-video nil :weight normal))))
-                          '(aw-leading-char-face ((t (:foreground "#bd93f9" :height 2.0 :weight normal)))))
-
-  (use-package doom-rouge-theme
-    ;; :init (load-theme 'doom-rouge t)
-    :config
-    (custom-theme-set-faces 'user
-                            '(hl-line ((t (:background "#1f2a3f"))))))
-
-  ;; (setq doom-one-brighter-comments t
-  ;;       doom-one-brighter-modeline t
-  ;;       doom-one-comment-bg nil)
-  ;; (setq doom-one-light-brighter-comments t
-  ;;       doom-one-light-brighter-modeline t
-  ;;       doom-one-light-comment-bg t)
-)
 
 ;;;################################################################
 ;; * EVIL-MODE
@@ -5095,4 +5300,5 @@ currently loaded theme first."
 ;; page-delimiter: ";; \\**"
 ;; eval:(outline-minor-mode 1)
 ;; eval:(outline-hide-sublevels 5)
+;; no-native-compile: t
 ;; End:

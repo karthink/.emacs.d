@@ -276,6 +276,13 @@ targets."
 ;;         (face           . list)
 ;;         (t              . grid)))
 
+  (add-to-list
+   'embark-exporters-alist
+   '(consult-flymake-error . embark-export-flymake))
+  
+  (defun embark-export-flymake (_errors)
+    (flymake-show-buffer-diagnostics))
+  
   (dolist (pair '((consult-fd . list)))
     (add-to-list 'embark-collect-initial-view-alist
                  pair))

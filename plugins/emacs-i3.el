@@ -22,7 +22,7 @@
           ('width '(left right))
           ('height '(up down)))))
 
-(defun my/emacs-i3-move-window (dir)
+(defun my/emacs-i3-move-window (dir &rest _)
   (let ((other-window (windmove-find-other-window dir))
         (other-direction (my/emacs-i3-direction-exists-p
                           (pcase dir

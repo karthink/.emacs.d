@@ -62,7 +62,7 @@
 
 ;; (add-hook 'emacs-startup-hook #'my/restore-file-name-handler-alist-h)
 
-;; Garbage collector optimization
+;; ;; Garbage collector optimization
 ;; (defvar my/gc-cons-threshold 33554432  ;32mb
 ;;   "The default value to use for `gc-cons-threshold'. If you experience freezing,
 ;; decrease this. If you experience stuttering, increase this.")

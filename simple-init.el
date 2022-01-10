@@ -28,9 +28,9 @@
 (when (require 'popup-buffers nil t) (popup-buffers-mode 1))
 
 (setq popup-buffers-reference-modes-list
-      (append +help-modes-list
-              +repl-modes-list
-              +occur-grep-modes-list))
+      (append my/help-modes-list
+              my/repl-modes-list
+              my/occur-grep-modes-list))
 (setq popup-buffers-reference-buffer-list
       '("^\\*Warnings\\*"
         "^\\*Compile-Log\\*"
@@ -72,7 +72,7 @@
 (global-set-key (kbd "M-SPC")
 		(defun my/cycle-spacing-impatient (&optional n preserve-nl-back)
 		  (interactive "*p")
-		  (cycle-spacing n preserve-nl-back 'fast)))
+		  (cycle-spacing (if (= n 1) -1 n) preserve-nl-back 'fast)))
 
 (global-set-key (kbd "<C-M-backspace>") 'backward-kill-sexp)
 

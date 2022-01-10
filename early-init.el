@@ -11,7 +11,7 @@
 ;; loaded, but after `early-init-file'.
 (setq package-enable-at-startup nil
       package-quickstart t
-      load-prefer-newer noninteractive)
+      load-prefer-newer t)
 
 (unless (or (daemonp) noninteractive)
   (let ((old-file-name-handler-alist file-name-handler-alist))
@@ -23,16 +23,14 @@
     (setq-default file-name-handler-alist nil)
     ;; ...but restore `file-name-handler-alist' later, because it is needed for
     ;; handling encrypted or compressed files, among other things.
-    (defun doom-reset-file-handler-alist-h ()
+    (defun my/reset-file-handler-alist ()
       (setq file-name-handler-alist
             ;; Merge instead of overwrite because there may have bene changes to
             ;; `file-name-handler-alist' since startup we want to preserve.
             (delete-dups (append file-name-handler-alist
                                  old-file-name-handler-alist))))
-    (add-hook 'emacs-startup-hook #'doom-reset-file-handler-alist-h 101))
+    (add-hook 'emacs-startup-hook #'my/reset-file-handler-alist 101))
 
-  ;; Emacs really shouldn't be displaying anything until it has fully started
-  ;; up. This saves a bit of time.
   (setq-default inhibit-redisplay t
                 inhibit-message t)
   (add-hook 'window-setup-hook
@@ -58,9 +56,6 @@
 (push '(tool-bar-lines . 0) default-frame-alist)
 (push '(vertical-scroll-bars) default-frame-alist)
 
-;; Resizing the Emacs frame can be a terribly expensive part of changing the
-;; font. By inhibiting this, we easily halve startup times with fonts that are
-;; larger than the system default.
 (setq frame-inhibit-implied-resize t)
 
 ;; Ignore X resources; its settings would be redundant with the other settings
@@ -68,3 +63,21 @@
 ;; cursor color is concerned).
 ;;; (advice-add #'x-apply-session-resources :override #'ignore)
 ;; (setq inhibit-x-resources nil)
+
+;; * NATIVE-COMP
+
+;; I'm still using Emacs 27.2, because it's good enough. This code configures
+;; the native compiler and is in preparation for 28.1.
+;; - Move eln files to a cache dir
+;; - Don't bombard the user with warnings
+;; - Compile packages on install, not at runtime
+(unless (version-list-<
+         (version-to-list emacs-version)
+         '(28 0 1 0))
+  (when (boundp 'native-comp-eln-load-path)
+    (add-to-list 'native-comp-eln-load-path
+                 (concat "~/.cache/emacs/" "eln-cache/"))
+    (setq native-comp-async-report-warnings-errors 'silent
+          native-comp-deferred-compilation t)))
+
+;;;################################################################

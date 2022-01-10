@@ -26,12 +26,12 @@
                  (window-height . 0.33)
                  (slot . 10)
                  (side . bottom)))
-  (setq ytel-invidious-api-url "https://inv.riverside.rocks")
+  (setq ytel-invidious-api-url "invidious.namazso.eu")
   (defvar ytel-invidious-api-alt-urls
     (mapcar (lambda (url) (concat "https://" url))
             '("inv.riverside.rocks" "invidious.silkky.cloud"
              "invidious-us.kavin.rocks" "ytb.trom.tf"
-             "yewtu.be" "invidious.namazso.eu"
+             "yewtu.be" "invidious.namazso.eu" "invidious.kavin.rocks"
              "ytprivate.com" "invidious.kavin.rocks"
              "vid.puffyan.us" "invidious.exonip.de"
              "invidious.snopyta.org" "y.com.cm"))

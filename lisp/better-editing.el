@@ -79,21 +79,6 @@
 ;;(add-hook 'text-mode-hook 'longlines-mode)
 (add-hook 'text-mode-hook 'toggle-word-wrap)
 
-;; Supercharge the way hippie-expand behaves, expand as little as
-;; possible
-(setq hippie-expand-try-functions-list 
-      '(try-expand-dabbrev-visible
-        try-expand-dabbrev
-        try-expand-dabbrev-all-buffers
-        try-complete-file-name-partially
-        try-complete-file-name
-        try-expand-all-abbrevs
-        try-expand-list
-        try-expand-line
-        try-expand-dabbrev-from-kill
-        try-complete-lisp-symbol-partially
-        try-complete-lisp-symbol))
-
 ;; Save clipboard before changing it
 (setq save-interprogram-paste-before-kill t)
 
@@ -115,10 +100,12 @@
 ;; (global-set-key (kbd "C-;") 'complete-symbol) 
 
 ;; Cycle spacing: just-one-space to no-space to original-spacing
-(global-set-key (kbd "M-SPC") (defun cycle-spacing-fast (&optional N)
-                                "Call `cycle-spacing', but in fast mode."
-                                (interactive "*p")
-                                (cycle-spacing N nil 'fast))) 
+(global-set-key (kbd "M-SPC")
+		(defun my/cycle-spacing-impatient (&optional n preserve-nl-back)
+		  (interactive "*p")
+                  "Call `cycle-spacing', but in fast mode."
+		  (cycle-spacing (if (= n 1) -1 n) preserve-nl-back 'fast)))
+
 ;;; Alternative to M-x
 (global-set-key "\C-x\C-m" 'execute-extended-command)
 ;;(global-set-key "\C-c\C-m" 'execute-extended-command)

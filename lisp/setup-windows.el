@@ -30,19 +30,20 @@ If buffer-or-name is nil return current buffer's mode."
   (let ((window (display-buffer-in-direction buffer alist)))
     (select-window window)))
 
-(defvar +occur-grep-modes-list '(occur-mode
+(defvar my/occur-grep-modes-list '(occur-mode
                                  grep-mode
                                  xref--xref-buffer-mode
                                  ivy-occur-grep-mode
                                  ivy-occur-mode
                                  locate-mode
+                                 flymake-diagnostics-buffer-mode
                                  rg-mode)
   "List of major-modes used in occur-type buffers")
 
 ;; This does not work at buffer creation since the major-mode for
 ;; REPLs is not yet set when `display-buffer' is called, but is
 ;; useful afterwards
-(defvar +repl-modes-list '(matlab-shell-mode
+(defvar my/repl-modes-list '(matlab-shell-mode
                            eshell-mode
                            geiser-repl-mode
                            shell-mode
@@ -52,7 +53,7 @@ If buffer-or-name is nil return current buffer's mode."
                            inferior-ess-julia-mode)
   "List of major-modes used in REPL buffers")
 
-(defvar +repl-names-list '("^\\*e*shell.*\\*"
+(defvar my/repl-names-list '("^\\*e*shell.*\\*"
                            "\\*.*REPL.*\\*"
                            "-eshell\\*$"
                            "\\*MATLAB\\*"
@@ -63,16 +64,16 @@ If buffer-or-name is nil return current buffer's mode."
                            "\\*ielm\\*")
   "List of buffer names used in REPL buffers")
 
-(defvar +help-modes-list '(helpful-mode
+(defvar my/help-modes-list '(helpful-mode
                            help-mode
                            pydoc-mode
                            TeX-special-mode)
   "List of major-modes used in documentation buffers")
 
-(defvar +man-modes-list '(Man-mode woman-mode)
+(defvar my/man-modes-list '(Man-mode woman-mode)
   "List of major-modes used in Man-type buffers")
 
-(defvar +message-modes-list '(compilation-mode)
+(defvar my/message-modes-list '(compilation-mode)
   "List of major-modes used in message buffers")
 
 (defun +helper-window-mode-line-format ()
@@ -156,7 +157,7 @@ If buffer-or-name is nil return current buffer's mode."
          ;; (preserve-size . (nil . t))
          )
 
-        ((lambda (buf act) (member (buffer-mode buf) +occur-grep-modes-list))
+        ((lambda (buf act) (member (buffer-mode buf) my/occur-grep-modes-list))
          (display-buffer-reuse-mode-window
           +select-buffer-in-direction
           +select-buffer-in-side-window)
@@ -184,7 +185,7 @@ If buffer-or-name is nil return current buffer's mode."
         ;; Windows on the side
         ;; ----------------------------------------------------------------
 
-        ((lambda (buf act) (member (buffer-mode buf) +man-modes-list))
+        ((lambda (buf act) (member (buffer-mode buf) my/man-modes-list))
          ;; "^\\*\\(?:Wo\\)?Man"
          (+select-buffer-in-side-window)
          (window-width . 76)       ; See the :hook
@@ -246,7 +247,7 @@ If buffer-or-name is nil return current buffer's mode."
         ;;  (side . bottom)
         ;;  (slot . -8))
 
-        ((lambda (buf act) (member (buffer-mode buf) +message-modes-list))
+        ((lambda (buf act) (member (buffer-mode buf) my/message-modes-list))
          (display-buffer-at-bottom display-buffer-in-side-window)
          (window-height . 0.25)
          (side . bottom)
@@ -272,7 +273,7 @@ If buffer-or-name is nil return current buffer's mode."
 
         ("\\(?:[Oo]utput\\)\\*" display-buffer-in-side-window
          (window-height . (lambda (win)
-                            (fit-window-to-buffer win (floor (frame-height) 5))))
+                            (fit-window-to-buffer win (floor (frame-height) 3))))
          (side . bottom)
          (slot . -4)
          ;; (preserve-size . (nil . t))
@@ -317,21 +318,25 @@ If buffer-or-name is nil return current buffer's mode."
                                )))
 
 
-        ((lambda (buf act) (seq-some (lambda (regex) (string-match-p regex buf))
-                                     +repl-names-list))
+        ((lambda (buf act) (or (seq-some (lambda (regex) (string-match-p regex buf))
+                                    my/repl-names-list)
+                          (seq-some (lambda (mode)
+                                      (equal
+                                       (buffer-mode buf)
+                                       mode))
+                                    my/repl-modes-list)))
          (display-buffer-reuse-window
           +select-buffer-in-direction
           +select-buffer-in-side-window)
          ;; +select-buffer-at-bottom
          (window-height . .35)
          (window-width .  .40)
+         ;; (preserve-size . (nil . t))
          (direction . below)
          (side . bottom)
-         (slot . 1)
-         ;; (preserve-size . (nil . t))
-         )
+         (slot . 1))
 
-        ((lambda (buf act) (member (buffer-mode buf) +help-modes-list))
+        ((lambda (buf act) (member (buffer-mode buf) my/help-modes-list))
          (display-buffer-reuse-window
           +select-buffer-in-side-window
           display-buffer-in-direction)
@@ -428,7 +433,7 @@ If buffer-or-name is nil return current buffer's mode."
       )
 
 ;;;###autoload
-(defun +display-buffer-at-bottom ()
+(defun my/display-buffer-at-bottom ()
   "Move the current buffer to the bottom of the frame.  This is
 useful to take a buffer out of a side window.
 
@@ -441,8 +446,7 @@ didactic purposes."
       (display-buffer-at-bottom
        buffer '((window-height . (lambda (win)
                                    (fit-window-to-buffer
-                                    win (/ (frame-height) 3)))))
-       ))))
+                                    win (/ (frame-height) 3)))))))))
 
 (eval-after-load 'org
   (progn 

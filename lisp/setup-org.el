@@ -272,7 +272,63 @@ an embedded LaTeX fragment, let `texmathp' do its job.
               ;; (setq ad-return-value t
 	      ;;       texmathp-why '("Org mode embedded math" . 0))
 	      ;; (when p ad-do-it)
-              ))))))))
+              )))))))
+
+  ;; From https://github.com/jkitchin/scimax
+  ;; Numbered equations all have (1) as the number for fragments with vanilla
+  ;; org-mode. This code injects the correct numbers into the previews so they
+  ;; look good.
+  (defun my/org-renumber-environment (orig-func &rest args)
+    "A function to inject numbers in LaTeX fragment previews."
+    (let ((results '())
+	  (counter -1)
+	  (numberp))
+      (setq results (cl-loop for (begin .  env) in
+			     (org-element-map (org-element-parse-buffer) 'latex-environment
+			       (lambda (env)
+			         (cons
+			          (org-element-property :begin env)
+			          (org-element-property :value env))))
+			     collect
+			     (cond
+			      ((and (string-match "\\\\begin{equation}" env)
+			            (not (string-match "\\\\tag{" env)))
+			       (cl-incf counter)
+			       (cons begin counter))
+			      ((string-match "\\\\begin{align}" env)
+			       (prog2
+			           (cl-incf counter)
+			           (cons begin counter)
+			         (with-temp-buffer
+			           (insert env)
+			           (goto-char (point-min))
+			           ;; \\ is used for a new line. Each one leads to a number
+			           (cl-incf counter (count-matches "\\\\$"))
+			           ;; unless there are nonumbers.
+			           (goto-char (point-min))
+			           (cl-decf counter (count-matches "\\nonumber")))))
+			      (t
+			       (cons begin nil)))))
+
+      (when (setq numberp (cdr (assoc (point) results)))
+        (setf (car args)
+	      (concat
+	       (format "\\setcounter{equation}{%s}\n" numberp)
+	       (car args)))))
+
+    (apply orig-func args))
+
+  (defun my/toggle-latex-equation-numbering ()
+    "Toggle whether LaTeX fragments are numbered."
+    (interactive)
+    (if (not (get 'my/org-renumber-environment 'enabled))
+        (progn
+	  (advice-add 'org-create-formula-image :around #'my/org-renumber-environment)
+	  (put 'my/org-renumber-environment 'enabled t)
+	  (message "Latex numbering enabled"))
+      (advice-remove 'org-create-formula-image #'my/org-renumber-environment)
+      (put 'my/org-renumber-environment 'enabled nil)
+      (message "Latex numbering disabled."))))
 
 (use-package consult-reftex
   :disabled
@@ -611,9 +667,9 @@ has no effect."
   (setq org-html-htmlize-output-type 'css)
   (with-eval-after-load 'ox-latex
     (setq org-latex-caption-above nil)
-    (setq org-latex-default-packages-alist
-          (delete '("" "hyperref" nil) org-latex-default-packages-alist))
-    (push '("hidelinks" "hyperref" nil) (cdr (last org-latex-default-packages-alist)))
+    ;; (setq org-latex-default-packages-alist
+    ;;       (delete '("" "hyperref" nil) org-latex-default-packages-alist))
+    ;; (push '("hidelinks" "hyperref" nil) (cdr (last org-latex-default-packages-alist)))
     (when (executable-find "latexmk")
       (setq org-latex-pdf-process
             '("latexmk -f -pdf -%latex -shell-escape -interaction=nonstopmode -output-directory=%o %f")))
@@ -626,9 +682,10 @@ has no effect."
                    ("\\paragraph{%s}" . "\\paragraph*{%s}")
                    ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
   (setq org-export-with-LaTeX-fragments t
-        org-latex-prefer-user-labels t)
+        org-latex-prefer-user-labels t
+        org-latex-hyperref-template nil)
   
-  (defun org-export-ignore-headlines (data backend info)
+  (defun my/org-export-ignore-headlines (data backend info)
     "Remove headlines tagged \"ignore\" retaining contents and promoting children.
 Each headline tagged \"ignore\" will be removed retaining its
 contents and promoting any children headlines to the level of the
@@ -656,7 +713,7 @@ parent."
       info nil)
     data)
 
-  (add-hook 'org-export-filter-parse-tree-functions 'org-export-ignore-headlines)
+  (add-hook 'org-export-filter-parse-tree-functions 'my/org-export-ignore-headlines)
   
   )
 
@@ -695,9 +752,17 @@ parent."
   :after ob-octave)
 
 (use-package ob-julia
-  ;; Source: "https://git.nixo.xyz/nixo/ob-julia.git"
+  ;; Source: https://git.nixo.xyz/nixo/ob-julia.git
+  :disabled
   :load-path "~/.local/share/git/ob-julia/"
   :requires ess
+  :defer)
+
+
+(use-package ob-julia
+  ;; Source: https://github.com/nico202/ob-julia.git
+  :load-path "~/.local/share/git/ob-julia/"
+  :requires (ess ess-julia)
   :defer)
 
 (use-package ess
@@ -1179,7 +1244,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
 ;; ** ORG-FRAGTOG (seamless latex fragment preview)
 ;;;----------------------------------------------------------------
 (use-package org-fragtog
-  :ensure
+  :disabled
   :after org)
 
 (provide 'setup-org)

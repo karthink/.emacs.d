@@ -26,39 +26,76 @@
               ("C-l"     . embark-export))
   :config
   (setq vertico-count 15
-        vertico-cycle t)
-  ;; (defvar vertico-min-chars 3)
-  ;; (defun vertico-min-chars-ad ()
-  ;;   (let ((content (minibuffer-contents-no-properties)))
-  ;;     (>= (length content) vertico-min-chars)))
-  ;; (advice- #'vertico--exhibit :before-while #'vertico-min-chars-ad)
+        vertico-cycle t
+        vertico-resize t)
   (advice-add #'tmm-add-prompt :after #'minibuffer-hide-completions))
 
+(use-package vertico-multiform
+  :load-path "~/.local/share/git/vertico/extensions/"
+  :commands vertico-multiform-mode
+  :after vertico-flat
+  :bind (:map vertico-map
+              ("M-q" . vertico-multiform-grid)
+              ("C-l" . vertico-multiform-unobtrusive)
+              ("C-M-l" . embark-export))
+  :config
+  (setq vertico-multiform-categories
+         '((file my/vertico-grid-mode reverse)
+           (project-file my/vertico-grid-mode reverse)
+           (imenu buffer)
+           (consult-location buffer)
+           (consult-grep buffer)
+           (notmuch-result reverse)
+           (minor-mode reverse)
+           (reftex-label reverse)
+           (bib-reference reverse)
+           (t unobtrusive)))
+   (setq vertico-multiform-commands
+         '((load-theme my/vertico-grid-mode reverse)
+           (my/toggle-theme my/vertico-grid-mode reverse)
+           (consult-dir-maybe reverse)
+           (consult-dir reverse)
+           (consult-history reverse)
+           (consult-completion-in-region reverse)
+           (completion-at-point reverse)
+           (org-roam-node-find reverse)
+           (embark-completing-read-prompter reverse)
+           (embark-act-with-completing-read reverse)
+           (embark-prefix-help-command reverse)
+           (tmm-menubar reverse)))
+  
+   (defun vertico-multiform-unobtrusive ()
+     "Toggle the quiet display."
+     (interactive)
+     (vertico-multiform--display-toggle 'vertico-unobtrusive-mode)
+     (if vertico-unobtrusive-mode
+         (vertico-multiform--temporary-mode 'vertico-reverse-mode -1)
+       (vertico-multiform--temporary-mode 'vertico-reverse-mode 1)))
+
+   (vertico-multiform-mode))
+
+(use-package vertico-unobtrusive
+  :load-path "~/.local/share/git/vertico/extensions/"
+  :after vertico-flat)
+
 (use-package vertico-grid
-  :disabled
   :load-path "~/.local/share/git/vertico/extensions/"
   :after vertico
-  :bind (:map vertico-map
-              ("M-q" . vertico-grid-mode))
+  ;; :bind (:map vertico-map ("M-q" . vertico-grid-mode))
   :config
+  (defvar my/vertico-count-orig vertico-count)
+  (define-minor-mode my/vertico-grid-mode
+    "Vertico-grid display with modified row count."
+    :global t :group 'vertico
+    (cond
+     (my/vertico-grid-mode
+      (setq my/vertico-count-orig vertico-count)
+      (setq vertico-count 4)
+      (vertico-grid-mode 1))
+     (t (vertico-grid-mode 0)
+        (setq vertico-count my/vertico-count-orig))))
   (setq vertico-grid-separator "    ")
-  (defvar vertico-grid-view-categories
-    '(symbol command buffer))
-  (defun vertico-grid-maybe ()
-    (let ((category 
-           (completion-metadata-get (completion-metadata
-                                     (buffer-substring-no-properties
-                                      (minibuffer-prompt-end)
-                                      (max (minibuffer-prompt-end) (point)))
-                                     minibuffer-completion-table
-                                     minibuffer-completion-predicate)
-                                    'category)))
-      (when (member category vertico-grid-view-categories)
-        (vertico-grid-mode 1))))
-  (advice-add 'vertico--setup :after #'vertico-grid-maybe)
-  (add-hook 'minibuffer-exit-hook
-            (lambda () (when (bound-and-true-p vertico-grid-mode))
-              (vertico-grid-mode -1))))
+  (setq vertico-grid-lookahead 50))
 
 (use-package vertico-quick
   :load-path "~/.local/share/git/vertico/extensions/"
@@ -91,64 +128,21 @@
          ("H-."   . vertico-repeat)))
 
 (use-package vertico-reverse
+  ;; :disabled
   :load-path "~/.local/share/git/vertico/extensions/"
-  :after vertico
-  :hook (vertico-reverse-mode . my/vertico-reverse-setup)
-  :config
-  (defun my/vertico-reverse-setup ()
-    (setq vertico-resize vertico-reverse-mode)))
+  :after vertico)
 
 (use-package vertico-flat
-  :disabled
   :load-path "~/.local/share/git/vertico/extensions/"
-  :after vertico
-  :defer 2
-  :bind (:map vertico-map
-         ("M-q" . vertico-flat-mode))
-  :hook ((minibuffer-setup . my/vertico-list-mode-setup)
-         (minibuffer-exit . my/vertico-list-mode-exit))
-  :config
-  (defvar vertico-list-mode-commands nil
-    "List of commands that should not use vertico-flat mode")
-  (defvar my/vertico-flat-mode-restore nil
-    "Flag to restore vertico mode")
-  
-  (setq vertico-list-mode-commands
-        '(consult-line
-          consult-line-symbol-at-point
-          consult-outline
-          consult-register-load
-          consult-imenu consult-project-imenu
-          consult-completion-in-region
-          consult-yank-pop
-          embark-keymap-help
-          consult-grep consult-ripgrep consult-git-grep
-          bibtex-actions-insert-key bibtex-actions-insert-citation
-          bibtex-actions-insert-reference bibtex-actions-insert-bibtex
-          consult-reftex-insert-reference
-          consult-find affe-find affe-grep
-          my/search-occur-browse-url my/eshell-previous-matching-input
-          eshell/cd))
-  
-  (defun my/vertico-list-mode-setup ()
-    (when (and vertico-flat-mode
-               (member this-command vertico-list-mode-commands))
-      (vertico-flat-mode -1)
-      (setq my/vertico-flat-mode-restore t)))
-  
-  (defun my/vertico-list-mode-exit ()
-    (when my/vertico-flat-mode-restore
-      (vertico-flat-mode 1)
-      (setq my/vertico-flat-mode-restore nil))))
+  ;; :bind (:map vertico-map
+  ;;             ("M-q" . vertico-flat-mode))
+  :after vertico)
 
 (use-package vertico-buffer
-  :disabled
   :load-path "~/.local/share/git/vertico/extensions/"
   :after vertico
-  :hook (vertico-buffer-mode . vertico-buffer-setup)
+  ;; :hook (vertico-buffer-mode . vertico-buffer-setup)
   :config
-  (defun vertico-buffer-setup ()
-    (setq vertico-count (if vertico-buffer-mode 50 12)))
   (setq vertico-buffer-display-action 'display-buffer-reuse-window))
 
 (provide 'setup-vertico)

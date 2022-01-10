@@ -134,6 +134,22 @@ When the number of characters in a buffer exceeds this threshold,
 ;;                                         " ARG")))
 ;;       (consult--find (or prompt "Find: ") consult-find-command initial)))
 
+  (dolist (func '(consult-fd consult-git-grep
+                             consult-ripgrep consult-grep))
+    (advice-add func :before (defun my/mark-jump-point (&rest _)
+                               (xref-push-marker-stack)
+                               (push-mark))))
+  
+  (use-package consult-flymake
+    :bind ("M-g f" . consult-flymake)
+    ;; :config
+    ;; (advice-add 'consult-flymake :before
+    ;;             #'my/consult-flymake-ensure)
+    ;; (defun my/consult-flymake-ensure ()
+    ;;   (interactive)
+    ;;   (flymake-mode 1))
+    )
+  
   (use-package org
   :defer
   :bind (:map org-mode-map
@@ -145,6 +161,7 @@ When the number of characters in a buffer exceeds this threshold,
          ("C-x M-:" . consult-complex-command)
          ("M-s M-o" . consult-multi-occur)
          ("M-X" . consult-mode-command)
+         ("C-h C-m" . consult-minor-mode-menu)
          ("C-c C-j" . consult-outline)
          ("M-s M-j" . consult-outline)
          ("M-s l"   . consult-line-symbol-at-point)
@@ -156,7 +173,6 @@ When the number of characters in a buffer exceeds this threshold,
          ("<help> a" . consult-apropos)
          ("M-s i" . consult-imenu-all)
          ("s-b" . consult-buffer)
-         ("M-g f" . consult-flymake)
          ("M-g j" . consult-compile-error)
          ("M-g g" . consult-goto-line)
          ;; ("H-b" . consult-buffer)
@@ -176,7 +192,7 @@ When the number of characters in a buffer exceeds this threshold,
          :map space-menu-file-map
          ("l" . consult-locate)
          :map minibuffer-local-map
-         ("C-r" . consult-history)))
+         ("M-r" . consult-history)))
 
 (use-package consult-dir
   :load-path "plugins/consult-dir/"

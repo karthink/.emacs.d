@@ -15,7 +15,7 @@
       (windmove-do-window-select direction))))
 
 (defun my/emacs-i3-direction-exists-p (dir)
-  (some (lambda (dir)
+  (seq-some (lambda (dir)
           (let ((win (windmove-find-other-window dir)))
             (and win (not (window-minibuffer-p win)))))
         (pcase dir

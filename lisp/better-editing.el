@@ -137,6 +137,7 @@
 ;; Set keyboard shortcuts for parenthesizing sentences in the
 ;; following modes
 (define-key text-mode-map "\M-(" 'insert-parentheses-sentence)
+(define-key erc-mode-map "\M-(" 'insert-parentheses-sentence)
 
 ;; Key to duplicate line
 (global-set-key (kbd "C-S-d") 'duplicate-line)

@@ -385,8 +385,10 @@ send a notification when the process has exited."
   :config
   (setq async-shell-command-buffer 'new-buffer))
 
+;; capf-autosuggest is a good idea, but it's too slow and laggy in practice.
 (use-package capf-autosuggest
-  :ensure t
+  ;; :ensure t
+  :disabled
   :hook ((comint-mode) . capf-autosuggest-mode))
 
 (provide 'setup-shells)

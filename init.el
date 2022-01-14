@@ -921,6 +921,7 @@ output instead."
 
 (use-package window
   :bind (("H-+" . balance-windows-area)
+         ("C-x +" . balance-windows-area)
          ("C-x q" . kill-buffer-and-window)))
 
 ;; setup-windows:
@@ -976,6 +977,7 @@ output instead."
                   "^\\*evil-registers\\*"
                   "^\\*Apropos"
                   "^Calc:"
+                  "^\\*eldoc\\*"
                   "^\\*TeX errors\\*"
                   "^\\*ielm\\*"
                   "^\\*TeX Help\\*"
@@ -1014,8 +1016,8 @@ output instead."
     (advice-add 'popper-echo :around
                 (defun my/popper-echo-no-which-key (orig-fn)
                   (let ((which-key-show-transient-maps nil))
-                    (funcall orig-fn)))))
-  (popper-echo-mode +1)
+                    (funcall orig-fn))))
+    (popper-echo-mode +1))
 
   :config
   (setq popper-display-control 'user)
@@ -3488,20 +3490,31 @@ project, as defined by `vc-root-dir'."
 ;;;----------------------------------------------------------------
 ;; ** CALC
 ;;;----------------------------------------------------------------
-;;;###autoload
-(global-set-key (kbd "H-*") 'calc-dispatch)
-(global-set-key (kbd "H-C") 'calc)
-(defun calc-on-line ()
- "Evaluate `calc' on the contents of line at point."
-  (interactive)
-       (cond ((region-active-p)
-              (let* ((beg (region-beginning))
-                     (end (region-end))
-                     (string (buffer-substring-no-properties beg end)))
-                (kill-region beg end)
-                (insert (calc-eval string))))
-             (t (end-of-line) (insert " = " (calc-eval (thing-at-point 'line))))))
-(global-set-key (kbd "C-S-e") 'calc-on-line)
+(use-package calc
+  :bind (("C-x c" . calc)
+         ("H-S-c" . calc)
+         ("H-*" . calc-dispatch)
+         ("C-S-e" . latex-math-from-calc))
+  :config
+  (defun latex-math-from-calc ()
+    "Evaluate `calc' on the contents of line at point."
+    (interactive)
+    (let ((lang (when (member major-mode '(org-mode latex-mode))
+                  'latex)))
+      (cond ((region-active-p)
+             (let* ((beg (region-beginning))
+                    (end (region-end))
+                    (string (buffer-substring-no-properties beg end)))
+               (kill-region beg end)
+               (insert (calc-eval `(,string calc-language ,lang
+                                            calc-prefer-frac t
+                                            calc-angle-mode rad)))))
+            (t (let ((l (thing-at-point 'line)))
+                 (end-of-line 1) (kill-line 0)
+                 (insert (calc-eval `(,l
+                                      calc-language ,lang
+                                      calc-prefer-frac t
+                                      calc-angle-mode rad)))))))))
 
 (use-package calctex
   :disabled

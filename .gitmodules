@@ -31,3 +31,6 @@
 [submodule "snippets"]
 	path = snippets
 	url = git@github.com:karthink/yasnippets.git
+[submodule "plugins/calc-transient"]
+	path = plugins/calc-transient
+	url = git@github.com:karthink/calc-transient.git

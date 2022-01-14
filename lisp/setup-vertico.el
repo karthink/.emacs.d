@@ -38,6 +38,7 @@
               ("M-q" . vertico-multiform-grid)
               ("C-l" . vertico-multiform-unobtrusive)
               ("C-M-l" . embark-export))
+  :init (vertico-multiform-mode 1)
   :config
   (setq vertico-multiform-categories
          '((file my/vertico-grid-mode reverse)
@@ -49,6 +50,7 @@
            (minor-mode reverse)
            (reftex-label reverse)
            (bib-reference reverse)
+           (xref-location reverse)
            (t unobtrusive)))
    (setq vertico-multiform-commands
          '((load-theme my/vertico-grid-mode reverse)
@@ -70,9 +72,7 @@
      (vertico-multiform--display-toggle 'vertico-unobtrusive-mode)
      (if vertico-unobtrusive-mode
          (vertico-multiform--temporary-mode 'vertico-reverse-mode -1)
-       (vertico-multiform--temporary-mode 'vertico-reverse-mode 1)))
-
-   (vertico-multiform-mode))
+       (vertico-multiform--temporary-mode 'vertico-reverse-mode 1))))
 
 (use-package vertico-unobtrusive
   :load-path "~/.local/share/git/vertico/extensions/"

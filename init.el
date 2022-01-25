@@ -180,7 +180,6 @@
                                      "magit" "modus-themes" "diff-hl"
                                      "dired" "ibuffer" "pdf-tools"))
                         (with-demoted-errors "Error: %S" (load-library lib)))
-                      (load-theme 'doom-rouge t)
                       (when (featurep 'pdf-tools) (pdf-tools-install))
                       (let ((elapsed (float-time (time-subtract (current-time)
                                                                 after-init-time))))
@@ -709,7 +708,8 @@ output instead."
   :load-path "~/.local/share/git/melpa/explain-pause-mode/")
 
 (use-package vterm
-  :ensure t
+  :when (not IS-GUIX)
+  :ensure
   :defer)
 
 ;;;----------------------------------------------------------------
@@ -1990,6 +1990,7 @@ environments."
 
 ;; *** PDFs
 (use-package pdf-tools
+  :when (not IS-GUIX)
   :commands pdf-tools-install
   :ensure)
 
@@ -2210,10 +2211,12 @@ environments."
   )
 
 (use-package jupyter 
+  :when (not IS-GUIX)
   :defer
   :ensure t)
 
 (use-package conda
+  :when (not IS-GUIX)
   :commands conda-env-activate
   :ensure t
   :config

@@ -14,7 +14,10 @@
 (defconst IS-LINUX   (eq system-type 'gnu/linux))
 (defconst IS-WINDOWS (memq system-type '(cygwin windows-nt ms-dos)))
 (defconst IS-BSD     (or IS-MAC (eq system-type 'berkeley-unix)))
-
+(defconst IS-GUIX    (and IS-LINUX
+                          (with-temp-buffer
+                            (insert-file-contents "/etc/os-release")
+                            (search-forward "ID=guix" nil t))))
 ;; Disable bidirectional text rendering for a modest performance boost. Just
 ;; need to remember to turn it on when displaying a right-to-left language!
 (setq-default bidi-display-reordering 'left-to-right)

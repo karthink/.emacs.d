@@ -273,6 +273,13 @@ USE-SINGLE-P) with mpv."
           (insert (concat plus-minus tag " ")))))
     (elfeed-search-update :force))
   
+  (defun my/elfeed-quick-switch-filter ()
+    (interactive)
+    (bookmark-jump
+     (consult--read
+      (consult--bookmark-candidates)
+      :prompt "Elfeed bookmark: "
+      :initial "elfeed/")))
   ;;----------------------------------------------------------------------
   ;; Faces
   ;;----------------------------------------------------------------------
@@ -304,6 +311,7 @@ USE-SINGLE-P) with mpv."
             "B" 'elfeed-show-eww-open
             "x" 'elfeed-search-browse-url)
   (:keymaps 'elfeed-search-mode-map
+            "C-<tab>" 'my/elfeed-quick-switch-filter
             "B" 'elfeed-search-eww-open
             "W" 'elfeed-search-eww-open
             "x" 'elfeed-search-browse-url))

@@ -8,10 +8,11 @@
 ;; ** KEYBINDINGS
 ;;----------------------------------------------------------------------
 
-(global-set-key [remap kill-buffer] 'kill-this-buffer)
-(global-set-key (kbd "M-`") (lambda (&optional _arg)
-                              (interactive)
-                              (switch-to-buffer (other-buffer))))
+(global-set-key (kbd "C-x k") 'my/kill-this-buffer)
+(global-set-key (kbd "M-`")
+                (defun my/switch-to-other-buffer (&optional _arg)
+                  (interactive)
+                  (switch-to-buffer (other-buffer))))
 
 ;; Keys to traverse buffers
 ;; (global-set-key (kbd "<C-M-return>") 'ido-display-buffer)
@@ -85,7 +86,7 @@ nil."
 (global-set-key (kbd "H-3") 'my/split-window-right)
 (global-set-key (kbd "H-4") ctl-x-4-map)
 (global-set-key (kbd "H-5") ctl-x-5-map)
-(global-set-key (kbd "H-k") 'kill-this-buffer)
+(global-set-key (kbd "H-k") 'my/kill-this-buffer)
 (global-set-key (kbd "H-q") 'kill-buffer-and-window)
 (global-set-key (kbd "<f7>") '+make-frame-floating-with-current-buffer)
 ;;----------------------------------------------------------------------
@@ -102,6 +103,15 @@ nil."
 ;;           ("<down>"  . ignore             ))))
 
 ;; (add-hook 'iswitchb-define-mode-map-hook 'iswitchb-local-keys)
+
+;;;###autoload
+(defun my/kill-this-buffer (&optional arg)
+  (interactive "P")
+  (pcase arg
+    ('4 (call-interactively #'kill-buffer))
+    (_ (kill-buffer (current-buffer)))))
+
+
 
 ;;;###autoload
 (defun toggle-window-split ()

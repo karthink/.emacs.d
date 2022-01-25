@@ -50,18 +50,21 @@ If buffer-or-name is nil return current buffer's mode."
                            vterm-mode
                            inferior-python-mode
                            cider-repl-mode
+                           jupyter-repl-mode
                            inferior-ess-julia-mode)
   "List of major-modes used in REPL buffers")
 
-(defvar my/repl-names-list '("^\\*e*shell.*\\*"
-                           "\\*.*REPL.*\\*"
-                           "-eshell\\*$"
-                           "\\*MATLAB\\*"
-                           "\\*Python\\*"
-                           "\\*Inferior .*\\*$"
-                           "^\\*julia.*\\*$"
-                           "^\\*cider-repl.*\\*$"
-                           "\\*ielm\\*")
+
+(defvar my/repl-names-list
+  '("^\\*\\(?:.*?-\\)\\{0,1\\}e*shell[^z-a]*\\(?:\\*\\|<[[:digit:]]+>\\)$"
+    "\\*.*REPL.*\\*"
+    "\\*MATLAB\\*"
+    "\\*Python\\*"
+    "^\\*jupyter-repl.*?\\(\\*\\|<[[:digit:]]>\\)$"
+    "\\*Inferior .*\\*$"
+    "^\\*julia.*\\*$"
+    "^\\*cider-repl.*\\*$"
+    "\\*ielm\\*")
   "List of buffer names used in REPL buffers")
 
 (defvar my/help-modes-list '(helpful-mode
@@ -138,6 +141,9 @@ If buffer-or-name is nil return current buffer's mode."
 (setq display-buffer-alist
       '(
 
+        ("^\\*[Ee]shell [Ee]xport: .*\\*$"
+         (display-buffer-reuse-window display-buffer-use-some-window))
+        
         ;; ----------------------------------------------------------------
         ;; Windows on top
         ;; ----------------------------------------------------------------
@@ -211,7 +217,7 @@ If buffer-or-name is nil return current buffer's mode."
          (side . right)
          (slot . 5))
 
-        ("*undo-tree*" ;; (lambda (buf act) (equal (buffer-mode buf) 'undo-tree-visualizer-mode))
+        ("\\*undo-tree\\*" ;; (lambda (buf act) (equal (buffer-mode buf) 'undo-tree-visualizer-mode))
           (display-buffer-in-direction)
          (window-width . 35) ;; (lambda (win) (fit-window-to-buffer win nil nil 65 40 t)))
          (direction . right)

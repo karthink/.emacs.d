@@ -11,7 +11,9 @@
   (setq completion-styles '(orderless partial-completion))
   (setq orderless-matching-styles
         '(orderless-regexp
-          orderless-strict-leading-initialism)
+          orderless-initialism
+          ;; orderless-strict-leading-initialism
+          )
         orderless-style-dispatchers
         '(my/orderless-flex-dispatcher
           my/orderless-literal-dispatcher
@@ -41,6 +43,45 @@
     (when (string-prefix-p "!" pattern)
       `(orderless-without-literal . ,(substring pattern 1))))
 
+  ;; These were removed from Orderless, I use them.
+  (defun orderless--strict-*-initialism (component &optional anchored)
+    "Match a COMPONENT as a strict initialism, optionally ANCHORED.
+The characters in COMPONENT must occur in the candidate in that
+order at the beginning of subsequent words comprised of letters.
+Only non-letters can be in between the words that start with the
+initials.
+If ANCHORED is `start' require that the first initial appear in
+the first word of the candidate.  If ANCHORED is `both' require
+that the first and last initials appear in the first and last
+words of the candidate, respectively."
+    (orderless--separated-by
+     '(seq (zero-or-more alpha) word-end (zero-or-more (not alpha)))
+     (cl-loop for char across component collect `(seq word-start ,char))
+     (when anchored '(seq (group buffer-start) (zero-or-more (not alpha))))
+     (when (eq anchored 'both)
+       '(seq (zero-or-more alpha) word-end (zero-or-more (not alpha)) eol))))
+
+  (defun orderless-strict-initialism (component)
+    "Match a COMPONENT as a strict initialism.
+This means the characters in COMPONENT must occur in the
+candidate in that order at the beginning of subsequent words
+comprised of letters.  Only non-letters can be in between the
+words that start with the initials."
+    (orderless--strict-*-initialism component))
+
+  (defun orderless-strict-leading-initialism (component)
+    "Match a COMPONENT as a strict initialism, anchored at start.
+See `orderless-strict-initialism'.  Additionally require that the
+first initial appear in the first word of the candidate."
+    (orderless--strict-*-initialism component 'start))
+
+  (defun orderless-strict-full-initialism (component)
+    "Match a COMPONENT as a strict initialism, anchored at both ends.
+See `orderless-strict-initialism'.  Additionally require that the
+first and last initials appear in the first and last words of the
+candidate, respectively."
+    (orderless--strict-*-initialism component 'both))
+  
   :bind (:map minibuffer-local-completion-map
               ("SPC" . self-insert-command)))
 

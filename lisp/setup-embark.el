@@ -53,12 +53,17 @@
   (setq prefix-help-command #'embark-prefix-help-command)
 
   ;; Embark indicators
-  (setq embark-indicators '(embark-minimal-indicator
+  (setq embark-indicators '(embark-which-key-indicator
+                            ;; embark-minimal-indicator
                             embark-highlight-indicator
                             embark-isearch-highlight-indicator))
   ;; (add-to-list 'embark-indicators 'embark-mixed-indicator)
   ;; (setq embark-mixed-indicator-delay 0.5)
-  (setq embark-verbose-indicator-display-action '(display-buffer-at-bottom))
+  (setq embark-verbose-indicator-display-action
+        '(display-buffer-at-bottom
+          (window-height . (lambda (win) (fit-window-to-buffer
+                                     win (floor (frame-height) 
+                                                3))))))
 
   ;; Utility commands
   (defun embark-minimal-act (&optional arg)
@@ -154,8 +159,8 @@
       ("g" revert-buffer))
 
     (add-to-list 'embark-keymap-alist '(this-buffer-file . this-buffer-file-map))
-    (cl-pushnew 'revert-buffer embark-allow-edit-actions)
-    (cl-pushnew 'rename-file-and-buffer embark-allow-edit-actions)
+    ;; (cl-pushnew 'revert-buffer embark-allow-edit-actions)
+    ;; (cl-pushnew 'rename-file-and-buffer embark-allow-edit-actions)
     
     (use-package helpful
       :defer
@@ -209,7 +214,7 @@
 
     ;; Which-key style indicator
     (use-package which-key
-      :defer
+      :after which-key
       :config
       ;; From the embark wiki
       (defun embark-which-key-indicator ()

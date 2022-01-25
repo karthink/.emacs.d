@@ -482,7 +482,7 @@
 ;; For lazy typists
 (fset 'yes-or-no-p 'y-or-n-p)
 ;; Move the mouse away if the cursor gets close
-(mouse-avoidance-mode 'animate)
+;; (mouse-avoidance-mode 'animate)
 
 ;; highlight the current line, as in Matlab
 ;; (global-hl-line-mode)
@@ -1298,10 +1298,11 @@ surrounded by word boundaries."
 ;; Colorize color names and parens in buffers
 (use-package rainbow-mode
   :commands rainbow-mode
-  :ensure t
-  ;; :config
-  ;; (setq rainbow-delimiters-max-face-count 3)
-  )
+  :ensure t)
+
+(use-package rainbow-delimiters
+  :commands rainbow-delimiters-mode
+  :ensure t)
 
 (defun sudo-find-file (file)
   "Open FILE as root."
@@ -1802,6 +1803,18 @@ environments."
       (goto-char beg)
       (TeX-activate-region))))
 
+(use-package latex
+  :defer
+  :if (version<= "28.0" emacs-version)
+  :config
+  (defvar my/TeX-error-map
+    (let ((map (make-sparse-keymap)))
+      (define-key map "n" 'TeX-next-error)
+      (define-key map "p" 'TeX-previous-error)
+      map))
+  (put 'TeX-next-error 'repeat-map 'my/TeX-error-map)
+  (put 'TeX-previous-error 'repeat-map 'my/TeX-error-map))
+
 (use-package tex-fold
   :after latex
   :defer
@@ -1873,8 +1886,10 @@ environments."
   :load-path "plugins/consult-reftex/"
   :after (reftex consult embark)
   :bind (:map reftex-mode-map
-         ("C-c )"   . consult-reftex-insert-reference)
-         ("C-c M-." . consult-reftex-goto-label)))
+         ;; ("C-c )"   . consult-reftex-insert-reference)
+         ("C-c M-." . consult-reftex-goto-label))
+  :config (setq consult-reftex-preview-function
+                #'consult-reftex-make-window-preview))
 
 ;; (setq-default TeX-master nil)
 (use-package cdlatex
@@ -1914,10 +1929,10 @@ environments."
 
 ;; Make cdlatex play nice inside org tables
 (use-package lazytab
-  :load-path "plugins/lazytab/"
+  :load-path "plugins/lazytab/";; 
   :after cdlatex
   :hook (cdlatex-tab . lazytab-cdlatex-or-orgtbl-next-field)
-  :bind (:map ortbl-mode-map
+  :bind (:map orgtbl-mode-map
               ("<tab>" . lazytab-org-table-next-field-maybe)
               ("TAB" . lazytab-org-table-next-field-maybe))
   :init
@@ -1951,34 +1966,32 @@ environments."
   :commands (ink-make-figure ink-edit-figure))
 
 ;; *** BIBTEX
-(use-package bibtex-actions
-  :after latex
+(use-package citar
+  :ensure
+  :after (latex reftex)
   :bind (:map LaTeX-mode-map
-         ("C-c [" . bibtex-actions-insert-citation)
+         ("C-c [" . citar-insert-citation)
          :map reftex-mode-map
-         ("C-c [" . bibtex-actions-insert-citation))
+         ("C-c [" . citar-insert-citation))
   :config
-  ;; make sure to set this to ensure open commands work correctly
-  (setq bibtex-completion-additional-search-fields '(doi url))
-  (setq bibtex-completion-bibliography '("~/Documents/research/control_systems.bib"))
+  (setq citar-bibliography '("~/Documents/research/control_systems.bib"))
   
-  (use-package embark
-    :config
-    (add-to-list 'embark-target-finders 'bibtex-actions-citation-key-at-point)
-    (add-to-list 'embark-keymap-alist '(bib-reference . bibtex-actions-map))
-    (add-to-list 'embark-keymap-alist '(citation-key . bibtex-actions-buffer-map)))
-
   (use-package cdlatex
     :config
     (defun my/cdlatex-bibtex-action ()
-      "Call `bibtex-actions-insert-citation' interactively."
-      (call-interactively 'bibtex-actions-insert-citation))
+      "Call `citar-insert-citation' interactively."
+      (call-interactively 'citar-insert-citation))
     (setf (alist-get "cite" cdlatex-command-alist nil nil 'equal)
           '("Make a citation interactively"
             "" my/cdlatex-bibtex-action nil t nil))
     (setf (alist-get "cite{" cdlatex-command-alist nil nil 'equal)
           '("Make a citation interactively"
             "cite{" my/cdlatex-bibtex-action nil t nil))))
+
+;; *** PDFs
+(use-package pdf-tools
+  :commands pdf-tools-install
+  :ensure)
 
 ;;;----------------------------------------------------------------
 ;; ** MATLAB
@@ -2196,6 +2209,30 @@ environments."
   ;;            ("Union" .    #x22c3)))))
   )
 
+(use-package jupyter 
+  :defer
+  :ensure t)
+
+(use-package conda
+  :commands conda-env-activate
+  :ensure t
+  :config
+  (setq conda-anaconda-home "/opt/miniconda3/")
+  (setq conda-env-home-directory (expand-file-name "~/.conda/"))
+  ;; (setq conda-env-subdirectory "envs")
+  ;; (unless (getenv "CONDA_DEFAULT_ENV")
+  ;;   (conda-env-activate "base"))
+  ;; if you want interactive shell support, include:
+  ;; (conda-env-initialize-interactive-shells)
+  ;; if you want eshell support, include:
+  (conda-env-initialize-eshell)
+  ;; if you want auto-activation (see below for details), include:
+  ;; (conda-env-autoactivate-mode t)
+  ;; if you want to automatically activate a conda environment on the opening of a file:
+  ;; (add-to-hook 'find-file-hook (lambda () (when (bound-and-true-p conda-project-env-path)
+  ;;                                      (conda-env-activate-for-buffer))))
+  )
+
 ;;;----------------------------------------------------------------
 ;; ** GEISER
 ;;;----------------------------------------------------------------
@@ -2323,6 +2360,16 @@ and Interpretation of Classical Mechanics) - The book."
 ;; * PLUGINS
 ;;;################################################################
 
+;; ** FLYSPELL
+;;;----------------------------------------------------------------
+(use-package flyspell
+  :commands flyspell-mode
+  :bind (:map flyspell-mode-map
+              ("C-;" . nil)
+              ("C-," . nil)
+              ("C-; C-;" . 'flyspell-correct-word-before-point)
+              ("C-; n" . 'flyspell-goto-next-error)))
+
 ;;;----------------------------------------------------------------
 ;; ** EMBRACE
 ;;;----------------------------------------------------------------
@@ -2417,7 +2464,7 @@ and Interpretation of Classical Mechanics) - The book."
 ;; ** STROKES
 ;;;----------------------------------------------------------------
 (use-package strokes
-  :bind ("<down-mouse-2>" . strokes-do-stroke)
+  :bind ("<down-mouse-9>" . strokes-do-stroke)
   :config
   (setq strokes-file (dir-concat user-cache-directory "strokes"))
   (setq strokes-use-strokes-buffer t))
@@ -2567,13 +2614,65 @@ is not visible. Otherwise delegates to regular Emacs next-error."
 ;;;----------------------------------------------------------------
 ;; ** TRANSIENT
 ;;;----------------------------------------------------------------
+
 (use-package transient
-  :defer
+  :defines toggle-modes
+  :bind (("<f8>"  . toggle-modes)
+         ("C-c t" . toggle-modes))
   :config
+  (transient-bind-q-to-quit)
   (setq transient-display-buffer-action '(display-buffer-below-selected))
   (setq transient-history-file (dir-concat user-cache-directory "transient/history.el")
         transient-levels-file (dir-concat user-cache-directory "transient/levels.el")
-        transient-values-file (dir-concat user-cache-directory "transient/values.el")))
+        transient-values-file (dir-concat user-cache-directory "transient/values.el"))
+  (transient-define-prefix toggle-modes ()
+    "Turn on and off various frequently used modes."
+    
+    [:pad-keys t
+     ["Appearance"
+      ("t" "color theme" my/toggle-theme)
+      ("B" "BIG mode"    presentation-mode)
+      ;; ("M" "smart modeline" ignore)
+      ("8" "pretty symbols" (lambda () (interactive)
+                              (if (derived-mode-p 'org-mode)
+                                  (org-toggle-pretty-entities)
+                                (call-interactively
+                                 #'prettify-symbols-mode))))
+      ("vl" "visual lines" visual-line-mode)
+      ("vt" "trunc lines" toggle-truncate-lines)]
+
+     ["Editing"
+      ("r" "read only" read-only-mode)
+      ("n" "line numbers" display-line-numbers-mode)
+      ("M-q" "auto fill" auto-fill-mode)
+      (";" "flyspell" flyspell-mode)
+      ("V" "view mode" view-mode)
+      ("o" "outline" outline-minor-mode)]
+
+     ["Highlight"
+      ("hl" "line" hl-line-mode)
+      ("hp" "paren" show-paren-mode)
+      ("hw" "whitespace" whitespace-mode)
+      ("hd" "delimiters" rainbow-delimiters-mode)
+      ("hr" "rainbow" rainbow-mode)]
+
+     ["Code"
+      ("c" "completion" corfu-mode)
+      ("a" "autocomp" (lambda () (interactive)
+                        (setq-local corfu-auto (not corfu-auto))
+                        (message "corfu-auto is now %s" corfu-auto))
+       :transient t)
+      ;; ("a"
+      ;;  :description "autocomp?"
+      ;;  :class transient-lisp-variable
+      ;;  :variable corfu-auto
+      ;;  :reader (lambda () (interactive)
+      ;;            (setq corfu-auto
+      ;;                  (not corfu-auto))))
+      ("g" "vc gutter" diff-hl-mode)
+      ("f" "flymake" flymake-mode)
+      ("e" "elec pair" electric-pair-mode)
+      ("p" "smartparens" smartparens-mode)]]))
 
 ;;;----------------------------------------------------------------
 ;; ** HYDRAS
@@ -2636,64 +2735,6 @@ _p_rev       _u_pper              _=_: upper/lower       _r_esolve
        "Save and bury buffer" :color blue)
       ("q" nil "cancel" :color blue)))
 
-  (defhydra hydra-toggle-menu (:color blue :hint nil)
-    "
-^Toggle!^ [_Q_]uit
-^Appearance^           ^Editing^          ^Highlight^         ^Code^
-^^^^^^^---------------------------------------------------------------------------
-_t_: color theme       _r_: read only     _h l_: line         _g_: vc gutter
-_B_: BIG mode          _n_: line numbers  _h p_: paren        _f_: flymake
-_M_: smart mode line   _q_: auto fill     _h w_: whitespace   _o_: outline/folding
-                   _v l_: visual lines  _h d_: delimiters   _e_: electric pair
-_8_: pretty symbols  _v t_: trunc lines   _h r_: rainbow    _s p_: smart parens
-                     _V_: view mode
-"
-
-    ("e" electric-pair-mode)
-    ("s p" smartparens-mode)
-    ("n" display-line-numbers-mode)
-    ("v l" visual-line-mode)
-    ;; ("v f" (lambda () (interactive)
-    ;;          (cond
-    ;;           (visual-fill-column-mode
-    ;;            (visual-line-mode -1)
-    ;;            (visual-fill-column-mode -1))
-    ;;           (t
-    ;;            (visual-line-mode 1)
-    ;;            (visual-fill-column-mode 1)))))
-    ("v t" toggle-truncate-lines)
-    ("8" (lambda () (interactive)
-           (if (derived-mode-p 'org-mode)
-               (org-toggle-pretty-entities)
-             (prettify-symbols-mode))))
-    ("B" presentation-mode)
-    ("t" my/toggle-theme)
-    ("M" nil)
-    ("r" read-only-mode)
-    ("q" auto-fill-mode)
-    ("V" view-mode)
-    ("h l" hl-line-mode)
-    ("h p" show-paren-mode)
-    ("h w" whitespace-mode)
-    ("h d" rainbow-delimiters-mode)
-    ("h r" rainbow-mode)
-    ("g" diff-hl-mode)
-    ("f" flymake-mode)
-    ("o" outline-minor-mode)
-    ("Q" nil)
-    ("<f8>" nil))
-
-  (defhydra hydra-winner (:body-pre (funcall 'winner-undo))
-    "winner"
-    ("u" winner-undo "undo")
-    ("r" winner-redo "redo")
-    ("q" nil "quit" :color blue)
-    )
-  ;; (:states 'emacs
-  ;;  "C-n" (hydra-move hydra-move-down  'next-line)
-  ;;  "C-p" (hydra-move hydra-move-up    'previous-line)
-  ;;  )
-
   (with-eval-after-load 'outline
     (defhydra hydra-outline (:color pink :hint nil)
       "
@@ -2736,9 +2777,7 @@ _d_: subtree
                   :wk "winner-mode"))
   (:states '(motion)
            "C-w u" 'hydra-winner/body)
-  ("<f8>"  'hydra-toggle-menu/body
-   "C-c <tab>" 'hydra-outline/body
-   )
+  ("C-c <tab>" 'hydra-outline/body)
   (:keymaps 'space-menu-map
             "t" 'hydra-toggle-menu/body)
   (:keymaps 'space-menu-map
@@ -2838,8 +2877,8 @@ _d_: subtree
 ;; Show a list of the tabs in the echo area when switching tabs. Disabled since
 ;; I've taken to showing the tab-bar instead
 (use-package tab-bar-echo-area
-  :disabled
-  ;; :ensure
+  :if (version< emacs-version "28.0")
+  :ensure
   :after tab-bar
   :init
   (if (version< emacs-version "28.0")
@@ -3850,7 +3889,7 @@ project, as defined by `vc-root-dir'."
     (interactive "P")
     (let ((avy-all-windows)
           (current-prefix-arg (if arg 4)))
-      (call-interactively 'avy-goto-char)))
+      (call-interactively 'avy-goto-word-1)))
   
   (defun my/avy-isearch (&optional arg)
     "Goto isearch candidate in this window with hints."
@@ -4234,6 +4273,9 @@ project, as defined by `vc-root-dir'."
   ;; (global-set-key (kbd "M-S-SPC") 'company-yasnippet)
   )
 
+(use-package yasnippet-snippets
+  :ensure t)
+
 (use-package warnings
     :config
     (cl-pushnew '(yasnippet backquote-change) warning-suppress-types
@@ -4425,6 +4467,8 @@ project, as defined by `vc-root-dir'."
 ;; ** ERC
 (use-package erc
   :commands (erc-tls erc)
+  :bind (:map erc-mode-map
+         ("\M-(" . insert-parentheses-sentence))
   :config
   (setq erc-server "irc.karthinks.com"
         erc-port 7078
@@ -4980,6 +5024,7 @@ the mode-line and switches to `variable-pitch-mode'."
 
 (defvar mode-line-cleaner-alist
   `((company-mode . " ⇝")
+    (corfu-mode . " ⇝")
     (yas-minor-mode .  " Y";; " Υ"
                     )
     (smartparens-mode . " ()";; " ﴾﴿"
@@ -5005,7 +5050,7 @@ the mode-line and switches to `variable-pitch-mode'."
     (python-mode . "Py")
     (emacs-lisp-mode . "Eλ")
     (nxhtml-mode . "nx")
-    (dot-mode . " .")
+    (dot-mode . "")
     (scheme-mode . " SCM")
     (matlab-mode . "M")
     (org-mode . " ORG";; "⦿"

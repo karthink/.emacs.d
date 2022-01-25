@@ -49,7 +49,7 @@
            (notmuch-result reverse)
            (minor-mode reverse)
            (reftex-label reverse)
-           (bib-reference reverse)
+           (citar-reference reverse)
            (xref-location reverse)
            (t unobtrusive)))
    (setq vertico-multiform-commands
@@ -64,6 +64,8 @@
            (embark-completing-read-prompter reverse)
            (embark-act-with-completing-read reverse)
            (embark-prefix-help-command reverse)
+           (consult-org-heading reverse)
+           (my/eshell-previous-matching-input reverse)
            (tmm-menubar reverse)))
   
    (defun vertico-multiform-unobtrusive ()

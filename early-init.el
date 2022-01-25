@@ -10,7 +10,7 @@
 ;; In Emacs 27+, package initialization occurs before `user-init-file' is
 ;; loaded, but after `early-init-file'.
 (setq package-enable-at-startup nil
-      package-quickstart t
+      package-quickstart nil
       load-prefer-newer t)
 
 (unless (or (daemonp) noninteractive)

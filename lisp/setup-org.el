@@ -774,6 +774,7 @@ parent."
 (use-package ob
   :after org
   :commands org-babel-execute-src-block
+  :hook (org-babel-after-execute . org-redisplay-inline-images)
   :config
   (setq org-src-window-setup 'split-window-below
         org-confirm-babel-evaluate nil
@@ -787,7 +788,8 @@ parent."
                                (shell . t)
                                (scheme . t)
                                (ditaa . t)
-                               (julia . t)))
+                               (julia . t)
+                               (jupyter . t)))
   (setq org-ditaa-jar-path "/usr/bin/ditaa")
   (defun my/org-babel-goto-tangle-file ()
     (if-let* ((args (nth 2 (org-babel-get-src-block-info t)))
@@ -795,8 +797,8 @@ parent."
         (unless (equal "no" tangle)
           (find-file tangle)
           t)))
-  (add-hook 'org-babel-after-execute-hook (lambda () (when org-inline-image-overlays
-                                                  (org-redisplay-inline-images))))
+  ;; (add-hook 'org-babel-after-execute-hook (lambda () (when org-inline-image-overlays
+  ;;                                                 (org-redisplay-inline-images))))
   (add-hook 'org-open-at-point-functions 'my/org-babel-goto-tangle-file))
 
 

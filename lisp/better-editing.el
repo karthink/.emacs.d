@@ -76,7 +76,7 @@
 ; which auto fills in Emacs buffers but not when you copy the text.
 (setq default-major-mode 'text-mode)
 ;;(add-hook 'text-mode-hook 'turn-on-auto-fill)
-;;(add-hook 'text-mode-hook 'longlines-mode)
+(add-hook 'text-mode-hook 'visual-line-mode)
 (add-hook 'text-mode-hook 'toggle-word-wrap)
 
 ;; Save clipboard before changing it
@@ -137,7 +137,6 @@
 ;; Set keyboard shortcuts for parenthesizing sentences in the
 ;; following modes
 (define-key text-mode-map "\M-(" 'insert-parentheses-sentence)
-(define-key erc-mode-map "\M-(" 'insert-parentheses-sentence)
 
 ;; Key to duplicate line
 (global-set-key (kbd "C-S-d") 'duplicate-line)
@@ -229,8 +228,8 @@
 
 
 (defun back-to-indentation-or-beginning () (interactive)
-   (if (= (point) (progn (beginning-of-line) (point)))
-       (beginning-of-line-text)))
+   (if (= (point) (progn (beginning-of-line-text) (point)))
+       (beginning-of-line)))
 
 ;; (defun beginning-of-line-or-indentation ()
 ;;   "move to beginning of line, or indentation"

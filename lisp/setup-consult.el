@@ -3,8 +3,8 @@
 (use-package consult
   :ensure t
   :after minibuffer
-  :hook ((shell-mode eshell-mode) . (lambda () (setq completion-in-region-function
-                                                #'consult-completion-in-region)))
+  ;; :hook ((shell-mode eshell-mode) . (lambda () (setq completion-in-region-function
+  ;;                                               #'consult-completion-in-region)))
   :config
   (setq consult-narrow-key "<")
   (setq consult-line-numbers-widen t)

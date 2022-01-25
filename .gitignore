@@ -31,3 +31,4 @@ newsticker/
 
 # Backup files
 \#*
+*.org

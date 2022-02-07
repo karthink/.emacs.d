@@ -763,6 +763,9 @@ output instead."
       (setq-local outline-regexp "---\\|\\+\\+\\|@@ ")
       (outline-minor-mode 1))))
 
+(use-package so-long
+  :hook (after-init . global-so-long-mode))
+
 (use-package iedit
   :ensure t
   :bind ("C-M-;" . iedit-mode))
@@ -811,6 +814,26 @@ output instead."
          ("M-i" . goto-last-change)
          ("M-g M-;" . goto-last-change)))
 
+(use-package quail
+  :commands my/cdlatex-input-tex
+  :config
+  (defun my/cdlatex-input-tex ()
+  (interactive)
+  (require 'cdlatex nil t)
+  (let ((cim current-input-method))
+    (unless (equal cim "TeX")
+      (activate-input-method "TeX"))
+    (cl-letf (((symbol-function 'texmathp)
+               (lambda () t))
+              ((symbol-function 'insert)
+               (lambda (symbol)
+                 (setq unread-input-method-events
+                       (nconc (quail-input-string-to-events symbol)
+                              (list 0))))))
+      (cdlatex-math-symbol))
+    (unless (equal cim "TeX")
+      (run-at-time 0 nil (lambda () (activate-input-method cim)))))))
+
 ;; * MANAGE STATE
 ;; ** RECENTF
 ;; Keep track of recently opened files. Also feeds into the list of recent
@@ -836,7 +859,8 @@ output instead."
 ;; ** DESKTOP
 ;; Save and resume Emacs sessions.
 (use-package desktop
-  :hook (kill-emacs . desktop-save-in-desktop-dir)
+  :defer
+  ;; :hook (kill-emacs . desktop-save-in-desktop-dir)
   :config
   ;; (when (daemonp)
   ;;   (defun my/restore-desktop (frame)
@@ -922,7 +946,16 @@ output instead."
 (use-package window
   :bind (("H-+" . balance-windows-area)
          ("C-x +" . balance-windows-area)
-         ("C-x q" . kill-buffer-and-window)))
+         ("C-x q" . my/kill-buffer-and-window))
+  :config
+  (defun my/kill-buffer-and-window ()
+    "Kill buffer.
+
+Also kill this window, tab or frame if necessary."
+    (interactive)
+    (cl-letf ((symbol-function 'delete-window)
+              (symbol-function 'my/delete-window-or-delete-frame))
+      (kill-buffer-and-window))))
 
 ;; setup-windows:
 ;; #+INCLUDE: "./lisp/setup-windows.org" :minlevel 2
@@ -1660,12 +1693,6 @@ If region is active, add its contents to the new buffer."
             TeX-view-program-selection
             TeX-mode-map
             )
-  ;; :bind (:map TeX-mode-map
-  ;;             ;; ("M-SPC" . TeX-matrix-spacer)
-  ;;             ("C-M-9" . TeX-insert-smallmatrix)
-  ;;             ("C-M-]" . TeX-insert-bmatrix)
-  ;;             ;; ("C-;" . TeX-complete-symbol)
-  ;;             )
   :bind
   (:map LaTeX-mode-map
         ("M-RET" . LaTeX-insert-item))
@@ -1871,17 +1898,6 @@ environments."
   (setq reftex-plug-into-AUCTeX t)
   (setq reftex-use-multiple-selection-buffers t))
 
-(use-package company-reftex
-  :disabled
-  :after (reftex company)
-  :hook ((latex-mode LaTeX-mode) . my/company-reftex-completions)
-  :config
-  (defun my/company-reftex-completions ()
-    "Add company-reftex based completions to company-backends in
-    latex/org buffers."
-    (make-variable-buffer-local 'company-backends)
-    (add-to-list 'company-backends '(company-reftex-labels company-reftex-citations))))
-
 (use-package consult-reftex
   :load-path "plugins/consult-reftex/"
   :after (reftex consult embark)
@@ -1953,13 +1969,6 @@ environments."
                                        lazytab-position-cursor-and-edit
                                        nil t nil)))
 
-(use-package inkscape-figures
-  :disabled
-  :after latex
-  :bind (:map LaTeX-mode-map
-            ("C-c i" . +inkscape-figures-create-at-point-latex)
-            ("C-c e" . +inkscape-figures-edit)))
-
 (use-package ink
   :load-path "plugins/ink/"
   :after latex
@@ -1970,11 +1979,13 @@ environments."
   :ensure
   :after (latex reftex)
   :bind (:map LaTeX-mode-map
-         ("C-c [" . citar-insert-citation)
-         :map reftex-mode-map
-         ("C-c [" . citar-insert-citation))
+         ("C-c ]" . citar-insert-citation)
+         :map org-mode-map
+         ("C-c C-x ]" . citar-insert-citation))
   :config
-  (setq citar-bibliography '("~/Documents/research/control_systems.bib"))
+  (setq citar-bibliography ;; '("~/Documents/research/control_systems.bib")
+        '("~/Documents/roam/biblio.bib")
+        citar-at-point-function 'embark-act)
   
   (use-package cdlatex
     :config
@@ -1992,7 +2003,12 @@ environments."
 (use-package pdf-tools
   :when (not IS-GUIX)
   :commands pdf-tools-install
-  :ensure)
+  :ensure t
+  :config
+  (setq pdf-view-resize-factor 1.1))
+
+(use-package sow
+  :after pdf-tools)
 
 ;;;----------------------------------------------------------------
 ;; ** MATLAB
@@ -2109,17 +2125,15 @@ environments."
 ;; Company-specific setup for Matlab-mode
 (use-package matlab
   :load-path "~/.local/share/git/matlab-emacs-src/"
-  :init
-  (use-package company
-    :if (featurep 'company)
-    :hook (matlab-mode . my/matlab-company-settings)
-    :config
-    ;; (add-to-list 'company-backends 'company-matlab 'company-semantic)
-    ;; (add-to-list 'company-backends 'company-matlab-shell)
-    
-    (defun my/matlab-company-settings ()
-      ;; (unless (featurep 'company-matlab)
-      ;;   (require 'company-matlab))
+  :hook (matlab-mode . my/matlab-company-settings)
+  :config
+  ;; (add-to-list 'company-backends 'company-matlab 'company-semantic)
+  ;; (add-to-list 'company-backends 'company-matlab-shell)
+  
+  (defun my/matlab-company-settings ()
+    ;; (unless (featurep 'company-matlab)
+    ;;   (require 'company-matlab))
+    (when (boundp 'company-mode-on)
       (make-local-variable 'company-backends)
       (setq-local company-backends '((company-files company-capf)))
       (company-mode-on))))
@@ -2336,7 +2350,7 @@ and Interpretation of Classical Mechanics) - The book."
   ;;        ("`" . my/ess-julia-cdlatex-symbol))
   :mode ("\\.jl\\'" . ess-julia-mode)
   :config
-  (setq inferior-julia-args "-t8")
+  (setq inferior-julia-args "-t12 -q")
   (defun my/ess-julia-cdlatex-symbol ()
     (interactive)
     (require 'cdlatex)
@@ -2368,9 +2382,10 @@ and Interpretation of Classical Mechanics) - The book."
 (use-package flyspell
   :commands flyspell-mode
   :bind (:map flyspell-mode-map
+              ("C-M-i" . nil)
               ("C-;" . nil)
               ("C-," . nil)
-              ("C-; C-;" . 'flyspell-correct-word-before-point)
+              ("C-; C-;" . 'flyspell-auto-correct-previous-word)
               ("C-; n" . 'flyspell-goto-next-error)))
 
 ;;;----------------------------------------------------------------
@@ -3698,7 +3713,7 @@ project, as defined by `vc-root-dir'."
     (defun er/mark-latex-outside-pairs ()
       (unless (texmathp) (er/mark-outside-pairs)))
     (defun er/mark-latex-outside-delimiters ()
-      (destructuring-bind (beg . end )
+      (cl-destructuring-bind (beg . end)
           (my/find-bounds-of-regexps "\\\\left\\\\*[{([|<]"
                                      "\\\\right\\\\*[]})|>]")
         (set-mark (save-excursion
@@ -3710,7 +3725,7 @@ project, as defined by `vc-root-dir'."
         (exchange-point-and-mark)))
     (defun er/mark-latex-inside-delimiters ()
       (when (texmathp)
-        (destructuring-bind (beg . end)
+        (cl-destructuring-bind (beg . end)
             (my/find-bounds-of-regexps "\\\\left\\\\*[{([|<]"
                                        "\\\\right\\\\*[]})|>]")
           (set-mark (save-excursion
@@ -3744,7 +3759,7 @@ project, as defined by `vc-root-dir'."
   :ensure t
   :commands (avy-goto-word-1 avy-goto-char-2 avy-goto-char-timer)
   :config
-  (setq avy-timeout-seconds 0.35)
+  (setq avy-timeout-seconds 0.24)
   (setq avy-keys '(?a ?s ?d ?f ?g ?j ?l ?\; ;?x
                    ?v ?b ?n ?, ?/ ?u ?p ?e ?.
                    ?c ?q ?2 ?3 ?'))
@@ -3890,7 +3905,7 @@ project, as defined by `vc-root-dir'."
   (defun my/avy-goto-char-this-window (&optional arg)
     "Goto char in this window with hints."
     (interactive "P")
-    (let ((avy-all-windows)
+    (let ((avy-all-windows t)
           (current-prefix-arg (if arg 4)))
       (call-interactively 'avy-goto-word-1)))
   
@@ -4277,7 +4292,8 @@ project, as defined by `vc-root-dir'."
   )
 
 (use-package yasnippet-snippets
-  :ensure t)
+  :ensure t
+  :after yasnippet)
 
 (use-package warnings
     :config
@@ -5136,7 +5152,7 @@ currently loaded theme first."
 (setq minibuffer-prompt-properties '(read-only t intangible t cursor-intangible t face minibuffer-prompt))
 (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
 
-;;;################################################################
+;;;################################################################I
 ;; * FONTS AND COLORS
 ;;;################################################################
 (use-package cus-face
@@ -5160,11 +5176,9 @@ currently loaded theme first."
           '(default ((t (:family "Consolas" :foundry "outline"
                                  :slant normal :weight normal
                                  :height 120 :width normal)))))))
-
   ;; (custom-set-faces  '(region ((t (:inverse-video t))))
   ;;                    '(font-lock-comment-face ((t (:foreground "IndianRed3")))))
   ;; (add-to-list 'default-frame-alist '(alpha 96 90))
-
   (use-package dracula-theme
     :disabled
     :defer
@@ -5174,7 +5188,6 @@ currently loaded theme first."
                               ((t (:background "#282a36" :inverse-video nil :weight normal))))
                             '(aw-leading-char-face
                               ((t (:foreground "#bd93f9" :height 2.5 :weight normal))))))
-
   (use-package dichromacy-theme
     :disabled
     :defer
@@ -5188,7 +5201,6 @@ currently loaded theme first."
                             '(org-level-2 ((t (:foreground "#d55e00" :inherit bold :height 1.1))))
                             '(org-document-title ((t (:inherit bold :height 1.5))))
                             )))
-
 ;;   (use-package gruvbox-theme
 ;;     :disabled
 ;;     :defer
@@ -5198,7 +5210,6 @@ currently loaded theme first."
 ;;                               ((t (:height 2.5 :weight normal))))
 ;;                             '(org-level-1 ((t (:height 1.3 :foreground "#83a598" :inherit (bold) ))))
 ;;                             '(org-level-2 ((t (:height 1.1 ;; 
-
 ;; Protesilaos Stavrou's excellent high contrast themes, perfect for working in
 ;; bright sunlight (especially on a dim laptop screen).
 (use-package modus-themes
@@ -5243,9 +5254,13 @@ currently loaded theme first."
           (header-date . (bold-today grayscale scale))
           (scheduled . rainbow)
           (habit . traffic-light-deuteranopia))
-        modus-themes-headings  '((t . (background overline rainbow)))
         modus-themes-variable-pitch-ui nil
-        modus-themes-scale-headings t)
+        modus-themes-scale-headings t
+        modus-themes-headings
+        '((1 . (background overline variable-pitch 1.25))
+          (2 . (overline rainbow 1.18))
+          (3 . (overline 1.25))
+          (t . (monochrome))))
   ;; (setq modus-themes-operandi-color-overrides
   ;;       '((bg-main . "#ededed")))
   (setq modus-themes-vivendi-color-overrides
@@ -5272,14 +5287,14 @@ currently loaded theme first."
   :init
   (defun my/doom-theme-settings (theme &rest args)
     "Additional face settings for doom themes"
-    (when (member theme '(doom-iosvkem doom-rouge))
+    (when (string-match-p "^doom-" (symbol-name theme))
       (dolist (face-spec
-               '((aw-background-face (:background "#061229" :inverse-video nil :weight normal)
-                                     ace-window)
-                 (org-level-1        (:height 1.20 :inherit outline-1) org)
-                 (org-level-2        (:height 1.15 :inherit outline-2) org)
-                 (org-level-3        (:height 1.10 :inherit outline-3) org)
-                 (hl-line            (:background "#1f2a3f") hl-line)
+               '((aw-leading-char-face (:height 2.0 :foreground nil :inherit mode-line-emphasis)
+                                       ace-window)
+                 (aw-background-face (:inherit default :weight normal) ace-window)
+                 (org-level-1        (:height 1.22 :inherit outline-1) org)
+                 (org-level-2        (:height 1.17 :inherit outline-2) org)
+                 (org-level-3        (:height 1.12 :inherit outline-3) org)
                  (tab-bar            (:background "black" :height 1.0 :foreground "white")
                                      tab-bar)
                  (tab-bar-tab
@@ -5292,8 +5307,10 @@ currently loaded theme first."
           (if (featurep library)
               (apply #'set-face-attribute face nil spec)
             (with-eval-after-load library
-              (when (member 'doom-rouge custom-enabled-themes)
-                  (apply #'set-face-attribute face nil spec))))))))
+              (when (string-match-p "^doom-" (symbol-name theme))
+                  (apply #'set-face-attribute face nil spec)))))))
+    (when (eq theme 'doom-rouge)
+      (set-face-attribute 'hl-line nil :background "#1f2a3f")))
 
   (advice-add 'load-theme :after #'my/doom-theme-settings)
   

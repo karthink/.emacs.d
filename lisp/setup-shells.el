@@ -89,7 +89,18 @@ Filenames are always matched by eshell."
 
 (use-package pcmpl-args
   :ensure
-  :after eshell-mode)
+  :hook (eshell-mode . my/pcmpl-args-pcomplete-settings)
+  :after eshell-mode
+  :config
+  (defun my/pcmpl-args-pcomplete-settings ()
+    (setq-local pcomplete-try-first-hook
+                '(eshell-complete-host-reference
+                  eshell-complete-history-reference
+                  eshell-complete-user-reference
+                  ;;eshell-complete-variable-assignment
+                  eshell-complete-variable-reference
+                  eshell-complete-lisp-symbols
+                  t))))
 
 ;; ** Eshell built-ins customizations
 (use-package eshell

@@ -32,3 +32,4 @@ newsticker/
 # Backup files
 \#*
 *.org
+/elpa-28/

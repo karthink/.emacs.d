@@ -308,6 +308,7 @@ USE-SINGLE-P) with mpv."
             "SPC" 'elfeed-scroll-up-command
             "S-SPC" 'elfeed-scroll-down-command
             "W" 'elfeed-search-eww-open
+            "w" 'elfeed-show-yank
             "B" 'elfeed-show-eww-open
             "x" 'elfeed-search-browse-url)
   (:keymaps 'elfeed-search-mode-map

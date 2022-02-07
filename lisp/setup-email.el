@@ -30,7 +30,8 @@
                    ;; I use email address as account label in ~/.msmtprc
                    ((string-match my-email-address from) my-email-dir)
                    ((seq-some (lambda (x) (string-match x from))
-                              my-alt-email-addresses) my-alt-email-dir))))
+                              my-alt-email-addresses)
+                    my-alt-email-dir))))
             (setq message-sendmail-extra-arguments (list '"-a" account))))))
   ;; the original form of this script did not have the ' before "a" which causes
   ;; a very difficult to track bug --frozencemetery

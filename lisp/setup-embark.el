@@ -9,6 +9,8 @@
          ("s-o"      . embark-act)
          ("s-C-o"    . embark-act-noexit)
          ("H-SPC" . embark-act)
+         ("C-h b" . embark-bindings)
+         ("C-h C-b" . describe-bindings)
          :map minibuffer-local-completion-map
          ("s-o"      . embark-act)
          ("s-C-o"    . embark-act-noexit)

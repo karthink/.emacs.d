@@ -330,6 +330,13 @@ an embedded LaTeX fragment, let `texmathp' do its job.
       (put 'my/org-renumber-environment 'enabled nil)
       (message "Latex numbering disabled."))))
 
+(use-package org-appear
+  :ensure t
+  :hook (org-mode . org-appear-mode)
+  :config
+   (setq org-appear-autoemphasis t
+        org-appear-autosubmarkers t))
+
 (use-package consult-reftex
   :disabled
   :after (org latex reftex)
@@ -527,16 +534,14 @@ has no effect."
           
           ("o" "Overview"
            ((tags-todo "*"
-               ((org-agenda-skip-function '(org-agenda-skip-if nil '(timestamp)))
-                (org-agenda-skip-function
+               ((org-agenda-skip-function
                  `(org-agenda-skip-entry-if
                    'notregexp ,(format "\\[#%s\\]" ;;(char-to-string org-priority-highest)
-                                       "\\(?:A\\|B\\|C\\)")))
+                                       "\\(?:A\\|B\\|C\\)"
+                                       )))
+                (org-agenda-skip-function '(org-agenda-skip-if nil '(timestamp)))
                 (org-agenda-block-separator nil)
                 (org-agenda-overriding-header "⛤ Important (not urgent)\n")))
-            (todo "WAITING"
-                  ((org-agenda-overriding-header "\n💤 On Hold\n")
-                   (org-agenda-block-separator nil)))
             (agenda ""
                     ((org-agenda-overriding-header "\n🕐 Today\n")
                      (org-agenda-span 1)
@@ -563,12 +568,15 @@ has no effect."
                      (org-agenda-entry-types '(:deadline))
                      (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
                      (org-agenda-overriding-header "\n🞜 Upcoming deadlines (+14d)\n")))
+            (tags "TODO=\"PROJECT\"&LEVEL>1&CATEGORY=\"Research\""
+                  ((org-agenda-block-separator nil)
+                   (org-agenda-overriding-header "\n⨕ Research\n")))
             ;; (alltodo ""
             ;;  ((org-agenda-overriding-header "Project Next Actions")
             ;;   (org-agenda-skip-function #'my/org-agenda-skip-all-siblings-but-first)))
-            (tags "TODO=\"PROJECT\"&LEVEL>1&CATEGORY=\"Research\""
-                  ((org-agenda-block-separator nil)
-                   (org-agenda-overriding-header "\n⨕ Research\n"))))))))
+            (todo "WAITING"
+                  ((org-agenda-overriding-header "\n💤 On Hold\n")
+                   (org-agenda-block-separator nil))))))))
 
 ;; ** ORG-CAPTURE
 (use-package org-capture
@@ -667,9 +675,9 @@ has no effect."
   (setq org-html-htmlize-output-type 'css)
   (with-eval-after-load 'ox-latex
     (setq org-latex-caption-above nil)
-    ;; (setq org-latex-default-packages-alist
-    ;;       (delete '("" "hyperref" nil) org-latex-default-packages-alist))
-    ;; (push '("hidelinks" "hyperref" nil) (cdr (last org-latex-default-packages-alist)))
+    (setq org-latex-default-packages-alist
+          (delete '("" "hyperref" nil) org-latex-default-packages-alist))
+    (push '("hidelinks" "hyperref" nil) (cdr (last org-latex-default-packages-alist)))
     (when (executable-find "latexmk")
       (setq org-latex-pdf-process
             '("latexmk -f -pdf -%latex -shell-escape -interaction=nonstopmode -output-directory=%o %f")))
@@ -684,6 +692,16 @@ has no effect."
   (setq org-export-with-LaTeX-fragments t
         org-latex-prefer-user-labels t
         org-latex-hyperref-template nil)
+  
+  ;; Minted
+  (setq org-latex-listings 'minted)
+  (add-to-list 'org-latex-packages-alist
+               '("" "minted"))
+  (add-to-list 'org-latex-packages-alist
+               '("" "xcolor"))
+  (setq org-latex-minted-options
+        '(("frame" "lines")
+          ("linenos" "true")))
   
   (defun my/org-export-ignore-headlines (data backend info)
     "Remove headlines tagged \"ignore\" retaining contents and promoting children.
@@ -740,7 +758,7 @@ parent."
   ;; (setq org-download-backend (if IS-LINUX "curl" "url-retrieve"))
   (setq org-download-heading-lvl nil)
   (setq org-download-backend 'curl)
-  (setq org-download-image-dir "./figures")
+  (setq-default org-download-image-dir "./figures")
   (setq org-download-image-attr-list
         '("#+attr_html: :width 70% :align center"
           "#+attr_latex: :width 0.6\\textwidth")))
@@ -1001,6 +1019,34 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
         org-ref-default-bibliography reftex-default-bibliography
         org-ref-pdf-directory "~/Documents/research/lit/")
   )
+
+;;;----------------------------------------------------------------
+;; ORG-CITE
+;;;----------------------------------------------------------------
+(use-package org
+  :defer
+  :config
+  (use-package oc
+    :after org
+    :when (version<= "9.5" org-version)
+    :commands org-cite-insert
+    :config
+    (when-let*
+        ((dir "~/.local/share/Zotero/styles/")
+         (_ (file-directory-p dir)))
+      (setq org-cite-csl-styles-dir dir))
+    (setq org-cite-export-processors
+          '((latex biblatex)
+            (html csl)
+            (t basic)))
+    (use-package citar
+      :config
+      (setq
+       org-cite-insert-processor 'citar
+       org-cite-follow-processor 'citar
+       org-cite-activate-processor 'citar
+       org-cite-global-bibliography citar-bibliography))))
+
 ;;;----------------------------------------------------------------
 ;; ** MY ORG PROJECTS
 ;;;----------------------------------------------------------------
@@ -1248,6 +1294,11 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
 (use-package org-fragtog
   :disabled
   :after org)
+
+;;;----------------------------------------------------------------
+;; ** ORG-NOTER
+;;;----------------------------------------------------------------
+(use-package org-noter :ensure t :defer)
 
 (provide 'setup-org)
 

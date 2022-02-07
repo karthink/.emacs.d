@@ -64,7 +64,9 @@
            (embark-completing-read-prompter reverse)
            (embark-act-with-completing-read reverse)
            (embark-prefix-help-command reverse)
+           (embark-bindings reverse)
            (consult-org-heading reverse)
+           (consult-dff unobtrusive)
            (my/eshell-previous-matching-input reverse)
            (tmm-menubar reverse)))
   

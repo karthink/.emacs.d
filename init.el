@@ -834,6 +834,24 @@ output instead."
     (unless (equal cim "TeX")
       (run-at-time 0 nil (lambda () (activate-input-method cim)))))))
 
+(use-package kmacro
+  :defer
+  :config
+  (defsubst my/mode-line-macro-recording ()
+    "Display macro being recorded."
+    (when (or defining-kbd-macro executing-kbd-macro)
+      (let ((sep (propertize " " 'face 'highlight ))
+            (vsep (propertize " " 'face '(:inherit variable-pitch))))
+        ;; "●"
+        (propertize (concat sep "MACRO" vsep
+                            (number-to-string kmacro-counter) vsep
+                            "▶" sep)
+                    'face 'highlight))))
+  
+  (setq-default mode-line-format
+                (cl-pushnew '(:eval (my/mode-line-macro-recording))
+                            (default-value 'mode-line-format)
+                            :test 'equal)))
 ;; * MANAGE STATE
 ;; ** RECENTF
 ;; Keep track of recently opened files. Also feeds into the list of recent
@@ -2663,7 +2681,12 @@ is not visible. Otherwise delegates to regular Emacs next-error."
       ("r" "read only" read-only-mode)
       ("n" "line numbers" display-line-numbers-mode)
       ("M-q" "auto fill" auto-fill-mode)
-      (";" "flyspell" flyspell-mode)
+      (";" "flyspell" (lambda ()
+                        (interactive)
+                        (call-interactively
+                         (if (derived-mode-p 'prog-mode)
+                             #'flyspell-prog-mode
+                           #'flyspell-mode))))
       ("V" "view mode" view-mode)
       ("o" "outline" outline-minor-mode)]
 
@@ -3760,9 +3783,9 @@ project, as defined by `vc-root-dir'."
   :commands (avy-goto-word-1 avy-goto-char-2 avy-goto-char-timer)
   :config
   (setq avy-timeout-seconds 0.24)
-  (setq avy-keys '(?a ?s ?d ?f ?g ?j ?l ?\; ;?x
+  (setq avy-keys '(?a ?s ?d ?f ?g ?j ?l ;?x
                    ?v ?b ?n ?, ?/ ?u ?p ?e ?.
-                   ?c ?q ?2 ?3 ?'))
+                   ?c ?q ?2 ?3 ?' ?\;))
   (setq avy-dispatch-alist '((?m . avy-action-mark)
                              (?  . avy-action-mark-to-char)
                              (?i . avy-action-ispell)
@@ -4592,6 +4615,19 @@ project, as defined by `vc-root-dir'."
 (require 'setup-eww)
 
 ;;;----------------------------------------------------------------
+;; ** YTEL
+
+;; ytel provides an elfeed-like interface to search invidious instances for
+;; youtube videos. Phew. The churn rate of Invidious urls is quite high, which
+;; makes this flaky, but anything's better than the browser interface to
+;; Youtube.
+(use-package setup-ytel)
+
+;;;----------------------------------------------------------------
+;; #+INCLUDE: "./lisp/setup-ytel.org" :minlevel 2
+;;;----------------------------------------------------------------
+
+;;;----------------------------------------------------------------
 ;; ** NOV.EL
 ;;;----------------------------------------------------------------
 (use-package nov
@@ -5318,7 +5354,7 @@ currently loaded theme first."
   (doom-themes-org-config)
   (use-package doom-rouge-theme
     :config
-    (setq doom-rouge-padded-modeline t))
+    (setq doom-rouge-padded-modeline nil))
 
   (use-package doom-iosvkem-theme
     :disabled

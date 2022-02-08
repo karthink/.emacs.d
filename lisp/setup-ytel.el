@@ -1,10 +1,13 @@
+;; Utilities for opening youtube videos with mpv using ytel
 (use-package ytel
   :ensure t
   :commands ytel
   :bind (:map ytel-mode-map
               ("x" . ytel-watch-browse-url)
               ("m" . ytel-watch-umpv)
-              ("w" . ytel-url-kill-new))
+              ("w" . ytel-url-kill-new)
+              ("f" . ytel-search-next-page)
+              ("b" . ytel-search-previous-page))
   :hook ((ytel-mode . toggle-truncate-lines)
          (ytel-mode . hl-line-mode))
   :config
@@ -26,7 +29,7 @@
                  (window-height . 0.33)
                  (slot . 10)
                  (side . bottom)))
-  (setq ytel-invidious-api-url "vid.puffyan.us")
+  (setq ytel-invidious-api-url "https://invidious.osi.kr/")
   (defvar ytel-invidious-api-alt-urls
     (mapcar (lambda (url) (concat "https://" url))
             '("inv.riverside.rocks" "invidious.silkky.cloud"
@@ -59,6 +62,8 @@
     (message "Copied url to kill ring.")
     (forward-line)))
 
+;; ytel-show is useful for digging through video descriptions and, occasionally,
+;; comments.
 (use-package ytel-show
   :after ytel
   :load-path "~/.local/share/git/ytel-show/"
@@ -69,3 +74,6 @@
   :config
   (setq ytel-show-image-max-width 50
         ytel-show-image-max-height 50))
+
+(provide 'setup-ytel)
+;;; setup-ytel.el ends here

@@ -42,7 +42,19 @@
     (setq-local corfu-quit-at-boundary t
                 corfu-quit-no-match t
                 corfu-auto nil)
-    (corfu-mode)))
+    (setq-local corfu-map (copy-keymap corfu-map))
+    (define-key corfu-map "\r" #'corfu-insert-and-send)
+    (corfu-mode))
+  (defun corfu-insert-and-send ()
+    (interactive)
+    ;; 1. First insert the completed candidate
+    (corfu-insert)
+    ;; 2. Send the entire prompt input to the shell
+    (cond
+     ((and (derived-mode-p 'eshell-mode) (fboundp 'eshell-send-input))
+      (eshell-send-input))
+     ((derived-mode-p 'comint-mode)
+      (comint-send-input)))))
 
 (use-package kind-icon
   :ensure t
@@ -93,7 +105,6 @@
     (add-to-list 'completion-at-point-functions #'cape-dict))
   
   (use-package pcomplete
-    :disabled
     :defer
     :config
     ;; Silence the pcomplete capf, no errors or messages!

@@ -80,6 +80,7 @@
             ("https://github.com/tecosaur/screenshot.git" . "emacs-screenshot")
             ("git@github.com:karthink/sicp.git")
             ("https://github.com/chenyanming/wallabag.el.git")
+            ("https://github.com/lastquestion/explain-pause-mode.git")
             ;; ("git@github.com:karthink/lazytab.git")
             ;; ("git@github.com:karthink/consult-reftex.git")
             ;; ("git@github.com:karthink/consult-dir.git")
@@ -704,8 +705,10 @@ output instead."
   :bind ("C-x U" . 0x0-dwim))
 
 (use-package explain-pause-mode
-  :disabled
-  :load-path "~/.local/share/git/melpa/explain-pause-mode/")
+  :commands explain-pause-mode
+  :load-path "~/.local/share/git/explain-pause-mode/"
+  :config
+  (setq explain-pause-alert-style 'silent))
 
 (use-package vterm
   :when (not IS-GUIX)
@@ -1011,7 +1014,7 @@ Also kill this window, tab or frame if necessary."
              ((locate-dominating-file dd "research") 'documents)
              ((locate-dominating-file dd "init.el") 'emacs)
              (t (popper-group-by-project))))))
-  (setq popper-mode-line nil
+  (setq ;; popper-mode-line nil
         popper-reference-buffers
         (append my/help-modes-list
                 my/repl-modes-list
@@ -5044,7 +5047,7 @@ the mode-line and switches to `variable-pitch-mode'."
   :defines sml/fix-mode-line-a
   :disabled
   :config
-    
+  (add-to-list 'sml/replacer-regexp-list '("^~/[dD]ocuments/[rR]oam.*/" ":ROAM:"))
   (defun sml/fix-mode-line-a (_theme &rest _args)
     "Advice to `load-theme' to fix the mode-line height after activating/deactivating theme"
     (set-face-attribute 'mode-line nil
@@ -5246,59 +5249,42 @@ currently loaded theme first."
 ;;                               ((t (:height 2.5 :weight normal))))
 ;;                             '(org-level-1 ((t (:height 1.3 :foreground "#83a598" :inherit (bold) ))))
 ;;                             '(org-level-2 ((t (:height 1.1 ;; 
+
 ;; Protesilaos Stavrou's excellent high contrast themes, perfect for working in
-;; bright sunlight (especially on a dim laptop screen).
+;; bright sunlight (especially on my laptop's dim screen).
 (use-package modus-themes
   ;; :ensure
   :defer
-  ;; :config
-  ;; (custom-set-faces '(aw-background-face ((t nil))))
-  ;; (custom-set-faces '(aw-leading-char-face ((t nil))))
-  ;; (custom-set-faces '(org-level-1 ((t nil))))
-  ;; (custom-set-faces '(org-level-2 ((t nil))))
-  ;; (custom-set-faces '(org-level-3 ((t nil))))
-  ;; (custom-set-faces '(tab-bar-tab ((t nil))))
-  ;; (custom-set-faces '(tab-bar-tab-inactive ((t nil))))
-  ;; (custom-set-faces '(tab-bar ((t nil))))
-  ;; (custom-set-faces '(hl-line ((t nil))))
-  ;; (custom-set-faces '(default ((t nil))))
   :init
   (setq modus-themes-org-blocks nil
-        modus-themes-intense-hl-line t
         modus-themes-org-blocks 'grayscale
         modus-themes-fringes 'subtle
-        modus-themes-scale-headings t
-        modus-themes-section-headings nil
-        modus-themes-variable-pitch-headings nil
         modus-themes-intense-paren-match t
         modus-themes-bold-constructs t
         modus-themes-completions 'opinionated
-        modus-themes-diffs 'desaturated ;'fg-only-deuteranopia
-        modus-themes-syntax nil ;'faint
+        modus-themes-diffs 'desaturated
+        modus-themes-syntax nil ;'(alt-syntax) ;'faint
         modus-themes-links '(faint neutral-underline)
-        modus-themes-hl-line '(intense)
         modus-themes-prompts '(bold background)
-        modus-themes-mode-line '(accented borderless)
-        ;; modus-themes-org-habit 'simplified
         modus-themes-subtle-line-numbers t
         modus-themes-tabs-accented t
-        modus-themes-inhibit-reload t
         modus-themes-paren-match '(underline)
         modus-themes-region '(no-extend accented)
-        modus-themes-org-agenda ; this is an alist: read the manual or its doc string
+        modus-themes-org-agenda
         '((header-block . (variable-pitch scale-title))
           (header-date . (bold-today grayscale scale))
           (scheduled . rainbow)
           (habit . traffic-light-deuteranopia))
         modus-themes-variable-pitch-ui nil
-        modus-themes-scale-headings t
+        modus-themes-hl-line '(intense accented)
+        modus-themes-mode-line '(borderless accented)
         modus-themes-headings
-        '((1 . (background overline variable-pitch 1.25))
-          (2 . (overline rainbow 1.18))
-          (3 . (overline 1.25))
+        '((1 . (background overline variable-pitch 1.28))
+          (2 . (overline rainbow 1.22))
+          (3 . (overline 1.17))
+          (4 . (1.14))
           (t . (monochrome))))
-  ;; (setq modus-themes-operandi-color-overrides
-  ;;       '((bg-main . "#ededed")))
+  ;; (setq modus-themes-operandi-color-overrides '((bg-main . "#ededed")))
   (setq modus-themes-vivendi-color-overrides
         '((bg-main . "#100b17")
           (bg-dim . "#161129")

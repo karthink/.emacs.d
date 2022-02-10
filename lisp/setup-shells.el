@@ -71,8 +71,9 @@ Filenames are always matched by eshell."
                           completions)))))
         (eshell-complete-commands-list)))))
 
+;; Superceded by pcmpl-args
 (use-package pcomplete
-  :defer
+  :disabled
   :config
   (defun pcomplete/xargs ()
     "Completion for `xargs'."
@@ -89,9 +90,14 @@ Filenames are always matched by eshell."
 
 (use-package pcmpl-args
   :ensure
-  :hook (eshell-mode . my/pcmpl-args-pcomplete-settings)
-  :after eshell-mode
+  :hook ((eshell-mode . my/pcmpl-args-pcomplete-settings)
+         (eshell-first-time-mode . my/pcmpl-extras))
   :config
+  (defun my/pcmpl-extras ()
+    (dolist (cmd '("fd" "rg" "pacman" "systemctl"))
+      (defalias
+        (intern (concat "pcomplete/" cmd))
+        'pcmpl-args-pcomplete-on-man)))
   (defun my/pcmpl-args-pcomplete-settings ()
     (setq-local pcomplete-try-first-hook
                 '(eshell-complete-host-reference

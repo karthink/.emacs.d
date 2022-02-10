@@ -24,8 +24,8 @@
   (consult-customize
    consult-ripgrep consult-git-grep consult-grep 
    consult-bookmark consult--source-buffer consult-recent-file consult-xref
-   consult--source-file consult--source-project-file consult--source-bookmark
-   consult--source-library
+   consult--source-recent-file consult--source-project-recent-file
+   consult--source-bookmark consult--source-library consult--source-project-buffer
    :preview-key (kbd "C-M-m"))
   (setq consult-project-root-function (lambda () "Return current project root"
                                         (project-root (project-current))))

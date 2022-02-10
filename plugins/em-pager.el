@@ -19,7 +19,14 @@
         (add-hook 'post-command-hook #'eshell-pager-scroll -99 'local)
         (with-selected-window win
           (goto-char eshell-pager-start)
-          (set-window-start nil eshell-pager-start))))))
+          (set-window-start nil eshell-pager-start)
+          (set-transient-map
+           (let ((map (make-sparse-keymap)))
+             (define-key map (kbd "SPC") #'scroll-up-command)
+             (define-key map (kbd "S-SPC") #'scroll-down-command)
+             (define-key map (kbd "DEL") #'scroll-down-command)
+             map)
+           (lambda () (< (point) (marker-position eshell-last-output-end)))))))))
 
 (defun eshell-pager-pre ()
   (run-at-time 0 nil (lambda ()

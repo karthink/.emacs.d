@@ -42,7 +42,8 @@
     (setq-local corfu-quit-at-boundary t
                 corfu-quit-no-match t
                 corfu-auto nil)
-    (setq-local corfu-map (copy-keymap corfu-map))
+    (setq-local corfu-map (copy-keymap corfu-map)
+                completion-cycle-threshold nil)
     (define-key corfu-map "\r" #'corfu-insert-and-send)
     (corfu-mode))
   (defun corfu-insert-and-send ()

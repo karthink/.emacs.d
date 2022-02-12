@@ -81,6 +81,7 @@
             ("git@github.com:karthink/sicp.git")
             ("https://github.com/chenyanming/wallabag.el.git")
             ("https://github.com/lastquestion/explain-pause-mode.git")
+            ("https://github.com/dakra/emacs-zmq.git")
             ;; ("git@github.com:karthink/lazytab.git")
             ;; ("git@github.com:karthink/consult-reftex.git")
             ;; ("git@github.com:karthink/consult-dir.git")
@@ -181,7 +182,7 @@
                                      "magit" "modus-themes" "diff-hl"
                                      "dired" "ibuffer" "pdf-tools"))
                         (with-demoted-errors "Error: %S" (load-library lib)))
-                      (when (featurep 'pdf-tools) (pdf-tools-install))
+                      (when (featurep 'pdf-tools) (pdf-tools-install t))
                       (let ((elapsed (float-time (time-subtract (current-time)
                                                                 after-init-time))))
                         (message "[Pre-loaded packages in %.3fs]" elapsed))))))))
@@ -2245,31 +2246,47 @@ environments."
   ;;            ("Union" .    #x22c3)))))
   )
 
-(use-package jupyter 
+(use-package zmq
   :when (not IS-GUIX)
-  :defer
-  :ensure t)
+  :load-path "~/.local/share/git/emacs-zmq/"
+  :init
+  (add-to-list 'native-comp-deferred-compilation-deny-list "zmq")
+  (use-package jupyter 
+    :when (not IS-GUIX)
+    :defer
+    :init
+    (when (version< "28.0" emacs-version)
+      (add-to-list 'native-comp-deferred-compilation-deny-list "jupyter"))))
 
+;; *** CONDA SUPPORT
 (use-package conda
   :when (not IS-GUIX)
   :commands conda-env-activate
+  :hook (eshell-first-time-mode . conda-env-initialize-eshell)
   :ensure t
   :config
   (setq conda-anaconda-home "/opt/miniconda3/")
   (setq conda-env-home-directory (expand-file-name "~/.conda/"))
-  ;; (setq conda-env-subdirectory "envs")
-  ;; (unless (getenv "CONDA_DEFAULT_ENV")
-  ;;   (conda-env-activate "base"))
-  ;; if you want interactive shell support, include:
-  ;; (conda-env-initialize-interactive-shells)
-  ;; if you want eshell support, include:
-  (conda-env-initialize-eshell)
-  ;; if you want auto-activation (see below for details), include:
-  ;; (conda-env-autoactivate-mode t)
-  ;; if you want to automatically activate a conda environment on the opening of a file:
-  ;; (add-to-hook 'find-file-hook (lambda () (when (bound-and-true-p conda-project-env-path)
-  ;;                                      (conda-env-activate-for-buffer))))
-  )
+  (add-to-list
+   'global-mode-string
+   '(:eval
+     (list
+      (if conda-env-current-name
+          (propertize (concat "(" conda-env-current-name ") ")
+                      'face 'font-lock-builtin-face)
+        "")))))
+;;; (setq conda-env-subdirectory "envs")
+;;; (unless (getenv "CONDA_DEFAULT_ENV")
+;;;   (conda-env-activate "base"))
+;;; if you want interactive shell support, include:
+;;; (conda-env-initialize-interactive-shells)
+;;; if you want eshell support, include:
+;;; if you want auto-activation, include:
+;;; (conda-env-autoactivate-mode t)
+;;; if you want to automatically activate a conda environment on the opening of a file:
+;;; (add-to-hook 'find-file-hook (lambda () (when (bound-and-true-p conda-project-env-path)
+;;;                                      (conda-env-activate-for-buffer))))
+
 
 ;;;----------------------------------------------------------------
 ;; ** GEISER
@@ -4809,7 +4826,7 @@ This function is meant to be mapped to a key in `rg-mode-map'."
 ;; ** MONOCLE-MODE
 (use-package emacs
   :bind (("H-m" . my/monocle-mode)
-         ("C-x C-m" . my/monocle-mode))
+         ("C-x C-1" . my/monocle-mode))
   :config 
   (defvar my/window-configuration nil
     "Current window configuration.
@@ -5253,7 +5270,7 @@ currently loaded theme first."
 ;; Protesilaos Stavrou's excellent high contrast themes, perfect for working in
 ;; bright sunlight (especially on my laptop's dim screen).
 (use-package modus-themes
-  ;; :ensure
+  :ensure t
   :defer
   :init
   (setq modus-themes-org-blocks nil

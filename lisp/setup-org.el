@@ -334,6 +334,7 @@ an embedded LaTeX fragment, let `texmathp' do its job.
   :ensure t
   :hook (org-mode . org-appear-mode)
   :config
+   (setq org-hide-emphasis-markers t)
    (setq org-appear-autoemphasis t
         org-appear-autosubmarkers t))
 

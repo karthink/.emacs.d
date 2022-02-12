@@ -94,7 +94,8 @@ Filenames are always matched by eshell."
          (eshell-first-time-mode . my/pcmpl-extras))
   :config
   (defun my/pcmpl-extras ()
-    (dolist (cmd '("fd" "rg" "pacman" "systemctl"))
+    (dolist (cmd '("fd" "rg" "pacman" "systemctl"
+                   "aura"))
       (defalias
         (intern (concat "pcomplete/" cmd))
         'pcmpl-args-pcomplete-on-man)))
@@ -148,8 +149,9 @@ Filenames are always matched by eshell."
     ;; (setq-local completion-in-region-function #'consult-completion-in-region)
     (setq eshell-cmpl-cycle-cutoff-length 2)))
 
-;; ** Better buffer redirection and paging
+;; ** Better paging
 (use-package em-pager
+  :disabled
   :after eshell
   :config
   (add-hook 'eshell-mode-hook
@@ -160,8 +162,12 @@ Filenames are always matched by eshell."
   (remove-hook 'eshell-output-filter-functions #'eshell-postoutput-scroll-to-bottom)
   (add-hook 'eshell-output-filter-functions #'eshell-pager-reposition)
   (add-hook 'eshell-pre-command-hook #'eshell-pager-pre)
-  (add-hook 'eshell-post-command-hook #'eshell-pager-post)
-  
+  (add-hook 'eshell-post-command-hook #'eshell-pager-post))
+
+;; ** Better buffer redirection
+(use-package eshell
+  :defer
+  :config
   ;; From https://gist.github.com/minad/19df21c3edbd8232f3a7d5430daa103a
   (defun my/eshell-font-lock-and-pop (fun object target)
     (let* ((buf (and (markerp target) (marker-buffer target)))

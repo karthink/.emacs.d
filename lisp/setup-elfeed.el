@@ -16,9 +16,8 @@
 ;; - tag completion
 
 (use-package elfeed
+  :straight t
   :commands (elfeed elfeed-update elfeed-search-bookmark-handler)
-  :load-path ("~/.local/share/git/elfeed/"
-              "~/.local/share/git/elfeed/web")
   :config
   (setq-default elfeed-db-directory (dir-concat user-cache-directory "elfeed")
                 elfeed-save-multiple-enclosures-without-asking t

@@ -1,5 +1,5 @@
 (use-package corfu
-  :ensure
+  :straight t
   ;; Optional customizations
   ;; :custom
   ;; (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
@@ -58,7 +58,7 @@
       (comint-send-input)))))
 
 (use-package kind-icon
-  :ensure t
+  :straight t
   :after corfu
   :custom
   (kind-icon-default-face 'corfu-default) ; to compute blended backgrounds correctly
@@ -67,7 +67,7 @@
 
 ;; Add extensions
 (use-package cape
-  :ensure
+  :straight t
   :bind (("C-; i" . cape-ispell)
          ("C-; e" . cape-line)
          ("C-; f" . cape-file)

@@ -91,7 +91,7 @@ When no VC root is available, use standard `switch-to-buffer'."
          )
 
 (use-package ibuffer-project
-  :ensure t
+  :straight t
   :after (ibuffer project)
   :hook ((ibuffer ibuffer-mode) . my/ibuffer-project-generate-filter-groups)
   :config

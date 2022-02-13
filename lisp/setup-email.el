@@ -185,7 +185,7 @@
 ;; default, bound to my "search map" (=M-s=) prefix:
 
 (use-package consult-notmuch
-  :load-path "~/.local/share/git/consult-notmuch/"
+  :straight t
   :after consult
   :bind (("M-s M-m" . consult-notmuch-latest-tree)
          ("M-s m" . consult-notmuch-latest))

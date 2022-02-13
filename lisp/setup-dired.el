@@ -137,7 +137,7 @@ This relies on the external 'fd' executable."
   (setq find-name-arg "-iname"))
 
 (use-package async
-  :ensure)
+  :straight t)
 
 (use-package dired-async
   :after (dired async)
@@ -172,7 +172,7 @@ This relies on the external 'fd' executable."
       (error "no more than 2 files should be marked"))))
 
 (use-package dired-subtree
-  :ensure t
+  :straight t
   :after dired
   :config
   (setq dired-subtree-use-backgrounds nil)
@@ -292,7 +292,7 @@ This relies on the external 'fd' executable."
     (dired-sidebar-toggle-sidebar)))
 
 (use-package dired-rsync
-  :ensure t
+  :straight t
   :bind (:map dired-mode-map
          ("r" . dired-rsync))
   :hook (dired-rsync-failed . dired-rsync--pop-to-rsync-failed-buf)
@@ -300,11 +300,11 @@ This relies on the external 'fd' executable."
   (setq dired-rsync-unmark-on-completion nil))
 
 (use-package dired-filter
-  :ensure t
+  :straight t
   :after dired)
 
 (use-package diredfl
-  :ensure t
+  :straight t
   :hook (dired-mode . diredfl-mode))
 
 (provide 'setup-dired)

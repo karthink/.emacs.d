@@ -1,7 +1,7 @@
 ;; -*- lexical-binding: t -*-
 ;; Consult
 (use-package consult
-  :ensure t
+  :straight t
   :hook (minibuffer-setup . consult-completion-enable-in-minibuffer)
   ;; :hook ((shell-mode eshell-mode) . (lambda () (setq completion-in-region-function
   ;;                                               #'consult-completion-in-region)))
@@ -287,7 +287,7 @@ When the number of characters in a buffer exceeds this threshold,
                 ("H-M-j" . consult-dir-jump-file))))
 
 (use-package affe
-  :ensure t
+  :straight t
   :bind (("M-s M-f" . affe-find)
          ("M-s M-g" . affe-grep))
   :config

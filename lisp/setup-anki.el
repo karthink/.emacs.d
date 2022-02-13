@@ -1,5 +1,5 @@
 (use-package anki-editor
-  :ensure t
+  :straight t
   :after org-capture
   :init 
   (setq org-my-anki-file (concat (file-name-as-directory org-directory)

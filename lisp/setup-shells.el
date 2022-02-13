@@ -89,7 +89,7 @@ Filenames are always matched by eshell."
 	         pcomplete-default-completion-function))))
 
 (use-package pcmpl-args
-  :ensure
+  :straight t
   :hook ((eshell-mode . my/pcmpl-args-pcomplete-settings)
          (eshell-first-time-mode . my/pcmpl-extras))
   :config
@@ -502,7 +502,7 @@ send a notification when the process has exited."
 
 ;; capf-autosuggest is a good idea, but it's too slow and laggy in practice.
 (use-package capf-autosuggest
-  ;; :ensure t
+  ;; :straight t
   :disabled
   :hook ((comint-mode) . capf-autosuggest-mode))
 

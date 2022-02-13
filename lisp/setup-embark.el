@@ -3,7 +3,7 @@
 ;; Embark for actions
 (use-package embark
   :demand
-  :ensure t
+  :straight t
   :after minibuffer
   :bind (("M-s RET"  . embark-act)
          ("s-o"      . embark-act)
@@ -256,7 +256,7 @@ targets."
       (add-to-list 'embark-indicators #'embark-vertico-indicator)))
 
 (use-package embark-consult
-  :ensure t
+  :straight t
   :after (embark consult)
   :demand
   :bind (:map embark-become-file+buffer-map

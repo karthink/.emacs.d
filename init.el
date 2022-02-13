@@ -10,12 +10,33 @@
 
 ;; * PACKAGE MANAGEMENT
 
+;; ** STRAIGHT!
+(defvar bootstrap-version)
+;; cache directory
+(defvar user-repos-directory "~/.local/share/git/"
+  "Location where cloned repos are stored.")
+(let ((bootstrap-file
+       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+      (bootstrap-version 5))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (unless (file-directory-p user-repos-directory)
+    (make-directory user-repos-directory t))
+  (setq straight-base-dir user-repos-directory)
+  (load bootstrap-file nil 'nomessage))
+
+;; ** PACKAGE.EL
 ;; "Activate" packages, /i.e./ autoload commands, set paths, info-nodes and so
 ;; on. Set load paths for ELPA packages. This is unnecessary in Emacs 27 with an
 ;; early-init.el, but I haven't checked.
-(package-initialize)
-(package-activate-all)
-(add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
+;; (package-initialize)
+;; (package-activate-all)
+;; (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
 
 ;; Package repositories that are no longer used or included by default:
 ;; #+begin_src emacs-lisp
@@ -36,15 +57,15 @@
 ;; autoloads.
 ;;
 ;; The one thing it's not is a package manager!
-(unless (package-installed-p 'use-package)
-  (package-refresh-contents)
-  (package-install 'use-package))
+;; (unless (package-installed-p 'use-package)
+;;   (package-refresh-contents)
+;;   (package-install 'use-package))
+(straight-use-package 'use-package)
 
 (eval-when-compile
   ;; (defvar use-package-verbose t)
   (eval-after-load 'advice
     `(setq ad-redefinition-action 'accept))
-  (require 'cl-lib)
   (require 'use-package)
   ;; (setq use-package-verbose t
   ;;       use-package-compute-statistics t
@@ -54,57 +75,8 @@
 
 ;;; (require 'bind-key)
 
-(use-package package
-  :hook (package-menu-mode . hl-line-mode))
-
-;; Packages not managed by package.el: These are packages that for various
-;; reasons I prefer to manage myself instead of installing from ELPA/MELPA. Thus
-;; an ersatz one-function "package manager".
-
-(defun my/package-sync-personal ()
-  "Download my packages not managed by package.el."
-  (let* ((my-packages-urls-extra)
-         (download-dir "~/.local/share/git/")
-         (default-directory (progn (or (file-directory-p download-dir)
-                                       (make-directory download-dir))
-                                   download-dir)))
-    (setq my-packages-urls-extra
-          '(("https://codeberg.org/jao/consult-notmuch.git")
-            ("https://github.com/xFA25E/ytel-show.git")
-            ("https://github.com/minad/vertico.git")
-            ("https://github.com/johnbcoughlin/calctex.git")
-            ("https://github.com/skeeto/elfeed.git")
-            ("git@github.com:karthink/ffmpeg-dispatch.git" . "ffmpeg")
-            ("https://git.code.sf.net/p/matlab-emacs/src" . "matlab-emacs-src")
-            ("https://github.com/nico202/ob-julia.git")
-            ("https://github.com/tecosaur/screenshot.git" . "emacs-screenshot")
-            ("git@github.com:karthink/sicp.git")
-            ("https://github.com/chenyanming/wallabag.el.git")
-            ("https://github.com/lastquestion/explain-pause-mode.git")
-            ("https://github.com/dakra/emacs-zmq.git")
-            ;; ("git@github.com:karthink/lazytab.git")
-            ;; ("git@github.com:karthink/consult-reftex.git")
-            ;; ("git@github.com:karthink/consult-dir.git")
-            ;; ("git@github.com:karthink/ink.git")
-            ;; ("git@github.com:karthink/popper.git")
-            ;; ("git@github.com:karthink/project-x.git")
-            ;; ("git@github.com:karthink/wallabag.el.git" . "wallabag")
-            ;; ("git@github.com:karthink/peep-dired.git")
-            ))
-    (dolist (pack my-packages-urls-extra)
-      (let* ((packurl (car pack))
-             (packdir (or (cdr pack) (file-name-base (car pack))))
-             (buf (concat packdir ".out")))
-        (if (file-directory-p packdir)
-            (let ((default-directory (concat default-directory packdir)))
-              (start-process packdir buf "git" "pull" packurl)
-              (message (format "Updating %s in %s" packurl packdir)))
-          (start-process packdir buf "git" "clone" packurl packdir)
-          (message (format "Cloning %s to %s" packurl packdir)))))))
-
-;; Packages I've authored are not on this list any more as I've taken to
-;; including them as git submodules. They are commented out above in
-;; =my-packages-urls-extra=.
+;; (use-package package
+;;   :hook (package-menu-mode . hl-line-mode))
 
 ;; * PATHS
 
@@ -126,8 +98,6 @@
   ;; Adds ~/.emacs.d to the load-path
   (push (dir-concat user-emacs-directory "plugins/") load-path)
   (push (dir-concat user-emacs-directory "lisp/") load-path)
-  
-  ;; cache directory
   (defvar user-cache-directory "~/.cache/emacs/"
   "Location where files created by emacs are placed."))
 
@@ -144,7 +114,7 @@
 (condition-case-unless-debug nil 
     (use-package gcmh
       :defer 2
-      :ensure
+      :straight t
       ;; :hook (after-init . gcmh-mode)
       :config
       (setq gcmh-idle-delay 'auto  ; default is 15s
@@ -252,7 +222,7 @@
 ;; evil-mode... which I don't use.
 (use-package general
   ;; :preface (setq use-package-ignore-unknown-keywords t)
-  :ensure t
+  :straight t
   :demand t
   :commands (general-def general-define-key)
   :init
@@ -691,7 +661,6 @@ output instead."
 
 (use-package piper
   :disabled
-  :load-path "~/.local/share/git/melpa/emacs-piper/"
   :bind ("C-x |" . piper)
   :config
   (defun +piper-start (&optional arg)
@@ -701,19 +670,21 @@ output instead."
     ))
 
 (use-package 0x0
-  :ensure
+  :straight t
   :commands (0x0-upload 0x0-dwim)
   :bind ("C-x U" . 0x0-dwim))
 
 (use-package explain-pause-mode
+  :straight (explain-pause-mode
+             :host github
+             :repo "lastquestion/explain-pause-mode")
   :commands explain-pause-mode
-  :load-path "~/.local/share/git/explain-pause-mode/"
   :config
   (setq explain-pause-alert-style 'silent))
 
 (use-package vterm
   :when (not IS-GUIX)
-  :ensure
+  :straight t
   :defer)
 
 ;;;----------------------------------------------------------------
@@ -771,7 +742,7 @@ output instead."
   :hook (after-init . global-so-long-mode))
 
 (use-package iedit
-  :ensure t
+  :straight t
   :bind ("C-M-;" . iedit-mode))
 
 (use-package replace
@@ -803,7 +774,7 @@ output instead."
             "M-SPC" 'space-menu))
 
 (use-package easy-kill
-  :ensure t
+  :straight t
   :bind (([remap kill-ring-save] . #'easy-kill)
          ([remap mark-sexp]      . #'easy-mark)
          :map easy-kill-base-map
@@ -813,7 +784,7 @@ output instead."
   (add-to-list 'easy-kill-alist '(104 paragraph "\n")))
 
 (use-package goto-chg
-  :ensure t
+  :straight t
   :bind (("M-g ;" . goto-last-change)
          ("M-i" . goto-last-change)
          ("M-g M-;" . goto-last-change)))
@@ -910,7 +881,7 @@ output instead."
 ;; The =undo-fu-session= package saves and restores the undo states of buffers
 ;; across Emacs sessions.
 (use-package undo-fu-session
-  :ensure t
+  :straight t
   :hook ((prog-mode conf-mode text-mode tex-mode) . undo-fu-session-mode)
   :config
   (setq undo-fu-session-directory
@@ -1115,7 +1086,7 @@ Also kill this window, tab or frame if necessary."
 
 ;; Add window numbers and use them to switch windows
 (use-package winum
-  :ensure
+  :straight t
   :init
   (defun my/winum-select (num)
     (lambda (&optional arg) (interactive "P")
@@ -1165,7 +1136,7 @@ Also kill this window, tab or frame if necessary."
 ;;----------------------------------------------------------------
 
 (use-package ace-window
-  :ensure t
+  :straight t
   :bind
   (("C-x o" . ace-window)
    ("H-o"   . ace-window)
@@ -1244,7 +1215,7 @@ Also kill this window, tab or frame if necessary."
 ;;----------------------------------------------------------------
 
 (use-package transpose-frame
-  :ensure t
+  :straight t
   :bind (("H-\\" . rotate-frame-anticlockwise)
          :map ctl-x-4-map
          ("|" . flop-frame)
@@ -1331,7 +1302,7 @@ surrounded by word boundaries."
 
 (use-package dashboard
   :disabled
-  :ensure t
+  :straight t
   :init (setq initial-buffer-choice (lambda () (get-buffer "*dashboard*")))
   :config
   (dashboard-setup-startup-hook)
@@ -1346,18 +1317,18 @@ surrounded by word boundaries."
                           )))
 
 (use-package screenshot
-  :load-path "~/.local/share/git/emacs-screenshot"
-  :commands screenshot
-  :requires posframe)
+  :straight (screenshot :host github
+                        :repo "tecosaur/screenshot")
+  :commands screenshot)
 
 ;; Colorize color names and parens in buffers
 (use-package rainbow-mode
   :commands rainbow-mode
-  :ensure t)
+  :straight t)
 
 (use-package rainbow-delimiters
   :commands rainbow-delimiters-mode
-  :ensure t)
+  :straight t)
 
 (defun sudo-find-file (file)
   "Open FILE as root."
@@ -1527,7 +1498,7 @@ To be used with `imenu-after-jump-hook' or equivalent."
   :bind ("M-s M-i" . imenu-list))
 
 (use-package scratch
-  :ensure
+  :straight t
   :config
   (defun my/scratch-buffer-setup ()
   "Add contents to `scratch' buffer and name it accordingly.
@@ -1625,7 +1596,7 @@ If region is active, add its contents to the new buffer."
   (setq lsp-auto-configure t
         lsp-enable-symbol-highlighting nil
         lsp-pyls-plugins-rope-completion-enabled t)
-  (use-package company-lsp :ensure t :commands company-lsp)
+  (use-package company-lsp :straight t :commands company-lsp)
   (add-to-list 'lsp-language-id-configuration '(matlab-mode . "matlab"))
   (lsp-register-client
    (make-lsp-client :new-connection (lsp-stdio-connection "~/.local/share/git/matlab-langserver/matlab-langserver.sh")
@@ -1665,7 +1636,7 @@ If region is active, add its contents to the new buffer."
 ;;;----------------------------------------------------------------
 (use-package eglot
   ;; :disabled t
-  :ensure t
+  :straight t
   :commands eglot
   :bind (:map eglot-mode-map
               ("C-h ." . eldoc))
@@ -1693,7 +1664,7 @@ If region is active, add its contents to the new buffer."
 (use-package latex
   :defer 5
   :after tex
-  :ensure auctex
+  :straight auctex
   :hook ((LaTeX-mode . electric-pair-mode)
          (LaTeX-mode . my/latex-with-outline))
   :mode ("\\.tex\\'" . latex-mode)
@@ -1875,7 +1846,7 @@ environments."
 (use-package latex-extra
   :disabled
   :after latex
-  ;; :ensure
+  ;; :straight t
   :defines (latex-extra-mode)
   :hook (LaTeX-mode . latex-extra-mode)
   :general
@@ -1932,7 +1903,7 @@ environments."
 ;; (setq-default TeX-master nil)
 (use-package cdlatex
   :after latex
-  :ensure t
+  :straight t
   ;; :commands turn-on-cdlatex
   :hook (LaTeX-mode . turn-on-cdlatex)
   :bind (:map cdlatex-mode-map ("[" . nil) ("(" . nil) ("{" . nil)
@@ -2001,7 +1972,7 @@ environments."
 
 ;; *** BIBTEX
 (use-package citar
-  :ensure
+  :straight t
   :after (latex reftex)
   :bind (:map LaTeX-mode-map
          ("C-c ]" . citar-insert-citation)
@@ -2028,7 +1999,7 @@ environments."
 (use-package pdf-tools
   :when (not IS-GUIX)
   :commands pdf-tools-install
-  :ensure t
+  :straight t
   :config
   (setq pdf-view-resize-factor 1.1))
 
@@ -2039,10 +2010,10 @@ environments."
 ;; ** MATLAB
 ;;;----------------------------------------------------------------
 (use-package matlab
-  :load-path "~/.local/share/git/matlab-emacs-src/"
+  :straight (matlab-mode :repo "https://git.code.sf.net/p/matlab-emacs/src")
   :commands (matlab-shell matlab-mode)
   :functions my/matlab-shell-help-at-point
-  ;; :ensure matlab-mode
+  ;; :straight matlab-mode
   ;; :commands (matlab-mode matlab-shell matlab-shell-run-block)
   :mode ("\\.m\\'" . matlab-mode)
   :hook ((matlab-mode . company-mode-on)
@@ -2092,7 +2063,7 @@ environments."
   ;; (setq matlab-shell-command "matlab")
   ;; (add-to-list 'matlab-shell-command-switches "-nosplash")
   (with-demoted-errors "Error loading Matlab autoloads: %s"
-    (load-library "matlab-autoloads")
+    (load-library "matlab-mode-autoloads")
     (load-library "matlab-shell")
     (load-library "mlint"))
   (setq matlab-shell-debug-tooltips-p t)
@@ -2149,7 +2120,6 @@ environments."
 
 ;; Company-specific setup for Matlab-mode
 (use-package matlab
-  :load-path "~/.local/share/git/matlab-emacs-src/"
   :hook (matlab-mode . my/matlab-company-settings)
   :config
   ;; (add-to-list 'company-backends 'company-matlab 'company-semantic)
@@ -2169,7 +2139,6 @@ environments."
 ;; - Company customizations
 
 (use-package matlab-shell
-  :load-path "~/.local/share/git/matlab-emacs-src/"
   :defer
   :after matlab
   :hook ((matlab-shell-mode . my/matlab-shell-company-settings)
@@ -2205,13 +2174,13 @@ environments."
 
 (use-package pyvenv
   :disabled t
-  :ensure t
+  :straight t
   :config
   (add-hook 'pyvenv-post-activate-hooks 'pyvenv-restart-python))
 
 (use-package elpy
   :disabled
-  ;; :ensure t
+  ;; :straight t
   :commands elpy
   ;; :init
   ;; (setq python-shell-interpreter "jupyter"
@@ -2252,11 +2221,17 @@ environments."
 ;; *** JUPYTER
 (use-package zmq
   :when (not IS-GUIX)
-  :load-path "~/.local/share/git/emacs-zmq/"
+  :straight (zmq :host github
+                 :repo "nnicandro/emacs-zmq"
+                 :fork (:host github
+                        :repo "dakra/emacs-zmq")
+                 :pre-build (compile "make")
+                 :files ("*.el" "*.so"))
   :defer
   :init
   (add-to-list 'native-comp-deferred-compilation-deny-list "zmq")
   (use-package jupyter 
+    :straight t
     :when (not IS-GUIX)
     :defer
     :init
@@ -2268,7 +2243,7 @@ environments."
   :when (not IS-GUIX)
   :commands conda-env-activate
   :hook (eshell-first-time-mode . conda-env-initialize-eshell)
-  :ensure t
+  :straight t
   :config
   (setq conda-anaconda-home "/opt/miniconda3/")
   (setq conda-env-home-directory (expand-file-name "~/.conda/"))
@@ -2301,7 +2276,7 @@ environments."
   :if (not (version-list-<
             (version-to-list emacs-version)
             '(27 0 0 0)))
-  :ensure t
+  :straight t
   :init
   (add-hook 'geiser-repl-mode-hook (lambda ()
                                      (setq-local company-idle-delay nil)
@@ -2317,7 +2292,7 @@ environments."
 ;;;----------------------------------------------------------------
 (use-package eval-in-repl
   :disabled
-  :ensure t
+  :straight t
   :init
   ;; (require 'eval-in-repl-geiser)
   (add-hook 'geiser-mode-hook
@@ -2355,7 +2330,7 @@ and Interpretation of Classical Mechanics) - The book."
 ;;;################################################################
 ;; ** JULIA
 (use-package julia-mode
-  :ensure t
+  :straight t
   :bind (:map julia-mode-map
               ("`" . my/julia-latexsub-or-indent))
   :config
@@ -2368,13 +2343,13 @@ and Interpretation of Classical Mechanics) - The book."
       (julia-latexsub-or-indent))))
 
 (use-package julia-repl
-  :ensure t
+  :straight t
   :commands julia-repl-mode
   :config
   (julia-repl-set-terminal-backend 'vterm))
 
 (use-package eglot-jl
-  :ensure t
+  :straight t
   :commands eglot-jl-init
   :config
   (cl-defmethod project-root ((project (head julia)))
@@ -2385,7 +2360,7 @@ and Interpretation of Classical Mechanics) - The book."
 ;; ** ESS
 ;; Need this for ob-julia
 (use-package ess-julia
-  :ensure ess
+  :straight ess
   :after ob-julia
   ;; :bind (:map ess-julia-mode-map
   ;;        ("`" . my/ess-julia-cdlatex-symbol)
@@ -2435,7 +2410,7 @@ and Interpretation of Classical Mechanics) - The book."
 ;; ** EMBRACE
 ;;;----------------------------------------------------------------
 (use-package embrace
-  :ensure t
+  :straight t
   :hook ((org-mode . embrace-org-mode-hook)
          (org-mode . my/embrace-latex-mode-hook-extra)
          (LaTeX-mode . embrace-LaTeX-mode-hook)
@@ -2574,7 +2549,7 @@ and Interpretation of Classical Mechanics) - The book."
   )
 
 (use-package dumb-jump
-  :ensure t
+  :straight t
   ;; :after xref
   :init (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
   :config
@@ -2626,20 +2601,22 @@ is not visible. Otherwise delegates to regular Emacs next-error."
   (advice-add 'next-error :around #'flymake--take-over-error-a))
 
 (use-package flymake-diagnostic-at-point
-  :ensure t
+  :straight t
   :after flymake
   :hook (flymake-mode . flymake-diagnostic-at-point-mode)
   :config (setq flymake-diagnostic-at-point-display-diagnostic-function
                 'flymake-diagnostic-at-point-display-minibuffer))
 
+(use-package package-lint :straight t :defer)
+
 (use-package package-lint-flymake
-  :ensure t
+  :straight t
   :after flymake
   :config
   (add-hook 'flymake-diagnostic-functions #'package-lint-flymake))
 
 (use-package flymake-proselint
-  :ensure t
+  :straight t
   :after flymake
   :hook ((markdown-mode org-mode text-mode) . flymake-proselint-setup))
 
@@ -2745,7 +2722,7 @@ is not visible. Otherwise delegates to regular Emacs next-error."
 ;;;----------------------------------------------------------------
 (use-package hydra
   :defer
-  :ensure t
+  :straight t
   :config
   (with-eval-after-load 'ediff
     (defhydra hydra-ediff (:color blue :hint nil)
@@ -2944,7 +2921,7 @@ _d_: subtree
 ;; I've taken to showing the tab-bar instead
 (use-package tab-bar-echo-area
   :if (version< emacs-version "28.0")
-  :ensure
+  :straight t
   :after tab-bar
   :init
   (if (version< emacs-version "28.0")
@@ -3064,7 +3041,7 @@ _d_: subtree
 
 ;; Highlight uncommitted changes using VC
 (use-package diff-hl
-  :ensure
+  :straight t
   :defer
   ;; :custom-face
   ;; (diff-hl-change ((t (:foreground ,(face-background 'highlight) :background nil))))
@@ -3273,7 +3250,7 @@ fully before starting comparison."
 ;; ** HELPFUl
 ;;;----------------------------------------------------------------
 (use-package helpful
-  :ensure t
+  :straight t
   :commands (helpful-callable helpful-variable)
   ;; :hook (helpful-mode . (lambda () (line-number-mode 0)))
   :init
@@ -3490,7 +3467,7 @@ project, as defined by `vc-root-dir'."
 (use-package magit
   :defer t
   ;; :commands magit-status
-  :ensure t
+  :straight t
   :bind ("C-x g" . magit-status)
   :hook (magit-diff-visit-file . (lambda ()
                                    (when (and smerge-mode
@@ -3553,7 +3530,7 @@ project, as defined by `vc-root-dir'."
 ;; ** WHICH-KEY
 ;;;----------------------------------------------------------------
 (use-package which-key
-  :ensure t
+  :straight t
   :defer 1
   :general
   (:keymaps 'help-map
@@ -3622,9 +3599,9 @@ project, as defined by `vc-root-dir'."
                                       calc-angle-mode rad)))))))))
 
 (use-package calctex
-  :disabled
-  :load-path "~/.local/share/git/calctex/calctex"
-  :load-path "~/.local/share/git/calctex/calctex-contrib"
+  :straight (calctex :host github :repo "johnbcoughlin/calctex"
+                     :files ("*.el" "vendor" "org-calctex/*.el"
+                             "calctex/*.el" "calctex-contrib/*.el"))
   :after calc
   :config
   (setq calctex-additional-latex-packages "
@@ -3642,15 +3619,18 @@ project, as defined by `vc-root-dir'."
         calctex-additional-latex-macros
         (concat calctex-additional-latex-macros
                 "\n\\let\\evalto\\Rightarrow"))
-  (let ((vendor-folder (concat (file-name-as-directory (getenv "HOME"))
-                               ".local/share/git/calctex/vendor/")))
+  (let ((vendor-folder (expand-file-name
+                        (concat (file-name-as-directory "straight")
+                                (file-name-as-directory straight-build-dir)
+                                (file-name-as-directory "calctex/vendor"))
+                        straight-base-dir)))
     (setq calctex-dvichop-bin (concat vendor-folder "texd/dvichop")
           calctex-dvichop-sty (concat vendor-folder "texd/dvichop")
           calctex-imagemagick-enabled-p nil))
   (unless (file-exists-p calctex-dvichop-bin)
     (message "CalcTeX: Building dvichop binary")
     (let ((default-directory (file-name-directory calctex-dvichop-bin)))
-      (call-process "make" nil nil nil))))
+      (compile "make"))))
 
 ;;;----------------------------------------------------------------
 ;; ** ISEARCH
@@ -3680,7 +3660,7 @@ project, as defined by `vc-root-dir'."
        ;; (electric-pair-mode +1)
        )
 (use-package smartparens
-  :ensure t
+  :straight t
   :hook ((emacs-lisp-mode lisp-interaction-mode) . smartparens-mode)
   :bind
   (:map smartparens-mode-map
@@ -3713,7 +3693,7 @@ project, as defined by `vc-root-dir'."
 ;; ** EXPAND-REGION
 ;;;----------------------------------------------------------------
 (use-package expand-region
-  :ensure t
+  :straight t
   :commands expand-region
   :bind ("C-," . 'er/expand-region)
   :config
@@ -3804,7 +3784,7 @@ project, as defined by `vc-root-dir'."
 ;; ** AVY
 ;;;----------------------------------------------------------------
 (use-package avy
-  :ensure t
+  :straight t
   :commands (avy-goto-word-1 avy-goto-char-2 avy-goto-char-timer)
   :config
   (setq avy-timeout-seconds 0.24)
@@ -4067,7 +4047,7 @@ project, as defined by `vc-root-dir'."
 ;; ** WRAP-REGION MODE
 ;;;----------------------------------------------------------------
 (use-package wrap-region
-  :ensure t
+  :straight t
   :init (wrap-region-mode 1))
 ;; (add-hook 'text-mode-hook 'wrap-region-mode)
 
@@ -4108,7 +4088,7 @@ project, as defined by `vc-root-dir'."
 ;;;----------------------------------------------------------------
 ;; ** DOT MODE
 (use-package dot-mode
-  :ensure t
+  :straight t
   :commands dot-mode
   :bind (:map dot-mode-map
          ("C-c ." . nil)
@@ -4165,7 +4145,7 @@ project, as defined by `vc-root-dir'."
 ;;;----------------------------------------------------------------
 (use-package company
   :disabled
-  :ensure t
+  :straight t
   :defer 3
   :general
   ("M-s <tab>"      'company-yasnippet)
@@ -4229,7 +4209,7 @@ project, as defined by `vc-root-dir'."
                        'company-abort))
   
   (use-package company-tng
-    :ensure company
+    :straight company
     :config (company-tng-mode))
   
   (global-company-mode))
@@ -4246,14 +4226,14 @@ project, as defined by `vc-root-dir'."
   :disabled
   :after company
   :defer 3
-  ;; :ensure t
+  ;; :straight t
   :init (company-prescient-mode))
 
 (use-package company-statistics
   :disabled
   :after company
   :defer 5
-  :ensure t
+  :straight t
   ;; :hook (after-init . company-statistics-mode)
   :init  (company-statistics-mode)
   :config
@@ -4268,13 +4248,13 @@ project, as defined by `vc-root-dir'."
 ;;;----------------------------------------------------------------
 
 (use-package yasnippet
-  :ensure t
+  :straight t
   ;; :defer 5
   ;; :after warnings
   :hook ((prog-mode LaTeX-mode org-mode) . yas-minor-mode)
   :config
   ;; (use-package yasnippet-snippets
-  ;;   :ensure t)
+  ;;   :straight t)
   ;; (yas-reload-all)
   ;; Redefine yas expand key from TAB because company-mode uses TAB.
 
@@ -4340,7 +4320,7 @@ project, as defined by `vc-root-dir'."
   )
 
 (use-package yasnippet-snippets
-  :ensure t
+  :straight t
   :after yasnippet)
 
 (use-package warnings
@@ -4559,7 +4539,7 @@ project, as defined by `vc-root-dir'."
 (use-package erc-image
   :disabled
   :after erc
-  :ensure
+  :straight t
   :init
   (setq erc-image-inline-rescale 350)
   (add-to-list 'erc-modules 'image)
@@ -4607,7 +4587,7 @@ project, as defined by `vc-root-dir'."
         image))))
 
 (use-package erc-hl-nicks
-  :ensure
+  :straight t
   :after erc
   :hook (erc-mode . erc-hl-nicks-mode))
 
@@ -4655,7 +4635,7 @@ project, as defined by `vc-root-dir'."
 ;; ** NOV.EL
 ;;;----------------------------------------------------------------
 (use-package nov
-  :ensure t
+  :straight t
   :init
   (add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode))
   :hook ((nov-mode . my/nov-font-setup)
@@ -4724,7 +4704,7 @@ active region use it instead."
 ;; *** DICTIONARY
 (use-package sdcv
   :disabled
-  :ensure nil
+  ;; :straight nil
   :commands (sdcv-search-input)
   :bind (("C-x M-=" . sdcv-search-input)
          :map sdcv-mode-map
@@ -4732,7 +4712,7 @@ active region use it instead."
               ("M-p" . sdcv-previous-dictionary)))
 
 (use-package dictionary
-  :ensure t
+  :straight t
   :commands (dictionary-lookup-definition dictionary-search)
   :config
   (define-key help-map (kbd "C-d") 'apropos-documentation)
@@ -4813,7 +4793,7 @@ This function is meant to be mapped to a key in `rg-mode-map'."
          ("M-p" . rg-prev-file)))
 
 (use-package wgrep
-  :ensure t
+  :straight t
   :commands wgrep
   :config
   (setq wgrep-auto-save-buffer t)
@@ -4856,14 +4836,14 @@ managers such as DWM, BSPWM refer to this state as 'monocle'."
 ;;;----------------------------------------------------------------
 (use-package mixed-pitch
   :defer
-  :ensure t
+  :straight t
   :config (add-to-list 'mixed-pitch-fixed-pitch-faces 'line-number))
 
 ;;;----------------------------------------------------------------
 ;; ** OLIVETTI
 (use-package olivetti
   :commands (my/olivetti-mode)
-  :ensure t
+  :straight t
   :config
   (setq olivetti-body-width 0.8
         olivetti-minimum-body-width 80
@@ -4923,7 +4903,7 @@ the mode-line and switches to `variable-pitch-mode'."
 
 ;; ** PRESENTATION (BIG) MODE
 (use-package presentation
-  :ensure t
+  :straight t
   :commands presentation-mode
   :config
   (setq presentation-default-text-scale 1.50
@@ -4934,7 +4914,7 @@ the mode-line and switches to `variable-pitch-mode'."
 ;; pressed. Gif-screencast will screenshot each user action and compile them
 ;; into a gif.
 (use-package keycast
-  :ensure t
+  :straight t
   :commands keycast-mode
   :config
   (setq keycast-separator-width 1)
@@ -5047,7 +5027,7 @@ the mode-line and switches to `variable-pitch-mode'."
 ;; higher, we show this info in the less crowded tab-bar instead.
 
 (use-package smart-mode-line
-  :ensure t
+  :straight t
   :commands sml/setup
   :init
   (setq sml/theme nil)
@@ -5274,7 +5254,7 @@ currently loaded theme first."
 ;; Protesilaos Stavrou's excellent high contrast themes, perfect for working in
 ;; bright sunlight (especially on my laptop's dim screen).
 (use-package modus-themes
-  :ensure t
+  :straight t
   :defer
   :init
   (setq modus-themes-org-blocks nil
@@ -5325,7 +5305,7 @@ currently loaded theme first."
 ;;
 ;; [[file:/img/dotemacs/doom-rouge-demo.png]]
 (use-package doom-themes
-  :ensure t
+  :straight t
   :defer
   :init
   (defun my/doom-theme-settings (theme &rest args)

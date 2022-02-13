@@ -3,7 +3,7 @@
 ;; Vertico
 (use-package vertico
   ;; :commands vertico-mode
-  :load-path "~/.local/share/git/vertico/"
+  :straight (vertico :files ("*.el" "extensions/*.el"))
   :after minibuffer
   :commands vertico-mode
   :init (vertico-mode 1)
@@ -31,7 +31,6 @@
   (advice-add #'tmm-add-prompt :after #'minibuffer-hide-completions))
 
 (use-package vertico-multiform
-  :load-path "~/.local/share/git/vertico/extensions/"
   :commands vertico-multiform-mode
   :after vertico-flat
   :bind (:map vertico-map
@@ -79,11 +78,9 @@
        (vertico-multiform--temporary-mode 'vertico-reverse-mode 1))))
 
 (use-package vertico-unobtrusive
-  :load-path "~/.local/share/git/vertico/extensions/"
   :after vertico-flat)
 
 (use-package vertico-grid
-  :load-path "~/.local/share/git/vertico/extensions/"
   :after vertico
   ;; :bind (:map vertico-map ("M-q" . vertico-grid-mode))
   :config
@@ -102,7 +99,6 @@
   (setq vertico-grid-lookahead 50))
 
 (use-package vertico-quick
-  :load-path "~/.local/share/git/vertico/extensions/"
   :after vertico
   :bind (:map vertico-map
          ("M-i" . vertico-quick-insert)
@@ -116,7 +112,6 @@
       (embark-act arg))))
 
 (use-package vertico-directory
-  :load-path "~/.local/share/git/vertico/extensions/"
   :hook (rfn-eshadow-update-overlay vertico-directory-tidy)
   :after vertico
   :bind (:map vertico-map
@@ -126,24 +121,20 @@
          ("RET"   . vertico-directory-enter)))
 
 (use-package vertico-repeat
-  :load-path "~/.local/share/git/vertico/extensions/"
   :after vertico
   :bind (("C-x ." . vertico-repeat)
          ("H-."   . vertico-repeat)))
 
 (use-package vertico-reverse
   ;; :disabled
-  :load-path "~/.local/share/git/vertico/extensions/"
   :after vertico)
 
 (use-package vertico-flat
-  :load-path "~/.local/share/git/vertico/extensions/"
   ;; :bind (:map vertico-map
   ;;             ("M-q" . vertico-flat-mode))
   :after vertico)
 
 (use-package vertico-buffer
-  :load-path "~/.local/share/git/vertico/extensions/"
   :after vertico
   ;; :hook (vertico-buffer-mode . vertico-buffer-setup)
   :config

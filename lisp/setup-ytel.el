@@ -1,6 +1,6 @@
 ;; Utilities for opening youtube videos with mpv using ytel
 (use-package ytel
-  :ensure t
+  :straight t
   :commands ytel
   :bind (:map ytel-mode-map
               ("x" . ytel-watch-browse-url)
@@ -66,7 +66,8 @@
 ;; comments.
 (use-package ytel-show
   :after ytel
-  :load-path "~/.local/share/git/ytel-show/"
+  :straight
+  (ytel-show :type git :host github :repo "xFA25E/ytel-show")
   :bind (:map ytel-mode-map ("RET" . ytel-show)
          :map ytel-show-mode-map
          ("TAB" . shr-next-link)

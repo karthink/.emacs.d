@@ -330,7 +330,7 @@ an embedded LaTeX fragment, let `texmathp' do its job.
       (message "Latex numbering disabled."))))
 
 (use-package org-appear
-  :ensure t
+  :straight t
   :hook (org-mode . org-appear-mode)
   :config
    (setq org-hide-emphasis-markers t)
@@ -737,11 +737,9 @@ parent."
 
 (use-package valign
   :disabled
-  :if (file-exists-p "~/.local/share/git/valign")
-  :load-path "~/.local/share/git/valign/"
+  :straight t
   :hook (org-mode . valign-mode)
-  :after org
-  )
+  :after org)
 
 (use-package themed-ltximg
   :after org)
@@ -750,7 +748,7 @@ parent."
 ;; ** ORG-DOWNLOAD
 ;;;----------------------------------------------------------------------
 (use-package org-download
-  :ensure t
+  :straight t
   :after org
   :hook ((dired-mode . org-download-enable)
          (org-mode . org-download-enable))
@@ -772,19 +770,18 @@ parent."
 (use-package ob-julia
   ;; Source: https://git.nixo.xyz/nixo/ob-julia.git
   :disabled
-  :load-path "~/.local/share/git/ob-julia/"
+  :straight (ob-julia :host github :repo "nixo/ob-julia")
   :requires ess
   :defer)
 
-
 (use-package ob-julia
-  ;; Source: https://github.com/nico202/ob-julia.git
-  :load-path "~/.local/share/git/ob-julia/"
+  :straight (ob-julia :host github :repo "nico202/ob-julia"
+                      :files ("*.el" "julia"))
   :requires (ess ess-julia)
   :defer)
 
 (use-package ess
-  :ensure t
+  :straight t
   :after ob-julia
   :config
   (use-package ess-julia))
@@ -822,7 +819,7 @@ parent."
 
 (use-package org-babel-eval-in-repl
   :disabled
-  :ensure t
+  :straight t
   :after ob
   :init
   ;; (define-key org-mode-map (kbd "C-<return>") 'ober-eval-in-repl)
@@ -858,7 +855,7 @@ parent."
 ;; ** ORG-BULLETS
 ;;;----------------------------------------------------------------
 (use-package org-bullets
-  :ensure t
+  :straight t
   :after org
   :hook (org-mode . org-bullets-mode))
 
@@ -866,7 +863,7 @@ parent."
 ;; ** OX-HUGO
 ;;;----------------------------------------------------------------
 (use-package ox-hugo
-  :ensure t
+  :straight t
   :after (org-capture)
   :config
   (setq org-hugo-section "blog")
@@ -919,7 +916,7 @@ See `org-capture-templates' for more information."
 ;; ** ORG-GCAL
 ;;;----------------------------------------------------------------
 (use-package org-gcal
-  :ensure
+  :straight t
   :after org
   :commands (org-gcal-sync org-gcal-fetch my/org-gcal-sync-maybe)
   :hook (org-agenda-mode . my/org-gcal-sync-maybe)
@@ -968,7 +965,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
 ;;;----------------------------------------------------------------
 (use-package org-re-reveal
   ;; :disabled
-  :ensure t
+  :straight t
   :after ox
   :commands (org-re-reveal-export-to-html
              org-re-reveal-export-to-html-and-browse)
@@ -983,7 +980,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
 
 (use-package ox-reveal
   :disabled 
-  :ensure t
+  :straight t
   :init
   (setq org-reveal-root "file:///home/karthik/.local/share/git/reveal.js")
   (setq org-reveal-hlevel 2))
@@ -1117,46 +1114,11 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
   )
 
 ;;;----------------------------------------------------------------
-;; ORG-ROAM - Disabled for now
-;;;----------------------------------------------------------------
-(use-package org-roam
-  :disabled
-  :after org
-  :commands (org-roam-mode org-roam-find-file)
-  :init
-  (setq org-roam-directory (dir-concat org-directory "roam"))
-  :bind (:map org-roam-mode-map
-              (("C-c n l" . org-roam)
-               ("C-c n f" . org-roam-find-file)
-               ("C-c n j" . org-roam-jump-to-index)
-               ("C-c n b" . org-roam-switch-to-buffer)
-               ("C-c n g" . org-roam-graph))
-              :map org-mode-map
-              (("C-c n i" . org-roam-insert)))
-  :config
-  (setq org-roam-capture-templates '(("d" "default" plain
-                                     #'org-roam-capture--get-point
-                                     "%?"
-                                     :file-name "%<%Y%m%d%H%M%S>-${slug}"
-                                     :head "#+TITLE: ${title}\n#+ROAM_TAGS:\n#+ROAM_KEY:\n"
-                                     :unnarrowed t))))
-
-  (use-package company-org-roam
-  :disabled
-  :load-path "~/.local/share/git/company-org-roam/"
-  :after (company org org-roam)
-  :init
-  (add-hook 'org-roam-mode-hook (lambda ()
-                                  (make-local-variable 'company-backends)
-                                  (push 'company-org-roam company-backends)
-                                  )))
-
-;;;----------------------------------------------------------------
 ;; ** ORG-TREE-SLIDE
 ;;;----------------------------------------------------------------
 ;; Presentations from within org-mode.
 (use-package org-tree-slide
-  :ensure t
+  :straight t
   :after org
   :commands my/org-presentation-mode
   :config
@@ -1207,7 +1169,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
 ;;;----------------------------------------------------------------
 ;; Compose HTML emails in org-mode.
 (use-package org-mime
-  :ensure t
+  :straight t
   :after (notmuch org)
   :defer 2
   :config
@@ -1298,7 +1260,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
 ;;;----------------------------------------------------------------
 ;; ** ORG-NOTER
 ;;;----------------------------------------------------------------
-(use-package org-noter :ensure t :defer)
+(use-package org-noter :straight t :defer)
 
 (provide 'setup-org)
 

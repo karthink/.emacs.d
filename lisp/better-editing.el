@@ -13,7 +13,7 @@
 
 ;; (and (require 'use-package nil t)
 ;;      (use-package visual-fill-column-mode
-;;        ;; :ensure t
+;;        ;; :straight t
 ;;        ;; :hook (visual-line-mode . visual-fill-column-mode)
 ;;        :config
 ;;        (setq split-window-preferred-function #'visual-fill-column-mode-split-window-sensibly)

@@ -28,6 +28,14 @@
 ;; (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
 ;; #+end_src
 
+;; Set up Quelpa
+(if (package-installed-p 'quelpa)
+    (setq quelpa-checkout-melpa-p nil)
+  (with-temp-buffer
+    (url-insert-file-contents "https://raw.githubusercontent.com/quelpa/quelpa/master/quelpa.el")
+    (eval-buffer)
+    (quelpa-self-upgrade)))
+
 ;; ** USE PACKAGE
 
 ;; =use-package= is a neat wrapper over =with-eval-after-load= and =require=, a
@@ -54,6 +62,17 @@
 
 ;;; (require 'bind-key)
 
+(unless (package-installed-p 'quelpa-use-package)
+  (quelpa
+   '(quelpa-use-package
+     :fetcher git
+     :url "https://github.com/quelpa/quelpa-use-package.git")))
+
+(use-package quelpa-use-package 
+  :config
+  ;; (setq use-package-ensure-function 'quelpa)
+  )
+
 (use-package package
   :hook (package-menu-mode . hl-line-mode))
 
@@ -71,17 +90,17 @@
     (setq my-packages-urls-extra
           '(("https://codeberg.org/jao/consult-notmuch.git")
             ("https://github.com/xFA25E/ytel-show.git")
-            ("https://github.com/minad/vertico.git")
+            ;; ("https://github.com/minad/vertico.git")
             ("https://github.com/johnbcoughlin/calctex.git")
-            ("https://github.com/skeeto/elfeed.git")
-            ("git@github.com:karthink/ffmpeg-dispatch.git" . "ffmpeg")
-            ("https://git.code.sf.net/p/matlab-emacs/src" . "matlab-emacs-src")
+            ;; ("https://github.com/skeeto/elfeed.git")
+            ;; ("git@github.com:karthink/ffmpeg-dispatch.git" . "ffmpeg")
+            ;; ("https://git.code.sf.net/p/matlab-emacs/src" . "matlab-emacs-src")
             ("https://github.com/nico202/ob-julia.git")
-            ("https://github.com/tecosaur/screenshot.git" . "emacs-screenshot")
+            ;; ("https://github.com/tecosaur/screenshot.git" . "emacs-screenshot")
             ("git@github.com:karthink/sicp.git")
-            ("https://github.com/chenyanming/wallabag.el.git")
-            ("https://github.com/lastquestion/explain-pause-mode.git")
-            ("https://github.com/dakra/emacs-zmq.git")
+            ;; ("https://github.com/chenyanming/wallabag.el.git")
+            ;; ("https://github.com/lastquestion/explain-pause-mode.git")
+            ;; ("https://github.com/dakra/emacs-zmq.git")
             ;; ("git@github.com:karthink/lazytab.git")
             ;; ("git@github.com:karthink/consult-reftex.git")
             ;; ("git@github.com:karthink/consult-dir.git")
@@ -707,7 +726,9 @@ output instead."
 
 (use-package explain-pause-mode
   :commands explain-pause-mode
-  :load-path "~/.local/share/git/explain-pause-mode/"
+  :quelpa (explain-pause-mode :fetcher github
+                              :repo "lastquestion/explain-pause-mode")
+  ;; :load-path "~/.local/share/git/explain-pause-mode/"
   :config
   (setq explain-pause-alert-style 'silent))
 
@@ -1346,9 +1367,9 @@ surrounded by word boundaries."
                           )))
 
 (use-package screenshot
-  :load-path "~/.local/share/git/emacs-screenshot"
-  :commands screenshot
-  :requires posframe)
+  ;; :load-path "~/.local/share/git/emacs-screenshot"
+  :quelpa (screenshot :fetcher github :repo "tecosaur/screenshot")
+  :commands screenshot)
 
 ;; Colorize color names and parens in buffers
 (use-package rainbow-mode
@@ -2039,7 +2060,8 @@ environments."
 ;; ** MATLAB
 ;;;----------------------------------------------------------------
 (use-package matlab
-  :load-path "~/.local/share/git/matlab-emacs-src/"
+  ;; :load-path "~/.local/share/git/matlab-emacs-src/"
+  :quelpa (matlab-mode :fetcher git :url "https://git.code.sf.net/p/matlab-emacs/src")
   :commands (matlab-shell matlab-mode)
   :functions my/matlab-shell-help-at-point
   ;; :ensure matlab-mode
@@ -2252,12 +2274,14 @@ environments."
 ;; *** JUPYTER
 (use-package zmq
   :when (not IS-GUIX)
-  :load-path "~/.local/share/git/emacs-zmq/"
+  ;; :load-path "~/.local/share/git/emacs-zmq/"
+  :quelpa (zmq :fetcher git :repo "dakra/emacs-zmq")
   :defer
   :init
   (add-to-list 'native-comp-deferred-compilation-deny-list "zmq")
   (use-package jupyter 
     :when (not IS-GUIX)
+    :quelpa t
     :defer
     :init
     (when (version< "28.0" emacs-version)
@@ -3622,11 +3646,18 @@ project, as defined by `vc-root-dir'."
                                       calc-angle-mode rad)))))))))
 
 (use-package calctex
-  :disabled
-  :load-path "~/.local/share/git/calctex/calctex"
-  :load-path "~/.local/share/git/calctex/calctex-contrib"
+  ;; :load-path "~/.local/share/git/calctex/calctex"
+  ;; :load-path "~/.local/share/git/calctex/calctex-contrib"
+  :quelpa (calctex :fetcher github :repo "johnbcoughlin/calctex"
+                   :files (:defaults "calctex-contrib" "calctex"))
+  :commands calctex-mode
   :after calc
   :config
+  (advice-add 'calctex-default-dispatching-render-process
+              :around (defun my/calctex-silent (orig-fn &rest args)
+                        (let (message-log-max
+                              (inhibit-message t))
+                          (apply orig-fn args))))
   (setq calctex-additional-latex-packages "
 \\usepackage[usenames]{xcolor}
 \\usepackage{soul}
@@ -3642,15 +3673,17 @@ project, as defined by `vc-root-dir'."
         calctex-additional-latex-macros
         (concat calctex-additional-latex-macros
                 "\n\\let\\evalto\\Rightarrow"))
-  (let ((vendor-folder (concat (file-name-as-directory (getenv "HOME"))
-                               ".local/share/git/calctex/vendor/")))
+  (let ((vendor-folder ;; (concat (file-name-as-directory (getenv "HOME"))
+                       ;;         ".local/share/git/calctex/vendor/")
+         (concat (file-name-as-directory quelpa-dir)
+                 "build/calctex/vendor/")))
     (setq calctex-dvichop-bin (concat vendor-folder "texd/dvichop")
           calctex-dvichop-sty (concat vendor-folder "texd/dvichop")
           calctex-imagemagick-enabled-p nil))
   (unless (file-exists-p calctex-dvichop-bin)
     (message "CalcTeX: Building dvichop binary")
     (let ((default-directory (file-name-directory calctex-dvichop-bin)))
-      (call-process "make" nil nil nil))))
+      (compile "make"))))
 
 ;;;----------------------------------------------------------------
 ;; ** ISEARCH

@@ -772,7 +772,7 @@ parent."
 (use-package ob-julia
   ;; Source: https://git.nixo.xyz/nixo/ob-julia.git
   :disabled
-  :load-path "~/.local/share/git/ob-julia/"
+  ;; :load-path "~/.local/share/git/ob-julia/"
   :requires ess
   :defer)
 

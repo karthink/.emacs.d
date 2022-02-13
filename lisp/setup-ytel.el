@@ -66,7 +66,8 @@
 ;; comments.
 (use-package ytel-show
   :after ytel
-  :load-path "~/.local/share/git/ytel-show/"
+  :quelpa (ytel-show :fetcher github :repo "xFA25E/ytel-show")
+  ;; :load-path "~/.local/share/git/ytel-show/"
   :bind (:map ytel-mode-map ("RET" . ytel-show)
          :map ytel-show-mode-map
          ("TAB" . shr-next-link)

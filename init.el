@@ -2269,7 +2269,7 @@ environments."
 
 
 ;;;----------------------------------------------------------------
-;; ** GEISER
+;; ** GEISER/SCHEME
 ;;;----------------------------------------------------------------
 (use-package geiser
   :defer
@@ -2287,6 +2287,31 @@ environments."
   ;; (setq geiser-mit-binary "mechanics")
   (setq geiser-mit-binary "mit-scheme"))
 
+(use-package geiser-guile :straight t :defer)
+(use-package geiser-mit
+  :straight t
+  :commands mechanics
+  :config
+  (defun mechanics ()
+    "Run mit-scheme with SCMUTILS loaded, to work with (Structure
+and Interpretation of Classical Mechanics) - The book."
+    (interactive)
+    (setenv "MITSCHEME_BAND" "mechanics.com")
+    (setenv "MITSCHEME_HEAP_SIZE" "100000")
+    (let ((geiser-repl-skip-version-check-p t))
+      (run-geiser 'mit))))
+
+;; Make sure mit-scheme (from repos) and scmutils (from internet + sudo ./install.sh)are installed
+;;;###autoload
+;; (defun mechanics ()
+;;   "Run mit-scheme with SCMUTILS loaded, to work with (Structure
+;; and Interpretation of Classical Mechanics) - The book."
+;;   (interactive)
+;;   (setenv "MITSCHEME_BAND" "mechanics.com")
+;;   (setenv "MITSCHEME_HEAP_SIZE" "100000")
+;;   (run-scheme
+;;    "/usr/bin/mit-scheme --library /opt/mit-scheme/lib/mit-scheme-x86-64/"))
+
 ;;;----------------------------------------------------------------
 ;; ** EVAL-IN-REPL
 ;;;----------------------------------------------------------------
@@ -2300,33 +2325,6 @@ environments."
                (local-set-key (kbd "<C-return>") 'eir-eval-in-geiser))))
 
 ;;;----------------------------------------------------------------
-;; ** SCHEME - SICM
-;;;----------------------------------------------------------------
-
-;; Make sure mit-scheme (from repos) and scmutils (from internet + sudo ./install.sh)are installed
-;;;###autoload
-;; (defun mechanics ()
-;;   "Run mit-scheme with SCMUTILS loaded, to work with (Structure
-;; and Interpretation of Classical Mechanics) - The book."
-;;   (interactive)
-;;   (setenv "MITSCHEME_BAND" "mechanics.com")
-;;   (setenv "MITSCHEME_HEAP_SIZE" "100000")
-;;   (run-scheme
-;;    "/usr/bin/mit-scheme --library /opt/mit-scheme/lib/mit-scheme-x86-64/"))
-
-(use-package geiser
-  :commands mechanics
-  :config
-  (defun mechanics ()
-    "Run mit-scheme with SCMUTILS loaded, to work with (Structure
-and Interpretation of Classical Mechanics) - The book."
-    (interactive)
-    (setenv "MITSCHEME_BAND" "mechanics.com")
-    (setenv "MITSCHEME_HEAP_SIZE" "100000")
-    (let ((geiser-repl-skip-version-check-p t))
-      (run-geiser 'mit))))
-
-
 ;;;################################################################
 ;; ** JULIA
 (use-package julia-mode
@@ -5199,18 +5197,19 @@ currently loaded theme first."
   :config
   (cond (IS-LINUX
          (set-fontset-font t 'unicode "Symbola" nil 'prepend)
-         (custom-set-faces
-          '(variable-pitch ((t (:family "Ubuntu" :height 110))))
-          ;; '(default ((t (:family "Ubuntu Mono" :foundry "PfEd"
-          ;;                        :slant normal :weight normal
-          ;;                        :height 125 :width normal))))
-          ;; '(default ((t (:family "Iosevka" :foundry "PfEd"
-          ;;                        :slant normal :weight normal
-          ;;                        :height 110 :width normal))))
-          '(default ((t (:family "FantasqueSansMono" :foundry "PfEd"
-                                 :slant normal :weight normal
-                                 :height 120 :width normal))))
-          ))
+         (pcase-let ((`(,vp ,fp) (if (equal system-name "x220")
+                                     '(120 130) '(110 120))))
+           (custom-set-faces
+            `(variable-pitch ((t (:family "Ubuntu" :height ,vp))))
+            ;; '(default ((t (:family "Ubuntu Mono" :foundry "PfEd"
+            ;;                        :slant normal :weight normal
+            ;;                        :height 125 :width normal))))
+            ;; '(default ((t (:family "Iosevka" :foundry "PfEd"
+            ;;                        :slant normal :weight normal
+            ;;                        :height 110 :width normal))))
+            `(default ((t (:family "FantasqueSansMono" :foundry "PfEd"
+                                  :slant normal :weight normal
+                                  :height ,fp :width normal)))))))
         (IS-WINDOWS
          (custom-set-faces
           '(default ((t (:family "Consolas" :foundry "outline"
@@ -5321,7 +5320,7 @@ currently loaded theme first."
                  (tab-bar            (:background "black" :height 1.0 :foreground "white")
                                      tab-bar)
                  (tab-bar-tab
-                  (:foreground "#B16E75" :bold t :height 1.10 :background "#172030")
+                  (:bold t :height 1.10 :foreground nil :inherit mode-line-emphasis)
                   tab-bar)
                  (tab-bar-tab-inactive
                   (:inherit 'mode-line-inactive :height 1.10 :background "black")

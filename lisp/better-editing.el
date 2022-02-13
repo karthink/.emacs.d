@@ -107,7 +107,7 @@
 		  (cycle-spacing (if (= n 1) -1 n) preserve-nl-back 'fast)))
 
 ;;; Alternative to M-x
-(global-set-key "\C-x\C-m" 'execute-extended-command)
+;; (global-set-key "\C-x\C-m" 'execute-extended-command)
 ;;(global-set-key "\C-c\C-m" 'execute-extended-command)
 
 ;;; Unbind `C-x f'

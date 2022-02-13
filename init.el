@@ -1937,59 +1937,62 @@ environments."
   :hook (LaTeX-mode . turn-on-cdlatex)
   :bind (:map cdlatex-mode-map ("[" . nil) ("(" . nil) ("{" . nil)
               ("<tab>" . cdlatex-tab))
-  :config
-  (progn
-    (setq cdlatex-command-alist
-          '(("vc" "Insert \\vect{}" "\\vect{?}"
-             cdlatex-position-cursor nil nil t)
-            ("equ*" "Insert equation* env"
-             "\\begin{equation*}\n?\n\\end{equation*}"
-             cdlatex-position-cursor nil t nil)
-            ("sn*" "Insert section* env"
-             "\\section*{?}"
-             cdlatex-position-cursor nil t nil)
-            ("ss*" "Insert subsection* env"
-             "\\subsection*{?}"
-             cdlatex-position-cursor nil t nil)
-            ("sss*" "Insert subsubsection* env"
-             "\\subsubsection*{?}"
-             cdlatex-position-cursor nil t nil)))
+  :init
+  (dolist (cmd '(("vc" "Insert \\vect{}" "\\vect{?}"
+                  cdlatex-position-cursor nil nil t)
+                 ("equ*" "Insert equation* env"
+                  "\\begin{equation*}\n?\n\\end{equation*}"
+                  cdlatex-position-cursor nil t nil)
+                 ("sn*" "Insert section* env"
+                  "\\section*{?}"
+                  cdlatex-position-cursor nil t nil)
+                 ("ss*" "Insert subsection* env"
+                  "\\subsection*{?}"
+                  cdlatex-position-cursor nil t nil)
+                 ("sss*" "Insert subsubsection* env"
+                  "\\subsubsection*{?}"
+                  cdlatex-position-cursor nil t nil)))
+    (push cmd cdlatex-command-alist))
 
-    (setq cdlatex-math-symbol-alist '((?F ("\\Phi"))
-                                      (?o ("\\omega" "\\mho" "\\mathcal{O}"))
-                                      (?6 ("\\partial"))
-                                      (?v ("\\vee" "\\forall"))
-                                      (?^ ("\\uparrow" "\\Updownarrow" "\\updownarrow"))))
-    (setq cdlatex-math-modify-alist '((?b "\\mathbb" "\\textbf" t nil nil)
-                                      (?B "\\mathbf" "\\textbf" t nil nil)
-                                      (?t "\\text" nil t nil nil)))
-    (setq cdlatex-paired-parens "$[{(")))
+  (setq cdlatex-math-symbol-alist '((?F ("\\Phi"))
+                                    (?o ("\\omega" "\\mho" "\\mathcal{O}"))
+                                    (?6 ("\\partial"))
+                                    (?v ("\\vee" "\\forall"))
+                                    (?^ ("\\uparrow" "\\Updownarrow" "\\updownarrow"))))
+  (setq cdlatex-math-modify-alist '((?b "\\mathbb" "\\textbf" t nil nil)
+                                    (?B "\\mathbf" "\\textbf" t nil nil)
+                                    (?t "\\text" nil t nil nil)))
+  (setq cdlatex-paired-parens "$[{(")
+  (cdlatex-reset-mode))
 
 ;; Make cdlatex play nice inside org tables
 (use-package lazytab
   :load-path "plugins/lazytab/";; 
-  :after cdlatex
-  :hook (cdlatex-tab . lazytab-cdlatex-or-orgtbl-next-field)
   :bind (:map orgtbl-mode-map
               ("<tab>" . lazytab-org-table-next-field-maybe)
               ("TAB" . lazytab-org-table-next-field-maybe))
-  :init
-  (add-to-list 'cdlatex-command-alist '("smat" "Insert smallmatrix env"
-                                       "\\left( \\begin{smallmatrix} ? \\end{smallmatrix} \\right)"
-                                       lazytab-position-cursor-and-edit
-                                       nil nil t))
-  (add-to-list 'cdlatex-command-alist '("bmat" "Insert bmatrix env"
-                                       "\\begin{bmatrix} ? \\end{bmatrix}"
-                                       lazytab-position-cursor-and-edit
-                                       nil nil t))
-  (add-to-list 'cdlatex-command-alist '("pmat" "Insert pmatrix env"
-                                       "\\begin{pmatrix} ? \\end{pmatrix}"
-                                       lazytab-position-cursor-and-edit
-                                       nil nil t))
-  (add-to-list 'cdlatex-command-alist '("tbl" "Insert table"
-                                        "\\begin{table}\n\\centering ? \\caption{}\n\\end{table}\n"
-                                       lazytab-position-cursor-and-edit
-                                       nil t nil)))
+  :after cdlatex
+  :demand t
+  :config
+  (add-hook 'cdlatex-tab-hook #'lazytab-cdlatex-or-orgtbl-next-field 90)
+  (dolist (cmd '(("smat" "Insert smallmatrix env"
+                  "\\left( \\begin{smallmatrix} ? \\end{smallmatrix} \\right)"
+                  lazytab-position-cursor-and-edit
+                  nil nil t)
+                 ("bmat" "Insert bmatrix env"
+                  "\\begin{bmatrix} ? \\end{bmatrix}"
+                  lazytab-position-cursor-and-edit
+                  nil nil t)
+                 ("pmat" "Insert pmatrix env"
+                  "\\begin{pmatrix} ? \\end{pmatrix}"
+                  lazytab-position-cursor-and-edit
+                  nil nil t)
+                 ("tbl" "Insert table"
+                  "\\begin{table}\n\\centering ? \\caption{}\n\\end{table}\n"
+                  lazytab-position-cursor-and-edit
+                  nil t nil)))
+    (push cmd cdlatex-command-alist))
+  (cdlatex-reset-mode))
 
 (use-package ink
   :load-path "plugins/ink/"
@@ -2246,9 +2249,11 @@ environments."
   ;;            ("Union" .    #x22c3)))))
   )
 
+;; *** JUPYTER
 (use-package zmq
   :when (not IS-GUIX)
   :load-path "~/.local/share/git/emacs-zmq/"
+  :defer
   :init
   (add-to-list 'native-comp-deferred-compilation-deny-list "zmq")
   (use-package jupyter 
@@ -4347,7 +4352,6 @@ project, as defined by `vc-root-dir'."
   :defer
   :config
   (use-package cdlatex
-    :if (featurep 'cdlatex)
     :hook ((cdlatex-tab . yas-expand)
            (cdlatex-tab . cdlatex-in-yas-field))
     :bind (:map yas-keymap

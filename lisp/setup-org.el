@@ -1,7 +1,6 @@
 ;;;; Org mode
 
 (use-package org
-  :defer 10
   :bind (("\C-cl" . org-store-link)
          ("\C-ca" . org-agenda)
          ("<f5>"  . org-capture)

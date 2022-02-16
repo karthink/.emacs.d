@@ -1,6 +1,7 @@
 ;;;; Org mode
 
 (use-package org
+  :straight (:type built-in)
   :bind (("\C-cl" . org-store-link)
          ("\C-ca" . org-agenda)
          ("<f5>"  . org-capture)
@@ -534,12 +535,11 @@ has no effect."
           
           ("o" "Overview"
            ((tags-todo "*"
-               ((org-agenda-skip-function
+               ((org-agenda-skip-function '(org-agenda-skip-if nil '(timestamp)))
+                (org-agenda-skip-function
                  `(org-agenda-skip-entry-if
                    'notregexp ,(format "\\[#%s\\]" ;;(char-to-string org-priority-highest)
-                                       "\\(?:A\\|B\\|C\\)"
-                                       )))
-                (org-agenda-skip-function '(org-agenda-skip-if nil '(timestamp)))
+                                       "\\(?:A\\|B\\|C\\)")))
                 (org-agenda-block-separator nil)
                 (org-agenda-overriding-header "⛤ Important (not urgent)\n")))
             (agenda ""
@@ -593,16 +593,16 @@ has no effect."
             (not (eq this-command 'org-capture-refile)))
        (delete-frame)))
  
- (add-to-list 'org-capture-templates `("t" "Add task"
-                    entry
-                    (file+headline "~/do.org" "Tasks")
-                    "* TODO %?
-:PROPERTIES:
-:CREATED:  %U
-:END:
-%a\n%x\n"
-                    :prepend t))
-
+ (pcase-dolist
+     (`(,key . ,template)
+      '(("t" "Add task" entry (file+headline "~/do.org" "Tasks")
+         "* TODO %?\n:PROPERTIES:\n:CREATED:  %U\n:END:\n%a\n%x\n" :prepend t)
+        ("c" "Add calendar entry" entry (file "~/org/gmail-cal.org")
+         "* %?\n%^{LOCATION}p\n:%(progn (require 'org-gcal) (symbol-value 'org-gcal-drawer-name)):
+%a\n:END:")))
+   (setf (alist-get key org-capture-templates nil nil #'equal)
+         template))
+ 
  ;; (setq org-capture-templates
 ;;         (append org-capture-templates 
 ;;                  `(("t" "TODO items")

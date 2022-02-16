@@ -682,10 +682,19 @@ output instead."
   :config
   (setq explain-pause-alert-style 'silent))
 
-(use-package vterm
-  :when (not IS-GUIX)
-  :straight t
-  :defer)
+(unless IS-GUIX
+  (use-package vterm
+    :straight (:files
+               ("*.so" "*.el")
+               :pre-build
+               (progn (unless (file-directory-p "build")
+                        (make-directory "build"))
+                      (call-process
+                       "sh" nil "*vterm-prepare*" t "-c" 
+                       (concat "cd build; "
+                               "cmake -G 'Unix Makefiles' .."))
+                      (compile "cd build; make")))
+    :defer))
 
 ;;;----------------------------------------------------------------
 ;; ** SHELL AND ESHELL PREFERENCES
@@ -1551,8 +1560,7 @@ If region is active, add its contents to the new buffer."
         compilation-ask-about-save nil
         compilation-scroll-output 'first-error)
   (global-set-key [(f9)] 'compile)
-  (global-set-key [(f10)] 'recompile)
-
+  
   (defun my/apply-ansi-color-to-compilation-buffer-h ()
     "Applies ansi codes to the compilation buffers. Meant for
   `compilation-filter-hook'."
@@ -1583,6 +1591,11 @@ If region is active, add its contents to the new buffer."
 ;;;################################################################
 ;; * LANGUAGE MODES
 ;;;################################################################
+
+;;;----------------------------------------------------------------
+;; ** MARKDOWN
+;;;----------------------------------------------------------------
+(use-package markdown-mode :straight t :defer)
 
 ;;;----------------------------------------------------------------
 ;; ** LSP SUPPORT
@@ -1971,6 +1984,7 @@ environments."
   :commands (ink-make-figure ink-edit-figure))
 
 ;; *** BIBTEX
+(use-package org :straight (:type built-in) :defer)
 (use-package citar
   :straight t
   :after (latex reftex)
@@ -1996,12 +2010,12 @@ environments."
             "cite{" my/cdlatex-bibtex-action nil t nil))))
 
 ;; *** PDFs
-(use-package pdf-tools
-  :when (not IS-GUIX)
-  :commands pdf-tools-install
-  :straight t
-  :config
-  (setq pdf-view-resize-factor 1.1))
+(unless IS-GUIX
+  (use-package pdf-tools
+    :commands pdf-tools-install
+    :straight t
+    :config
+    (setq pdf-view-resize-factor 1.1)))
 
 (use-package sow
   :after pdf-tools)
@@ -2060,20 +2074,16 @@ environments."
   ;;                                     (company-mode-on) ))
 
   ;; :config
-  ;; (setq matlab-shell-command "matlab")
-  ;; (add-to-list 'matlab-shell-command-switches "-nosplash")
-  (with-demoted-errors "Error loading Matlab autoloads: %s"
-    (load-library "matlab-mode-autoloads")
-    (load-library "matlab-shell")
-    (load-library "mlint"))
+  ;; (with-demoted-errors "Error loading Matlab autoloads: %s"
+  ;;   (load-library "matlab-mode-autoloads")
+  ;;   (load-library "matlab-shell")
+  ;;   (load-library "mlint"))
   (setq matlab-shell-debug-tooltips-p t)
   (setq matlab-shell-command-switches '("-nodesktop" "-nosplash"))
   ;; (setq matlab-shell-echoes nil)
   (setq matlab-shell-run-region-function 'matlab-shell-region->script)
   ;; (setq matlab-shell-run-region-function 'matlab-shell-region->internal)
-  (add-hook 'matlab-shell-mode-hook (lambda () (interactive)
-                                      (define-key matlab-shell-mode-map (kbd "C-<tab>") nil)))
-
+  
   ;; ;;;###autoload
   ;; (defun +matlab-shell-no-select-a (&rest _args)
   ;;   "Switch back to matlab file buffer after evaluating region"
@@ -2087,19 +2097,6 @@ environments."
         (cons (or block-beg (point-min)) (if block-end
                                              (- block-end 2)
                                            (point-max))))))
-
-  (defun matlab-shell-run-block (&optional prefix)
-    "Run a block of code around point separated by %% and display
-  result in MATLAB shell. If prefix argument is non-nil, replace
-  newlines with commas to suppress output. This command requires an
-  active MATLAB shell."
-    (interactive "P")
-    (let* ((block (matlab-select-block))
-           (beg (car block))
-           (end (cdr block)))
-      (if prefix
-          (matlab-shell-run-region beg end prefix)
-        (matlab-shell-run-region beg end))))
 
   ;; These are obviated by outline-next-heading and co:
   ;;
@@ -2116,7 +2113,18 @@ environments."
   ;;   (re-search-backward "^\\s-*%%" nil t)
   ;;   (match-beginning 0))
 
-  )
+  (defun matlab-shell-run-block (&optional prefix)
+    "Run a block of code around point separated by %% and display
+  result in MATLAB shell. If prefix argument is non-nil, replace
+  newlines with commas to suppress output. This command requires an
+  active MATLAB shell."
+    (interactive "P")
+    (let* ((block (matlab-select-block))
+           (beg (car block))
+           (end (cdr block)))
+      (if prefix
+          (matlab-shell-run-region beg end prefix)
+        (matlab-shell-run-region beg end)))))
 
 ;; Company-specific setup for Matlab-mode
 (use-package matlab
@@ -2145,6 +2153,7 @@ environments."
          (matlab-shell-mode . (lambda ()
                                 (buffer-disable-undo)
                                 (setq comint-process-echoes t)
+                                (define-key matlab-shell-mode-map (kbd "C-<tab>") nil)
                                 (define-key matlab-shell-mode-map (kbd "C-h .")
                                   'my/matlab-shell-help-at-point))))
   :config
@@ -2218,43 +2227,54 @@ environments."
   ;;            ("Union" .    #x22c3)))))
   )
 
+;;;----------------------------------------------------------------
 ;; *** JUPYTER
-(use-package zmq
-  :when (not IS-GUIX)
-  :straight (zmq :host github
-                 :repo "nnicandro/emacs-zmq"
-                 :fork (:host github
-                        :repo "dakra/emacs-zmq")
-                 :pre-build (compile "make")
-                 :files ("*.el" "*.so"))
-  :defer
-  :init
-  (add-to-list 'native-comp-deferred-compilation-deny-list "zmq")
-  (use-package jupyter 
-    :straight t
-    :when (not IS-GUIX)
+;;;----------------------------------------------------------------
+(unless IS-GUIX
+  (use-package zmq
+    :straight (zmq :host github
+                   ;;   :repo "nnicandro/emacs-zmq"
+                   :repo "dakra/emacs-zmq"
+                   :branch "hidden-visibility"
+                   :files ("*.el" "*.so")
+                   :pre-build (compile "make"))
+    
+    ;; (zmq :host github
+    ;;      :repo "nnicandro/emacs-zmq"
+    ;;      :fork (:host github
+    ;;             :repo "dakra/emacs-zmq"
+    ;;             :branch "hidden-visibility")
+    ;;      :pre-build (compile "make")
+    ;;      :files ("*.el" "*.so"))
     :defer
     :init
-    (when (version< "28.0" emacs-version)
-      (add-to-list 'native-comp-deferred-compilation-deny-list "jupyter"))))
+    (add-to-list 'native-comp-deferred-compilation-deny-list "zmq")
+    (use-package jupyter 
+      :straight t
+      :defer
+      :init
+      (when (version< "28.0" emacs-version)
+        (add-to-list 'native-comp-deferred-compilation-deny-list "jupyter")))))
 
+;;;----------------------------------------------------------------
 ;; *** CONDA SUPPORT
-(use-package conda
-  :when (not IS-GUIX)
-  :commands conda-env-activate
-  :hook (eshell-first-time-mode . conda-env-initialize-eshell)
-  :straight t
-  :config
-  (setq conda-anaconda-home "/opt/miniconda3/")
-  (setq conda-env-home-directory (expand-file-name "~/.conda/"))
-  (add-to-list
-   'global-mode-string
-   '(:eval
-     (list
-      (if conda-env-current-name
-          (propertize (concat "(" conda-env-current-name ") ")
-                      'face 'font-lock-builtin-face)
-        "")))))
+;;;----------------------------------------------------------------
+(unless IS-GUIX 
+  (use-package conda
+    :commands conda-env-activate
+    :hook (eshell-first-time-mode . conda-env-initialize-eshell)
+    :straight t
+    :config
+    (setq conda-anaconda-home "/opt/miniconda3/")
+    (setq conda-env-home-directory (expand-file-name "~/.conda/"))
+    (add-to-list
+     'global-mode-string
+     '(:eval
+       (list
+        (if conda-env-current-name
+            (propertize (concat "(" conda-env-current-name ") ")
+                        'face 'font-lock-builtin-face)
+          ""))))))
 ;;; (setq conda-env-subdirectory "envs")
 ;;; (unless (getenv "CONDA_DEFAULT_ENV")
 ;;;   (conda-env-activate "base"))
@@ -2324,9 +2344,9 @@ and Interpretation of Classical Mechanics) - The book."
             '(lambda ()
                (local-set-key (kbd "<C-return>") 'eir-eval-in-geiser))))
 
-;;;----------------------------------------------------------------
 ;;;################################################################
 ;; ** JULIA
+;;;################################################################
 (use-package julia-mode
   :straight t
   :bind (:map julia-mode-map
@@ -2355,7 +2375,10 @@ and Interpretation of Classical Mechanics) - The book."
   ;; Workaround until LanguageServer.jl is fixed
   (setq eglot-jl-language-server-project
         (dir-concat user-cache-directory "eglot-jl-project")))
+
+;;;----------------------------------------------------------------
 ;; ** ESS
+;;;----------------------------------------------------------------
 ;; Need this for ob-julia
 (use-package ess-julia
   :straight ess
@@ -2378,7 +2401,9 @@ and Interpretation of Classical Mechanics) - The book."
   (define-key ess-julia-mode-map (kbd "`") 'my/ess-julia-cdlatex-symbol)
   (define-key inferior-ess-julia-mode-map (kbd "`") 'my/ess-julia-cdlatex-symbol))
 
+;;;----------------------------------------------------------------
 ;; ** CIDER
+;;;----------------------------------------------------------------
 (use-package cider
   :defer
   :init
@@ -2390,9 +2415,12 @@ and Interpretation of Classical Mechanics) - The book."
   (defun my/cider-comp-styles ()
     (make-variable-buffer-local 'completion-styles)
     (add-to-list 'completion-styles 'basic)))
+
+;;;################################################################
 ;; * PLUGINS
 ;;;################################################################
 
+;;;----------------------------------------------------------------
 ;; ** FLYSPELL
 ;;;----------------------------------------------------------------
 (use-package flyspell

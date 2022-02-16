@@ -241,7 +241,7 @@ When the number of characters in a buffer exceeds this threshold,
       :narrow ?l
       :category library
       :face consult-buffer
-      :history 'consult--library-history
+      :history consult--library-history
       :hidden t
       :items ,(lambda ()
                 (let ((ht consult--library-hash))
@@ -253,8 +253,7 @@ When the number of characters in a buffer exceeds this threshold,
 
 (use-package consult-dir
   :load-path "plugins/consult-dir/"
-  :defer 2
-  :after (consult bookmark marginalia)
+  :commands (consult-dir consult-dir-maybe)
   :bind (("C-x C-d" . consult-dir)
          :map minibuffer-local-completion-map
          ("C-M-d" . consult-dir-maybe)

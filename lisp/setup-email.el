@@ -41,6 +41,7 @@
 ;;* NOTMUCH
 
 (use-package notmuch
+  :straight (:type built-in)
   :commands notmuch
   :bind (("C-x m" . notmuch-mua-new-mail)
          ("C-x M-m" . notmuch-jump-search))

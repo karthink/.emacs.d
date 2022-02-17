@@ -56,6 +56,7 @@
            (my/toggle-theme my/vertico-grid-mode reverse)
            (consult-dir-maybe reverse)
            (consult-dir reverse)
+           (consult-flymake reverse)
            (consult-history reverse)
            (consult-completion-in-region reverse)
            (completion-at-point reverse)

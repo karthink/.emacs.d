@@ -171,8 +171,10 @@
     (with-eval-after-load 'expand-region
       (set (make-local-variable 'er/try-expand-list)
            (append (remove #'er/mark-method-call er/try-expand-list)
-                   '(LaTeX-mark-environment
-                     ;; er/mark-LaTeX-inside-environment
+                   '(LaTeX-mark-environment 
+                     er/mark-LaTeX-inside-math
+                     er/mark-latex-inside-delimiters
+                     er/mark-latex-outside-delimiters
                      er/mark-LaTeX-math)))))
   
 ;;;###autoload

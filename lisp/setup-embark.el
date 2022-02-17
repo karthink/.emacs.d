@@ -66,6 +66,7 @@
           (window-height . (lambda (win) (fit-window-to-buffer
                                      win (floor (frame-height) 
                                                 3))))))
+  (setf (alist-get 'kill-buffer embark-pre-action-hooks) nil)
 
   ;; Utility commands
   (defun embark-minimal-act (&optional arg)

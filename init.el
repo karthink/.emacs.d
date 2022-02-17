@@ -2612,14 +2612,13 @@ and Interpretation of Classical Mechanics) - The book."
                                    t))
        ((eq 'emacs sys) (funcall orig-fn arg reset)))))
 
-;;;###autoload
   (defun +error-delegate ()
     "Decide which error API to delegate to.
 
 Delegates to flymake if it is enabled and the `next-error' buffer
 is not visible. Otherwise delegates to regular Emacs next-error."
     (if (and (bound-and-true-p flymake-mode)
-             (let ((buf (ignore-errors (next-error-find-buffer))))
+             (let ((buf (ignore-errors (next-error-find-buffer t))))
                (not (and buf (get-buffer-window buf)))))
         'flymake
       'emacs))
@@ -3764,6 +3763,27 @@ project, as defined by `vc-root-dir'."
       (unless (texmathp) (er/mark-text-paragraph)))
     (defun er/mark-latex-inside-pairs ()
       (unless (texmathp) (er/mark-inside-pairs)))
+    (defun er/mark-LaTeX-inside-math ()
+      "Mark text inside LaTeX math delimiters. See `er/mark-LaTeX-math'
+for details."
+      (when (texmathp)
+          (let* ((string (car texmathp-why))
+                 (pos (cdr texmathp-why))
+                 (reason (assoc string texmathp-tex-commands1))
+                 (type (cadr reason)))
+            (cond
+             ((eq type 'sw-toggle) ;; $ and $$
+              (goto-char pos)
+              (set-mark (1+ (point)))
+              (forward-sexp 1)
+              (backward-char 1)
+              (exchange-point-and-mark))
+             ((eq type 'sw-on) ;; \( and \[
+              (re-search-forward texmathp-onoff-regexp)
+              (backward-char 2)
+              (set-mark (+ pos 2))
+              (exchange-point-and-mark))
+             (t (error (format "Unknown reason to be in math mode: %s" type)))))))
     (defun er/mark-latex-outside-pairs ()
       (unless (texmathp) (er/mark-outside-pairs)))
     (defun er/mark-latex-outside-delimiters ()
@@ -3782,29 +3802,30 @@ project, as defined by `vc-root-dir'."
         (cl-destructuring-bind (beg . end)
             (my/find-bounds-of-regexps "\\\\left\\\\*[{([|<]"
                                        "\\\\right\\\\*[]})|>]")
-          (set-mark (save-excursion
-                      (goto-char beg)
-                      (skip-chars-forward er--space-str)
-                      (forward-char 6)
-                      (point)))
-          (goto-char end)
-          (skip-chars-backward er--space-str)
-          (backward-char 7))
-        (exchange-point-and-mark)))
+          (when-let ((n (length (match-string-no-properties 0))))
+            (set-mark (save-excursion
+                        (goto-char beg)
+                        (skip-chars-forward er--space-str)
+                        (forward-char n)
+                        (point)))
+            (goto-char end)
+            (skip-chars-backward er--space-str)
+            (backward-char n))
+          (exchange-point-and-mark))))
+    ;;  LaTeX-mark-environment LaTeX-mark-section
+    ;;  er/mark-LaTeX-inside-environment er/mark-LaTeX-math
+    ;;  er/mark-method-call 
     (defun er/set-latex-mode-expansions ()
       (make-variable-buffer-local 'er/try-expand-list)
       (setq er/try-expand-list
             '(er/mark-word er/mark-symbol er/mark-symbol-with-prefix
               er/mark-next-accessor  er/mark-inside-quotes er/mark-outside-quotes
+              er/mark-LaTeX-inside-math
               er/mark-latex-inside-pairs er/mark-latex-outside-pairs
               er/mark-latex-inside-delimiters er/mark-latex-outside-delimiters
               er/mark-comment er/mark-url er/mark-email ;er/mark-defun
               er/mark-latex-text-sentence er/mark-latex-text-paragraph))
-      (er/add-latex-mode-expansions)
-      ;;  LaTeX-mark-environment LaTeX-mark-section
-      ;;  er/mark-LaTeX-inside-environment er/mark-LaTeX-math
-      ;;  er/mark-method-call 
-)))
+      (er/add-latex-mode-expansions))))
 
 ;;;----------------------------------------------------------------
 ;; ** AVY

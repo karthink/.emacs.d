@@ -4367,7 +4367,14 @@ for details."
   )
 
 (use-package yasnippet-snippets
-  :straight t
+  :straight (:post-build
+             (progn (let ((default-directory
+                            (straight--build-dir
+                             "yasnippet-snippets"
+                             "snippets"
+                             "latex-mode")))
+                      (with-temp-buffer
+                        (write-file ".yas-skip")))))
   :after yasnippet)
 
 (use-package warnings
@@ -5164,6 +5171,7 @@ the mode-line and switches to `variable-pitch-mode'."
     (valign-mode . "")
     (eldoc-mode . "")
     (org-cdlatex-mode . "")
+    (cdlatex-mode . "")
     (org-indent-mode . "")
     (org-roam-mode . "")
     (visual-line-mode . "")

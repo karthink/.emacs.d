@@ -1030,6 +1030,10 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
     :when (version<= "9.5" org-version)
     :commands org-cite-insert
     :config
+    (use-package ox-html :defer :config
+      (use-package oc-csl))
+    (use-package ox-latex :defer :config
+      (use-package oc-biblatex))
     (when-let*
         ((dir "~/.local/share/Zotero/styles/")
          (_ (file-directory-p dir)))

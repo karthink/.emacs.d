@@ -37,10 +37,8 @@
         corfu-quit-no-match t
         corfu-preselect-first nil
         corfu-scroll-margin 5)
-  (setq corfu-quit-at-boundary nil)
   (defun my/corfu-shell-settings ()
-    (setq-local corfu-quit-at-boundary t
-                corfu-quit-no-match t
+    (setq-local corfu-quit-no-match t
                 corfu-auto nil)
     (setq-local corfu-map (copy-keymap corfu-map)
                 completion-cycle-threshold nil)

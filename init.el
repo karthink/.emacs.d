@@ -2417,6 +2417,26 @@ and Interpretation of Classical Mechanics) - The book."
     (add-to-list 'completion-styles 'basic)))
 
 ;;;################################################################
+;; ** LUA
+(use-package lua-mode :straight t :defer)
+(use-package eglot-lua
+  :straight (:host github
+             :repo "juergenhoetzel/eglot-lua")
+  :defer
+  :config
+  (setq eglot-lua-server-install-dir
+                     (concat
+                      (file-name-as-directory user-cache-directory)
+                      "EmmyLua-LanguageServer/")))
+
+;; *** FENNEL
+(use-package fennel-mode
+  :straight t :defer
+  :config
+  (setq
+   fennel-program
+   "~/dotfiles/mpv/.config/mpv/fnl/fennel-1.0.0"))
+
 ;; * PLUGINS
 ;;;################################################################
 
@@ -3686,7 +3706,10 @@ project, as defined by `vc-root-dir'."
        )
 (use-package smartparens
   :straight t
-  :hook ((emacs-lisp-mode lisp-interaction-mode) . smartparens-mode)
+  :hook ((emacs-lisp-mode
+          lisp-interaction-mode
+          fennel-mode scheme-mode)
+         . smartparens-mode)
   :bind
   (:map smartparens-mode-map
         ("C-M-<up>"      . sp-raise-sexp)

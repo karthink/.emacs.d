@@ -17,6 +17,8 @@
   (setq anki-editor-create-decks t ;; Allow anki-editor to create a new deck if it doesn't exist
         anki-editor-org-tags-as-anki-tags t
         anki-editor-break-consecutive-braces-in-latex t)
+  
+  (cl-pushnew "@anki" anki-editor-ignored-org-tags)
 
   (defun anki-editor-cloze-region-auto-incr (&optional arg)
     "Cloze region without hint and increase card number."
@@ -45,18 +47,27 @@
 
 (with-eval-after-load 'org-capture
   ;; Org-capture templates
-  (add-to-list 'org-capture-templates
-               `("a" "Anki basic"
-                 entry
-                 (file+headline ,org-my-anki-file "Dispatch Shelf")
-                 "* %<%H:%M>   %^g\n:PROPERTIES:\n:ID: %(shell-command-to-string \"uuidgen\"):ANKI_NOTE_TYPE: Basic\n:ANKI_DECK: Default\n:END:\n** Front\n%?\n** Back\n\n"
-                 :kill-buffer t))
-  (add-to-list 'org-capture-templates
-               `("A" "Anki cloze"
-                 entry
-                 (file+headline ,org-my-anki-file "Dispatch Shelf")
-                 "* %<%H:%M>   %^g\n:PROPERTIES:\n:ID: %(shell-command-to-string \"uuidgen\"):ANKI_NOTE_TYPE: Cloze\n:ANKI_DECK: Default\n:END:\n** Text\n\n** Extra\n"
-                 :kill-buffer t)))
+  (pcase-dolist
+     (`(,key . ,template)
+      '(("ah" "Here"
+           entry
+           (function (lambda ()
+                        (cl-assert (eq major-mode 'org-mode) nil "Cannot insert here, not in org-mode.")
+                        (outline-back-to-heading)))
+           "* %<%H:%M>   %^g\n:PROPERTIES:\n:ANKI_NOTE_TYPE: Basic\n:ANKI_DECK: Default\n:END:\n** Front\n%?\n** Back\n\n")
+        ("ab" "Anki basic"
+           entry
+           (file+headline ,org-my-anki-file "Dispatch Shelf")
+           "* %<%H:%M>   %^g\n:PROPERTIES:\n:ANKI_NOTE_TYPE: Basic\n:ANKI_DECK: Default\n:END:\n** Front\n%?\n** Back\n\n"
+           :kill-buffer t)
+        ("ac" "Anki cloze"
+           entry
+           (file+headline ,org-my-anki-file "Dispatch Shelf")
+           "* %<%H:%M>   %^g\n:PROPERTIES:\n:ANKI_NOTE_TYPE: Cloze\n:ANKI_DECK: Default\n:END:\n** Text\n\n** Extra\n"
+           :kill-buffer t)
+          ("a" "Anki")))
+   (setf (alist-get key org-capture-templates nil nil #'equal)
+         template)))
 
 ;; ;; Allow Emacs to access content from clipboard.
 ;; (setq x-select-enable-clipboard t

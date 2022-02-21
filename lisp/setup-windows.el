@@ -50,6 +50,7 @@ If buffer-or-name is nil return current buffer's mode."
                            vterm-mode
                            inferior-python-mode
                            cider-repl-mode
+                           fennel-repl-mode
                            jupyter-repl-mode
                            inferior-ess-julia-mode)
   "List of major-modes used in REPL buffers")

@@ -34,3 +34,6 @@
 [submodule "plugins/calc-transient"]
 	path = plugins/calc-transient
 	url = git@github.com:karthink/calc-transient.git
+[submodule "plugins/dired-hist"]
+	path = plugins/dired-hist
+	url = git@github.com:karthink/dired-hist.git

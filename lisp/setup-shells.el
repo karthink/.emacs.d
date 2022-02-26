@@ -506,4 +506,53 @@ send a notification when the process has exited."
   :disabled
   :hook ((comint-mode) . capf-autosuggest-mode))
 
+(use-package comint
+  :commands (comint-mode shell-command-at-line)
+  :bind
+  ("C-!" . shell-command-at-line)
+  :general
+  (:keymaps 'shell-mode-map
+            :states  '(insert emacs)
+            "SPC"    'comint-magic-space)
+  :config
+  ;; Arrange for Emacs to notice password prompts and turn off echoing for them, as follows:
+  (add-hook 'comint-output-filter-functions
+            'comint-watch-for-password-prompt)
+
+  (setq ansi-color-for-comint-mode t) ; package ansi-color
+  
+  ;; Auto-kill buffer and window of comint process when done
+  (advice-add 'comint-send-eof :after
+              (defun comint-kill-after-finish-a (&rest _args)
+                (let (confirm-kill-processes kill-buffer-query-functions)
+                  ;; (set-process-query-on-exit-flag (get-buffer-process (current-buffer)) nil)
+                  (ignore-errors (kill-buffer-and-window)))))
+
+  (defun shell-command-at-line (&optional prefix)
+    "Run contents of line around point as a shell command and
+replace the line with output. With a prefix argument, append the
+output instead."
+    (interactive "P")
+    (let ( (command (thing-at-point 'line)) )
+      (cond ((null prefix)
+             (kill-whole-line)
+             (indent-according-to-mode))
+            (t (newline-and-indent)))
+      (shell-command command t nil)
+      (exchange-point-and-mark))))
+
+(unless IS-GUIX
+  (use-package vterm
+    :straight (:files
+               ("*.so" "*.el")
+               :pre-build
+               (progn (unless (file-directory-p "build")
+                        (make-directory "build"))
+                      (call-process
+                       "sh" nil "*vterm-prepare*" t "-c" 
+                       (concat "cd build; "
+                               "cmake -G 'Unix Makefiles' .."))
+                      (compile "cd build; make")))
+    :defer))
+
 (provide 'setup-shells)

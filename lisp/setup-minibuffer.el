@@ -1,4 +1,5 @@
 (use-package minibuffer
+  :hook (minibuffer-setup .  cursor-intangible-mode)
   :config
 ;; Minibuffer completion
   (setq completion-cycle-threshold 2
@@ -85,6 +86,9 @@ instead."
     (when mini
       (select-window mini))))
 
-)
+;; Try really hard to keep the cursor from getting stuck in the read-only prompt
+;; portion of the minibuffer.
+(setq minibuffer-prompt-properties
+      '(read-only t intangible t cursor-intangible t face minibuffer-prompt)))
 
 (provide 'setup-minibuffer)

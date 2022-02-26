@@ -30,18 +30,18 @@ confines of word boundaries (e.g. multiple words)."
     (when isearch-other-end
       (goto-char isearch-other-end)))
 
-  (defun my/isearch-abort ()
-    "Remove non-matching `isearch' input, reverting to previous
-successful search and continuing with the search.
+;;   (defun my/isearch-abort ()
+;;     "Remove non-matching `isearch' input, reverting to previous
+;; successful search and continuing with the search.
 
-This is a modified variant of the original `isearch-abort',
-mapped to C-g which will remove the failed match if any and only
-afterwards exit the search altogether."
-    (interactive)
-    (discard-input)
-    (while (or (not isearch-success) isearch-error)
-      (isearch-pop-state))
-    (isearch-update))
+;; This is a modified variant of the original `isearch-abort',
+;; mapped to C-g which will remove the failed match if any and only
+;; afterwards exit the search altogether."
+;;     (interactive)
+;;     (discard-input)
+;;     (while (or (not isearch-success) isearch-error)
+;;       (isearch-pop-state))
+;;     (isearch-update))
 
   (defun my/isearch-query-replace-symbol-at-point ()
     "Run `query-replace-regexp' for the symbol at point."
@@ -136,7 +136,6 @@ Also see `my/search-occur-url'."
          ("M-s <"       . isearch-beginning-of-buffer)
          ("M-/"         . isearch-complete)
          ("C-SPC"       . my/isearch-mark-and-exit)
-         ("DEL"         . my/isearch-abort)
          ("<C-return>"  . my/isearch-other-end)
          ("C-w"         . nil)
          ("M-w"         . isearch-yank-word-or-char)))

@@ -869,6 +869,9 @@ parent."
   :after (org-capture)
   :config
   (setq org-hugo-section "blog")
+  (add-to-list 'org-hugo-special-block-type-properties
+               '("sidenote" . (:trim-pre t :trim-post t)))
+  (setq org-hugo-paired-shortcodes "%sidenote")
   (with-eval-after-load 'org-capture
 
   (defun org-hugo-new-subtree-post-capture-template ()
@@ -1127,6 +1130,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
   :straight t
   :after org
   :commands my/org-presentation-mode
+  :hook (org-tree-slide-after-narrow . my/org-tree-slide-enlarge-latex-preview)
   :config
   (setq org-tree-slide-never-touch-face nil
         org-tree-slide-skip-outline-level 8
@@ -1137,6 +1141,17 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
         (propertize "ORG PRESENTATION STARTED" 'face 'success)
         org-tree-slide-deactivate-message
         (propertize "ORG PRESENTATIONS STOPPED" 'face 'error))
+  
+  (defun my/org-tree-slide-enlarge-latex-preview ()
+    (dolist (ov (overlays-in (point-min) (point-max)))
+      (if (eq (overlay-get ov 'org-overlay-type)
+              'org-latex-overlay)
+          (overlay-put
+           ov 'display
+           (cons 'image 
+                 (plist-put
+                  (cdr (overlay-get ov 'display))
+                  :scale (+ 1.0 (* 0.2 text-scale-mode-amount))))))))
 
   (define-minor-mode my/org-presentation-mode
     "Parameters for plain text presentations with `org-mode'."
@@ -1150,11 +1165,9 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
           (setq-local org-hide-emphasis-markers t)
           (my/olivetti-mode 1)
           ;; (org-indent-mode 1)
-          (text-scale-increase 3)
-          (setq-local org-format-latex-options (plist-put org-format-latex-options :scale 2.5)))
+          (text-scale-increase 3))
       (org-tree-slide-mode -1)
       (kill-local-variable 'org-hide-emphasis-markers)
-      (setq-local org-format-latex-options (plist-put org-format-latex-options :scale 1.70))
       (my/olivetti-mode -1)
       ;; (org-indent-mode)
       (text-scale-decrease 3)

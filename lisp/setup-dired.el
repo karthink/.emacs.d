@@ -304,7 +304,16 @@ This relies on the external 'fd' executable."
   :after dired)
 
 (use-package diredfl
+  :disabled
   :straight t
   :hook (dired-mode . diredfl-mode))
+
+(use-package dired-hist
+  :load-path "plugins/dired-hist/"
+  :after dired
+  :bind (:map dired-mode-map
+         ("l" . dired-hist-go-back)
+         ("r" . dired-hist-go-forward))
+  :config (dired-hist-mode 1))
 
 (provide 'setup-dired)

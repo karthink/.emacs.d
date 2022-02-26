@@ -11,7 +11,6 @@
              ("C-c n j" . org-roam-dailies-capture-today))
       :config
       (setq org-roam-directory (file-truename "~/Documents/roam/"))
-      (setq org-roam-completion-everywhere t)
       (setq org-roam-dailies-directory "journal")
       
       (defun org-roam-node-insert-immediate (arg &rest args)
@@ -75,5 +74,11 @@
       (org-roam-setup))
 ;; If using org-roam-protocol
 ;; (require 'org-roam-protocol)
+
+(use-package org-roam-ui
+  :straight t
+  :defer
+  :config
+  (setq org-roam-ui-sync-theme t))
 
 (provide 'setup-roam)

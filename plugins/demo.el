@@ -520,5 +520,11 @@
   
   (advice-add 'push-button :after #'my/activate-line))
 
+(defun org-set-dvisvgm ()
+  (setf (alist-get 'dvisvgm org-preview-latex-process-alist)
+        (plist-put (alist-get 'dvisvgm org-preview-latex-process-alist)
+                   :image-size-adjust '(1.35 . 1.5)))
+  (setq org-preview-latex-default-process 'dvisvgm))
+
 (provide 'demo)
 ;;; demo.el ends here

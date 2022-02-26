@@ -218,6 +218,32 @@
 ;;----------------------------------------------------------------------
 
 ;;;###autoload
+(defun forward-sexp (&optional arg interactive)
+  "Customized: Move forward across one balanced expression (sexp).
+With ARG, do it that many times. Negative arg -N means move
+backward across N balanced expressions. This command assumes
+point is not in a string or comment. Calls
+`forward-sexp-function' to do the work, if that is non-nil. If
+unable to move over a sexp, signal `scan-error' with three
+arguments: a message, the start of the obstacle (usually a
+parenthesis or list marker of some kind), and end of the
+obstacle. If INTERACTIVE is non-nil, as it is interactively,
+go up/down the list instead."
+  (interactive "^p\nd")
+  (if interactive
+      (condition-case _
+          (forward-sexp arg nil)
+        (scan-error (if (> arg 0)
+                        (up-list 1 t t)
+                      (up-list -1 t t))))
+    (or arg (setq arg 1))
+    (if forward-sexp-function
+        (funcall forward-sexp-function arg)
+      (goto-char (or (scan-sexps (point) arg) (buffer-end arg)))
+      (if (< arg 0) (backward-prefix-chars)))))
+
+
+;;;###autoload
 (defun unfill-paragraph (&optional region)
   "Takes a multi-line paragraph and makes it into a single line of text."
   (interactive (progn (barf-if-buffer-read-only) '(t)))

@@ -24,8 +24,8 @@
                '((lambda (buf act) (equal (buffer-mode buf)
                                      'ytel-mode))
                  ;; "^\\*ytel\\*$"
-                 (+select-buffer-in-side-window
-                  display-buffer-in-side-window)
+                 (display-buffer-in-side-window)
+                 (body-function . (lambda (win) (select-window win)))
                  (window-height . 0.33)
                  (slot . 10)
                  (side . bottom)))

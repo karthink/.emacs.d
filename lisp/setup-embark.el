@@ -184,7 +184,8 @@
 
     (setf (alist-get "^\\*Embark \\(?:Export\\|Collect\\).*Variables\\*"
                      display-buffer-alist nil nil 'equal)
-            '((+select-buffer-in-side-window)
+            '((display-buffer-in-side-window)
+              (body-function . (lambda (win) (select-window win)))
               (window-width . 74)
               (side . right)
               (slot . 5)

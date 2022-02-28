@@ -37,3 +37,6 @@
 [submodule "plugins/dired-hist"]
 	path = plugins/dired-hist
 	url = git@github.com:karthink/dired-hist.git
+[submodule "plugins/org-auctex"]
+	path = plugins/org-auctex
+	url = git@github.com:karthink/org-auctex.git

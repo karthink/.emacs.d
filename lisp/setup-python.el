@@ -68,12 +68,46 @@
     (add-to-list 'native-comp-deferred-compilation-deny-list "zmq")
     (use-package jupyter 
       :straight t
-      :defer
+      :bind (:map jupyter-repl-interaction-mode-map
+                  ("M-i"   . nil)
+                  ("C-h ." . jupyter-inspect-at-point))
       :init
       (when (version< "28.0" emacs-version)
-        (add-to-list 'native-comp-deferred-compilation-deny-list "jupyter")))
+        (add-to-list 'native-comp-deferred-compilation-deny-list "jupyter"))
+      :config
+      ;; Make jupyter's completion work with corfu-show-documentation
+      (unless (fboundp 'company-mode)
+        (defun company-doc-buffer (&optional string)
+          (with-current-buffer (get-buffer-create "*jupyter help*")
+            (erase-buffer)
+            (markdown-mode)
+            (when string
+              (save-excursion
+                (insert string)
+                (visual-line-mode)))
+            (current-buffer))))
+      (defun jupyter-completion--company-doc-buffer (arg)
+        "Send an inspect request for ARG to the kernel.
+Use the `company-doc-buffer' to insert the results."
+        (let* ((buf (company-doc-buffer))
+               (prefix (car (jupyter-code-context 'inspect)))
+               (sym (if (string-match ".*\\." prefix)
+                        (concat (match-string 0 prefix) arg)
+                      arg)))
+          (jupyter-inspect sym (length sym) buf)
+          (with-current-buffer buf
+            (when (> (point-max) (point-min))
+              (let ((inhibit-read-only t))
+                (remove-text-properties
+                 (point-min) (point-max) '(read-only))
+                (font-lock-mode 1)
+                (goto-char (point-min))
+                (current-buffer)))))))
     (use-package ob-jupyter
       :after (jupyter ob)
+      :bind (:map jupyter-org-interaction-mode-map
+                  ("M-i"   . nil)
+                  ("C-h ." . jupyter-inspect-at-point))
       :config
       ;; Clean up ob-jupyter source block output
       ;; From Henrik Lissner

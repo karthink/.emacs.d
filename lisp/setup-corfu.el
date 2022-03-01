@@ -63,6 +63,33 @@
   :config
   (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
 
+;; Corfu-doc shows help in an adjacent popup window (Testing)
+(use-package corfu-doc
+    :straight (corfu-doc :host github :repo "galeo/corfu-doc")
+    :after corfu
+    :bind (:map corfu-map
+           ([remap corfu-show-documentation] . corfu-doc-toggle)
+           ([remap scroll-other-window] . corfu-doc-scroll-up)
+           ([remap scroll-other-window-down] . corfu-doc-scroll-down))
+    :config
+    (setq corfu-doc-max-width  77
+          corfu-echo-documentation nil
+          corfu-doc-max-height 20
+          corfu-doc-delay 0.2)
+    (defun corfu-doc--cleanup ()
+      (advice-remove 'corfu--popup-hide #'corfu-doc--cleanup)
+      (advice-remove 'corfu--popup-show #'corfu-doc--set-timer)
+      (corfu-doc--hide))
+
+    (defun corfu-doc-toggle ()
+      (interactive)
+      (advice-add 'corfu--popup-hide :after #'corfu-doc--cleanup)
+      (if (and corfu-doc--frame (frame-visible-p corfu-doc--frame))
+          (progn (corfu-doc--hide)
+                 (advice-remove 'corfu--popup-show #'corfu-doc--set-timer))
+        (corfu-doc--show)
+        (advice-add 'corfu--popup-show :after #'corfu-doc--set-timer))))
+
 ;; Add extensions
 (use-package cape
   :straight t

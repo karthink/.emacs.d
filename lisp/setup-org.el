@@ -247,6 +247,11 @@
 ;; (add-hook 'org-mode-hook '(lambda ()
 ;;			   (define-key org-mode-map (kbd "C-;") 'org-complete))
 
+  (advice-add 'org-show-set-visibility
+              :after (defun my/org-set-visibility-local-tree (detail)
+                       "Expand local tree after setting visibility."
+                       (when (eq detail 'local)
+                         (org-ctrl-c-tab) (org-show-entry))))
   (add-to-list 'org-structure-template-alist '("ma" . "src matlab"))
   (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
 
@@ -433,6 +438,11 @@ has no effect."
    org-agenda-include-diary nil
    org-agenda-follow-indirect t
    org-agenda-default-appointment-duration 60)
+
+  (advice-add 'org-agenda-do-tree-to-indirect-buffer :after
+     (defun my/org-agenda-collapse-indirect-buffer-tree (arg)
+       (with-current-buffer org-last-indirect-buffer
+         (org-ctrl-c-tab) (org-show-entry))))
 
   (defun org-todo-age (&optional pos)
     (if-let* ((entry-age (org-todo-age-time pos))

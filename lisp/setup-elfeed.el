@@ -131,7 +131,7 @@ MYTAG"
       (elfeed-search-browse-url use-generic-p)
       (add-hook 'eww-after-render-hook 'eww-readable nil t)))
 
-  (defun elfeed-mpv-url (&optional use-single-p)
+  (defun elfeed-umpv-url (&optional use-single-p)
     "Visit the current entry in umpv or (with prefix arg
 USE-SINGLE-P) with mpv."
     (interactive "P")
@@ -141,10 +141,24 @@ USE-SINGLE-P) with mpv."
       (pcase major-mode
         ('elfeed-search-mode (elfeed-search-browse-url))
         ('elfeed-show-mode (elfeed-show-visit)))))
+  
+  (defun elfeed-mpv-url (&optional enqueue-p)
+    "Visit the current entry in umpv or (with prefix arg
+USE-SINGLE-P) with mpv."
+    (interactive "P")
+    (let ((browse-url-browser-function
+           (if enqueue-p
+             #'browse-url-umpv-last
+             #'browse-url-mpv)))
+      (pcase major-mode
+        ('elfeed-search-mode (elfeed-search-browse-url))
+        ('elfeed-show-mode (elfeed-show-visit)))))
 
-  (bind-key "m" #'elfeed-mpv-url elfeed-search-mode-map)
-  (bind-key "m" #'elfeed-mpv-url elfeed-show-mode-map)
-
+  (bind-key "m" #'elfeed-umpv-url elfeed-search-mode-map)
+  (bind-key "m" #'elfeed-umpv-url elfeed-show-mode-map)
+  (bind-key "M" #'elfeed-mpv-url elfeed-search-mode-map)
+  (bind-key "M" #'elfeed-mpv-url elfeed-show-mode-map)
+  
   (add-hook 'elfeed-new-entry-hook
             (elfeed-make-tagger :feed-title "The Linux Experiment"
                                 :entry-title "Linux News"

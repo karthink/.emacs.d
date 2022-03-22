@@ -47,6 +47,7 @@
          :map embark-url-map
          ("f"        . browse-url-firefox)
          ("m"        . browse-url-umpv)
+         ("C-M-m"      . browse-url-umpv-last)
          ("M"        . browse-url-mpv))
   :config
   (setq embark-cycle-key (kbd "s-o"))

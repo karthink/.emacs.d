@@ -158,37 +158,36 @@ the fram has exactly two windows."
  (set-window-start w2 s1)))))
 
 ;; Skip to next/previous user buffer
-;;;###autoload
-(defun next-user-buffer ()
-  "Switch to the next user buffer in cyclic order.\n
-User buffers are those not starting with *."
-  (interactive)
-  (next-buffer)
-  (let ((i 0))
-    ;; (cond ((and (string-equal "*scratch*" (buffer-name))
-    ;;             (buffer-modified-p))
-    ;;        (setq i (1+ i))
-    ;;        (next-buffer)))
-    (while (and (not (and (string-equal "*scratch*" (buffer-name))
-                          (buffer-modified-p)))
-                (string-match "^*" (buffer-name))
-                (< i 50))
-      (setq i (1+ i)) (next-buffer) )))
+;; (defun next-user-buffer ()
+;;   "Switch to the next user buffer in cyclic order.\n
+;; User buffers are those not starting with *."
+;;   (interactive)
+;;   (next-buffer)
+;;   (let ((i 0))
+;;     ;; (cond ((and (string-equal "*scratch*" (buffer-name))
+;;     ;;             (buffer-modified-p))
+;;     ;;        (setq i (1+ i))
+;;     ;;        (next-buffer)))
+;;     (while (and (not (and (string-equal "*scratch*" (buffer-name))
+;;                           (buffer-modified-p)))
+;;                 (string-match "^*" (buffer-name))
+;;                 (< i 50))
+;;       (setq i (1+ i)) (next-buffer) )))
 
-;;;###autoload
-(defun previous-user-buffer ()
-  "Switch to the previous user buffer in cyclic order.\n
-User buffers are those not starting with *."
-  (interactive)
-  (previous-buffer)
-  (let ((i 0))
-    (while (and (not (string-equal "*scratch*" (buffer-name)))
-                (string-match "^*" (buffer-name))
-                (< i 50))
-      (setq i (1+ i)) (previous-buffer) )))
+;; (defun previous-user-buffer ()
+;;   "Switch to the previous user buffer in cyclic order.\n
+;; User buffers are those not starting with *."
+;;   (interactive)
+;;   (previous-buffer)
+;;   (let ((i 0))
+;;     (while (and (not (string-equal "*scratch*" (buffer-name)))
+;;                 (string-match "^*" (buffer-name))
+;;                 (< i 50))
+;;       (setq i (1+ i)) (previous-buffer) )))
 
-(global-set-key (kbd "s-n") 'next-buffer)
-(global-set-key (kbd "s-p") 'previous-buffer)
+;; (global-set-key (kbd "s-n") 'next-buffer)
+;; (global-set-key (kbd "s-p") 'previous-buffer)
+
 ;;; scroll-buffer: Functions to do exactly that.
 
 ;;;###autoload

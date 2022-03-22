@@ -142,7 +142,7 @@ Filenames are always matched by eshell."
     (setq outline-regexp eshell-prompt-regexp)
     (abbrev-mode 1)
     (define-key eshell-mode-map (kbd "H-<return>") 'my/delete-window-or-delete-frame)
-    (define-key eshell-mode-map (kbd "M-s") nil)
+    (define-key eshell-hist-mode-map (kbd "M-s") nil)
     (define-key eshell-mode-map (kbd "C-c C-SPC") 'eshell-mark-output)
     (define-key eshell-mode-map (kbd "C-<return>") 'my/eshell-send-detached-input)
     (setq-local company-minimum-prefix-length 2)
@@ -267,7 +267,7 @@ Surrounding spaces are ignored when comparing."
       (insert input)))
   (add-hook 'eshell-mode-hook
             (lambda ()
-              (define-key eshell-mode-map (kbd "M-r")
+              (define-key eshell-hist-mode-map (kbd "M-r")
                 'my/eshell-previous-matching-input))))
 
 ;; ** Custom functions for use in eshell
@@ -355,7 +355,7 @@ argument arg, Also copy the prompt and input."
    'eshell-mode-hook
    (lambda ()
      (define-key eshell-mode-map (kbd "C-c M-w") 'my/eshell-copy-output)
-     (define-key eshell-mode-map (kbd "C-c C-l") 'my/eshell-export-output)))
+     (define-key eshell-hist-mode-map (kbd "C-c C-l") 'my/eshell-export-output)))
   
   ;;From https://github.com/nbarrientos/dotfiles/.emacs.d/init.el
   (defun my/eshell-send-detached-input (&optional arg)
@@ -414,6 +414,24 @@ send a notification when the process has exited."
                      (find-file-noselect file))))
           (when buffer
             (kill-buffer buffer)))))))
+
+;; Better region selection for eshell
+(use-package expand-region
+  :defer
+  :init
+  (add-hook 'eshell-mode-hook
+            (lambda ()
+              (when (require 'expand-region nil t)
+                (make-local-variable 'er/try-expand-list)
+                (add-to-list 'er/try-expand-list
+                             #'er/mark-eshell-command-and-output))))
+  :config
+  (defun er/mark-eshell-command-and-output ()
+    (when (re-search-forward eshell-prompt-regexp nil t)
+      (goto-char (match-beginning 0))
+      (push-mark)
+      (when (re-search-backward eshell-prompt-regexp nil t)
+        (goto-char (match-end 0))))))
 
 ;; ** Calling and exiting eshell
 (use-package eshell
@@ -483,7 +501,7 @@ send a notification when the process has exited."
           (format " [%s]" output)
         "")))
 
-  (defface my/eshell-prompt-pwd '((t (:inherit font-lock-constant-face)))
+  (defface my/eshell-prompt-pwd '((t (:inherit font-lock-keyword-face)))
     "TODO"
     :group 'eshell)
 
@@ -519,7 +537,8 @@ send a notification when the process has exited."
   (add-hook 'comint-output-filter-functions
             'comint-watch-for-password-prompt)
 
-  (setq ansi-color-for-comint-mode t) ; package ansi-color
+  (setq ansi-color-for-comint-mode t ; package ansi-color
+        shell-command-switch "-ic")
   
   ;; Auto-kill buffer and window of comint process when done
   (advice-add 'comint-send-eof :after

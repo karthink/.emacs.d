@@ -45,7 +45,7 @@
   (setq-default org-adapt-indentation nil 
                 org-cycle-include-plain-lists t 
                 org-fontify-done-headline t 
-                org-ellipsis "  "
+                org-ellipsis " ▼ "
                 org-fontify-quote-and-verse-blocks t 
                 org-fontify-whole-heading-line t 
                 org-footnote-auto-label 'plain 
@@ -68,7 +68,6 @@
                 org-tags-column -80
                 org-use-sub-superscripts t
                 org-pretty-entities-include-sub-superscripts t
-                org-latex-listings t
                 org-special-ctrl-a/e t
                 org-special-ctrl-k t
                 org-log-done 'time
@@ -553,7 +552,7 @@ has no effect."
                    'notregexp ,(format "\\[#%s\\]" ;;(char-to-string org-priority-highest)
                                        "\\(?:A\\|B\\|C\\)")))
                 (org-agenda-block-separator nil)
-                (org-agenda-overriding-header "⛤ Important (not urgent)\n")))
+                (org-agenda-overriding-header "⛤ Important\n")))
             (agenda ""
                     ((org-agenda-overriding-header "\n🕐 Today\n")
                      (org-agenda-span 1)
@@ -1289,7 +1288,12 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
 ;;;----------------------------------------------------------------
 ;; ** ORG-NOTER
 ;;;----------------------------------------------------------------
-(use-package org-noter :straight t :defer)
+(use-package org-noter
+  :straight t
+  :defer
+  :config
+  (setq org-noter-always-create-frame t
+        org-noter-kill-frame-at-session-end t))
 
 (provide 'setup-org)
 

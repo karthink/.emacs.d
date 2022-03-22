@@ -152,6 +152,7 @@
 
 ;; Key to kill word backwards OR kill region 
 (global-set-key (kbd "C-w") 'backward-kill-word-or-region)
+(global-set-key (kbd "C-S-w") 'kill-region)
 
 ;; Easy keys to traverse paragraphs
 (global-set-key (kbd "M-]") 'forward-paragraph)

@@ -60,7 +60,9 @@
              ("" which-func-format " ")))
            ;; (global-mode-string
            ;;  ("" global-mode-string))
-            ))))
+            )))
+  :config
+  (add-to-list 'sml/replacer-regexp-list '("^~/[dD]ocuments/[rR]oam.*/" ":ROAM:")))
 
 ;; Some advice to add support for Evil to smart-mode-line, long since
 ;; deprecated.
@@ -69,7 +71,6 @@
   :defines sml/fix-mode-line-a
   :disabled
   :config
-  (add-to-list 'sml/replacer-regexp-list '("^~/[dD]ocuments/[rR]oam.*/" ":ROAM:"))
   (defun sml/fix-mode-line-a (_theme &rest _args)
     "Advice to `load-theme' to fix the mode-line height after activating/deactivating theme"
     (set-face-attribute 'mode-line nil

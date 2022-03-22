@@ -1,24 +1,5 @@
 (use-package corfu
   :straight t
-  ;; Optional customizations
-  ;; :custom
-  ;; (corfu-cycle t)                ;; Enable cycling for `corfu-next/previous'
-  ;; (corfu-auto t)                 ;; Enable auto completion
-  ;; (corfu-commit-predicate nil)   ;; Do not commit selected candidates on next input
-  ;; (corfu-quit-at-boundary t)     ;; Automatically quit at word boundary
-  ;; (corfu-quit-no-match t)        ;; Automatically quit if there is no match
-  ;; (corfu-preview-current nil)    ;; Disable current candidate preview
-  ;; (corfu-preselect-first nil)    ;; Disable candidate preselection
-  ;; (corfu-echo-documentation nil) ;; Disable documentation in the echo area
-  ;; (corfu-scroll-margin 5)        ;; Use scroll margin
-
-  ;; You may want to enable Corfu only for certain modes.
-  ;; :hook ((prog-mode . corfu-mode)
-  ;;        (shell-mode . corfu-mode)
-  ;;        (eshell-mode . corfu-mode))
-
-  ;; Recommended: Enable Corfu globally. This is recommended since dabbrev can
-  ;; be used globally (M-/).
   :hook (((prog-mode text-mode tex-mode) . corfu-mode)
          ((shell-mode eshell-mode) . my/corfu-shell-settings))
   :bind (:map corfu-map
@@ -32,7 +13,7 @@
          ("M-h" . nil)
          ("C-h" . corfu-show-documentation))
   :config
-  (setq corfu-auto  nil
+  (setq corfu-auto  t
         corfu-cycle t
         corfu-quit-no-match t
         corfu-preselect-first nil
@@ -84,7 +65,7 @@
     (defun corfu-doc-toggle ()
       (interactive)
       (advice-add 'corfu--popup-hide :after #'corfu-doc--cleanup)
-      (if (and corfu-doc--frame (frame-visible-p corfu-doc--frame))
+      (if (and (frame-live-p corfu-doc--frame) (frame-visible-p corfu-doc--frame))
           (progn (corfu-doc--hide)
                  (advice-remove 'corfu--popup-show #'corfu-doc--set-timer))
         (corfu-doc--show)

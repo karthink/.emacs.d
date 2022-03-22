@@ -3,7 +3,7 @@
 (defun reb-update-overlays (&optional subexp)
   "Switch to `reb-target-buffer' and mark all matches of `reb-regexp'.
 If SUBEXP is non-nil mark only the corresponding sub-expressions."
-  (let* ((re (reb-target-binding reb-regexp))
+  (let* ((re (buffer-local-value 'reb-regexp reb-target-buffer))
 	 (subexps (reb-count-subexps re))
 	 (matches 0)
 	 (submatches 0)

@@ -44,7 +44,10 @@
   :straight (:type built-in)
   :commands notmuch
   :bind (("C-x m" . notmuch-mua-new-mail)
-         ("C-x M-m" . notmuch-jump-search))
+         ("C-x M-m" . notmuch-jump-search)
+         :map notmuch-search-mode-map
+         ("RET"   . notmuch-tree-from-search-thread)
+         ("M-RET" . notmuch-search-show-thread))
   :hook ((notmuch-message-mode . turn-off-auto-fill)
          (notmuch-mua-send . notmuch-mua-attachment-check))
   :config

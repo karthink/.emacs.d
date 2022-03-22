@@ -28,6 +28,7 @@
   (unless (file-directory-p user-repos-directory)
     (make-directory user-repos-directory t))
   (setq straight-base-dir user-repos-directory)
+  (setq straight-check-for-modifications '(find-when-checking))
   (load bootstrap-file nil 'nomessage))
 
 ;; ** PACKAGE.EL
@@ -142,6 +143,7 @@
      (run-at-time 1 nil
                   (lambda () 
                     (let ((after-init-time (current-time)))
+                      (when (featurep 'straight) (straight-check-all))
                       (dolist (lib '("org" "ob" "ox" "ol" "org-roam"
                                      "org-capture" "org-agenda" "org-fragtog"
                                      "org-gcal" "latex" "reftex" "cdlatex"
@@ -604,7 +606,10 @@ Also kill this window, tab or frame if necessary."
          ("H-`" . popper-toggle-latest)
          ("H-M-`" . popper-cycle)
          ("H-6" . popper-toggle-type)
-         ("H-M-k" . popper-kill-latest-popup))
+         ("H-M-k" . popper-kill-latest-popup)
+         ("M-`" . my/switch-to-other-buffer)
+         ("s-n" . my/next-buffer)
+         ("s-p" . my/previous-buffer))
   :init
   (setq popper-group-function
         (defun my/popper-group-by-heuristic ()
@@ -686,6 +691,28 @@ Also kill this window, tab or frame if necessary."
   :config
   (setq popper-display-control 'user)
   (popper-mode 1)
+  
+  (defun my/switch-to-other-buffer (&optional _arg)
+    (interactive)
+    (switch-to-buffer (other-buffer)))
+  (defun my/next-buffer (&optional arg)
+    (interactive "p")
+    (dotimes (or (abs arg) 1)
+      (my/switch-buffer-1 #'next-buffer)))
+  (defun my/previous-buffer (&optional arg)
+    (interactive "p")
+    (dotimes (or (abs arg) 1)
+      (my/switch-buffer-1 #'previous-buffer)))
+  (defun my/switch-buffer-1 (switch)
+  "Switch to the next user buffer in cyclic order.
+User buffers are those not starting with *."
+  (funcall switch)
+  (let ((i 0))
+    (while (and (< i 50)
+                (or (popper-popup-p (current-buffer))
+                    (string-match "^*" (buffer-name))))
+      (setq i (1+ i)) (funcall switch))))
+                           
   :general
   (:states 'motion
            "C-w ^" '(popper-raise-popup :wk "raise popup")
@@ -1489,8 +1516,12 @@ is not visible. Otherwise delegates to regular Emacs next-error."
     (defun browse-url-umpv (url &optional single)
       (start-process "mpv" nil (if single "mpv" "umpv")
                      (shell-quote-wildcard-pattern url)))
+    
+    (defun browse-url-umpv-last (url &optional single)
+      (start-process "umpv_last" nil (if single "mpv" "umpv_last")
+                     (shell-quote-wildcard-pattern url)))
 
-    (defun browse-url-mpv (url)
+    (defun browse-url-mpv (url &optional _)
       (browse-url-umpv url t))
     
     (defun browse-url-at-point-umpv (&optional single)
@@ -1706,9 +1737,11 @@ _d_: subtree
            magit-diff-visit-file
            next-error) . my/recenter-and-pulse-line))
   :init
-  (add-hook 'after-make-frame-functions
-            (defun my/pulse-type (_frame)
-              (when window-system (setq pulse-flag t))))
+  (add-hook 'server-after-make-frame-hook
+            (defun my/pulse-type ()
+              (when (and (not pulse-flag)
+                         (pulse-available-p))
+                (setq pulse-flag t))))
   
   (with-no-warnings
     (defun my/pulse-momentary-line (&rest _)
@@ -2842,8 +2875,8 @@ buffer's text scale."
         modus-themes-mode-line '(borderless accented)
         modus-themes-headings
         '((1 . (background overline variable-pitch 1.28))
-          (2 . (overline rainbow 1.22))
-          (3 . (overline 1.17))
+          (2 . (variable-pitch 1.22))
+          (3 . (semibold 1.17))
           (4 . (1.14))
           (t . (monochrome))))
   ;; (setq modus-themes-operandi-color-overrides '((bg-main . "#ededed")))

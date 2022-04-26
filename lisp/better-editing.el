@@ -128,12 +128,6 @@
 (global-set-key "\C-z" 'zap-up-to-char)
 (global-set-key "\M-z" 'zap-to-char-save)
 
-;; goto matching parenthesis. 
-;; Note that in the interest of Vi mimicry, this command has taken
-;; over the prefix digit argument. The digit argument will still apply
-;; provided (point) is not at a paren. :-/
-(global-set-key (kbd "C-5") 'goto-match-paren)
-
 ;; Set keyboard shortcuts for parenthesizing sentences in the
 ;; following modes
 (define-key text-mode-map "\M-(" 'insert-parentheses-sentence)
@@ -358,16 +352,6 @@ go up/down the list instead."
                                           (char-to-string char) 
                                           nil nil arg)
                                          (point)))))
-
-;;; goto matching parenthesis, Vi style. The last statement is a bit conked; also look at the keybinding for this function above.
-;;;###autoload
-(defun goto-match-paren (arg)
-  "Go to the matching parenthesis if on parenthesis, otherwise do nothing"
-  (interactive "p")
-  (cond
-   ((looking-at "\\s\(") (forward-list 1) (backward-char 1))
-   ((looking-at "\\s\)") (forward-char 1) (backward-list 1))
-   (t (digit-argument (or arg 1)))))
 
 ;;; Modifies kill-ring-save so that with no active mark, the current
 ;;; line is saved.

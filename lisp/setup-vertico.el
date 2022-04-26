@@ -21,6 +21,7 @@
               ("C-<tab>"   . embark-act-with-completing-read)
               ("C-o"     . embark-minimal-act)
               ("C-M-o"   . embark-minimal-act-noexit)
+              ("C-*"     . embark-act-all)
               ("M-s o"   . embark-export)
               ("C-c C-o" . embark-export)
               ("C-l"     . embark-export))
@@ -35,7 +36,7 @@
   :after vertico-flat
   :bind (:map vertico-map
               ("M-q" . vertico-multiform-grid)
-              ("C-l" . vertico-multiform-unobtrusive)
+              ("C-l" . my/vertico-multiform-unobtrusive)
               ("C-M-l" . embark-export))
   :init (vertico-multiform-mode 1)
   :config
@@ -54,6 +55,7 @@
    (setq vertico-multiform-commands
          '((load-theme my/vertico-grid-mode reverse)
            (my/toggle-theme my/vertico-grid-mode reverse)
+           (affe-find reverse)
            (consult-dir-maybe reverse)
            (consult-dir reverse)
            (consult-flymake reverse)
@@ -70,13 +72,10 @@
            (my/eshell-previous-matching-input reverse)
            (tmm-menubar reverse)))
   
-   (defun vertico-multiform-unobtrusive ()
-     "Toggle the quiet display."
+   (defun my/vertico-multiform-unobtrusive ()
+     "Toggle between vertico-unobtrusive and vertico-reverse."
      (interactive)
-     (vertico-multiform--display-toggle 'vertico-unobtrusive-mode)
-     (if vertico-unobtrusive-mode
-         (vertico-multiform--temporary-mode 'vertico-reverse-mode -1)
-       (vertico-multiform--temporary-mode 'vertico-reverse-mode 1))))
+     (vertico-multiform-vertical 'vertico-reverse-mode)))
 
 (use-package vertico-unobtrusive
   :after vertico-flat)

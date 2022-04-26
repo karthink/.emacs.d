@@ -15,7 +15,7 @@
   ;;                              "anki-notes.org"))
 
   (setq anki-editor-create-decks t ;; Allow anki-editor to create a new deck if it doesn't exist
-        anki-editor-org-tags-as-anki-tags t
+        anki-editor-org-tags-as-anki-tags nil
         anki-editor-break-consecutive-braces-in-latex t)
   
   (cl-pushnew "@anki" anki-editor-ignored-org-tags)

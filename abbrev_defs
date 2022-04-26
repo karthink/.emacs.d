@@ -20,6 +20,7 @@
     ("sjc" "sudo journalctl" nil :count 1)
     ("ssc" "sudo systemctl" nil :count 4)
     ("tri" "trizen -S" nil :count 5)
+    ("xo" "xdg-open" nil :count 4)
     ("yt" "youtube-dl -w -c -o '%(title)s.%(ext)s' -f 'bestvideo[height<=?1080]+bestaudio/best' --add-metadata" nil :count 2)
     ("yta" "youtube-dl -w -c -r 1M -o '%(playlist_index)s-%(title)s.%(ext)s' --add-metadata  -f 'bestaudio[ext=m4a]'" nil :count 2)
    ))

@@ -38,6 +38,14 @@
     (find-file file)))
   )
 
+(use-package dired
+  :if (>= emacs-major-version 28)
+  :defer
+  :config
+  (setq  dired-switches-in-mode-line 'as-is
+         dired-do-revert-buffer t
+         dired-mark-region t))
+
 (use-package dired-aux
   ;; This functionality is superceded by affe-find and affe-grep from the
   ;; affe.el library and is thus disabled.
@@ -222,7 +230,7 @@ This relies on the external 'fd' executable."
 (setq peep-dired-cleanup-eagerly nil)
 (setq peep-dired-enable-on-directories nil)
 (setq peep-dired-ignored-extensions
-      '("mkv" "iso" "mp4" "pdf" "djvu" "one" "mat"
+      '("mkv" "iso" "mp4" "djvu" "one" "mat"
         "fig" "nb" "slx" "slxc" "r2016b" "onetoc2")))
 
 (use-package image-dired

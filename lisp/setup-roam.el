@@ -8,7 +8,7 @@
              ("C-c n c" . org-roam-capture)
              ("C-c n r" . my/org-roam-node-from-cite)
              ;; Dailies
-             ("C-c n j" . org-roam-dailies-capture-today))
+             ("C-c n j" . org-roam-dailies-goto-today))
       :config
       (setq org-roam-directory (file-truename "~/Documents/roam/"))
       (setq org-roam-dailies-directory "journal")

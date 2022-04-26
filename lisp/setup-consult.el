@@ -255,7 +255,7 @@ When the number of characters in a buffer exceeds this threshold,
   :load-path "plugins/consult-dir/"
   :commands (consult-dir consult-dir-maybe)
   :bind (("C-x C-d" . consult-dir)
-         :map minibuffer-local-completion-map
+         :map minibuffer-local-filename-completion-map
          ("C-M-d" . consult-dir-maybe)
          ("H-M-d" . consult-dir-maybe)
          ("C-M-j" . consult-dir-jump-file)

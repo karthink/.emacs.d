@@ -222,7 +222,7 @@ USE-SINGLE-P) with mpv."
                                  (encode-time 
                                   (parse-time-string
                                    (concat (replace-regexp-in-string
-                                            ".*@.*?--\\([^[:space:]]+?\\)" "\\1"
+                                            ".*@\\([^[:space:]]+?\\)--.*" "\\1"
                                             elfeed-search-filter)
                                            " 00:00:00 Z")))))
                            (and entry

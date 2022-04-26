@@ -30,6 +30,8 @@
 ;; More performant rapid scrolling over unfontified regions. May cause brief
 ;; spells of inaccurate fontification immediately after scrolling.
 (setq fast-but-imprecise-scrolling t)
+(when (> emacs-major-version 27)
+  (setq redisplay-skip-fontification-on-input t))
 
 ;; Resizing the Emacs frame can be a terribly expensive part of changing the
 ;; font. By inhibiting this, we halve startup times, particularly when we use

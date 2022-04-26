@@ -20,6 +20,7 @@
          ("M-s o"    . embark-export)
          ("H-SPC"    . embark-act)
          ("C->"      . embark-become)
+         ("C-*"      . embark-act-all)
          :map completion-list-mode-map
          ("C-o"      . embark-minimal-act)
          :map embark-collect-mode-map

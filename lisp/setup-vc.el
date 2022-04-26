@@ -104,6 +104,7 @@ highlighting of word-wise changes (local to the current buffer)."
     :bind (("C-x v C-l" . my/vc-print-log)
            :map vc-prefix-map
            ("=" . my/diff-buffer-dwim)
+           ("C-=" . vc-ediff)
            :map log-view-mode-map
            ("<tab>" . log-view-toggle-entry-display)
            ("<return>" . log-view-find-revision)

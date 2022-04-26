@@ -1,7 +1,30 @@
 ;;;----------------------------------------------------------------
 ;; *** HELPFUl
 ;;;----------------------------------------------------------------
+(use-package emacs
+  :bind (("C-h A" . info-apropos)
+         ("C-h C-a" . customize-apropos)
+         ("C-h ." . my/describe-symbol-at-point))
+  :config
+  (defun my/describe-symbol-at-point (&optional arg)
+  "Get help (documentation) for the symbol at point.
+
+With a prefix argument, switch to the *Help* window.  If that is
+already focused, switch to the most recently used window
+instead."
+  (interactive "P")
+  (let ((symbol (symbol-at-point)))
+    (when symbol
+      (describe-symbol symbol)))
+  (when arg
+    (let ((help (get-buffer-window "*Help*")))
+      (when help
+        (if (not (eq (selected-window) help))
+            (select-window help)
+          (select-window (get-mru-window))))))))
+
 (use-package helpful
+  :disabled
   :straight t
   :commands (helpful-callable helpful-variable)
   ;; :hook (helpful-mode . (lambda () (line-number-mode 0)))
@@ -19,10 +42,6 @@
             "f" '(helpful-callable :wk "describe function")
             "k" '(helpful-key :wk "describe keybind")
             "C" '(helpful-command :wk "describe command")))
-
-(use-package emacs
-  :bind (("C-h A" . info-apropos)
-         ("C-h C-a" . customize-apropos)))
 
 ;;;----------------------------------------------------------------
 ;; *** GOOGLE ANSWERS

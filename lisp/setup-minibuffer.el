@@ -12,6 +12,7 @@
       read-file-name-completion-ignore-case t
       completions-format 'vertical   ; *Completions* buffer
       enable-recursive-minibuffers t
+      read-minibuffer-restore-windows t
       read-answer-short t
       resize-mini-windows 'grow-only
       completion-styles '(partial-completion substring initials)
@@ -45,27 +46,6 @@ Meant as advice around minibuffer completion FN with ARGS."
 (minibuffer-depth-indicate-mode 1)
 (minibuffer-electric-default-mode nil)
 ;; (define-key minibuffer-local-completion-map (kbd "-") #'minibuffer-complete-word)
-
-;; Technically, this is not specific to the minibuffer, but I define
-;; it here so that you can see how it is also used from inside the
-;; "Completions" buffer
-;;;###autoload
-(defun my/describe-symbol-at-point (&optional arg)
-  "Get help (documentation) for the symbol at point.
-
-With a prefix argument, switch to the *Help* window.  If that is
-already focused, switch to the most recently used window
-instead."
-  (interactive "P")
-  (let ((symbol (symbol-at-point)))
-    (when symbol
-      (describe-symbol symbol)))
-  (when arg
-    (let ((help (get-buffer-window "*Help*")))
-      (when help
-        (if (not (eq (selected-window) help))
-            (select-window help)
-          (select-window (get-mru-window)))))))
 
 (define-key minibuffer-local-completion-map (kbd "?")
   (lambda () (interactive)

@@ -9,6 +9,7 @@
   :bind ("M-s W" . eww-search-words)
   :hook (eww-mode . prot-eww--set-bookmark-handler)
   :config
+  (setq eww-browse-url-new-window-is-tab nil)
   (defcustom prot-eww-bookmark-link t
     "Control the behaviour of bookmarking inside EWW buffers.
 

@@ -257,7 +257,7 @@
 ;; * MISCELLANEOUS PREFERENCES
 ;;;################################################################
 ;; For lazy typists
-(fset 'yes-or-no-p 'y-or-n-p)
+(setq use-short-answers t)
 ;; Move the mouse away if the cursor gets close
 ;; (mouse-avoidance-mode 'animate)
 
@@ -473,7 +473,8 @@
   :defer 2
   :config
   (setq recentf-save-file (dir-concat user-cache-directory "recentf")
-        recentf-max-saved-items 200)
+        recentf-max-saved-items 200
+        recentf-auto-cleanup "8:00pm")
   (recentf-mode 1))
 
 ;; ** SAVEHIST
@@ -1422,6 +1423,12 @@ If region is active, add its contents to the new buffer."
          (define-key map (kbd "p") 'my/next-error)
          map)))))
 
+(use-package simple
+  :if (> emacs-major-version 27)
+  :config
+  (setq next-error-message-highlight 'keep
+        next-error-found-function #'next-error-quit-window))
+
 ;;;----------------------------------------------------------------
 ;; ** DUMB-JUMP
 ;;;----------------------------------------------------------------
@@ -1454,6 +1461,13 @@ If region is active, add its contents to the new buffer."
   :disabled
   :defer
   :config (setq undo-tree-enable-undo-in-region  t))
+
+(use-package vundo
+  :straight (:host github :repo "casouri/vundo")
+  :bind ("C-x u" . vundo)
+  :config
+  (set-face-attribute 'vundo-default nil :family "Symbola")
+  (setq vundo-glyph-alist vundo-unicode-symbols))
 
 ;;;----------------------------------------------------------------
 ;; ** FLYMAKE
@@ -2792,18 +2806,19 @@ buffer's text scale."
   (cond (IS-LINUX
          (set-fontset-font t 'unicode "Symbola" nil 'prepend)
          (pcase-let ((`(,vp ,fp) (if (equal system-name "x220")
-                                     '(120 130) '(110 120))))
+                                     '(120 130) '(135 135))))
            (custom-set-faces
             `(variable-pitch ((t (:family "Ubuntu" :height ,vp))))
             ;; '(default ((t (:family "Ubuntu Mono" :foundry "PfEd"
             ;;                        :slant normal :weight normal
             ;;                        :height 125 :width normal))))
-            ;; '(default ((t (:family "Iosevka" :foundry "PfEd"
-            ;;                        :slant normal :weight normal
-            ;;                        :height 110 :width normal))))
-            `(default ((t (:family "FantasqueSansMono" :foundry "PfEd"
-                                  :slant normal :weight normal
-                                  :height ,fp :width normal)))))))
+            `(default ((t (:family "Iosevka" :foundry "PfEd"
+                                   :slant normal :weight normal
+                                   :height ,fp :width normal))))
+            ;; `(default ((t (:family "FantasqueSansMono" :foundry "PfEd"
+            ;;                       :slant normal :weight normal
+            ;;                       :height ,fp :width normal))))
+            )))
         (IS-WINDOWS
          (custom-set-faces
           '(default ((t (:family "Consolas" :foundry "outline"

@@ -4,6 +4,7 @@
          ("H-*" . calc-dispatch)
          ("C-S-e" . latex-math-from-calc))
   :config
+  (setq calc-make-windows-dedicated t)
   (defun latex-math-from-calc ()
     "Evaluate `calc' on the contents of line at point."
     (interactive)

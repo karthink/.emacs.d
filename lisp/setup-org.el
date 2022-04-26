@@ -714,6 +714,9 @@ has no effect."
         '(("frame" "lines")
           ("linenos" "true")))
   
+  ;; (add-to-list 'org-latex-packages-alist '("" "listings"))
+  ;; (add-to-list 'org-latex-packages-alist '("" "color"))
+
   (defun my/org-export-ignore-headlines (data backend info)
     "Remove headlines tagged \"ignore\" retaining contents and promoting children.
 Each headline tagged \"ignore\" will be removed retaining its
@@ -1201,7 +1204,8 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
   :after (notmuch org)
   :defer 2
   :config
-  (setq org-mime-export-options '(:section-numbers nil
+  (setq org-mime-export-options '(:with-latex dvipng
+                                  :section-numbers nil
                                   :with-author nil
                                   :with-toc nil))
   
@@ -1294,6 +1298,31 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
   :config
   (setq org-noter-always-create-frame t
         org-noter-kill-frame-at-session-end t))
+
+;;;----------------------------------------------------------------
+;; ** ORG-ALERT
+;;;----------------------------------------------------------------
+(use-package org-alert
+  :disabled
+  :straight t
+  :after org-agenda
+  :config
+  (setq org-alert-style 'notifications))
+
+;;;----------------------------------------------------------------
+;; ** ORG-XOURNALPP
+;;;----------------------------------------------------------------
+(use-package org-xournalpp
+  :straight (:host gitlab
+             :repo "vherrmann/org-xournalpp"
+             :files ("*.el" "resources"))
+  :after org
+  :commands org-xournalpp-insert-new-image
+  :config
+  (setq org-xournalpp-export-dir "figures/"
+        org-xournalpp-export-overwrite? t
+        org-xournalpp-path-default "figures/sketch"
+        org-xournalpp-image-type 'png))
 
 (provide 'setup-org)
 

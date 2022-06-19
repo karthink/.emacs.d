@@ -111,11 +111,16 @@ Which web browser to use depends on the value of the variable
 
 Also see `my/search-occur-url'."
     (interactive "P")
-    (let ((matches nil))
+    (let ((match nil)
+          (matches nil))
       (save-excursion
         (goto-char (point-min))
         (while (search-forward-regexp my/search-url-regexp nil t)
           (push (match-string-no-properties 0) matches)))
+      (save-excursion
+        (goto-char (point-min))
+        (while (setq match (text-property-search-forward 'shr-url nil nil))
+          (push (prop-match-value match) matches)))
       (let ((url (completing-read "Browse URL: " matches nil t)))
         (if use-generic-p
             (browse-url-generic url)

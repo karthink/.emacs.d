@@ -44,18 +44,18 @@
 
     (demo--define-infix
      "h" "height" "Height in pixels"
-     'integer 1080
+     'integer 640
      (pcase demo-aspect-ratio
        ('tall 1080)
-       ('wide 720)
+       ('wide 640)
        (_ (read-number "Height (pixels): "))))
 
     (demo--define-infix
      "w" "width" "Width in pixels"
-     'integer 610
+     'integer 820
      (pcase demo-aspect-ratio
        ('tall 610)
-       ('wide 1280)
+       ('wide 820)
        (_ (read-number "Width (pixels): "))))
 
     (demo--define-infix
@@ -109,15 +109,34 @@
       (demo--set-popper-style)]
      ["Action"
       ("RET" "Toggle demo-mode" demo-mode)])
-
   (defvar my/frame-name nil)
-  (defvar my/current-themes custom-enabled-themes)
-  (define-minor-mode demo-mode ()
+(defvar my/current-themes custom-enabled-themes)
+(define-minor-mode demo-mode ()
     :global t
     :keymap nil
     (if demo-mode
         (progn
 
+          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
+          ;; Elfeed demo
+          (with-eval-after-load 'elfeed-tube
+            (setq elfeed-tube-invidious-url "https://vid.puffyan.us"
+                  elfeed-tube-save-to-db-p nil)
+            (elfeed-tube-teardown)
+            (elfeed-tube-setup-no-fetch))
+          
+          ;; For pasting
+          (kill-new "https://www.youtube.com/c/QuantaScienceChannel")
+          (kill-new "https://www.youtube.com/playlist?list=PLEoMzSkcN8oMc34dTjyFmTUWbXTKrNfZA")
+          (find-file "~/.emacs.orig/plugins/elfeed-tube/demo.org")
+          (setq x-gtk-use-system-tooltips nil)
+          (tooltip-mode 0)
+          (tooltip-mode 1)
+          (add-hook 'elfeed-tube-channels-mode-hook
+                    'hl-line-mode)
+          
+          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+          
           ;; Always needed
           (add-hook 'grep-mode-hook 'toggle-truncate-lines)
 
@@ -125,6 +144,8 @@
           (dolist (mode '(project-x-mode))
             (if (bound-and-true-p mode)
                 (funcall (symbol-function mode) 0)))
+          
+          (project-x-mode 0)
           
           ;; Popups
           (demo-popper-apply-settings demo-popper-style)
@@ -151,7 +172,7 @@
           ;; Font
           (set-face-attribute
            'default nil
-           :family "FantasqueSansMono"
+           :family "Monospace"
            :slant 'normal
            :height demo-fontsize
            :width 'normal)
@@ -177,13 +198,12 @@
       ;; Restore font
       (set-face-attribute
        'default nil
-       :family "FantasqueSansMono"
+       :family "Monospace"
        :slant 'normal
-       :height 125
+       :height 130
        :width 'normal)
       (set-frame-parameter
-       nil
-       'name my/frame-name)
+       nil 'name my/frame-name)
 
       ;; Restore mode-line
       (when demo-mode-line-p

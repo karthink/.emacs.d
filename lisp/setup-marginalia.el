@@ -9,12 +9,10 @@
   :straight t
   :after setup-minibuffer
   :init (marginalia-mode 1)
-  ;; :bind (:map vertico-map
-  ;;        ("M-]" . marginalia-cycle))
+  :bind (:map vertico-map
+         ("M-]" . marginalia-cycle))
   :config
-  (add-to-list 'marginalia-prompt-categories '("\\burl\\b" . url))
-  (setq marginalia-annotators
-        '(marginalia-annotators-heavy marginalia-annotators-light)))
+  (add-to-list 'marginalia-prompt-categories '("\\burl\\b" . url)))
 
 (provide 'setup-marginalia)
 ;; setup-marginalia.el ends here

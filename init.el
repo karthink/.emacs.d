@@ -180,12 +180,20 @@
 ;;;################################################################
 (load (expand-file-name "lisp/setup-modeline" user-emacs-directory))
 
+;; ---------------------------
+;; #+INCLUDE: "./lisp/setup-modeline.org" :minlevel 2
+;; ---------------------------
+
 ;;;################################################################
 ;; * MINIBUFFER
 ;;;################################################################
 (use-package minibuffer
   :config
- (require 'setup-minibuffer nil t))
+  (load (expand-file-name "lisp/setup-minibuffer" user-emacs-directory)))
+
+;; ---------------------------
+;; #+INCLUDE: "./lisp/setup-minibuffer.org" :minlevel 2
+;; ---------------------------
 
 ;;;################################################################
 ;; * UI
@@ -235,6 +243,10 @@
 ;; These are mostly leader based keybindings that make sense to use with
 ;; evil-mode... which I don't use.
 (load (expand-file-name "lisp/setup-keybinds" user-emacs-directory))
+
+;; ---------------------------
+;; #+INCLUDE: "./lisp/setup-keybinds.org" :minlevel 2
+;; ---------------------------
 
 ;;;################################################################
 ;; * SAVE AND BACKUP
@@ -372,8 +384,8 @@
 ;;;################################################################
 ;; * EDITING
 ;;;######################################################################
-(use-package visual-fill-column-mode
-  :disabled
+(use-package visual-fill-column
+  :straight t
   :commands visual-fill-column-mode)
 
 (use-package so-long
@@ -529,6 +541,10 @@
 ;; * BUFFER MANAGEMENT
 (load (expand-file-name "lisp/better-buffers" user-emacs-directory))
 
+;; ---------------------------
+;; #+INCLUDE: "./lisp/better-buffers.org" :minlevel 2
+;; ---------------------------
+
 ;;;----------------------------------------------------------------
 ;; #+INCLUDE: "./lisp/better-buffers.org" :minlevel 2
 ;;;----------------------------------------------------------------
@@ -591,7 +607,10 @@ Also kill this window, tab or frame if necessary."
       (kill-buffer-and-window))))
 
 ;; setup-windows:
+;; ---------------------------
 ;; #+INCLUDE: "./lisp/setup-windows.org" :minlevel 2
+;; ---------------------------
+
 
 ;;;----------------------------------------------------------------
 ;; ** POPUPS
@@ -612,23 +631,24 @@ Also kill this window, tab or frame if necessary."
          ("s-n" . my/next-buffer)
          ("s-p" . my/previous-buffer))
   :init
-  (setq popper-group-function
-        (defun my/popper-group-by-heuristic ()
-          "Group popups according to heuristic rules suitable for
-          my usage."
-          (let ((dd (abbreviate-file-name default-directory)))
-            (cond
-             ((string-match-p "\\(?:~/\\.config/\\|~/dotfiles/\\)" dd)
-              'config)
-             ((or (string-match-p "local/share/git" dd)
-                  (string-match-p "plugins/" dd))
-              'projects)
-             ((string-match-p "\\(?:KarthikBa\\|research/\\)" dd)
-              'research)
-             ((string-match-p "karthinks" dd) 'website)
-             ((locate-dominating-file dd "research") 'documents)
-             ((locate-dominating-file dd "init.el") 'emacs)
-             (t (popper-group-by-project))))))
+  ;; (setq popper-group-function
+  ;;       (defun my/popper-group-by-heuristic ()
+  ;;         "Group popups according to heuristic rules suitable for
+  ;;         my usage."
+  ;;         (let ((dd (abbreviate-file-name default-directory)))
+  ;;           (cond
+  ;;            ((string-match-p "\\(?:~/\\.config/\\|~/dotfiles/\\)" dd)
+  ;;             'config)
+  ;;            ((or (string-match-p "local/share/git" dd)
+  ;;                 (string-match-p "plugins/" dd))
+  ;;             'projects)
+  ;;            ((string-match-p "\\(?:KarthikBa\\|research/\\)" dd)
+  ;;             'research)
+  ;;            ((string-match-p "karthinks" dd) 'website)
+  ;;            ((locate-dominating-file dd "research") 'documents)
+  ;;            ((locate-dominating-file dd "init.el") 'emacs)
+  ;;            (t (popper-group-by-project))))))
+  (setq popper-group-function nil)
   (setq ;; popper-mode-line nil
         popper-reference-buffers
         (append my/help-modes-list
@@ -934,7 +954,11 @@ surrounded by word boundaries."
 ;; * UTILITY
 ;;;################################################################
 ;; Count words, print ASCII table, etc
-(require 'utilities nil t)
+(load (expand-file-name "lisp/utilities" user-emacs-directory))
+
+;; ---------------------------
+;; #+INCLUDE: "./lisp/utilities.org" :minlevel 2
+;; ---------------------------
 
 (use-package async
   :disabled
@@ -961,7 +985,8 @@ surrounded by word boundaries."
 
 (use-package screenshot
   :straight (screenshot :host github
-                        :repo "tecosaur/screenshot")
+                        :repo "tecosaur/screenshot"
+                        :build (:not compile))
   :commands screenshot)
 
 ;; Colorize color names and parens in buffers
@@ -1184,6 +1209,7 @@ If region is active, add its contents to the new buffer."
               ("C-h ." . eldoc))
   :config
   (setq eglot-put-doc-in-help-buffer nil)
+  (setq eglot-events-buffer-size 0)
   (add-to-list 'eglot-server-programs
                '(matlab-mode . ("~/.local/share/git/matlab-langserver/matlab-langserver.sh" ""))))
 
@@ -1199,6 +1225,186 @@ If region is active, add its contents to the new buffer."
         (let ((current-prefix-arg '4))
           (call-interactively #'pp-eval-last-sexp))
       (call-interactively #'eval-last-sexp))))
+
+(use-package elisp-mode
+  :defer t
+  :config
+  ;; From https://emacs.stackexchange.com/questions/10230/how-to-indent-keywords-aligned
+  (advice-add #'calculate-lisp-indent :override #'void~calculate-lisp-indent)
+  (defun void~calculate-lisp-indent (&optional parse-start)
+    "Add better indentation for quoted and backquoted lists."
+    ;; This line because `calculate-lisp-indent-last-sexp` was defined with
+    ;; `defvar` with its value ommited, marking it special and only defining it
+    ;; locally. So if you don't have this, you'll get a void variable error.
+    (defvar calculate-lisp-indent-last-sexp)
+    (save-excursion
+      (beginning-of-line)
+      (let ((indent-point (point))
+            state
+            ;; setting this to a number inhibits calling hook
+            (desired-indent nil)
+            (retry t)
+            calculate-lisp-indent-last-sexp containing-sexp)
+        (cond ((or (markerp parse-start) (integerp parse-start))
+               (goto-char parse-start))
+              ((null parse-start) (beginning-of-defun))
+              (t (setq state parse-start)))
+        (unless state
+          ;; Find outermost containing sexp
+          (while (< (point) indent-point)
+            (setq state (parse-partial-sexp (point) indent-point 0))))
+        ;; Find innermost containing sexp
+        (while (and retry
+                    state
+                    (> (elt state 0) 0))
+          (setq retry nil)
+          (setq calculate-lisp-indent-last-sexp (elt state 2))
+          (setq containing-sexp (elt state 1))
+          ;; Position following last unclosed open.
+          (goto-char (1+ containing-sexp))
+          ;; Is there a complete sexp since then?
+          (if (and calculate-lisp-indent-last-sexp
+                   (> calculate-lisp-indent-last-sexp (point)))
+              ;; Yes, but is there a containing sexp after that?
+              (let ((peek (parse-partial-sexp calculate-lisp-indent-last-sexp
+                                              indent-point 0)))
+                (if (setq retry (car (cdr peek))) (setq state peek)))))
+        (if retry
+            nil
+          ;; Innermost containing sexp found
+          (goto-char (1+ containing-sexp))
+          (if (not calculate-lisp-indent-last-sexp)
+              ;; indent-point immediately follows open paren.
+              ;; Don't call hook.
+              (setq desired-indent (current-column))
+            ;; Find the start of first element of containing sexp.
+            (parse-partial-sexp (point) calculate-lisp-indent-last-sexp 0 t)
+            (cond ((looking-at "\\s(")
+                   ;; First element of containing sexp is a list.
+                   ;; Indent under that list.
+                   )
+                  ((> (save-excursion (forward-line 1) (point))
+                      calculate-lisp-indent-last-sexp)
+                   ;; This is the first line to start within the containing sexp.
+                   ;; It's almost certainly a function call.
+                   (if (or
+                        ;; Containing sexp has nothing before this line
+                        ;; except the first element. Indent under that element.
+                        (= (point) calculate-lisp-indent-last-sexp)
+
+                        ;; First sexp after `containing-sexp' is a keyword. This
+                        ;; condition is more debatable. It's so that I can have
+                        ;; unquoted plists in macros. It assumes that you won't
+                        ;; make a function whose name is a keyword.
+                        (when-let (char-after (char-after (1+ containing-sexp)))
+                          (char-equal char-after ?:))
+
+                        ;; Check for quotes or backquotes around.
+                        (let* ((positions (elt state 9))
+                               (last (car (last positions)))
+                               (rest (reverse (butlast positions)))
+                               (any-quoted-p nil)
+                               (point nil))
+                          (or
+                           (when-let (char (char-before last))
+                             (or (char-equal char ?')
+                                 (char-equal char ?`)))
+                           (progn
+                             (while (and rest (not any-quoted-p))
+                               (setq point (pop rest))
+                               (setq any-quoted-p
+                                     (or
+                                      (when-let (char (char-before point))
+                                        (or (char-equal char ?')
+                                            (char-equal char ?`)))
+                                      (save-excursion
+                                        (goto-char (1+ point))
+                                        (looking-at-p
+                                         "\\(?:back\\)?quote[\t\n\f\s]+(")))))
+                             any-quoted-p))))
+                       ;; Containing sexp has nothing before this line
+                       ;; except the first element.  Indent under that element.
+                       nil
+                     ;; Skip the first element, find start of second (the first
+                     ;; argument of the function call) and indent under.
+                     (progn (forward-sexp 1)
+                            (parse-partial-sexp (point)
+                                                calculate-lisp-indent-last-sexp
+                                                0 t)))
+                   (backward-prefix-chars))
+                  (t
+                   ;; Indent beneath first sexp on same line as
+                   ;; `calculate-lisp-indent-last-sexp'.  Again, it's
+                   ;; almost certainly a function call.
+                   (goto-char calculate-lisp-indent-last-sexp)
+                   (beginning-of-line)
+                   (parse-partial-sexp (point) calculate-lisp-indent-last-sexp
+                                       0 t)
+                   (backward-prefix-chars)))))
+        ;; Point is at the point to indent under unless we are inside a string.
+        ;; Call indentation hook except when overridden by lisp-indent-offset
+        ;; or if the desired indentation has already been computed.
+        (let ((normal-indent (current-column)))
+          (cond ((elt state 3)
+                 ;; Inside a string, don't change indentation.
+                 nil)
+                ((and (integerp lisp-indent-offset) containing-sexp)
+                 ;; Indent by constant offset
+                 (goto-char containing-sexp)
+                 (+ (current-column) lisp-indent-offset))
+                ;; in this case calculate-lisp-indent-last-sexp is not nil
+                (calculate-lisp-indent-last-sexp
+                 (or
+                  ;; try to align the parameters of a known function
+                  (and lisp-indent-function
+                       (not retry)
+                       (funcall lisp-indent-function indent-point state))
+                  ;; If the function has no special alignment
+                  ;; or it does not apply to this argument,
+                  ;; try to align a constant-symbol under the last
+                  ;; preceding constant symbol, if there is such one of
+                  ;; the last 2 preceding symbols, in the previous
+                  ;; uncommented line.
+                  (and (save-excursion
+                         (goto-char indent-point)
+                         (skip-chars-forward " \t")
+                         (looking-at ":"))
+                       ;; The last sexp may not be at the indentation
+                       ;; where it begins, so find that one, instead.
+                       (save-excursion
+                         (goto-char calculate-lisp-indent-last-sexp)
+                         ;; Handle prefix characters and whitespace
+                         ;; following an open paren.  (Bug#1012)
+                         (backward-prefix-chars)
+                         (while (not (or (looking-back "^[ \t]*\\|([ \t]+"
+                                                       (line-beginning-position))
+                                         (and containing-sexp
+                                              (>= (1+ containing-sexp) (point)))))
+                           (forward-sexp -1)
+                           (backward-prefix-chars))
+                         (setq calculate-lisp-indent-last-sexp (point)))
+                       (> calculate-lisp-indent-last-sexp
+                          (save-excursion
+                            (goto-char (1+ containing-sexp))
+                            (parse-partial-sexp (point) calculate-lisp-indent-last-sexp 0 t)
+                            (point)))
+                       (let ((parse-sexp-ignore-comments t)
+                             indent)
+                         (goto-char calculate-lisp-indent-last-sexp)
+                         (or (and (looking-at ":")
+                                  (setq indent (current-column)))
+                             (and (< (line-beginning-position)
+                                     (prog2 (backward-sexp) (point)))
+                                  (looking-at ":")
+                                  (setq indent (current-column))))
+                         indent))
+                  ;; another symbols or constants not preceded by a constant
+                  ;; as defined above.
+                  normal-indent))
+                ;; in this case calculate-lisp-indent-last-sexp is nil
+                (desired-indent)
+                (t
+                 normal-indent)))))))
 
 ;;;----------------------------------------------------------------
 ;; ** AUCTEX-MODE & ADDITIONS
@@ -1231,15 +1437,27 @@ If region is active, add its contents to the new buffer."
 ;;;----------------------------------------------------------------
 (load (expand-file-name "lisp/setup-matlab" user-emacs-directory))
 
+;; ---------------------------
+;; #+INCLUDE: "./lisp/setup-matlab.org" :minlevel 2
+;; ---------------------------
+
 ;;;----------------------------------------------------------------
 ;; ** PYTHON-MODE
 ;;;----------------------------------------------------------------
 (load (expand-file-name "lisp/setup-python" user-emacs-directory))
 
+;; ---------------------------
+;; #+INCLUDE: "./lisp/setup-python.org" :minlevel 2
+;; ---------------------------
+
 ;;;----------------------------------------------------------------
 ;; ** GEISER/SCHEME
 ;;;----------------------------------------------------------------
 (load (expand-file-name "lisp/setup-scheme" user-emacs-directory))
+
+;; ---------------------------
+;; #+INCLUDE: "./lisp/setup-scheme.org" :minlevel 2
+;; ---------------------------
 
 ;;;----------------------------------------------------------------
 ;; ** EVAL-IN-REPL
@@ -1257,6 +1475,10 @@ If region is active, add its contents to the new buffer."
 ;; ** JULIA
 ;;;################################################################
 (load (expand-file-name "lisp/setup-julia" user-emacs-directory))
+
+;; ---------------------------
+;; #+INCLUDE: "./lisp/setup-julia.org" :minlevel 2
+;; ---------------------------
 
 ;;;----------------------------------------------------------------
 ;; ** CIDER
@@ -1737,6 +1959,10 @@ _d_: subtree
 ;;;----------------------------------------------------------------
 (load (expand-file-name "lisp/setup-tabs" user-emacs-directory))
 
+;; ---------------------------
+;; #+INCLUDE: "./lisp/setup-tabs.org" :minlevel 2
+;; ---------------------------
+
 ;;;----------------------------------------------------------------
 ;; ** HIGHLIGHTS
 ;;;----------------------------------------------------------------
@@ -1780,15 +2006,19 @@ _d_: subtree
 
     (defun my/pulse-momentary-upper-bound (&rest _)
       "Pulse the upper scrolling bound of the screen."
-      (save-excursion
-        (move-to-window-line next-screen-context-lines)
-        (my/pulse-momentary-line)))
+      (let ((pulse-delay 0.08)
+            (pulse-iterations 20))
+        (save-excursion
+          (move-to-window-line (1- next-screen-context-lines))
+          (my/pulse-momentary-line))))
 
     (defun my/pulse-momentary-lower-bound (&rest _)
       "Pulse the lower scrolling bound of the screen."
-      (save-excursion
-        (move-to-window-line (- next-screen-context-lines))
-        (my/pulse-momentary-line)))
+      (let ((pulse-delay 0.08)
+            (pulse-iterations 20))
+        (save-excursion
+          (move-to-window-line (- next-screen-context-lines))
+          (my/pulse-momentary-line))))
 
     (advice-add 'scroll-up-command   :after #'my/pulse-momentary-upper-bound)
     (advice-add 'scroll-down-command :after #'my/pulse-momentary-lower-bound)
@@ -1844,6 +2074,10 @@ _d_: subtree
 ;;;----------------------------------------------------------------
 (load (expand-file-name "lisp/setup-vc" user-emacs-directory))
 
+;; ---------------------------
+;; #+INCLUDE: "./lisp/setup-vc.org" :minlevel 2
+;; ---------------------------
+
 ;;;----------------------------------------------------------------
 ;; ** WHICH-KEY
 ;;;----------------------------------------------------------------
@@ -1884,7 +2118,7 @@ _d_: subtree
                   (setq prefix-help-command
                         #'embark-prefix-help-command))))
   
-  (which-key-mode +1)
+  ;; (which-key-mode +1)
   :diminish "")
 
 ;;;----------------------------------------------------------------
@@ -1927,6 +2161,13 @@ _d_: subtree
          . smartparens-mode)
   :bind
   (:map smartparens-mode-map
+        ("M-["           . sp-backward-slurp-sexp)
+        ("M-]"           . sp-forward-slurp-sexp)
+        ("M-{"           . sp-backward-barf-sexp)
+        ("M-}"           . sp-forward-barf-sexp)
+        ("M-U"           . sp-raise-sexp)
+        ("M-C"           . sp-convolute-sexp)
+        ("M-J"           . sp-join-sexp)
         ("C-M-<up>"      . sp-raise-sexp)
         ("C-<right>"     . sp-forward-slurp-sexp)
         ("C-<left>"      . sp-backward-slurp-sexp)
@@ -2103,25 +2344,7 @@ for details."
   :straight t
   :init (wrap-region-mode 1))
 ;; (add-hook 'text-mode-hook 'wrap-region-mode)
-
 ;;;----------------------------------------------------------------
-;; ** ORG-MODE
-;;;----------------------------------------------------------------
-(load (expand-file-name "lisp/setup-org" user-emacs-directory))
-
-;; --------------------
-;; #+INCLUDE: "./lisp/setup-org.org" :minlevel 2
-;; --------------------
-
-;;;----------------------------------------------------------------
-;; ** ORG-ADDONS
-;;;----------------------------------------------------------------
-;; *** ANKI
-(use-package setup-anki
-  :after (org-capture org))
-
-;; *** ROAM
-(use-package setup-roam)
 ;;;################################################################
 ;; ** TRAMP
 ;;;################################################################
@@ -2224,14 +2447,31 @@ for details."
 ;;;----------------------------------------------------------------
 (load (expand-file-name "lisp/setup-yas" user-emacs-directory))
 
+;; ---------------------------
+;; #+INCLUDE: "./lisp/setup-yas.org" :minlevel 2
+;; ---------------------------
+
 ;;;----------------------------------------------------------------
 ;; ** M O V E C
 ;;;----------------------------------------------------------------
-(load (expand-file-name "lisp/setup-marginalia" user-emacs-directory))
 (load (expand-file-name "lisp/setup-orderless" user-emacs-directory))
 (load (expand-file-name "lisp/setup-vertico" user-emacs-directory))
+(load (expand-file-name "lisp/setup-marginalia" user-emacs-directory))
 (load (expand-file-name "lisp/setup-embark" user-emacs-directory))
 (load (expand-file-name "lisp/setup-consult" user-emacs-directory))
+
+;; ---------------------------
+;; #+INCLUDE: "./lisp/setup-marginalia.org" :minlevel 2
+;; ---------------------------
+;; #+INCLUDE: "./lisp/setup-orderless.org" :minlevel 2
+;; ---------------------------
+;; #+INCLUDE: "./lisp/setup-vertico.org" :minlevel 2
+;; ---------------------------
+;; #+INCLUDE: "./lisp/setup-embark.org" :minlevel 2
+;; ---------------------------
+;; #+INCLUDE: "./lisp/setup-consult.org" :minlevel 2
+;; ---------------------------
+
 
 ;;;----------------------------------------------------------------
 ;; *** MARGINALIA
@@ -2349,10 +2589,37 @@ for details."
         counsel-spotify-use-notifications nil))
 
 ;;;----------------------------------------------------------------
+;; * ORG-MODE
+;;;----------------------------------------------------------------
+(load (expand-file-name "lisp/setup-org" user-emacs-directory))
+
+;; --------------------
+;; #+INCLUDE: "./lisp/setup-org.org" :minlevel 2
+;; --------------------
+
+;;;----------------------------------------------------------------
+;; ** ORG-ADDONS
+;;;----------------------------------------------------------------
+;; *** ANKI
+(use-package setup-anki
+  :after (org-capture org))
+
+;; *** ROAM
+(load (expand-file-name "lisp/setup-roam" user-emacs-directory))
+
+;; ---------------------------
+;; #+INCLUDE: "./lisp/setup-roam.org" :minlevel 2
+;; ---------------------------
+
 ;; * APPLICATIONS
 ;; ** DIRED
 ;;;----------------------------------------------------------------
-(require 'setup-dired nil t)
+(load (expand-file-name "lisp/setup-dired" user-emacs-directory))
+
+;; ---------------------------
+;; #+INCLUDE: "./lisp/setup-dired.org" :minlevel 2
+;; ---------------------------
+
 (use-package emacs
   :after dired
   :config
@@ -2487,15 +2754,28 @@ for details."
   :straight t
   :init
   (add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode))
-  :hook ((nov-mode . my/nov-font-setup)
+  :hook ((nov-mode . my/nov-display-setup)
          (nov-mode . er/add-text-mode-expansions))
+  :bind (:map nov-mode-map
+         ("u" . my/scroll-down-half)
+         ("d" . my/scroll-up-half))
   :config
-  (setq nov-text-width 80
+  (setq nov-text-width 72
         nov-save-place-file (dir-concat user-cache-directory "nov-places"))
-  (defun my/nov-font-setup ()
+  ;; Pinched from https://tecosaur.github.io/emacs-config/config.html
+  (defun my/nov-display-setup ()
     (face-remap-add-relative 'variable-pitch
-                             :family "Noto Serif"
-                             :height 1.0)))
+                             :family "Merriweather"
+                             :height 1.0
+                             :width 'semi-expanded)
+    ;; (face-remap-add-relative 'default :height 1.1)
+    (setq-local line-spacing 0.2
+                next-screen-context-lines 4
+                shr-use-colors t)
+    (require 'visual-fill-column nil t)
+    (setq-local visual-fill-column-center-text t
+                visual-fill-column-width (1+ nov-text-width))
+    (visual-fill-column-mode 1)))
 
 ;;;----------------------------------------------------------------
 ;; ** LOOK UP
@@ -2518,6 +2798,9 @@ for details."
 ;;;----------------------------------------------------------------
 ;; ** RG, GREP AND WGREP
 ;;;----------------------------------------------------------------
+
+(use-package grep
+  :hook ((grep-mode . toggle-truncate-lines)))
 
 ;; consult-ripgrep handles this better
 (use-package rg
@@ -2806,13 +3089,14 @@ buffer's text scale."
   (cond (IS-LINUX
          (set-fontset-font t 'unicode "Symbola" nil 'prepend)
          (pcase-let ((`(,vp ,fp) (if (equal system-name "x220")
-                                     '(120 130) '(135 135))))
+                                     '(120 130) '(120 125))))
            (custom-set-faces
-            `(variable-pitch ((t (:family "Ubuntu" :height ,vp))))
+            `(variable-pitch ((t (:family "Merriweather" :height ,vp
+                                  :width semi-expanded))))
             ;; '(default ((t (:family "Ubuntu Mono" :foundry "PfEd"
             ;;                        :slant normal :weight normal
             ;;                        :height 125 :width normal))))
-            `(default ((t (:family "Iosevka" :foundry "PfEd"
+            `(default ((t (:family "Monospace" :foundry "PfEd"
                                    :slant normal :weight normal
                                    :height ,fp :width normal))))
             ;; `(default ((t (:family "FantasqueSansMono" :foundry "PfEd"
@@ -2871,14 +3155,15 @@ buffer's text scale."
         modus-themes-fringes 'subtle
         modus-themes-intense-paren-match t
         modus-themes-bold-constructs t
+        ;; modus-themes-italic-constructs t
         modus-themes-completions 'opinionated
         modus-themes-diffs 'desaturated
-        modus-themes-syntax nil ;'(alt-syntax) ;'faint
+        modus-themes-syntax nil ;'(alt-syntax yellow-comments) ;'faint
         modus-themes-links '(faint neutral-underline)
         modus-themes-prompts '(bold background)
         modus-themes-subtle-line-numbers t
         modus-themes-tabs-accented t
-        modus-themes-paren-match '(underline)
+        modus-themes-paren-match '(bold intense)
         modus-themes-region '(no-extend accented)
         modus-themes-org-agenda
         '((header-block . (variable-pitch scale-title))
@@ -2895,19 +3180,20 @@ buffer's text scale."
           (4 . (1.14))
           (t . (monochrome))))
   ;; (setq modus-themes-operandi-color-overrides '((bg-main . "#ededed")))
-  (setq modus-themes-vivendi-color-overrides
-        '((bg-main . "#100b17")
-          (bg-dim . "#161129")
-          (bg-alt . "#181732")
-          (bg-hl-line . "#191628")
-          (bg-active . "#282e46")
-          (bg-inactive . "#1a1e39")
-          (bg-region . "#393a53")
-          (bg-header . "#202037")
-          (bg-tab-bar . "#262b41")
-          (bg-tab-active . "#120f18")
-          (bg-tab-inactive . "#3a3a5a")
-          (fg-unfocused . "#9a9aab"))))
+  ;; (setq modus-themes-vivendi-color-overrides
+  ;;       '((bg-main . "#100b17")
+  ;;         (bg-dim . "#161129")
+  ;;         (bg-alt . "#181732")
+  ;;         (bg-hl-line . "#191628")
+  ;;         (bg-active . "#282e46")
+  ;;         (bg-inactive . "#1a1e39")
+  ;;         (bg-region . "#393a53")
+  ;;         (bg-header . "#202037")
+  ;;         (bg-tab-bar . "#262b41")
+  ;;         (bg-tab-active . "#120f18")
+  ;;         (bg-tab-inactive . "#3a3a5a")
+  ;;         (fg-unfocused . "#9a9aab")))
+  )
 
 
 ;; ** DOOM THEMES
@@ -2975,7 +3261,7 @@ buffer's text scale."
   :defer
   :config
   (setq shr-image-animate nil
-        shr-width 66))
+        shr-width 76))
 
 (use-package url
   :defer

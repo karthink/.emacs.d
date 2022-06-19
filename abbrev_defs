@@ -25,6 +25,11 @@
     ("yta" "youtube-dl -w -c -r 1M -o '%(playlist_index)s-%(title)s.%(ext)s' --add-metadata  -f 'bestaudio[ext=m4a]'" nil :count 2)
    ))
 
+(define-abbrev-table 'org-mode-abbrev-table
+  '(
+    ("yt" "Youtube" nil :count 7)
+   ))
+
 (define-abbrev-table 'shell-mode-abbrev-table
   '(
     ("jcu" "journalctl --user" nil :count 1)

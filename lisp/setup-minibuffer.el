@@ -1,3 +1,5 @@
+;; setup-minibuffer
+
 (use-package minibuffer
   :hook (minibuffer-setup .  cursor-intangible-mode)
   :config

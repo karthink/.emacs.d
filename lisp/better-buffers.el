@@ -32,8 +32,8 @@
 
 ;;; Set keys to scroll buffer while centering
 ;;; location on screen.
-(global-set-key "\M-]" 'scroll-buffer-down)
-(global-set-key "\M-[" 'scroll-buffer-up)
+;; (global-set-key "\M-]" 'scroll-buffer-down)
+;; (global-set-key "\M-[" 'scroll-buffer-up)
 
 ;;; Toggle window split between horizontal and vertical
 ;; (define-key ctl-x-4-map "t" 'toggle-window-split)
@@ -88,7 +88,8 @@ nil."
 (global-set-key (kbd "H-5") ctl-x-5-map)
 (global-set-key (kbd "H-k") 'my/kill-this-buffer)
 (global-set-key (kbd "H-q") 'kill-buffer-and-window)
-(global-set-key (kbd "<f7>") '+make-frame-floating-with-current-buffer)
+;; (global-set-key (kbd "<f7>") '+make-frame-floating-with-current-buffer)
+(global-set-key (kbd "<f7>") 'my/hide-cursor-mode)
 ;;----------------------------------------------------------------------
 ;; ** UTILITY FUNCTIONS
 ;;----------------------------------------------------------------------
@@ -190,19 +191,19 @@ the fram has exactly two windows."
 
 ;;; scroll-buffer: Functions to do exactly that.
 
-;;;###autoload
-(defun scroll-buffer-down (&optional arg)
-  "Scroll buffer by (optional) ARG paragraphs."
-  (interactive "p")
-  (forward-paragraph arg)
-  (recenter))
+;; ;;;###autoload
+;; (defun scroll-buffer-down (&optional arg)
+;;   "Scroll buffer by (optional) ARG paragraphs."
+;;   (interactive "p")
+;;   (forward-paragraph arg)
+;;   (recenter))
 
-;;;###autoload
-(defun scroll-buffer-up (&optional arg)
-  "Scroll buffer by (optional) ARG paragraphs."
-  (interactive "p")
-  (backward-paragraph arg)
-  (recenter))
+;; ;;;###autoload
+;; (defun scroll-buffer-up (&optional arg)
+;;   "Scroll buffer by (optional) ARG paragraphs."
+;;   (interactive "p")
+;;   (backward-paragraph arg)
+;;   (recenter))
 
 ;;;###autoload
 (defun rename-file-and-buffer (new-name)
@@ -259,6 +260,39 @@ window manager to present the frame in a floating state."
                   (minibuffer . nil)))
     (with-selected-frame (get-other-frame)
       (switch-to-buffer buf))))
+
+(define-minor-mode my/hide-cursor-mode
+  "Hide or show the cursor.
+
+When the cursor is hidden `scroll-lock-mode' is enabled, so that
+the buffer works like a pager."
+  :global nil
+  :lighter "H"
+  (if my/hide-cursor-mode
+      (progn
+        (scroll-lock-mode 1)
+        (setq-local hide-cursor--original
+                    cursor-type)
+        (setq-local cursor-type nil))
+    (scroll-lock-mode -1)
+    (setq-local cursor-type (or hide-cursor--original
+                                t))))
+
+(defun my/scroll-up-half ()
+  (interactive)
+  (scroll-up-command
+   (floor
+    (- (window-height)
+       next-screen-context-lines)
+    2)))
+
+(defun my/scroll-down-half ()
+  (interactive)
+  (scroll-down-command
+   (floor
+    (- (window-height)
+       next-screen-context-lines)
+    2)))
 
 (provide 'better-buffers)
 

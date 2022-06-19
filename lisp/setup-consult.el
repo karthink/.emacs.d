@@ -1,4 +1,8 @@
 ;; -*- lexical-binding: t -*-
+
+;; Needed for consult
+(use-package compat :straight t :defer)
+
 ;; Consult
 (use-package consult
   :straight t
@@ -45,8 +49,6 @@
   (setq register-preview-delay 0
         register-preview-function #'consult-register-format)
   
- 
-
   (defvar consult--fd-command nil)
   (defun consult--fd-builder (input)
     (unless consult--fd-command
@@ -222,19 +224,17 @@ When the number of characters in a buffer exceeds this threshold,
      (find-file-noselect
       (find-library-name lib)))
     (run-hooks 'find-function-after-hook))
+  
   (defun consult--library-preview ()
     "Create preview function for libraries."
     (let ((open (consult--temporary-files))
           (preview (consult--buffer-preview)))
-      (lambda (cand restore)
-        (if restore
-            (progn
-              (funcall preview nil t)
-              (funcall open))
-          (funcall
-           preview
-           (and cand (funcall open (find-library-name cand)))
-           nil)))))
+      (lambda (action cand)
+        (unless cand (funcall open))
+        (funcall preview action
+                 (and cand
+                      (eq action 'preview)
+                      (funcall open (find-library-name cand)))))))
 
   (setq consult--source-library
     `(:name  "Library"

@@ -1,5 +1,5 @@
 ;; -*- lexical-binding: t -*-
-;;(require 'use-package nil t)
+
 (use-package dired
   :commands dired
   :hook ((dired-mode . hl-line-mode)
@@ -198,9 +198,13 @@ This relies on the external 'fd' executable."
            "z p" 'peep-dired)
   (:keymaps 'dired-mode-map
             "P" 'peep-dired)
-  :hook (peep-dired-display-file . auto-revert-mode)
+  :hook ((peep-dired-display-file . auto-revert-mode)
+         (peep-dired-display-file . peep-dired-fit-image))
   :config
   ;; (add-hook 'peep-dired-hook 'evil-normalize-keymaps)
+  (defun peep-dired-fit-image ()
+    (when (derived-mode-p 'image-mode)
+      (image-transform-fit-both)))
   (ignore-errors
     (setq peep-dired-display-action-alist
           '(display-buffer-in-direction

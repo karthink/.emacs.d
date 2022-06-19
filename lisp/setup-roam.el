@@ -1,3 +1,5 @@
+;;; setup-roam
+
 (use-package org-roam
       :straight t
       :init (setq org-roam-v2-ack t)

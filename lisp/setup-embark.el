@@ -5,6 +5,7 @@
   :demand
   :straight t
   :after minibuffer
+  :hook ((embark-collect-mode . hl-line-mode))
   :bind (("M-s RET"  . embark-act)
          ("s-o"      . embark-act)
          ("s-C-o"    . embark-act-noexit)
@@ -57,7 +58,7 @@
   (setq prefix-help-command #'embark-prefix-help-command)
 
   ;; Embark indicators
-  (setq embark-indicators '(embark-which-key-indicator
+  (setq embark-indicators '(;; embark-which-key-indicator
                             ;; embark-minimal-indicator
                             embark-highlight-indicator
                             embark-isearch-highlight-indicator))
@@ -223,6 +224,7 @@
       :after which-key
       :config
       ;; From the embark wiki
+      (add-to-list 'embark-indicators #'embark-which-key-indicator)
       (defun embark-which-key-indicator ()
         "An embark indicator that displays keymaps using which-key.
 The which-key help message will show the type and value of the
@@ -294,9 +296,9 @@ targets."
   (defun embark-export-flymake (_errors)
     (flymake-show-buffer-diagnostics))
   
-  (dolist (pair '((consult-fd . list)))
-    (add-to-list 'embark-collect-initial-view-alist
-                 pair))
+  ;; (dolist (pair '((consult-fd . list)))
+  ;;   (add-to-list 'embark-collect-initial-view-alist
+  ;;                pair))
   :bind (:map embark-file-map
               ("x" . consult-file-externally)))
 

@@ -147,8 +147,14 @@ Use the `company-doc-buffer' to insert the results."
      '(:eval
        (list
         (if conda-env-current-name
-            (propertize (concat "(" conda-env-current-name ") ")
-                        'face 'font-lock-builtin-face)
+            (propertize (concat "(py: " conda-env-current-name ") ")
+                        'face 'font-lock-builtin-face
+                        'help-echo "Conda environment"
+                        'mouse-face '(:box 1)
+                        'local-map (make-mode-line-mouse-map
+                                    'mouse-1
+                                    (lambda () (interactive)
+                                      (conda-env-activate))))
           ""))))))
 ;;; (setq conda-env-subdirectory "envs")
 ;;; (unless (getenv "CONDA_DEFAULT_ENV")

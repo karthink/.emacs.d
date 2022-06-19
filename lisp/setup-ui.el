@@ -34,7 +34,7 @@
 ;; Scrolling
 (setq scroll-margin 0
       scroll-preserve-screen-position t
-      next-screen-context-lines 2)
+      next-screen-context-lines 5)
 ;;; mouse
 ;;; (setq mouse-wheel-scroll-amount '(t ((shift) . 2))
 ;;;       mouse-wheel-progressive-speed t)
@@ -57,17 +57,18 @@
 
 ;; The native border "consumes" a pixel of the fringe on righter-most splits,
 ;; `window-divider' does not. Available since Emacs 25.1.
-(setq window-divider-default-places t
-      window-divider-default-bottom-width 2
-      window-divider-default-right-width 2)
-(add-hook 'after-init-hook #'window-divider-mode)
+;; (setq window-divider-default-places t
+;;       window-divider-default-bottom-width 2
+;;       window-divider-default-right-width 2)
+;; (add-hook 'after-init-hook #'window-divider-mode)
 
 ;; No popup dialogs
 (setq use-dialog-box nil)
 
-;; native linux tooltips are ugly
+(tooltip-mode 1)
+;; native linux tooltips are all right
 (when IS-LINUX
-  (setq x-gtk-use-system-tooltips t))
+  (setq x-gtk-use-system-tooltips nil))
 
 ;; Window splitting
 ;; Set horizontal splits as the default
@@ -76,7 +77,7 @@
 ;;       split-height-threshold 80)
 ;; #+end_src
 ;; or favor vertical splits over horizontal ones?
-(setq split-width-threshold 180
+(setq split-width-threshold 150
       split-height-threshold 80)
 
 ;;; ;;;###package pos-tip

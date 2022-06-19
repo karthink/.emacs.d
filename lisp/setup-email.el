@@ -47,7 +47,9 @@
          ("C-x M-m" . notmuch-jump-search)
          :map notmuch-search-mode-map
          ("RET"   . notmuch-tree-from-search-thread)
-         ("M-RET" . notmuch-search-show-thread))
+         ("M-RET" . notmuch-search-show-thread)
+         :map notmuch-tree-mode-map
+         ("M-s u" . my/notmuch-tree-browse-url))
   :hook ((notmuch-message-mode . turn-off-auto-fill)
          (notmuch-mua-send . notmuch-mua-attachment-check))
   :config
@@ -79,6 +81,12 @@
                                     ("unread"    . (:inherit notmuch-search-unread-face
                                                     ;; :background "gray16"
                                                     ))))
+  
+  (defun my/notmuch-tree-browse-url (&optional arg)
+    (interactive "P")
+    (when (window-live-p notmuch-tree-message-window)
+      (with-selected-window notmuch-tree-message-window
+        (my/search-occur-browse-url arg))))
   
   (defun notmuch-search-make-tagger (&rest tags)
     (lambda () (interactive)

@@ -4,7 +4,8 @@
 (use-package emacs
   :bind (("C-h A" . info-apropos)
          ("C-h C-a" . customize-apropos)
-         ("C-h ." . my/describe-symbol-at-point))
+         ("C-h ." . my/describe-symbol-at-point)
+         ("C-h C-f". describe-face))
   :config
   (defun my/describe-symbol-at-point (&optional arg)
   "Get help (documentation) for the symbol at point.
@@ -21,7 +22,8 @@ instead."
       (when help
         (if (not (eq (selected-window) help))
             (select-window help)
-          (select-window (get-mru-window))))))))
+          (select-window (get-mru-window)))))))
+  (unbind-key "C-h C-h"))
 
 (use-package helpful
   :disabled
@@ -125,6 +127,18 @@ argument, query for word to search."
         (if (thing-at-point 'word)
             (dictionary-lookup-definition)
           (dictionary-search-dwim '(4))))))
+  
+  (defvar my/dictionary-log-file
+    (concat user-cache-directory "dictionary-log")
+    "File that tracks looked up words.")
+  (advice-add 'dictionary-search :after
+              (defun my/dictionary-log-update (word &optional dictionary)
+                "Add the looked up WORD to `my/dictionary-log-file'."
+                (when word
+                  (write-region (concat word "\n") nil
+                                my/dictionary-log-file
+                                'append))))
+  
   :bind (("C-M-=" . dictionary-search-dwim)
          :map help-map
          ("=" . dictionary-search-dwim)

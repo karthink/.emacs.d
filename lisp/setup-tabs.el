@@ -97,6 +97,7 @@
 
 (when (version< "28.0" emacs-version)
   (use-package project-tab-groups
+    :disabled
     :straight t
     :defer))
 

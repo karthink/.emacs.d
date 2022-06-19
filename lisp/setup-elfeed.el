@@ -19,16 +19,24 @@
   :straight t
   :commands (elfeed elfeed-update elfeed-search-bookmark-handler)
   :config
-  (setq-default elfeed-db-directory (dir-concat user-cache-directory "elfeed")
+  (setq elfeed-feeds my-elfeed-feeds)
+  ;; (setq elfeed-feeds nil)
+  
+  (setq-default elfeed-db-directory
+                ;; (concat "~/Desktop/elfeed-"
+                ;;         (format-time-string "%Y-%m-%d-%H%M"))
+                (dir-concat user-cache-directory "elfeed")
                 elfeed-save-multiple-enclosures-without-asking t
                 elfeed-search-clipboard-type 'CLIPBOARD
                 elfeed-search-filter "#50 +unread "
-                elfeed-show-entry-switch #'elfeed-display-buffer)
+                ;; elfeed-show-entry-switch #'elfeed-display-buffer
+                )
+  
   ;;----------------------------------------------------------------------
   ;;*** Helper functions
   ;;----------------------------------------------------------------------
 
-
+  
   (defun elfeed-search-show-entry-pre (&optional lines) 
   "Returns a function to scroll forward or back in the Elfeed
   search results, displaying entries without switching to them."
@@ -36,8 +44,12 @@
       (interactive "p")
       (forward-line (* times (or lines 0)))
       (recenter)
-      (call-interactively #'elfeed-search-show-entry)
-      (select-window (previous-window))
+      (let ((elfeed-show-entry-switch #'elfeed-display-buffer))
+        (call-interactively #'elfeed-search-show-entry))
+      (when-let ((win (get-buffer-window "*elfeed-search*")))
+        (select-window win)
+        (setq-local other-window-scroll-buffer
+                    (get-buffer "*elfeed-entry*")))
       (unless elfeed-search-remain-on-entry (forward-line -1))))
 
   (general-def :keymaps 'elfeed-search-mode-map
@@ -48,9 +60,24 @@
                "[[" (elfeed-search-show-entry-pre -1))
   (general-def :keymaps 'elfeed-search-mode-map
                "M-RET" (elfeed-search-show-entry-pre)
-               "w" 'elfeed-search-yank
                "M-n" (elfeed-search-show-entry-pre 1)
                "M-p" (elfeed-search-show-entry-pre -1))
+  
+  (defun my/elfeed-search-quit-window ()
+    (interactive)
+    (if (window-live-p (get-buffer-window "*elfeed-entry*"))
+        (with-current-buffer (get-buffer "*elfeed-entry*")
+          ;; (elfeed-kill-buffer)
+          (kill-buffer-and-window))
+      (call-interactively #'elfeed-search-quit-window)))
+  
+  (defun my/elfeed-show-quit-window ()
+    (interactive)
+    (if (window-live-p (get-buffer-window "*elfeed-search*"))
+        (progn
+          (quit-window)
+          (select-window (get-buffer-window "*elfeed-search*")))
+      (kill-buffer (current-buffer))))
   
   (defun elfeed-display-buffer (buf &optional act)
     (pop-to-buffer buf '((display-buffer-reuse-window display-buffer-in-direction)
@@ -59,7 +86,7 @@
     ;; (set-window-text-height (get-buffer-window) (round (* 0.7 (frame-height))))
     ) 
   
-  (advice-add 'elfeed-kill-buffer :after 'delete-window-if-not-single)
+  ;; (advice-add 'elfeed-kill-buffer :after 'delete-window-if-not-single)
   (advice-add 'elfeed-show-entry :after (defun elfeed-visual-lines-a (_entry)
                                           (visual-line-mode 1)))
 
@@ -78,6 +105,22 @@
       (condition-case-unless-debug nil
           (scroll-down-command arg)
         (error (elfeed-show-prev)))))
+  
+  (defun my/elfeed-search-scroll-up-command (&optional arg)
+    (interactive "^P")
+   (if-let ((show-win (get-buffer-window "*elfeed-entry*"))
+             (_ (window-live-p show-win)))
+       (with-selected-window show-win
+         (elfeed-scroll-up-command arg))
+      (funcall (elfeed-search-show-entry-pre 1) 1)))
+
+  (defun my/elfeed-search-scroll-down-command (&optional arg)
+    (interactive "^P")
+   (if-let ((show-win (get-buffer-window "*elfeed-entry*"))
+             (_ (window-live-p show-win)))
+       (with-selected-window show-win
+         (elfeed-scroll-down-command arg))
+      (funcall (elfeed-search-show-entry-pre -1) 1)))
 
   (defun elfeed-search-tag-as (mytag)
     "Returns a function that tags an elfeed entry or selection as
@@ -112,11 +155,9 @@ MYTAG"
     "d"     (elfeed-show-tag-as 'junk))
 
   (bind-key "l" (elfeed-show-tag-as 'later)  elfeed-show-mode-map)
-  (bind-key "u" (elfeed-show-tag-as 'unread) elfeed-show-mode-map)
+  (bind-key "U" (elfeed-show-tag-as 'unread) elfeed-show-mode-map)
   (bind-key "a" (elfeed-show-tag-as 'listen) elfeed-show-mode-map)
   
-  (setq elfeed-feeds my-elfeed-feeds)
-
   (defun elfeed-show-eww-open (&optional use-generic-p)
     "open with eww"
     (interactive "P")
@@ -210,7 +251,12 @@ USE-SINGLE-P) with mpv."
                             (string-match-p "\\`[A-Z\\.\\?\\!\\':,’\\-]*\\'"
                                             word))
                        (capitalize word))
-                      (t word)))
+                      (t (replace-regexp-in-string
+                          (rx (group punct) (group (any "T" "M" "S" "D")))
+                          (lambda (m)
+                            (concat (match-string 1 m)
+                                    (downcase (match-string 2 m))))
+                          word))))
                    arr " "))))
 
   (defun my/elfeed-search-by-day (dir)
@@ -323,9 +369,18 @@ USE-SINGLE-P) with mpv."
             "W" 'elfeed-search-eww-open
             "w" 'elfeed-show-yank
             "B" 'elfeed-show-eww-open
-            "x" 'elfeed-search-browse-url)
+            "x" 'elfeed-search-browse-url
+            "D" 'elfeed-show-save-enclosure
+            "d" 'my/scroll-up-half
+            "u" 'my/scroll-down-half
+            [remap elfeed-kill-buffer] 'my/elfeed-show-quit-window)
   (:keymaps 'elfeed-search-mode-map
+            [remap elfeed-search-quit-window] 'my/elfeed-search-quit-window
+            "w" 'elfeed-search-yank
             "C-<tab>" 'my/elfeed-quick-switch-filter
+            "SPC" 'my/elfeed-search-scroll-up-command
+            "DEL" 'my/elfeed-search-scroll-down-command
+            "S-SPC" 'my/elfeed-search-scroll-down-command
             "B" 'elfeed-search-eww-open
             "W" 'elfeed-search-eww-open
             "x" 'elfeed-search-browse-url))
@@ -405,6 +460,54 @@ USE-SINGLE-P) with mpv."
                 (entry (elfeed-db-get-entry (cons url title))))
       (elfeed-show-entry entry))))
 
+;; ** ELFEED-TUBE
+(use-package aio :straight t :defer)
+(use-package mpv :straight t :defer)
+
+(use-package elfeed-tube
+  :load-path "plugins/elfeed-tube"
+  :init (load-library "elfeed-tube-autoloads")
+  :after elfeed
+  :demand
+  :config
+  (setq elfeed-tube-auto-save-p nil
+        elfeed-tube-auto-fetch-p t)
+  (setq elfeed-tube-save-indicator t)
+  (elfeed-tube-setup)
+  (advice-add 'elfeed-show-entry :after
+              (defun my/elfeed-show-settings-a (&rest _)
+                (dolist (f '(message-header-name
+                             message-header-subject
+                             elfeed-tube-chapter-face))
+                  (face-remap-add-relative
+                   f :height 1.1))
+                (setq-local line-spacing 0.2)
+                (when (require 'visual-fill-column nil t)
+                  (setq-local visual-fill-column-center-text t
+                              visual-fill-column-width (1+ shr-width))
+                  (visual-fill-column-mode 1))
+                (setq-local
+                 imenu-prev-index-position-function #'elfeed-tube-prev-heading
+                 imenu-extract-index-name-function #'elfeed-tube--line-at-point)))
+  
+  (advice-add 'elfeed-tube-next-heading :after
+              (defun my/elfeed-jump-recenter (&rest _)
+                (recenter)))
+  
+  :bind (:map elfeed-show-mode-map
+         ("F" . elfeed-tube-fetch)
+         ([remap save-buffer] . elfeed-tube-save)
+         ("C-c C-f" . elfeed-tube-mpv-follow-mode)
+         ("C-c C-w" . elfeed-tube-mpv-where)
+         ("C-c C-n" . elfeed-tube-next-heading)
+         ("C-c C-p" . elfeed-tube-prev-heading)
+         :map elfeed-search-mode-map
+         ("F" . elfeed-tube-fetch)
+         ([remap save-buffer] . elfeed-tube-save)))
+
+(use-package elfeed-tube-mpv
+    :load-path "plugins/elfeed-tube"
+    :after elfeed-tube)
 
 ;; ** +AUTOTAGGING SETUP+
 

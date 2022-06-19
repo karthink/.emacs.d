@@ -314,9 +314,10 @@
           (set-transient-map
            (let ((map (make-sparse-keymap)))
              (set-keymap-parent map keymap)
-             (define-key map (kbd "C-h") #'my/which-key-repeat-mode-dispatch)
+             (define-key map (kbd "<f1>") #'my/which-key-repeat-mode-dispatch)
              map)))))
     (advice-add 'repeat-post-hook :after #'my/which-key-repeat-mode-binding)))
+
 
 
 (provide 'setup-keybinds)

@@ -95,7 +95,7 @@ Filenames are always matched by eshell."
   :config
   (defun my/pcmpl-extras ()
     (dolist (cmd '("fd" "rg" "pacman" "systemctl"
-                   "aura"))
+                   "aura" "stow" "rsync"))
       (defalias
         (intern (concat "pcomplete/" cmd))
         'pcmpl-args-pcomplete-on-man)))
@@ -534,6 +534,7 @@ send a notification when the process has exited."
             "SPC"    'comint-magic-space)
   :config
   ;; Arrange for Emacs to notice password prompts and turn off echoing for them, as follows:
+  (setq read-process-output-max (* 1024 64))
   (add-hook 'comint-output-filter-functions
             'comint-watch-for-password-prompt)
 

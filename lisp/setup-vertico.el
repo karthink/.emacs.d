@@ -26,7 +26,7 @@
               ("C-c C-o" . embark-export)
               ("C-l"     . embark-export))
   :config
-  (setq vertico-count 15
+  (setq vertico-count 10
         vertico-cycle t
         vertico-resize t)
   (advice-add #'tmm-add-prompt :after #'minibuffer-hide-completions))
@@ -51,6 +51,7 @@
            (reftex-label reverse)
            (citar-reference reverse)
            (xref-location reverse)
+           (url reverse)
            (t unobtrusive)))
    (setq vertico-multiform-commands
          '((load-theme my/vertico-grid-mode reverse)

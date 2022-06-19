@@ -1,5 +1,9 @@
 ;;;; Org mode
 
+;;;----------------------------------------------------------------
+;; ** ORG BEHAVIOR
+;;;----------------------------------------------------------------
+;; Org settings to do with its default behavior
 (use-package org
   :straight (:type built-in)
   :bind (("\C-cl" . org-store-link)
@@ -11,49 +15,20 @@
          ("C-c C-x +" . my/org-strike-through-heading)
          ("C-,"   . nil)
          ("C-'"   . nil)
+         ("C-c C-M-l" . org-toggle-link-display)
          ("C-S-<right>" . nil)
          ("C-S-<left>" . nil))
 
-  :hook ((org-mode . org-toggle-pretty-entities)
-         (org-mode . turn-on-org-cdlatex)
-         (org-mode . visual-line-mode)
-         (org-cdlatex-mode . my/org-cdlatex-texmathp-fix)
-         (org-mode . er/add-latex-in-org-mode-expansions)
-         (org-mode . my/org-prettify-symbols))
-  ;; :custom-face 
-  ;; (org-level-1 ((t (:height 1.2 :inherit (outline-1 variable-pitch)))))
-  ;; (org-level-2 ((t (:height 1.1 :inherit (outline-2 variable-pitch)))))
-  ;; (org-document-title ((t (:height 1.5))))
-  :init
-  (add-hook 'org-load-hook
-            '(lambda nil
-               (define-key org-mode-map (kbd "C-c C-S-l") 'org-toggle-link-display)
-               ;; (define-key org-mode-map (kbd "<C-tab>") nil)
-               ;; (define-key org-mode-map (kbd "<C-S-tab>") (lambda () (other-window -1)))
-               ;; Org-cdlatex options
-               (define-key org-cdlatex-mode-map (kbd "$") 'cdlatex-dollar)
-               ))
-  ;; Pretty symbols
-  ;; (add-hook 'org-mode-hook 'org-toggle-pretty-entities)
-  ;; Org LaTeX options
-  ;; (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
-  ;; Enable longline-truncation in org-mode buffers
-  ;; (add-hook 'org-mode-hook 'toggle-truncate-lines)
-
+  :hook ((org-mode . turn-on-org-cdlatex)
+         (org-cdlatex-mode . my/org-cdlatex-settings)
+         (org-mode . er/add-latex-in-org-mode-expansions))
+  
   :config
   ;; General preferences
   (setq-default org-adapt-indentation nil 
                 org-cycle-include-plain-lists t 
-                org-fontify-done-headline t 
-                org-ellipsis " ▼ "
-                org-fontify-quote-and-verse-blocks t 
-                org-fontify-whole-heading-line t 
-                org-footnote-auto-label 'plain 
-                org-hidden-keywords nil 
-                org-hide-emphasis-markers nil 
-                org-hide-leading-stars t 
+                org-footnote-auto-label 'confirm
                 org-image-actual-width 400 
-                org-pretty-entities-include-sub-superscripts t 
                 ;; org-refile-targets '((nil :maxlevel . 2) (org-agenda-files :maxlevel . 3)) 
                 org-refile-targets '((nil :level . 1) (org-agenda-files :todo . "PROJECT"))
                 org-refile-target-verify-function nil
@@ -61,13 +36,9 @@
                 org-refile-use-cache t
                 org-refile-allow-creating-parent-nodes t
                 org-outline-path-complete-in-steps nil
-                org-startup-folded t 
-                org-startup-indented t 
-                org-startup-with-inline-images nil 
                 org-use-tag-inheritance nil
-                org-tags-column -80
+                org-tags-column -67
                 org-use-sub-superscripts t
-                org-pretty-entities-include-sub-superscripts t
                 org-special-ctrl-a/e t
                 org-special-ctrl-k t
                 org-log-done 'time
@@ -76,7 +47,6 @@
                 org-speed-commands-user '(("z" . org-add-note)
                                           ("4" . org-tree-to-indirect-buffer)
                                           ("S" . org-tree-to-indirect-buffer))
-                org-highlight-latex-and-related '(native)
                 org-imenu-depth 7
                 org-id-link-to-org-use-id 'create-if-interactive
                 org-extend-today-until 3
@@ -84,82 +54,27 @@
                 org-default-notes-file "~/org/do.org"
                 org-M-RET-may-split-line '((headline) (default . t))
                 org-fast-tag-selection-single-key 'expert
-                org-return-follows-link t
-                ;; org-eldoc-breadcrumb-separator " → " 
-                ;; org-hide-leading-stars-before-indent-mode t 
                 ;; org-indent-indentation-per-level 2 
-                ;; org-indent-mode-turns-on-hiding-stars t 
-                ;; org-list-description-max-indent 4 
-                ;; org-pretty-entities nil 
-                ;; org-priority-faces '((?a . error) (?b . warning) (?c . success)) 
-                ;; org-entities-user '(("flat" "\\flat" nil "" "" "266D" "♭") ("sharp" "\\sharp" nil "" "" "266F" "♯")) 
-                ;; org-todo-keywords '((sequence "TODO(t)" "|" "DONE(d)") (sequence "[ ](T)" "[-](p)" "[?](m)" "|" "[X](D)") (sequence "NEXT(n)" "WAITING(w)" "LATER(l)" "|" "CANCELLED(c)")) 
-                ;; org-todo-keyword-faces '(("[-]" :inherit (font-lock-constant-face bold)) ("[?]" :inherit (warning bold)) ("WAITING" :inherit bold) ("LATER" :inherit (warning bold))) 
-                ;; org-use-sub-superscripts '{}
-                )
+                org-return-follows-link t)
   
-  (font-lock-add-keywords 'org-mode
-                          '(("\\(\\(?:\\\\\\(?:label\\|ref\\)\\)\\){\\(.+?\\)}"
-                             (1 font-lock-keyword-face)
-                             (2 font-lock-constant-face))))
-  (defun save-org-mode-files ()
-    (dolist (buf (buffer-list))
-      (with-current-buffer buf
-        (when (eq major-mode 'org-mode)
-          (if (and (buffer-modified-p) (buffer-file-name))
-              (save-buffer))))))
+  ;; (defun save-org-mode-files ()
+  ;;   (dolist (buf (buffer-list))
+  ;;     (with-current-buffer buf
+  ;;       (when (eq major-mode 'org-mode)
+  ;;         (if (and (buffer-modified-p) (buffer-file-name))
+  ;;             (save-buffer))))))
 
-  (run-with-idle-timer 120 t 'save-org-mode-files)
-
-  (setq org-todo-keyword-faces
-        '(;; ("TODO"    :foreground "#6e90c8" :weight bold)
-          ("WAITING" :foreground "red" :weight bold)
-          ("MAYBE"   :foreground "#6e8996" :weight bold)
-          ("PROJECT" :foreground "#088e8e" :weight bold)))
+  ;; (run-with-idle-timer 120 t 'save-org-mode-files)
 
   ;; My defaults
   (setq org-file-apps '((auto-mode . emacs)
                         ("\\.mm\\'" . default)
                         ("\\.x?html?\\'" . default)
-                        ("\\.pdf\\'" . "zathura %s"))
-        ;; Larger equations
-        org-format-latex-options
-        (progn (plist-put org-format-latex-options :background 'default)
-               (plist-put org-format-latex-options :scale 1.75)))
+                        ("\\.pdf\\'" . "zathura %s")))
 
   ;; Make org use `display-buffer' like every other Emacs citizen.
   (advice-add #'org-switch-to-buffer-other-window :override #'switch-to-buffer-other-window)
 
-  (defun my/org-prettify-symbols ()
-    (setq prettify-symbols-alist
-          (mapcan (lambda (x) (list x (cons (upcase (car x)) (cdr x))))
-                  '(;; ("#+begin_src" . ?)
-                    (":properties:" . "")
-                    ;; ("#+end_src" . ?)
-                    ("#+begin_src" . ?)
-                    ;; ("#+begin_src" . ?)
-                    ;; ("#+end_src" . ?)
-                    ;; ("#+begin_src" . "")
-                    ("#+end_src" . "―")
-                    ("#+begin_example" . ?)
-                    ("#+end_example" . ?)
-                    ("scheduled:" . ?)
-                    ("deadline:" . ?)
-                    ;; ("#+header:" . ?)
-                    ;; ("#+name:" . ?﮸)
-                    ;; ("#+results:" . ?)
-                    ;; ("#+call:" . ?)
-                    ;; (":properties:" . ?)
-                    ;; (":logbook:" . ?)
-                    (":end:" . "―")
-                    ("#+attr_latex:"    . "🄛")
-                    ("#+attr_html:"     . "🄗")
-                    ("#+attr_org:"      . "⒪")
-                    ("#+begin_quote:"   . "❝")
-                    ("#+end_quote:"     . "❞"))))
-    (prettify-symbols-mode 1))
-  
-;;;###autoload
   (defun er/add-latex-in-org-mode-expansions ()
     ;; Make Emacs recognize \ as an escape character in org
     (modify-syntax-entry ?\\ "\\" org-mode-syntax-table)
@@ -176,7 +91,6 @@
                      er/mark-latex-outside-delimiters
                      er/mark-LaTeX-math)))))
   
-;;;###autoload
   (defun org-cdlatex-pbb (&rest _arg)
     "Execute `cdlatex-pbb' in LaTeX fragments.
   Revert to the normal definition outside of these fragments."
@@ -190,47 +104,6 @@
   (define-key org-cdlatex-mode-map (kbd "[") #'org-cdlatex-pbb)
   (define-key org-cdlatex-mode-map (kbd "{") #'org-cdlatex-pbb)
 
-  ;; `org-pretty-entities-mode' does not work with `org-cdlatex' when
-  ;; entering sub/superscripts. The following modification to the
-  ;; function `org-raise-scripts' fixes the problem.
-;;;###autoload
-  (defun org-raise-scripts (limit)
-    "Add raise properties to sub/superscripts."
-    (when (and org-pretty-entities org-pretty-entities-include-sub-superscripts
-               (re-search-forward
-                (if (eq org-use-sub-superscripts t)
-                    org-match-substring-regexp
-                  org-match-substring-with-braces-regexp)
-                limit t))
-      (let* ((pos (point)) table-p comment-p
-             (mpos (match-beginning 3))
-             (emph-p (get-text-property mpos 'org-emphasis))
-             (link-p (get-text-property mpos 'mouse-face))
-             (keyw-p (eq 'org-special-keyword (get-text-property mpos 'face))))
-        (goto-char (point-at-bol))
-        (setq table-p (looking-at-p org-table-dataline-regexp)
-              comment-p (looking-at-p "^[ \t]*#[ +]"))
-        (goto-char pos)
-        ;; Handle a_b^c
-        (when (member (char-after) '(?_ ?^)) (goto-char (1- pos)))
-        (unless (or comment-p emph-p link-p keyw-p)
-          (put-text-property (match-beginning 3) (match-end 0)
-                             'display
-                             (if (equal (char-after (match-beginning 2)) ?^)
-                                 (nth (if table-p 3 1) org-script-display)
-                               (nth (if table-p 2 0) org-script-display)))
-          (add-text-properties (match-beginning 2) (match-end 2)
-                               (list 'invisible t))
-          ;;;; Do NOT hide the {}'s. This is what causes org-cdlatex-tab to fail.
-          ;; (when (and (eq (char-after (match-beginning 3)) ?{)
-          ;; 	   (eq (char-before (match-end 3)) ?}))
-          ;;   (add-text-properties (match-beginning 3) (1+ (match-beginning 3))
-          ;; 		       (list 'invisible t))
-          ;;   (add-text-properties (1- (match-end 3)) (match-end 3)
-          ;; 		       (list 'invisible t)))
-          )
-        t)))
-
   (defun my/org-strike-through-heading (&optional arg)
     "Strike through heading text of current Org item."
     (interactive "P")
@@ -243,18 +116,18 @@
           (insert "+")
           (org-end-of-line)
           (insert "+")))))
-;; (add-hook 'org-mode-hook '(lambda ()
-;;			   (define-key org-mode-map (kbd "C-;") 'org-complete))
 
   (advice-add 'org-show-set-visibility
               :after (defun my/org-set-visibility-local-tree (detail)
                        "Expand local tree after setting visibility."
                        (when (eq detail 'local)
                          (org-ctrl-c-tab) (org-show-entry))))
+  
   (add-to-list 'org-structure-template-alist '("ma" . "src matlab"))
   (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
 
-  (defun my/org-cdlatex-texmathp-fix ()
+  (defun my/org-cdlatex-settings ()
+    (define-key org-cdlatex-mode-map (kbd "$") 'cdlatex-dollar)
     (ad-unadvise #'texmathp)
     (defadvice texmathp (around org-math-always-on activate)
       "Always return t in Org buffers.
@@ -334,7 +207,64 @@ an embedded LaTeX fragment, let `texmathp' do its job.
 	  (message "Latex numbering enabled"))
       (advice-remove 'org-create-formula-image #'my/org-renumber-environment)
       (put 'my/org-renumber-environment 'enabled nil)
-      (message "Latex numbering disabled."))))
+      (message "Latex numbering disabled.")))
+
+  ;; From the Org manual
+  (defun org-summary-todo (n-done n-not-done)
+       "Switch entry to DONE when all subentries are done, to TODO otherwise."
+       (let (org-log-done org-log-states)   ; turn off logging
+         (org-todo (if (= n-not-done 0) "DONE" "TODO"))))
+
+  (add-hook 'org-after-todo-statistics-hook #'org-summary-todo))
+
+;;;----------------------------------------------------------------
+;; ** ORG-APPEARANCE
+;;;----------------------------------------------------------------
+
+;; Org settings to do with its default appearance
+(use-package org
+  :straight (:type built-in)
+  :hook ((org-mode . org-toggle-pretty-entities)
+         (org-mode . visual-line-mode))
+  :config
+  (setq-default
+   org-fontify-done-headline t
+   org-ellipsis " ▼ "
+   org-fontify-quote-and-verse-blocks t
+   org-fontify-whole-heading-line t
+   org-hidden-keywords nil
+   org-hide-emphasis-markers nil
+   org-hide-leading-stars nil
+   org-startup-folded t
+   org-startup-indented nil
+   org-startup-with-inline-images nil
+   org-pretty-entities-include-sub-superscripts t
+   org-highlight-latex-and-related '(native)
+   org-indent-mode-turns-on-hiding-stars nil
+   org-pretty-entities nil
+   org-pretty-entities-include-sub-superscripts t
+   ;; org-use-sub-superscripts '{}
+   ;; org-priority-faces '((?a . error) (?b . warning) (?c . success))
+   
+  ;; Display preferences for latex previews
+  ;; Larger equations
+   org-format-latex-options
+   (progn (plist-put org-format-latex-options :background 'default)
+          (plist-put org-format-latex-options :scale 1.75)))
+  
+  ;; Pretty symbols
+  ;; (add-hook 'org-mode-hook 'org-toggle-pretty-entities)
+  ;; Org LaTeX options
+  ;; (add-hook 'org-mode-hook 'turn-on-org-cdlatex)
+  ;; Enable longline-truncation in org-mode buffers
+  ;; (add-hook 'org-mode-hook 'toggle-truncate-lines)
+
+  ;; Keyword faces for reftex labels and references in Org
+  (font-lock-add-keywords
+   'org-mode
+   '(("\\(\\(?:\\\\\\(?:label\\|ref\\)\\)\\){\\(.+?\\)}"
+      (1 font-lock-keyword-face)
+      (2 font-lock-constant-face)))))
 
 (use-package org-appear
   :straight t
@@ -344,20 +274,79 @@ an embedded LaTeX fragment, let `texmathp' do its job.
    (setq org-appear-autoemphasis t
         org-appear-autosubmarkers t))
 
-(use-package consult-reftex
+;; TDOO Disabled while I test org-modern
+(use-package org-bullets
   :disabled
-  :after (org latex reftex)
-  :bind (:map org-mode-map
-         ("C-c )" . 'consult-reftex-insert-reference)))
+  :straight t
+  :after org
+  :hook (org-mode . org-bullets-mode))
 
-;; ** ORG-SRC
+;; TDOO Disabled while I test org-modern
+;; Prettified symbols in org
+(use-package org
+  :straight (:type built-in)
+  :disabled
+  :hook (org-mode . my/org-prettify-symbols)
+  :config
+  (setq org-todo-keyword-faces
+        '(;; ("TODO"    :foreground "#6e90c8" :weight bold)
+          ("WAITING" :foreground "red" :weight bold)
+          ("MAYBE"   :foreground "#6e8996" :weight bold)
+          ("PROJECT" :foreground "#088e8e" :weight bold)))
+
+  (defun my/org-prettify-symbols ()
+    (setq prettify-symbols-alist
+          (mapcan (lambda (x) (list x (cons (upcase (car x)) (cdr x))))
+                  '(;; ("#+begin_src" . ?)
+                    (":properties:" . "")
+                    ;; ("#+end_src" . ?)
+                    ("#+begin_src" . ?)
+                    ;; ("#+begin_src" . ?)
+                    ;; ("#+end_src" . ?)
+                    ;; ("#+begin_src" . "")
+                    ("#+end_src" . "―")
+                    ("#+begin_example" . ?)
+                    ("#+end_example" . ?)
+                    ("scheduled:" . ?)
+                    ("deadline:" . ?)
+                    ;; ("#+header:" . ?)
+                    ;; ("#+name:" . ?﮸)
+                    ;; ("#+results:" . ?)
+                    ;; ("#+call:" . ?)
+                    ;; (":properties:" . ?)
+                    ;; (":logbook:" . ?)
+                    (":end:" . "―")
+                    ("#+attr_latex:"    . "🄛")
+                    ("#+attr_html:"     . "🄗")
+                    ("#+attr_org:"      . "⒪")
+                    ("#+begin_quote:"   . "❝")
+                    ("#+end_quote:"     . "❞"))))
+    (prettify-symbols-mode 1)))
+
+(use-package org-modern
+  :straight (:host github
+             :repo "minad/org-modern")
+  :after org
+  :config
+  (setq org-modern-todo nil
+        org-modern-hide-stars 'leading))
+
+;; *** Modify latex previews to respect the theme
+(use-package themed-ltximg
+  :after org)
+
+;;;----------------------------------------------------------------------
+;; ** ORG FEATURES
+;;;----------------------------------------------------------------------
+
+;; *** ORG-SRC
 (use-package org-src
   :after org
   :config
   (setq-default
    org-src-tab-acts-natively t))
 
-;; ** ORG-CLOCK
+;; *** ORG-CLOCK
 (use-package org-clock
   :defer
   :after org
@@ -366,7 +355,7 @@ an embedded LaTeX fragment, let `texmathp' do its job.
                 org-clock-out-remove-zero-time-clocks t
                 org-clock-mode-line-total 'today))
 
-;; ** ORG-HABIT
+;; *** ORG-HABIT
 (use-package org-habit
   :after org-agenda
   :config
@@ -406,9 +395,7 @@ has no effect."
 
   (advice-add #'org-agenda-finalize :before #'my/org-agenda-mark-habits))
 
-
-;; ** ORG-AGENDA
-
+;; *** ORG-AGENDA
 (use-package org-agenda
   :after org
   :commands org-agenda
@@ -589,7 +576,7 @@ has no effect."
                   ((org-agenda-overriding-header "\n💤 On Hold\n")
                    (org-agenda-block-separator nil))))))))
 
-;; ** ORG-CAPTURE
+;; *** ORG-CAPTURE
 (use-package org-capture
   :after org
   :defer
@@ -668,7 +655,7 @@ has no effect."
     )
   )
 
-;; ORG-CRYPT
+;; *** ORG-CRYPT
 (use-package org-crypt
   :hook (org-mode . my/org-encrypt-entries)
   :config
@@ -678,7 +665,7 @@ has no effect."
               nil t))
   (setq org-crypt-key user-full-name))
 
-;; ORG-EXPORT (OX)
+;; *** ORG-EXPORT (OX)
 (use-package ox
   :after org
   :commands org-export-dispatch
@@ -749,14 +736,34 @@ parent."
   
   )
 
-(use-package valign
-  :disabled
-  :straight t
-  :hook (org-mode . valign-mode)
-  :after org)
-
-(use-package themed-ltximg
-  :after org)
+;; *** ORG-CITE
+(use-package org
+  :defer
+  :config
+  (use-package oc
+    :after org
+    :when (version<= "9.5" org-version)
+    :commands org-cite-insert
+    :config
+    (use-package ox-html :defer :config
+      (use-package oc-csl))
+    (use-package ox-latex :defer :config
+      (use-package oc-biblatex))
+    (when-let*
+        ((dir "~/.local/share/Zotero/styles/")
+         (_ (file-directory-p dir)))
+      (setq org-cite-csl-styles-dir dir))
+    (setq org-cite-export-processors
+          '((latex biblatex)
+            (html csl)
+            (t basic)))
+    (use-package citar
+      :config
+      (setq
+       org-cite-insert-processor 'citar
+       org-cite-follow-processor 'citar
+       org-cite-activate-processor 'citar
+       org-cite-global-bibliography citar-bibliography))))
 
 ;;;----------------------------------------------------------------------
 ;; ** ORG-DOWNLOAD
@@ -811,14 +818,14 @@ parent."
   (org-babel-do-load-languages
    'org-babel-load-languages '((emacs-lisp . t)
                                (matlab . t)
-                               (octave . t)
+                               (octave . nil)
                                (python . t)
-                               (R . t)
+                               (R . nil)
                                (shell . t)
-                               (scheme . t)
-                               (ditaa . t)
-                               (julia . t)
-                               (jupyter . t)))
+                               (scheme . nil)
+                               (ditaa . nil)
+                               (julia . nil)
+                               (jupyter . nil)))
   (setq org-ditaa-jar-path "/usr/bin/ditaa")
   (defun my/org-babel-goto-tangle-file ()
     (if-let* ((args (nth 2 (org-babel-get-src-block-info t)))
@@ -829,7 +836,6 @@ parent."
   ;; (add-hook 'org-babel-after-execute-hook (lambda () (when org-inline-image-overlays
   ;;                                                 (org-redisplay-inline-images))))
   (add-hook 'org-open-at-point-functions 'my/org-babel-goto-tangle-file))
-
 
 (use-package org-babel-eval-in-repl
   :disabled
@@ -854,24 +860,6 @@ parent."
   (add-to-list 'ober-org-babel-type-list
                '("scheme" . (eval-in-repl-geiser eir-eval-in-geiser)))
   (setq eir-jump-after-eval nil))
-
-;; ## Usage
-;; (with-eval-after-load "ob"
-;;   (require 'org-babel-eval-in-repl)
-;;   (define-key org-mode-map (kbd "C-<return>") 'ober-eval-in-repl)
-;;   (define-key org-mode-map (kbd "C-c C-c") 'ober-eval-block-in-repl))
-
-;; ## Recommended config (optional):
-;; (with-eval-after-load "eval-in-repl"
-;;   (setq eir-jump-after-eval nil))
-
-;;;----------------------------------------------------------------
-;; ** ORG-BULLETS
-;;;----------------------------------------------------------------
-(use-package org-bullets
-  :straight t
-  :after org
-  :hook (org-mode . org-bullets-mode))
 
 ;;;----------------------------------------------------------------
 ;; ** OX-HUGO
@@ -1013,7 +1001,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
               ("C-c e" . #'+inkscape-figures-edit)))
 
 ;;;----------------------------------------------------------------
-;; ORG-REF
+;; ** ORG-REF
 ;;;----------------------------------------------------------------
 (use-package org-ref
   :disabled
@@ -1033,37 +1021,6 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
         org-ref-default-bibliography reftex-default-bibliography
         org-ref-pdf-directory "~/Documents/research/lit/")
   )
-
-;;;----------------------------------------------------------------
-;; ORG-CITE
-;;;----------------------------------------------------------------
-(use-package org
-  :defer
-  :config
-  (use-package oc
-    :after org
-    :when (version<= "9.5" org-version)
-    :commands org-cite-insert
-    :config
-    (use-package ox-html :defer :config
-      (use-package oc-csl))
-    (use-package ox-latex :defer :config
-      (use-package oc-biblatex))
-    (when-let*
-        ((dir "~/.local/share/Zotero/styles/")
-         (_ (file-directory-p dir)))
-      (setq org-cite-csl-styles-dir dir))
-    (setq org-cite-export-processors
-          '((latex biblatex)
-            (html csl)
-            (t basic)))
-    (use-package citar
-      :config
-      (setq
-       org-cite-insert-processor 'citar
-       org-cite-follow-processor 'citar
-       org-cite-activate-processor 'citar
-       org-cite-global-bibliography citar-bibliography))))
 
 ;;;----------------------------------------------------------------
 ;; ** MY ORG PROJECTS
@@ -1100,7 +1057,9 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
         )
 
   (defun my/org-publish-rsync (project-plist)
-    "Sync output of org project to a remote server using RSYNC. All files and folders except for ORG files will be synced."
+    "Sync output of org project to a remote server using RSYNC.
+
+ All files and folders except for ORG files will be synced."
     (if (executable-find "rsync")
         (let* ((basedir (expand-file-name
                          (file-name-as-directory
@@ -1115,7 +1074,9 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
                        :warning)))
 
   (defun my/org-publish-rsync-cyclostationarity (project-plist)
-    "Sync output of org project to a remote server using RSYNC. All files and folders except for ORG files will be synced."
+    "Sync output of org project to a remote server using RSYNC.
+
+ All files and folders except for ORG files will be synced."
     (if (executable-find "rsync")
         (let* ((basedir (expand-file-name
                          (file-name-as-directory
@@ -1262,7 +1223,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
              (link (format "customize-%s:%s" link-type page))
              (description (format "Customize %s for %s" link-type page)))
         (when (eq page-type type)
-          (org-store-link-props
+          (org-link-store-props
            :type (format "customize-%s" link-type)
            :link link
            :description description)))))
@@ -1323,6 +1284,20 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
         org-xournalpp-export-overwrite? t
         org-xournalpp-path-default "figures/sketch"
         org-xournalpp-image-type 'png))
+
+;;;----------------------------------------------------------------
+;; ** TOC-ORG
+;;;----------------------------------------------------------------
+(use-package toc-org :straight t :defer)
+
+;;;----------------------------------------------------------------
+;; ** Integration for RefTeX
+;;;----------------------------------------------------------------
+(use-package consult-reftex
+  :disabled
+  :after (org latex reftex)
+  :bind (:map org-mode-map
+         ("C-c )" . 'consult-reftex-insert-reference)))
 
 (provide 'setup-org)
 

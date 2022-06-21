@@ -81,7 +81,22 @@
                 (let* ((tab (assq 'current-tab (frame-parameter nil 'tabs)))
                        (tab-name (alist-get 'name tab)))
                   (setf (alist-get 'name tab) (upcase tab-name)
-                        (alist-get 'explicit-name tab) t)))))
+                        (alist-get 'explicit-name tab) t))))
+  
+  ;; Workaround for wrong tab-bar right alignment with unicode chars
+  (advice-add 'tab-bar-format-align-right :override
+              (defun my/tab-bar-fix-align-a ()
+                "Align the rest of tab bar items to the right."
+                (let* ((rest (cdr (memq 'tab-bar-format-align-right
+                                        tab-bar-format)))
+                       (rest (tab-bar-format-list rest))
+                       (rest (mapconcat (lambda (item) (nth 2 item)) rest ""))
+                       (hlen  (length rest))
+                       (hpos (+ hlen (ceiling
+                                      (- (string-bytes rest) hlen) 2)))
+                       (str (propertize " " 'display
+                                        `(space :align-to (- right ,hpos)))))
+                  `((align-right menu-item ,str ignore))))))
 
 ;; Show a list of the tabs in the echo area when switching tabs. Disabled since
 ;; I've taken to showing the tab-bar instead

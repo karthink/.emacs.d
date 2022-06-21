@@ -49,7 +49,9 @@
          ("RET"   . notmuch-tree-from-search-thread)
          ("M-RET" . notmuch-search-show-thread)
          :map notmuch-tree-mode-map
-         ("M-s u" . my/notmuch-tree-browse-url))
+         ("M-s u" . my/notmuch-tree-browse-url)
+         ("<tab>" . my/notmuch-tree-message-push-button)
+         ("S-SPC" . notmuch-tree-scroll-message-window-back))
   :hook ((notmuch-message-mode . turn-off-auto-fill)
          (notmuch-mua-send . notmuch-mua-attachment-check))
   :config
@@ -74,13 +76,12 @@
         '(notmuch-hello-insert-saved-searches
           notmuch-hello-insert-alltags))
 
-  (setq notmuch-search-line-faces '(("flagged"   . (:inherit notmuch-search-flagged-face
-                                                    :foreground "IndianRed"))
-                                    ("ucsb"      . (:foreground "MediumPurple"))
-				    ("important" . (:foreground "CornflowerBlue"))
-                                    ("unread"    . (:inherit notmuch-search-unread-face
-                                                    ;; :background "gray16"
-                                                    ))))
+  (setq notmuch-search-line-faces
+        '(("flagged"   . (:inherit notmuch-search-flagged-face
+                          :foreground "IndianRed"))
+          ("ucsb"      . (:foreground "MediumPurple"))
+	  ("important" . (:foreground "CornflowerBlue"))
+          ("unread"    . (:inherit notmuch-search-unread-face))))
   
   (defun my/notmuch-tree-browse-url (&optional arg)
     (interactive "P")
@@ -131,8 +132,44 @@
   (define-key notmuch-show-mode-map (kbd "d") (notmuch-show-make-tagger "trash" "inbox"))
   (define-key notmuch-tree-mode-map (kbd "d") (notmuch-tree-make-tagger "trash" "inbox"))
 
-  
-  ;;; (define-key notmuch-show-mode-map "`" 'notmuch-show-apply-tag-macro)
+  (defun my/notmuch-tree-message-push-button ()
+    (interactive)
+    (when (window-live-p notmuch-tree-message-window)
+      (with-selected-window notmuch-tree-message-window
+        (let* ((win (selected-window))
+               match shr-buttons ov-buttons all-buttons)
+
+          ;; SHR links
+          (save-excursion
+            (goto-char (window-start))
+            (while (setq match
+                         (text-property-search-forward 'category 'shr t nil))
+              (let ((st (prop-match-beginning match)))
+                (push
+                 `((,st . ,(1+ st)) . ,win)
+                 all-buttons))))
+
+          ;; Collapsed sections
+          (thread-last (overlays-in (window-start) (window-end))
+                       (cl-remove-if-not
+                        (lambda (ov) (overlay-get ov 'button)))
+                       (mapc (lambda (ov)
+                               (let ((st (overlay-start ov)))
+                                 (push 
+                                  `((,st . ,(1+ st)) . ,win)
+                                  all-buttons)))))
+          
+          (when-let ((_ all-buttons) 
+                     (avy-action
+                      (lambda (pt) (if-let* ((b (button-at (1+ pt)))
+                                        (_ (button-type b)))
+                                  (button-activate b)
+                                (goto-char pt)
+                                (shr-browse-url)))))
+            (let ((cursor-type nil))
+              (avy-process all-buttons)))))))
+
+ ;;; (define-key notmuch-show-mode-map "`" 'notmuch-show-apply-tag-macro)
   ;;; (define-key notmuch-search-mode-map "`" 'notmuch-show-apply-tag-macro)
     ;
   ;;; (define-prefix-command notmuch-tagger-map)

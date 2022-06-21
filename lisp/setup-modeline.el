@@ -53,14 +53,6 @@
   :init
   (setq sml/theme nil)
   (sml/setup)
-  (unless (version< emacs-version "28.0")
-    (setq mode-line-misc-info
-          '((which-function-mode
-            (which-func-mode
-             ("" which-func-format " ")))
-           ;; (global-mode-string
-           ;;  ("" global-mode-string))
-            )))
   :config
   (add-to-list 'sml/replacer-regexp-list '("^~/[dD]ocuments/[rR]oam.*/" ":ROAM:")))
 
@@ -181,6 +173,7 @@
 
 (use-package moody
   :disabled
+  :straight t
   :after (modus-themes smart-mode-line)
   :config
   (setq x-underline-at-descent-line t)

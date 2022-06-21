@@ -80,9 +80,11 @@
       (kill-buffer (current-buffer))))
   
   (defun elfeed-display-buffer (buf &optional act)
-    (pop-to-buffer buf '((display-buffer-reuse-window display-buffer-in-direction)
-                         (direction . above)
-                         (window-height . 0.7)))
+    (pop-to-buffer buf `((display-buffer-reuse-window display-buffer-in-direction)
+                         (direction . ,(if (> (window-width) 130)
+                                           'right 'below))
+                         (window-height . 0.72)
+                         (window-width . 0.6)))
     ;; (set-window-text-height (get-buffer-window) (round (* 0.7 (frame-height))))
     ) 
   

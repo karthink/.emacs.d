@@ -37,7 +37,7 @@
                 org-refile-allow-creating-parent-nodes t
                 org-outline-path-complete-in-steps nil
                 org-use-tag-inheritance nil
-                org-tags-column -67
+                org-tags-column 0
                 org-use-sub-superscripts t
                 org-special-ctrl-a/e t
                 org-special-ctrl-k t
@@ -234,16 +234,15 @@ an embedded LaTeX fragment, let `texmathp' do its job.
    org-fontify-whole-heading-line t
    org-hidden-keywords nil
    org-hide-emphasis-markers nil
-   org-hide-leading-stars nil
+   org-hide-leading-stars t
    org-startup-folded t
    org-startup-indented nil
    org-startup-with-inline-images nil
-   org-pretty-entities-include-sub-superscripts t
    org-highlight-latex-and-related '(native)
    org-indent-mode-turns-on-hiding-stars nil
+   org-use-sub-superscripts '{}
    org-pretty-entities nil
    org-pretty-entities-include-sub-superscripts t
-   ;; org-use-sub-superscripts '{}
    ;; org-priority-faces '((?a . error) (?b . warning) (?c . success))
    
   ;; Display preferences for latex previews
@@ -270,7 +269,11 @@ an embedded LaTeX fragment, let `texmathp' do its job.
   :straight t
   :hook (org-mode . org-appear-mode)
   :config
-   (setq org-hide-emphasis-markers t)
+  (defun my/org-appear-markers ()
+    (setq-local
+     org-hide-emphasis-markers
+     (if org-appear-mode t nil)))
+   ;; (setq org-hide-emphasis-markers t)
    (setq org-appear-autoemphasis t
         org-appear-autosubmarkers t))
 
@@ -327,9 +330,14 @@ an embedded LaTeX fragment, let `texmathp' do its job.
   :straight (:host github
              :repo "minad/org-modern")
   :after org
+  :hook (org-modern-mode-hook . my/org-modern-spacing)
   :config
+  (defun my/org-modern-spacing ()
+    (setq-local line-spacing
+                (if org-modern-mode
+                    0.1 0.0)))
   (setq org-modern-todo nil
-        org-modern-hide-stars 'leading))
+        org-modern-hide-stars nil))
 
 ;; *** Modify latex previews to respect the theme
 (use-package themed-ltximg

@@ -13,7 +13,7 @@
          ("M-h" . nil)
          ("C-h" . corfu-show-documentation))
   :config
-  (setq corfu-auto  t
+  (setq corfu-auto  nil
         corfu-cycle t
         corfu-quit-no-match t
         corfu-preselect-first nil

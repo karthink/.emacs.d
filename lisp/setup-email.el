@@ -135,39 +135,7 @@
   (defun my/notmuch-tree-message-push-button ()
     (interactive)
     (when (window-live-p notmuch-tree-message-window)
-      (with-selected-window notmuch-tree-message-window
-        (let* ((win (selected-window))
-               match shr-buttons ov-buttons all-buttons)
-
-          ;; SHR links
-          (save-excursion
-            (goto-char (window-start))
-            (while (setq match
-                         (text-property-search-forward 'category 'shr t nil))
-              (let ((st (prop-match-beginning match)))
-                (push
-                 `((,st . ,(1+ st)) . ,win)
-                 all-buttons))))
-
-          ;; Collapsed sections
-          (thread-last (overlays-in (window-start) (window-end))
-                       (cl-remove-if-not
-                        (lambda (ov) (overlay-get ov 'button)))
-                       (mapc (lambda (ov)
-                               (let ((st (overlay-start ov)))
-                                 (push 
-                                  `((,st . ,(1+ st)) . ,win)
-                                  all-buttons)))))
-          
-          (when-let ((_ all-buttons) 
-                     (avy-action
-                      (lambda (pt) (if-let* ((b (button-at (1+ pt)))
-                                        (_ (button-type b)))
-                                  (button-activate b)
-                                (goto-char pt)
-                                (shr-browse-url)))))
-            (let ((cursor-type nil))
-              (avy-process all-buttons)))))))
+      (my/avy-link-hint notmuch-tree-message-window)))
 
  ;;; (define-key notmuch-show-mode-map "`" 'notmuch-show-apply-tag-macro)
   ;;; (define-key notmuch-search-mode-map "`" 'notmuch-show-apply-tag-macro)

@@ -36,6 +36,28 @@
   ;;*** Helper functions
   ;;----------------------------------------------------------------------
 
+  (defun my/elfeed-search-browse-url (&optional arg)
+    (interactive "P")
+    (when-let ((win
+                (cl-some (lambda (w)
+                           (and (eq
+                                 (buffer-mode (window-buffer w))
+                                 'elfeed-show-mode)
+                                w))
+                         (window-list))))
+      (with-selected-window win
+        (my/search-occur-browse-url arg))))
+
+  (defun my/elfeed-search-push-button ()
+    (interactive)
+    (when-let ((win
+                (cl-some (lambda (w)
+                           (and (eq
+                                 (buffer-mode (window-buffer w))
+                                 'elfeed-show-mode)
+                                w))
+                         (window-list))))
+      (my/avy-link-hint win)))
   
   (defun elfeed-search-show-entry-pre (&optional lines) 
   "Returns a function to scroll forward or back in the Elfeed
@@ -82,7 +104,7 @@
   (defun elfeed-display-buffer (buf &optional act)
     (pop-to-buffer buf `((display-buffer-reuse-window display-buffer-in-direction)
                          (direction . ,(if (> (window-width) 130)
-                                           'right 'below))
+                                           'right 'above))
                          (window-height . 0.72)
                          (window-width . 0.6)))
     ;; (set-window-text-height (get-buffer-window) (round (* 0.7 (frame-height))))
@@ -378,6 +400,8 @@ USE-SINGLE-P) with mpv."
             [remap elfeed-kill-buffer] 'my/elfeed-show-quit-window)
   (:keymaps 'elfeed-search-mode-map
             [remap elfeed-search-quit-window] 'my/elfeed-search-quit-window
+            "<tab>" 'my/elfeed-search-push-button
+            "M-s u" 'my/elfeed-search-browse-url
             "w" 'elfeed-search-yank
             "C-<tab>" 'my/elfeed-quick-switch-filter
             "SPC" 'my/elfeed-search-scroll-up-command

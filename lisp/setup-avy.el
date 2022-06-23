@@ -230,6 +230,50 @@
     (delete-forward-char 1)
     (move-end-of-line 1))
 
+  (defun my/avy-link-hint (&optional win)
+    "Find all visible buttons and links in window WIN and open one with Avy.
+
+The current window is chosen if WIN is not specified." 
+    (with-selected-window (or win
+                              (setq win (selected-window)))
+      (let* (match shr-buttons ov-buttons all-buttons)
+
+        ;; SHR links
+        (save-excursion
+          (goto-char (window-start))
+          (while (and
+                  (<= (point) (window-end))
+                  (setq match
+                        (text-property-search-forward 'category 'shr t nil)))
+            (let ((st (prop-match-beginning match)))
+              (push
+               `((,st . ,(1+ st)) . ,win)
+               all-buttons))))
+
+        ;; Collapsed sections
+        (thread-last (overlays-in (window-start) (window-end))
+                     (mapc (lambda (ov)
+                             (when (or (overlay-get ov 'button)
+                                       (eq (overlay-get ov 'face)
+                                           'link))
+                               (let ((st (overlay-start ov)))
+                                 (push 
+                                  `((,st . ,(1+ st)) . ,win)
+                                  all-buttons))))))
+        
+        (when-let
+            ((_ all-buttons) 
+             (avy-action
+              (lambda (pt) (if-let* ((b (button-at (1+ pt)))
+                                (_ (button-type b)))
+                          (button-activate b)
+                        (goto-char pt)
+                        (if (shr-url-at-point pt)
+                            (shr-browse-url)
+                          (browse-url (thing-at-point 'url)))))))
+          (let ((cursor-type nil))
+            (avy-process all-buttons))))))
+  
   :general
   ("C-'"        '(my/avy-goto-char-this-window :wk "Avy goto char")
    "M-s j"      '(avy-goto-char-2            :wk "Avy goto char 2")

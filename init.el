@@ -28,7 +28,8 @@
   (unless (file-directory-p user-repos-directory)
     (make-directory user-repos-directory t))
   (setq straight-base-dir user-repos-directory)
-  (setq straight-check-for-modifications '(find-when-checking))
+  (setq straight-check-for-modifications '(find-when-checking)
+        straight-vc-git-default-clone-depth 2)
   (load bootstrap-file nil 'nomessage))
 
 ;; ** PACKAGE.EL
@@ -386,7 +387,9 @@
 ;;;######################################################################
 (use-package visual-fill-column
   :straight t
-  :commands visual-fill-column-mode)
+  :commands visual-fill-column-mode
+  :config
+  (setq visual-fill-column-center-text t))
 
 (use-package so-long
   :hook (after-init . global-so-long-mode))
@@ -1803,7 +1806,8 @@ is not visible. Otherwise delegates to regular Emacs next-error."
                                 (call-interactively
                                  #'prettify-symbols-mode))))
       ("vl" "visual lines" visual-line-mode)
-      ("vt" "trunc lines" toggle-truncate-lines)]
+      ("vt" "trunc lines" toggle-truncate-lines)
+      ("vf" "visual fill" visual-fill-column-mode)]
 
      ["Editing"
       ("r" "read only" read-only-mode)
@@ -3089,7 +3093,7 @@ buffer's text scale."
   (cond (IS-LINUX
          (set-fontset-font t 'unicode "Symbola" nil 'prepend)
          (pcase-let ((`(,vp ,fp) (if (equal system-name "x220")
-                                     '(120 130) '(120 125))))
+                                     '(120 130) '(125 130))))
            (custom-set-faces
             `(variable-pitch ((t (:family "Merriweather" :height ,vp
                                   :width semi-expanded))))
@@ -3261,7 +3265,7 @@ buffer's text scale."
   :defer
   :config
   (setq shr-image-animate nil
-        shr-width 76))
+        shr-width 66))
 
 (use-package url
   :defer

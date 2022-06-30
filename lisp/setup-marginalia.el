@@ -12,7 +12,8 @@
   :bind (:map vertico-map
          ("M-]" . marginalia-cycle))
   :config
-  (add-to-list 'marginalia-prompt-categories '("\\burl\\b" . url)))
+  (add-to-list 'marginalia-prompt-categories '("\\burl\\b" . url))
+  (add-to-list 'marginalia-prompt-categories '("\\bHistory\\b" . history)))
 
 (provide 'setup-marginalia)
 ;; setup-marginalia.el ends here

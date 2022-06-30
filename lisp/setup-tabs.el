@@ -116,6 +116,16 @@
     :straight t
     :defer))
 
+;; Save and open tabs as bookmarks
+(use-package tab-bookmark
+  :after tab-bar
+  :straight (:host github :repo "minad/tab-bookmark")
+  :bind (:map tab-prefix-map
+         ("w" . tab-bookmark-save)
+         ("j" . tab-bookmark-open)
+         (">" . tab-bookmark-push)
+         ("<" . tab-bookmark-pop)))
+
 ;;;----------------------------------------------------------------
 ;; *** +EYEBROWSE+
 ;;;----------------------------------------------------------------

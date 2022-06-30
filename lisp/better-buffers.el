@@ -261,6 +261,7 @@ window manager to present the frame in a floating state."
     (with-selected-frame (get-other-frame)
       (switch-to-buffer buf))))
 
+(defvar-local hide-cursor--original nil)
 (define-minor-mode my/hide-cursor-mode
   "Hide or show the cursor.
 

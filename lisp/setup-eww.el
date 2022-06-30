@@ -7,9 +7,15 @@
 
 (use-package eww
   :bind ("M-s W" . eww-search-words)
-  :hook (eww-mode . prot-eww--set-bookmark-handler)
+  :hook (eww-after-render . visual-fill-column-mode)
   :config
-  (setq eww-browse-url-new-window-is-tab nil)
+  (setq eww-browse-url-new-window-is-tab nil))
+
+(use-package eww
+  :when (< emacs-major-version 28)
+  :hook (eww-mode . prot-eww--set-bookmark-handler)
+  :defer
+  :config
   (defcustom prot-eww-bookmark-link t
     "Control the behaviour of bookmarking inside EWW buffers.
 
@@ -67,7 +73,6 @@ type returned by `prot-eww--bookmark-make-record'."
     "Set appropriate `bookmark-make-record-function'.
 Intended for use with `eww-mode-hook'."
     (setq-local bookmark-make-record-function #'prot-eww--bookmark-make-record)))
-
 
 (provide 'setup-eww)
 

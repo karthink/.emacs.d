@@ -108,9 +108,10 @@
       (demo--set-autocomplete-p)
       (demo--set-popper-style)]
      ["Action"
-      ("RET" "Toggle demo-mode" demo-mode)])
-  (defvar my/frame-name nil)
+      ("RET" "Toggle demo-mode" demo-mode)]))
+
 (defvar my/current-themes custom-enabled-themes)
+(defvar my/frame-name nil)
 (define-minor-mode demo-mode ()
     :global t
     :keymap nil
@@ -121,9 +122,7 @@
           ;; Elfeed demo
           (with-eval-after-load 'elfeed-tube
             (setq elfeed-tube-invidious-url "https://vid.puffyan.us"
-                  elfeed-tube-save-to-db-p nil)
-            (elfeed-tube-teardown)
-            (elfeed-tube-setup-no-fetch))
+                  elfeed-tube-save-to-db-p nil))
           
           ;; For pasting
           (kill-new "https://www.youtube.com/c/QuantaScienceChannel")
@@ -212,7 +211,7 @@
         (keycast-mode -1))
 
       ;; Restore frame
-      (set-frame-size (selected-frame) 80 26))))
+      (set-frame-size (selected-frame) 80 26)))
 
 ;; Popper mode
 (use-package popper
@@ -235,7 +234,7 @@
       ('nil (popper-echo-mode 0)
             (popper-mode 0))
       ('user (setq popper-display-control 'user
-                   popper-group-function #'my/popper-group-by-heuristic)
+                   popper-group-function nil)
              (popper-mode 0)
              (popper-mode 1)
              (popper-echo-mode 1)

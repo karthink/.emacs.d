@@ -52,7 +52,7 @@
                 org-extend-today-until 3
                 org-id-locations-file (dir-concat user-cache-directory "org-id-locations")
                 org-default-notes-file "~/org/do.org"
-                org-M-RET-may-split-line '((headline) (default . t))
+                org-M-RET-may-split-line '((headline) (default . nil))
                 org-fast-tag-selection-single-key 'expert
                 ;; org-indent-indentation-per-level 2 
                 org-return-follows-link t)

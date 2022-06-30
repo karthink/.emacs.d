@@ -10,6 +10,7 @@
 (setq-default fill-column 80)
 (setq vc-follow-symlinks t)
 (setq scroll-error-top-bottom t)
+(setq mark-even-if-inactive t)
 
 ;; (and (require 'use-package nil t)
 ;;      (use-package visual-fill-column-mode

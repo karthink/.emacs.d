@@ -5,7 +5,8 @@
   :bind (("C-h A" . info-apropos)
          ("C-h C-a" . customize-apropos)
          ("C-h ." . my/describe-symbol-at-point)
-         ("C-h C-f". describe-face))
+         ("C-h C-f". describe-face)
+         ("C-h C-k" . describe-keymap))
   :config
   (defun my/describe-symbol-at-point (&optional arg)
   "Get help (documentation) for the symbol at point.
@@ -44,6 +45,13 @@ instead."
             "f" '(helpful-callable :wk "describe function")
             "k" '(helpful-key :wk "describe keybind")
             "C" '(helpful-command :wk "describe command")))
+
+(use-package helpful
+  :after (helpful embark)
+  :bind (:map embark-become-help-map
+         ("f" . helpful-callable)
+         ("v" . helpful-variable)
+         ("C" . helpful-command)))
 
 ;;;----------------------------------------------------------------
 ;; *** GOOGLE ANSWERS

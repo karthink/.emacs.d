@@ -29,6 +29,8 @@
                 elfeed-save-multiple-enclosures-without-asking t
                 elfeed-search-clipboard-type 'CLIPBOARD
                 elfeed-search-filter "#50 +unread "
+                elfeed-search-date-format '("%b %d" 6 :left)
+                elfeed-search-title-min-width 30
                 ;; elfeed-show-entry-switch #'elfeed-display-buffer
                 )
   
@@ -36,28 +38,30 @@
   ;;*** Helper functions
   ;;----------------------------------------------------------------------
 
+  (eval-when-compile
+    (defmacro elfeed-with-open-entry (&rest body)
+      "Execute BODY with a visible elfeed entry buffer as current."
+      (declare (indent defun))
+      `(when-let ((win
+                   (or (get-buffer-window "*elfeed-entry*")
+                    (cl-some (lambda (w)
+                               (and (eq
+                                     (buffer-mode (window-buffer w))
+                                     'elfeed-show-mode)
+                                w))
+                     (window-list)))))
+        (with-selected-window win
+         ,@body))))
+  
   (defun my/elfeed-search-browse-url (&optional arg)
     (interactive "P")
-    (when-let ((win
-                (cl-some (lambda (w)
-                           (and (eq
-                                 (buffer-mode (window-buffer w))
-                                 'elfeed-show-mode)
-                                w))
-                         (window-list))))
-      (with-selected-window win
-        (my/search-occur-browse-url arg))))
+    (elfeed-with-open-entry
+     (my/search-occur-browse-url arg)))
 
   (defun my/elfeed-search-push-button ()
     (interactive)
-    (when-let ((win
-                (cl-some (lambda (w)
-                           (and (eq
-                                 (buffer-mode (window-buffer w))
-                                 'elfeed-show-mode)
-                                w))
-                         (window-list))))
-      (my/avy-link-hint win)))
+    (elfeed-with-open-entry
+     (my/avy-link-hint win)))
   
   (defun elfeed-search-show-entry-pre (&optional lines) 
   "Returns a function to scroll forward or back in the Elfeed
@@ -81,23 +85,27 @@
                "]]" (elfeed-search-show-entry-pre 1)
                "[[" (elfeed-search-show-entry-pre -1))
   (general-def :keymaps 'elfeed-search-mode-map
-               "M-RET" (elfeed-search-show-entry-pre)
+               "M-RET" 'elfeed-search-show-entry
+               "RET" (elfeed-search-show-entry-pre)
                "M-n" (elfeed-search-show-entry-pre 1)
                "M-p" (elfeed-search-show-entry-pre -1))
   
+  (defun my/elfeed-search-imenu ()
+    (interactive)
+    (elfeed-with-open-entry
+     (consult-imenu)))
+  
   (defun my/elfeed-search-quit-window ()
     (interactive)
-    (if (window-live-p (get-buffer-window "*elfeed-entry*"))
-        (with-current-buffer (get-buffer "*elfeed-entry*")
-          ;; (elfeed-kill-buffer)
-          (kill-buffer-and-window))
-      (call-interactively #'elfeed-search-quit-window)))
+    (or (elfeed-with-open-entry
+          (kill-buffer-and-window) t)
+        (call-interactively #'elfeed-search-quit-window)))
   
   (defun my/elfeed-show-quit-window ()
     (interactive)
     (if (window-live-p (get-buffer-window "*elfeed-search*"))
         (progn
-          (quit-window)
+          (kill-buffer-and-window)      ;Don't use quit-window for this
           (select-window (get-buffer-window "*elfeed-search*")))
       (kill-buffer (current-buffer))))
   
@@ -310,11 +318,12 @@ USE-SINGLE-P) with mpv."
                        to   this-day))
           (_     (setq from this-day
                        to   next-day)))
-        (setq elfeed-search-filter (concat (replace-regexp-in-string
-                                            "@[^[:space:]]*" ""
-                                            elfeed-search-filter)
-                                           "@"  (elfeed-search-format-date from)
-                                           "--" (elfeed-search-format-date to)))
+        (let ((elfeed-search-date-format '("%Y-%m-%d" 10 :left)))
+          (setq elfeed-search-filter (concat (replace-regexp-in-string
+                                              "@[^[:space:]]*" ""
+                                              elfeed-search-filter)
+                                             "@"  (elfeed-search-format-date from)
+                                             "--" (elfeed-search-format-date to))))
         (elfeed-search-update :force))))
   
   (define-key elfeed-search-mode-map (kbd ".") (my/elfeed-search-by-day 'this))
@@ -400,6 +409,8 @@ USE-SINGLE-P) with mpv."
             [remap elfeed-kill-buffer] 'my/elfeed-show-quit-window)
   (:keymaps 'elfeed-search-mode-map
             [remap elfeed-search-quit-window] 'my/elfeed-search-quit-window
+            "M-i" 'my/elfeed-search-imenu
+            "i" 'my/elfeed-search-imenu
             "<tab>" 'my/elfeed-search-push-button
             "M-s u" 'my/elfeed-search-browse-url
             "w" 'elfeed-search-yank
@@ -501,24 +512,37 @@ USE-SINGLE-P) with mpv."
   (setq elfeed-tube-save-indicator t)
   (elfeed-tube-setup)
   (advice-add 'elfeed-show-entry :after
-              (defun my/elfeed-show-settings-a (&rest _)
-                (dolist (f '(message-header-name
-                             message-header-subject
-                             elfeed-tube-chapter-face))
-                  (face-remap-add-relative
-                   f :height 1.1))
-                (setq-local line-spacing 0.2)
-                (when (require 'visual-fill-column nil t)
-                  (setq-local visual-fill-column-center-text t
-                              visual-fill-column-width (1+ shr-width))
-                  (visual-fill-column-mode 1))
-                (setq-local
-                 imenu-prev-index-position-function #'elfeed-tube-prev-heading
-                 imenu-extract-index-name-function #'elfeed-tube--line-at-point)))
+              (defun my/elfeed-show-settings-a (entry)
+                (with-current-buffer (elfeed-show--buffer-name entry)
+                  (dolist (f '(message-header-name
+                               message-header-subject
+                               elfeed-tube-chapter-face))
+                    (face-remap-add-relative
+                     f :height 1.1))
+                  (setq-local line-spacing 0.2)
+                  (when (require 'visual-fill-column nil t)
+                    (setq-local visual-fill-column-center-text t
+                                visual-fill-column-width (1+ shr-width))
+                    (visual-fill-column-mode 1))
+                  (setq-local
+                   imenu-prev-index-position-function #'elfeed-tube-prev-heading
+                   imenu-extract-index-name-function #'elfeed-tube--line-at-point))))
   
   (advice-add 'elfeed-tube-next-heading :after
               (defun my/elfeed-jump-recenter (&rest _)
                 (recenter)))
+  
+  (use-package embark
+    :defer
+    :config
+    (defun my/embark-tube-fetch (link)
+      (if (string-match-p elfeed-tube-youtube-regexp
+                          link)
+          (with-temp-buffer
+            (fundamental-mode)
+            (elfeed-tube-fetch link))))
+    :bind (:map embark-url-map
+           ("F" . my/embark-tube-fetch)))
   
   :bind (:map elfeed-show-mode-map
          ("F" . elfeed-tube-fetch)

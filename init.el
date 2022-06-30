@@ -28,7 +28,8 @@
   (unless (file-directory-p user-repos-directory)
     (make-directory user-repos-directory t))
   (setq straight-base-dir user-repos-directory)
-  (setq straight-check-for-modifications '(find-when-checking)
+  (setq straight-check-for-modifications '(find-when-checking
+                                           check-on-save)
         straight-vc-git-default-clone-depth 2)
   (load bootstrap-file nil 'nomessage))
 
@@ -389,7 +390,7 @@
   :straight t
   :commands visual-fill-column-mode
   :config
-  (setq visual-fill-column-center-text t))
+  (setq-default visual-fill-column-center-text t))
 
 (use-package so-long
   :hook (after-init . global-so-long-mode))
@@ -485,11 +486,11 @@
 ;; Keep track of recently opened files. Also feeds into the list of recent
 ;; directories used by consult-dir.
 (use-package recentf
-  :defer 2
+  ;; :defer 2
   :config
   (setq recentf-save-file (dir-concat user-cache-directory "recentf")
         recentf-max-saved-items 200
-        recentf-auto-cleanup "8:00pm")
+        recentf-auto-cleanup 300)
   (recentf-mode 1))
 
 ;; ** SAVEHIST
@@ -597,7 +598,7 @@
 
 (use-package window
   :bind (("H-+" . balance-windows-area)
-         ("C-x +" . balance-windows-area)
+         ;; ("C-x +" . balance-windows-area)
          ("C-x q" . my/kill-buffer-and-window))
   :config
   (defun my/kill-buffer-and-window ()
@@ -676,7 +677,7 @@ Also kill this window, tab or frame if necessary."
                   "\\*Shell Command Output\\*"
                   ("\\*Async Shell Command\\*" . hide)
                   "\\*Completions\\*"
-                  ;; "\\*scratch\\*"
+                  ;; "\\*scratch.*\\*$"
                   "[Oo]utput\\*")))
 
   (use-package popper-echo
@@ -1504,6 +1505,17 @@ If region is active, add its contents to the new buffer."
 (load (expand-file-name "lisp/setup-lua" user-emacs-directory))
 
 ;;;################################################################
+;; ** JSON
+(use-package jsonian
+  :straight (:host github :repo "iwahbe/jsonian")
+  :init (add-to-list 'magic-fallback-mode-alist
+                     '("^[{[]$" . jsonian-mode))
+  :after so-long
+  :config (jsonian-no-so-long-mode)
+  :bind (:map jsonian-mode-map
+         ("C-c '" . jsonian-edit-string)
+         ("C-c C-w" . jsonian-path)
+         ("C-M-e" . jsonian-enclosing-item)))
 ;; * PLUGINS
 ;;;################################################################
 
@@ -1851,6 +1863,7 @@ is not visible. Otherwise delegates to regular Emacs next-error."
 ;; ** HYDRAS
 ;;;----------------------------------------------------------------
 (use-package hydra
+  :disabled
   :defer
   :straight t
   :config
@@ -1970,8 +1983,17 @@ _d_: subtree
 ;;;----------------------------------------------------------------
 ;; ** HIGHLIGHTS
 ;;;----------------------------------------------------------------
+;; Testing: Beacon
+(use-package beacon
+  :straight t
+  :bind ("C-x l" . beacon-blink)
+  :defer 4
+  :config
+  (setq beacon-blink-delay 0.1))
+
 ;; Flash lines
 (use-package pulse
+  :disabled
   :custom-face
   (pulse-highlight-start-face ((t (:inherit region))))
   (pulse-highlight-face ((t (:inherit region))))
@@ -2090,8 +2112,7 @@ _d_: subtree
   :defer 10
   :general
   (:keymaps 'help-map
-   "h" 'which-key-show-major-mode
-   "C-k" 'which-key-show-major-mode)
+   "h" 'which-key-show-major-mode)
   :init
   (setq which-key-sort-order #'which-key-description-order 
         ;; which-key-sort-order #'which-key-prefix-then-key-order
@@ -2231,21 +2252,22 @@ _d_: subtree
   (defun my/find-bounds-of-regexps (open close)
     (let ((start (point))
           (parity 0)
-          (open-close (concat "\\(?:" open "\\|" close "\\)")))
+          (open-close (concat "\\(?:" open "\\|" close "\\)"))
+          end)
       (save-excursion
         (while (and (not (= parity -1))
                     (re-search-backward open-close nil t))
           (if (looking-at open)
               (setq parity (1- parity))
             (setq parity (1+ parity))))
-        (push-mark)
+        (setq end (point))
         (goto-char start)
         (while (and (not (= parity 0))
                     (re-search-forward open-close nil t))
           (if (looking-back close)
               (setq parity (1+ parity))
             (setq parity (1- parity))))
-        (when (= parity 0) (cons (mark) (point))))))
+        (when (= parity 0) (cons end (point))))))
 
   (use-package outline
     :hook (outline-minor-mode . er/add-outline-mode-expansions)
@@ -2445,6 +2467,7 @@ for details."
 ;; ** CORFU + CAPE
 ;;;----------------------------------------------------------------
 (load (expand-file-name "lisp/setup-corfu" user-emacs-directory))
+(setq tab-always-indent 'complete)
 
 ;;;----------------------------------------------------------------
 ;; ** YASNIPPET
@@ -2907,8 +2930,8 @@ managers such as DWM, BSPWM refer to this state as 'monocle'."
   :commands (my/olivetti-mode)
   :straight t
   :config
-  (setq olivetti-body-width 0.8
-        olivetti-minimum-body-width 80
+  (setq olivetti-body-width 0.6
+        olivetti-minimum-body-width 72
         olivetti-recall-visual-line-mode-entry-state t)
 
   (define-minor-mode my/olivetti-mode
@@ -3093,7 +3116,7 @@ buffer's text scale."
   (cond (IS-LINUX
          (set-fontset-font t 'unicode "Symbola" nil 'prepend)
          (pcase-let ((`(,vp ,fp) (if (equal system-name "x220")
-                                     '(120 130) '(125 130))))
+                                     '(120 130) '(120 130))))
            (custom-set-faces
             `(variable-pitch ((t (:family "Merriweather" :height ,vp
                                   :width semi-expanded))))
@@ -3153,6 +3176,7 @@ buffer's text scale."
 (use-package modus-themes
   :straight t
   :defer
+  :commands my/modus-themes-tinted
   :init
   (setq modus-themes-org-blocks nil
         modus-themes-org-blocks 'grayscale
@@ -3162,7 +3186,7 @@ buffer's text scale."
         ;; modus-themes-italic-constructs t
         modus-themes-completions 'opinionated
         modus-themes-diffs 'desaturated
-        modus-themes-syntax nil ;'(alt-syntax yellow-comments) ;'faint
+        modus-themes-syntax '(faint) ;'(alt-syntax yellow-comments) ;'faint
         modus-themes-links '(faint neutral-underline)
         modus-themes-prompts '(bold background)
         modus-themes-subtle-line-numbers t
@@ -3183,21 +3207,42 @@ buffer's text scale."
           (3 . (semibold 1.17))
           (4 . (1.14))
           (t . (monochrome))))
-  ;; (setq modus-themes-operandi-color-overrides '((bg-main . "#ededed")))
-  ;; (setq modus-themes-vivendi-color-overrides
-  ;;       '((bg-main . "#100b17")
-  ;;         (bg-dim . "#161129")
-  ;;         (bg-alt . "#181732")
-  ;;         (bg-hl-line . "#191628")
-  ;;         (bg-active . "#282e46")
-  ;;         (bg-inactive . "#1a1e39")
-  ;;         (bg-region . "#393a53")
-  ;;         (bg-header . "#202037")
-  ;;         (bg-tab-bar . "#262b41")
-  ;;         (bg-tab-active . "#120f18")
-  ;;         (bg-tab-inactive . "#3a3a5a")
-  ;;         (fg-unfocused . "#9a9aab")))
-  )
+  
+  :config
+  ;; From the modus themes manual
+  (define-minor-mode my/modus-themes-tinted
+    "Tweak some Modus themes colors."
+    :init-value nil
+    :global t
+    (if my/modus-themes-tinted
+        (setq modus-themes-operandi-color-overrides
+              '((bg-main . "#fefcf4")
+                (bg-dim . "#faf6ef")
+                (bg-alt . "#f7efe5")
+                (bg-hl-line . "#f4f0e3")
+                (bg-active . "#e8dfd1")
+                (bg-inactive . "#f6ece5")
+                (bg-region . "#c6bab1")
+                (bg-header . "#ede3e0")
+                (bg-tab-bar . "#dcd3d3")
+                (bg-tab-active . "#fdf6eb")
+                (bg-tab-inactive . "#c8bab8")
+                (fg-unfocused . "#55556f"))
+              modus-themes-vivendi-color-overrides
+              '((bg-main . "#100b17")
+                (bg-dim . "#161129")
+                (bg-alt . "#181732")
+                (bg-hl-line . "#191628")
+                (bg-active . "#282e46")
+                (bg-inactive . "#1a1e39")
+                (bg-region . "#393a53")
+                (bg-header . "#202037")
+                (bg-tab-bar . "#262b41")
+                (bg-tab-active . "#120f18")
+                (bg-tab-inactive . "#3a3a5a")
+                (fg-unfocused . "#9a9aab")))
+      (setq modus-themes-operandi-color-overrides nil
+            modus-themes-vivendi-color-overrides nil))))
 
 
 ;; ** DOOM THEMES
@@ -3265,7 +3310,10 @@ buffer's text scale."
   :defer
   :config
   (setq shr-image-animate nil
-        shr-width 66))
+        shr-use-colors nil
+        shr-width 72)
+  (use-package shr-heading
+    :hook (eww-mode . shr-heading-setup-imenu)))
 
 (use-package url
   :defer

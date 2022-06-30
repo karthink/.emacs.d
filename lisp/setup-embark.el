@@ -7,30 +7,27 @@
   :after minibuffer
   :hook ((embark-collect-mode . hl-line-mode))
   :bind (("M-s RET"  . embark-act)
-         ("s-o"      . embark-act)
-         ("s-C-o"    . embark-act-noexit)
-         ("H-SPC" . embark-act)
-         ("C-h b" . embark-bindings)
+         ;; ("s-o"      . embark-act)
+         ("H-SPC"    . embark-act)
+         ("C-S-SPC"  . embark-act)
+         ("C-c SPC"  . embark-act)
+         ("C-c RET"  . embark-dwim)
+         ("C-M-<return>"  . embark-dwim)
+         ("C-h b"   . embark-bindings)
          ("C-h C-b" . describe-bindings)
          :map minibuffer-local-completion-map
-         ("s-o"      . embark-act)
-         ("s-C-o"    . embark-act-noexit)
-         ("C-o"      . embark-minimal-act)
-         ("C-M-o"    . embark-minimal-act-noexit)
+         ;; ("s-o"      . embark-act)
          ("C-c C-o"  . embark-export)
          ("M-s o"    . embark-export)
          ("H-SPC"    . embark-act)
          ("C->"      . embark-become)
          ("C-*"      . embark-act-all)
-         :map completion-list-mode-map
-         ("C-o"      . embark-minimal-act)
          :map embark-collect-mode-map
          ("H-SPC" . embark-act)
          ("o"        . embark-act)
          ("O"        . embark-act-noexit)
          ("C-o"      . embark-act)
          ("M-t"      . toggle-truncate-lines)
-         ("M-q"      . embark-collect-toggle-view)
          :map embark-file-map
          ("j"        . my/find-file-dir)
          ("S"        . sudo-find-file)
@@ -47,12 +44,12 @@
          ("4"        . bookmark-jump-other-window)
          ("5"        . bookmark-jump-other-frame)
          :map embark-url-map
-         ("f"        . browse-url-firefox)
+         ("B"        . eww)
          ("m"        . browse-url-umpv)
-         ("C-M-m"      . browse-url-umpv-last)
+         ("C-M-m"    . browse-url-umpv-last)
          ("M"        . browse-url-mpv))
   :config
-  (setq embark-cycle-key (kbd "s-o"))
+  (setq embark-cycle-key (kbd "SPC"))
   (setq embark-quit-after-action t)
   ;; Use Embark instead of `describe-prefix-bindings'
   (setq prefix-help-command #'embark-prefix-help-command)
@@ -60,30 +57,22 @@
   ;; Embark indicators
   (setq embark-indicators '(;; embark-which-key-indicator
                             ;; embark-minimal-indicator
+                            embark-mixed-indicator
                             embark-highlight-indicator
                             embark-isearch-highlight-indicator))
   ;; (add-to-list 'embark-indicators 'embark-mixed-indicator)
-  ;; (setq embark-mixed-indicator-delay 0.5)
+  (setq embark-mixed-indicator-delay 0.8)
+  ;; (setq embark-verbose-indicator-display-action
+  ;;       '(display-buffer-at-bottom
+  ;;         (window-height . (lambda (win) (fit-window-to-buffer
+  ;;                                    win (floor (frame-height) 
+  ;;                                               3))))))
   (setq embark-verbose-indicator-display-action
-        '(display-buffer-at-bottom
-          (window-height . (lambda (win) (fit-window-to-buffer
-                                     win (floor (frame-height) 
-                                                3))))))
+        '(display-buffer-below-selected
+          (window-height . fit-window-to-buffer)))
   (setf (alist-get 'kill-buffer embark-pre-action-hooks) nil)
 
   ;; Utility commands
-  (defun embark-minimal-act (&optional arg)
-    (interactive "P")
-    (let ((embark-indicators
-           '(embark-which-key-indicator
-             embark-highlight-indicator
-             embark-isearch-highlight-indicator)))
-      (embark-act arg)))
-  
-  (defun embark-minimal-act-noexit ()
-    (interactive)
-    (embark-minimal-act 4))
-  
   (defun embark-act-noexit ()
     (interactive)
     (embark-act 4))
@@ -122,6 +111,11 @@
     (define-key embark-bookmark-map (kbd "2") (my/embark-split-action bookmark-jump my/split-window-below))
     (define-key embark-bookmark-map (kbd "3") (my/embark-split-action bookmark-jump my/split-window-right))
     (define-key embark-file-map (kbd "U") '0x0-upload-file)
+    
+    (define-key embark-library-map (kbd "2") (my/embark-split-action find-library my/split-window-below))
+    (define-key embark-library-map (kbd "3") (my/embark-split-action find-library my/split-window-right))
+    (define-key embark-library-map (kbd "o") (my/embark-ace-action find-library))
+    
     (define-key embark-region-map (kbd "U") '0x0-upload-text)
     (define-key embark-buffer-map (kbd "U") '0x0-dwim)
 
@@ -168,13 +162,6 @@
     ;; (cl-pushnew 'revert-buffer embark-allow-edit-actions)
     ;; (cl-pushnew 'rename-file-and-buffer embark-allow-edit-actions)
     
-    (use-package helpful
-      :defer
-      :bind (:map embark-become-help-map
-                  ("f" . helpful-callable)
-                  ("v" . helpful-variable)
-                  ("C" . helpful-command)))
-
     ;; Embark-collect display
     (setf (alist-get "^\\*Embark \\(?:Export\\|Collect\\).*\\*"
                      display-buffer-alist nil nil 'equal)
@@ -222,7 +209,26 @@
     ;; Which-key style indicator
     (use-package which-key
       :after which-key
+      :disabled
+      :bind
+      (:map minibuffer-local-completion-map
+       ("C-o"      . embark-minimal-act)
+       ("C-M-o"    . embark-minimal-act-noexit)
+       :map completion-list-mode-map
+       ("C-o"      . embark-minimal-act))
       :config
+      (defun embark-minimal-act (&optional arg)
+        (interactive "P")
+        (let ((embark-indicators
+               '(embark-which-key-indicator
+                 embark-highlight-indicator
+                 embark-isearch-highlight-indicator)))
+          (embark-act arg)))
+      
+      (defun embark-minimal-act-noexit ()
+        (interactive)
+        (embark-minimal-act 4))
+
       ;; From the embark wiki
       (add-to-list 'embark-indicators #'embark-which-key-indicator)
       (defun embark-which-key-indicator ()

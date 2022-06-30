@@ -3,7 +3,7 @@
 ;; Needed for consult
 (use-package compat :straight t :defer)
 
-;; Consult
+;; Consult built-in options
 (use-package consult
   :straight t
   :hook (minibuffer-setup . consult-completion-enable-in-minibuffer)
@@ -20,66 +20,109 @@
   :config
   (setq consult-narrow-key "<")
   (setq consult-line-numbers-widen t)
-  (setq consult-preview-buffer nil)
-  (setq consult-preview-mark nil)
-  (setq consult-preview-line 'any)
-  (setq consult-preview-outline nil)
   (setq consult-preview-key 'any)
   (consult-customize
    consult-ripgrep consult-git-grep consult-grep 
    consult-bookmark consult--source-buffer consult-recent-file consult-xref
    consult--source-recent-file consult--source-project-recent-file
    consult--source-bookmark consult--source-project-buffer
-   :preview-key (kbd "C-M-m"))
-  (setq consult-project-root-function (lambda () "Return current project root"
-                                        (project-root (project-current))))
-  ;; (setq consult-find-args
-  ;;       "fd --color=never --hidden -t f -t d -t l --follow")
+   :preview-key (kbd "C-M-m")
+   consult-theme (list :debounce 1.0 (kbd "C-M-m")))
+
   (when (executable-find "plocate")
     (setq consult-locate-args "plocate --ignore-case --existing --regexp"))
+  
+  (setq xref-show-xrefs-function #'consult-xref
+        xref-show-definitions-function #'consult-xref)
+  
+  (setq register-preview-delay 1.0
+        register-preview-function #'consult-register-format)
+  (advice-add #'register-preview :override #'consult-register-window)
+  
+  (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
+  
+  (use-package consult-flymake
+    :bind ("M-g f" . consult-flymake)
+    :config
+    (advice-add 'consult-flymake :before
+                #'my/consult-flymake-ensure)
+    (defun my/consult-flymake-ensure ()
+      (interactive)
+      (flymake-mode 1)))
+  
+  (use-package org
+    :defer
+    :bind (:map org-mode-map
+           ("C-c C-j" . consult-org-heading)
+           ("M-s M-j" . consult-org-heading)))
+
+  :bind (("C-x b"   . consult-buffer)
+         ("C-x H-r" . consult-recent-file)
+         ("C-x M-:" . consult-complex-command)
+         ("M-s M-o" . consult-multi-occur)
+         ("M-X" . consult-mode-command)
+         ("C-h C-m" . consult-minor-mode-menu)
+         ("C-c C-j" . consult-outline)
+         ("M-s M-j" . consult-outline)
+         ("M-s M-l" . consult-locate)
+         ("M-s g"   . consult-ripgrep)
+         ("M-s G"   . consult-git-grep)
+         ("C-x C-r" . consult-recent-file)
+         ("<help> a" . consult-apropos)
+         ("s-b" . consult-buffer)
+         ("M-g j" . consult-compile-error)
+         ("M-g g" . consult-goto-line)
+         ;; ("H-b" . consult-buffer)
+         ("M-m" . consult-register-store)
+         ("M-s k l" . consult-focus-lines)
+         ("M-'" . consult-register-load)
+         ("M-y" . consult-yank-pop)
+         ("C-x `" . consult-compile-error)
+         :map ctl-x-r-map
+         ("b" . consult-bookmark)
+         ("x" . consult-register)
+         :map ctl-x-4-map
+         ("b" . consult-buffer-other-window)
+         :map ctl-x-5-map
+         ("b" . consult-buffer-other-frame)
+         :map space-menu-file-map
+         ("l" . consult-locate)
+         :map minibuffer-local-map
+         ("M-r" . consult-history)
+         :map project-prefix-map
+         ("b" . consult-project-buffer)))
+
+;; Consult extra commands and add-ons
+(use-package consult
+  :defer
+  :bind
+  (("M-s l"   . my/consult-ripgrep-or-line)
+   ("M-s f"   . consult-fd)
+   ("M-s i" . consult-imenu-all)
+   ("C-x '" . my/consult-mark)
+   :map tab-prefix-map
+   ("b" . consult-buffer-other-tab)
+   :map isearch-mode-map
+   ("M-s l" . consult-line))
+  :config
+  
+  (use-package orderless
+    :config
+    (defun my/orderless-dollar-dispatcher (pattern _index _total)
+      (when (string-suffix-p "$" pattern)
+        (cons 'orderless-regexp
+              (format "%s[%c-%c]*$"
+                      (substring pattern 0 -1)
+                      consult--tofu-char
+                      (+ consult--tofu-char consult--tofu-range -1)))))
+
+    (add-to-list 'orderless-style-dispatchers 'my/orderless-dollar-dispatcher))
+  
   (defun consult-buffer-other-tab ()
     "Variant of `consult-buffer' which opens in other frame."
     (interactive)
     (let ((consult--buffer-display #'switch-to-buffer-other-tab))
       (consult-buffer)))
-
-  (setq xref-show-xrefs-function #'consult-xref
-        xref-show-definitions-function #'consult-xref)
-  
-  (setq register-preview-delay 0
-        register-preview-function #'consult-register-format)
-  
-  (defvar consult--fd-command nil)
-  (defun consult--fd-builder (input)
-    (unless consult--fd-command
-      (setq consult--fd-command
-            (if (eq 0 (call-process-shell-command "fdfind"))
-                "fdfind"
-              "fd")))
-    (pcase-let* ((`(,arg . ,opts) (consult--command-split input))
-                 (`(,re . ,hl) (funcall consult--regexp-compiler
-                                        arg 'extended)))
-      (when re
-        (list :command (append
-                        (list consult--fd-command
-                              "--color=never" "--full-path"
-                              (consult--join-regexps re 'extended))
-                        opts)
-              :highlight hl))))
-
-  (defun consult-fd (&optional dir initial)
-    (interactive "P")
-    (let* ((prompt-dir (consult--directory-prompt "Fd" dir))
-           (default-directory (cdr prompt-dir)))
-      (find-file (consult--find (car prompt-dir) #'consult--fd-builder initial))))
-  
-  ;; (advice-add #'completing-read-multiple :override #'consult-completing-read-multiple)
-  
-  (defcustom my/consult-ripgrep-or-line-limit 300000
-    "Buffer size threshold for `my/consult-ripgrep-or-line'.
-When the number of characters in a buffer exceeds this threshold,
-`consult-ripgrep' will be used instead of `consult-line'."
-    :type 'integer)
 
   ;; Combine `consult-imenu' and `consult-project-imenu'
   (defun consult-imenu-all (&optional arg)
@@ -89,9 +132,20 @@ When the number of characters in a buffer exceeds this threshold,
     (if arg (consult-imenu-multi) (consult-imenu)))
   
   ;; From https://github.com/minad/consult/wiki
-  (defun my/consult-ripgrep-or-line (&optional initial start)
+  (defcustom my/consult-ripgrep-or-line-limit 300000
+    "Buffer size threshold for `my/consult-ripgrep-or-line'.
+When the number of characters in a buffer exceeds this threshold,
+`consult-ripgrep' will be used instead of `consult-line'."
+    :type 'integer)
+
+  (defun my/consult-mark (&optional arg)
+    (interactive "P")
+    (if arg (consult-global-mark) (consult-mark)))
+  
+  (defun my/consult-ripgrep-or-line (&optional arg)
     "Call `consult-line' for small buffers or `consult-ripgrep' for large files."
-    (interactive (list nil (not (not current-prefix-arg))))
+    ;; (interactive (list nil (not (not current-prefix-arg))))
+    (interactive "p")
     (if (or (not buffer-file-name)
             (buffer-narrowed-p)
             (ignore-errors
@@ -100,7 +154,10 @@ When the number of characters in a buffer exceeds this threshold,
             (<= (buffer-size)
                 (/ my/consult-ripgrep-or-line-limit
                    (if (eq major-mode 'org-mode) 4 1))))
-        (consult-line initial start)
+        (pcase arg
+          (4 (consult-line-multi nil))
+          (16 (consult-line-multi t))
+          (_ (consult-line)))
       (when (file-writable-p buffer-file-name)
         (save-buffer))
       (let ((consult-ripgrep-args
@@ -120,70 +177,38 @@ When the number of characters in a buffer exceeds this threshold,
                      ;; defaults
                      "-e "
                      (shell-quote-argument buffer-file-name))))
-        (consult-ripgrep default-directory initial))))
+        (let ((current-prefix-arg (or arg nil)))
+          (call-interactively #'consult-ripgrep)))))
 
-  (defun consult-line-symbol-at-point ()
-    (interactive)
-    (my/consult-ripgrep-or-line (thing-at-point 'symbol)))
+  (defvar consult--fd-command nil)
+  (defun consult--fd-builder (input)
+    (unless consult--fd-command
+      (setq consult--fd-command
+            (if (eq 0 (call-process-shell-command "fdfind"))
+                "fdfind"
+              "fd")))
+    (pcase-let* ((`(,arg . ,opts) (consult--command-split input))
+                 (`(,re . ,hl) (funcall consult--regexp-compiler
+                                        arg 'extended nil)))
+      (when re
+        (list :command (append
+                        (list consult--fd-command
+                              "--color=never" "--full-path"
+                              (consult--join-regexps re 'extended))
+                        opts)
+              :highlight hl))))
+
+  (defun consult-fd (&optional dir initial)
+    (interactive "P")
+    (let* ((prompt-dir (consult--directory-prompt "Fd" dir))
+           (default-directory (cdr prompt-dir)))
+      (find-file (consult--find (car prompt-dir) #'consult--fd-builder initial))))
+
   (dolist (func '(consult-fd consult-git-grep
-                             consult-ripgrep consult-grep))
+                  consult-ripgrep consult-grep))
     (advice-add func :before (defun my/mark-jump-point (&rest _)
                                (xref-push-marker-stack)
-                               (push-mark))))
-  
-  (use-package consult-flymake
-    :bind ("M-g f" . consult-flymake)
-    ;; :config
-    ;; (advice-add 'consult-flymake :before
-    ;;             #'my/consult-flymake-ensure)
-    ;; (defun my/consult-flymake-ensure ()
-    ;;   (interactive)
-    ;;   (flymake-mode 1))
-    )
-  
-  (use-package org
-    :defer
-    :bind (:map org-mode-map
-                ("C-c C-j" . consult-org-heading)
-                ("M-s M-j" . consult-org-heading)))
-
-  :bind (("C-x b"   . consult-buffer)
-         ("C-x H-r" . consult-recent-file)
-         ("C-x M-:" . consult-complex-command)
-         ("M-s M-o" . consult-multi-occur)
-         ("M-X" . consult-mode-command)
-         ("C-h C-m" . consult-minor-mode-menu)
-         ("C-c C-j" . consult-outline)
-         ("M-s M-j" . consult-outline)
-         ("M-s l"   . consult-line-symbol-at-point)
-         ("M-s f"   . consult-fd)
-         ("M-s M-l" . consult-locate)
-         ("M-s g"   . consult-ripgrep)
-         ("M-s G"   . consult-git-grep)
-         ("C-x C-r" . consult-recent-file)
-         ("<help> a" . consult-apropos)
-         ("M-s i" . consult-imenu-all)
-         ("s-b" . consult-buffer)
-         ("M-g j" . consult-compile-error)
-         ("M-g g" . consult-goto-line)
-         ;; ("H-b" . consult-buffer)
-         ("M-m" . consult-register-store)
-         ("M-s k l" . consult-focus-lines)
-         ("M-'" . consult-register-load)
-         ("M-y" . consult-yank-pop)
-         :map ctl-x-r-map
-         ("b" . consult-bookmark)
-         ("x" . consult-register)
-         :map ctl-x-4-map
-         ("b" . consult-buffer-other-window)
-         :map ctl-x-5-map
-         ("b" . consult-buffer-other-frame)
-         :map tab-prefix-map
-         ("b" . consult-buffer-other-tab)
-         :map space-menu-file-map
-         ("l" . consult-locate)
-         :map minibuffer-local-map
-         ("M-r" . consult-history)))
+                               (push-mark)))))
 
 ;; Library support for consult-buffer
 (use-package consult
@@ -206,7 +231,7 @@ When the number of characters in a buffer exceeds this threshold,
                                  (find-library-suffixes)
                                  "\\|")))
 
-             (cl-loop for dir in (or find-function-source-path load-path)
+             (cl-loop for dir in (or find-library-source-path load-path)
                       when (file-readable-p dir)
                       append (mapcar
                               (lambda (file)
@@ -319,9 +344,11 @@ When the number of characters in a buffer exceeds this threshold,
               dff-cache)
             :prompt "Find file: "
             :require-match t
+            ;; :state (consult--file-state)
             :history 'dff-file-name-history
             :category 'file)))
-      (find-file file-name))))
+      (find-file file-name)))
+  (consult-customize consult-dff :preview-key (kbd "C-M-m")))
 
 (provide 'setup-consult)
 ;; setup-consult.el ends here

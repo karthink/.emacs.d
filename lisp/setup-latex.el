@@ -15,7 +15,9 @@
             TeX-mode-map)
   :bind
   (:map LaTeX-mode-map
-        ("M-RET" . LaTeX-insert-item))
+   ("M-RET" . LaTeX-insert-item)
+   :map TeX-source-correlate-map     
+   ([C-down-mouse-1] . TeX-view-mouse))
   :config
   ;; (add-to-list 'Info-directory-list "/usr/share/texmf-dist/tex/texinfo/")
   (defun my/latex-with-outline ()

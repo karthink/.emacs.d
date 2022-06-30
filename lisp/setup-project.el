@@ -90,7 +90,7 @@ The directory name must be absolute."
   :after project
   :config
   (setq project-x-window-list-file (dir-concat user-cache-directory "project-window-list")
-        project-x-save-interval 600)
+        project-x-save-interval nil)
   (project-x-mode 1))
 
 (provide 'setup-project)

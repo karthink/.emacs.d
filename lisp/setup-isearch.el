@@ -30,6 +30,16 @@ confines of word boundaries (e.g. multiple words)."
     (when isearch-other-end
       (goto-char isearch-other-end)))
 
+  (defun my/isearch-forward-symbol-at-point (&optional arg)
+    (interactive "p")
+    (let ((arg (or arg 1)))
+      (isearch-forward-symbol-at-point arg)))
+  
+  (defun my/isearch-backward-symbol-at-point (&optional arg)
+    (interactive "p")
+    (let ((arg (or arg 1)))
+      (isearch-forward-symbol-at-point (- arg))))
+  
 ;;   (defun my/isearch-abort ()
 ;;     "Remove non-matching `isearch' input, reverting to previous
 ;; successful search and continuing with the search.
@@ -132,6 +142,8 @@ Also see `my/search-occur-url'."
          ("M-s M-u"     . my/search-occur-urls)
          ("C-M-s"       . my/isearch-forward-other-buffer)
          ("C-M-r"       . my/isearch-backward-other-buffer)
+         ("M-s ."           . my/isearch-forward-symbol-at-point)
+         ("M-s ,"           . my/isearch-backward-symbol-at-point)
          :map minibuffer-local-isearch-map
          ("M-/"         . isearch-complete-edit)
          :map isearch-mode-map

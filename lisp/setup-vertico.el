@@ -8,23 +8,24 @@
   :commands vertico-mode
   :init (vertico-mode 1)
   :bind (:map vertico-map
-              ("M-s"     . nil)
-              ("M-i"     . vertico-insert)
-              ("C-M-n"   . vertico-next-group)
-              ("C-M-p"   . vertico-previous-group)
-              ("C-j"     . (lambda () (interactive)
-	        	     (if minibuffer--require-match
-	        	         (minibuffer-complete-and-exit)
-	        	       (exit-minibuffer))))
-              ("C->"     . embark-become)
-              (">"       . embark-become)
-              ("C-<tab>"   . embark-act-with-completing-read)
-              ("C-o"     . embark-minimal-act)
-              ("C-M-o"   . embark-minimal-act-noexit)
-              ("C-*"     . embark-act-all)
-              ("M-s o"   . embark-export)
-              ("C-c C-o" . embark-export)
-              ("C-l"     . embark-export))
+         ("M-RET"   . nil)
+         ("M-s"     . nil)
+         ("M-i"     . vertico-insert)
+         ("C-M-n"   . vertico-next-group)
+         ("C-M-p"   . vertico-previous-group)
+         ("C-j"     . (lambda () (interactive)
+	        	(if minibuffer--require-match
+	        	    (minibuffer-complete-and-exit)
+	        	  (exit-minibuffer))))
+         ("C->"     . embark-become)
+         (">"       . embark-become)
+         ("C-<tab>"   . embark-act-with-completing-read)
+         ("C-o"     . embark-minimal-act)
+         ("C-M-o"   . embark-minimal-act-noexit)
+         ("C-*"     . embark-act-all)
+         ("M-s o"   . embark-export)
+         ("C-c C-o" . embark-export)
+         ("C-l"     . embark-export))
   :config
   (setq vertico-count 10
         vertico-cycle t
@@ -35,7 +36,7 @@
   :commands vertico-multiform-mode
   :after vertico-flat
   :bind (:map vertico-map
-              ("M-q" . vertico-multiform-grid)
+              ("M-q" . vertico-multiform-flat)
               ("C-l" . my/vertico-multiform-unobtrusive)
               ("C-M-l" . embark-export))
   :init (vertico-multiform-mode 1)
@@ -48,15 +49,19 @@
            (consult-grep buffer)
            (notmuch-result reverse)
            (minor-mode reverse)
-           (reftex-label reverse)
+           (reftex-label (:not unobtrusive))
            (citar-reference reverse)
            (xref-location reverse)
+           (history reverse)
            (url reverse)
+           (consult-compile-error reverse)
+           (buffer flat (vertico-cycle . t))
            (t unobtrusive)))
    (setq vertico-multiform-commands
          '((load-theme my/vertico-grid-mode reverse)
            (my/toggle-theme my/vertico-grid-mode reverse)
            (affe-find reverse)
+           (consult-project-buffer flat)
            (consult-dir-maybe reverse)
            (consult-dir reverse)
            (consult-flymake reverse)
@@ -70,6 +75,7 @@
            (embark-bindings reverse)
            (consult-org-heading reverse)
            (consult-dff unobtrusive)
+           (xref-find-definitions reverse)
            (my/eshell-previous-matching-input reverse)
            (tmm-menubar reverse)))
   
@@ -123,8 +129,15 @@
 
 (use-package vertico-repeat
   :after vertico
+  :hook (minibuffer-setup . vertico-repeat-save)
   :bind (("C-x ." . vertico-repeat)
-         ("H-."   . vertico-repeat)))
+         ("H-."   . vertico-repeat))
+  :config
+  (use-package savehist
+    :defer
+    :config
+    (add-to-list 'savehist-additional-variables
+                 'vertico-repeat-history)))
 
 (use-package vertico-reverse
   ;; :disabled

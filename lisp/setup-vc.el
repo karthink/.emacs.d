@@ -263,7 +263,21 @@ project, as defined by `vc-root-dir'."
   ;; (dolist (keymap (list magit-diff-mode-map magit-log-mode-map))
   ;;   (define-key keymap (kbd "C-TAB") nil)
   ;;   (define-key keymap (kbd "C-<tab>") nil))
+  (use-package magit-section
+    :config
+    (setq magit-section-initial-visibility-alist
+          '((stashes . hide)
+            ([file unstaged status] . hide))
+          )
+    )
   )
+
+(use-package forge
+  :straight t
+  :defer
+  :config
+  (setq forge-database-file
+        (dir-concat user-cache-directory "forge-database.sqlite")))
 
 ;; Misc git functions
 (use-package emacs

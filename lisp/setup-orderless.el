@@ -18,14 +18,8 @@
         '(my/orderless-flex-dispatcher
           my/orderless-literal-dispatcher
           my/orderless-initialism-dispatcher
-          my/orderless-exclude-dispatcher
-          my/orderless-dollar-dispatcher))
+          my/orderless-exclude-dispatcher))
 
-  (defun my/orderless-dollar-dispatcher (pattern _index _total)
-    (when (string-suffix-p "$" pattern)
-      `(orderless-regexp . ,(concat (substring pattern 0 -1)
-                                    "[\x100000-\x10FFFD]*$"))))
-    
   (defun my/orderless-flex-dispatcher (pattern _index _total)
     (when (or (string-suffix-p "`" pattern)
               (string-suffix-p "~" pattern))

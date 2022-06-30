@@ -1,17 +1,18 @@
+;; -*- lexical-binding: t; -*-
 (use-package avy
   :straight t
   :commands (avy-goto-word-1 avy-goto-char-2 avy-goto-char-timer)
   :config
-  (setq avy-timeout-seconds 0.24)
-  (setq avy-keys '(?a ?s ?d ?f ?g ?j ?l ;?x
+  (setq avy-timeout-seconds 0.32)
+  (setq avy-keys '(?a ?s ?d ?f ?g ?j ?l ?o
                    ?v ?b ?n ?, ?/ ?u ?p ?e ?.
                    ?c ?q ?2 ?3 ?' ?\;))
   (setq avy-dispatch-alist '((?m . avy-action-mark)
-                             (?  . avy-action-mark-to-char)
                              (?i . avy-action-ispell)
                              (?z . avy-action-zap-to-char)
-                             (?o . avy-action-embark)
+                             (?  . avy-action-embark)
                              (?= . avy-action-define)
+                             (67108896 . avy-action-mark-to-char)
                              (67108925 . avy-action-tuxi)
                              ;; (?W . avy-action-tuxi)
                              (?h . avy-action-helpful)
@@ -32,7 +33,8 @@
                              (?T . avy-action-teleport-whole-line)))
   
   (defun avy-action-easy-copy (pt)
-        (require 'easy-kill)
+    (unless (require 'easy-kill nil t)
+      (user-error "Easy Kill not found, please install."))
         (goto-char pt)
         (cl-letf (((symbol-function 'easy-kill-activate-keymap)
                    (lambda ()
@@ -101,9 +103,9 @@
     (unwind-protect
         (save-excursion
           (goto-char pt)
-          (embark-act)))
-    (select-window
-     (cdr (ring-ref avy-ring 0)))
+          (embark-act))
+      (select-window
+       (cdr (ring-ref avy-ring 0))))
     t)
   
   (defun avy-action-kill-line (pt)
@@ -264,23 +266,29 @@ The current window is chosen if WIN is not specified."
         (when-let
             ((_ all-buttons) 
              (avy-action
-              (lambda (pt) (if-let* ((b (button-at (1+ pt)))
-                                (_ (button-type b)))
-                          (button-activate b)
-                        (goto-char pt)
-                        (if (shr-url-at-point pt)
-                            (shr-browse-url)
-                          (browse-url (thing-at-point 'url)))))))
+              (lambda (pt)
+                (let (b link)
+                  (cond
+                   ((and (setq b (button-at (1+ pt)))
+                         (button-type b))
+                    (button-activate b))
+                   ((shr-url-at-point pt)
+                    (shr-browse-url))
+                   ((setq link (or (get-text-property pt 'shr-url)
+                                   (thing-at-point 'url)))
+                    (browse-url link)))))))
           (let ((cursor-type nil))
             (avy-process all-buttons))))))
   
+  (set-face-attribute 'avy-lead-face nil :inherit 'default)
+  
   :general
   ("C-'"        '(my/avy-goto-char-this-window :wk "Avy goto char")
-   "M-s j"      '(avy-goto-char-2            :wk "Avy goto char 2")
+   "M-s j"      '(avy-goto-char-timer        :wk "Avy goto char timer")
    "M-s y"      '(avy-copy-line              :wk "Avy copy line above")
    "M-s M-y"    '(avy-copy-region            :wk "Avy copy region above")
    "M-s M-k"    '(avy-kill-whole-line        :wk "Avy copy line as kill")
-   "M-j"        '(avy-goto-char-timer        :wk "Avy goto char timer")
+   "M-j"        '(avy-goto-char-2            :wk "Avy goto char 2")
    "M-s C-w"    '(avy-kill-region            :wk "Avy kill region")
    "M-s M-w"    '(avy-kill-ring-save-region  :wk "Avy copy as kill")
    "M-s t"      '(avy-move-line              :wk "Avy move line")

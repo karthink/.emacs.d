@@ -146,7 +146,7 @@ If buffer-or-name is nil return current buffer's mode."
          (display-buffer-reuse-mode-window
           display-buffer-in-direction
           display-buffer-in-side-window)
-         (side . above)
+         (side . top)
          (slot . 5)
          (window-height . (lambda (win) (fit-window-to-buffer win 20 10)))
          (direction . above)
@@ -319,14 +319,14 @@ If buffer-or-name is nil return current buffer's mode."
 
         ((lambda (buf act) (member (buffer-mode buf) my/help-modes-list))
          (display-buffer-reuse-window
-          display-buffer-in-side-window
-          display-buffer-in-direction)
+          display-buffer-in-direction
+          display-buffer-in-side-window)
          (body-function . select-window)
          ;; (direction . bottom)
          ;; (window-height . (lambda (win) (fit-window-to-buffer win 25 14)))
          (window-width . 77 ;; (lambda (win) (fit-window-to-buffer win nil nil 75 65))
                        )
-         (direction . right)
+         (direction . below)
          (side . right)
          (slot . 2)
          (window-parameters . ((split-window . #'ignore)

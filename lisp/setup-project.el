@@ -17,7 +17,7 @@
             (?d "Dired" project-dired)
             (?b "Buffer" project-switch-to-buffer)
             (?q "Query replace" project-query-replace-regexp)
-            (?v "VC-Dir" project-vc-dir)
+            (?v "magit" project-magit-status)
             (?k "Kill buffers" project-kill-buffers)
             (?! "Shell command" project-shell-command)
             (?e "Eshell" project-eshell)))
@@ -61,6 +61,11 @@ The directory name must be absolute."
                )))
          (or dirs
              (list (project-root project))))))
+    
+    (defun project-magit-status ()
+      "Run magit-status in the current project's root."
+      (interactive)
+      (magit-status (project-root (project-current t))))
     
     (defun my/project-remove-project ()
       "Remove project from `project--list' using completion."

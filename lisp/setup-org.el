@@ -593,75 +593,63 @@ has no effect."
          (org-capture-after-finalize   . org-capture-after-delete-frame))
   :config
   (defun org-capture-after-delete-frame ()
-   "If this is a dedicated org-capture frame, delete it after"
-   (if (and (equal (frame-parameter nil 'name)
-                   "dropdown_org-capture")
-            (not (eq this-command 'org-capture-refile)))
-       (delete-frame)))
- 
- (pcase-dolist
-     (`(,key . ,template)
-      '(("t" "Add task" entry (file+headline "~/do.org" "Tasks")
-         "* TODO %?\n:PROPERTIES:\n:CREATED:  %U\n:END:\n%a\n%x\n" :prepend t)
-        ("c" "Add calendar entry" entry (file "~/org/gmail-cal.org")
-         "* %?\n%^{LOCATION}p\n:%(progn (require 'org-gcal) (symbol-value 'org-gcal-drawer-name)):
-%a\n:END:")))
-   (setf (alist-get key org-capture-templates nil nil #'equal)
-         template))
- 
- ;; (setq org-capture-templates
-;;         (append org-capture-templates 
-;;                  `(("t" "TODO items")
-                   
-;;                    ("tr" "TODO research"
-;;                     entry
-;;                     (file+olp "~/do.org" "Research")
-;;                     "* TODO %? :research:
-;; SCHEDULED: %^{Do by}t
-;; :PROPERTIES:
-;; :ID:       %(shell-command-to-string \"uuidgen\"):CREATED:  %U
-;; :END:
-;; %a\n%x\n"
-;;                     :prepend t)
-
-;;                    ("tg" "Add task" entry
-;;                     (file+headline "~/do.org" "Tasks")
-;;                     "* TODO %?
-;; :PROPERTIES:
-;; :ID:       %(shell-command-to-string \"uuidgen\"):CREATED:  %U
-;; :END:
-;; %a
-;; %x\n" :kill-buffer t :prepend t)
-
-;;                    ("tc" "Config projects"
-;;                     entry
-;;                     (file+headline "~/do.org" "Configuration")
-;;                     "* TODO %? :config:
-;; :PROPERTIES:
-;; :ID:       %(shell-command-to-string \"uuidgen\"):CREATED:  %U
-;; :END:
-;; %a\n%x\n"
-;;                     :kill-buffer t :prepend t)
-
-;;                    ("tp" "Other Projects"
-;;                     entry
-;;                     (file+headline "~/do.org" "Other Projects")
-;;                     "* %? :project:
-;; :PROPERTIES:
-;; :ID:       %(shell-command-to-string \"uuidgen\"):CREATED:  %U
-;; :END:
-;; %a\n%x\n"
-;;                     :prepend t :kill-buffer t))))
-;;;###autoload
+    "If this is a dedicated org-capture frame, delete it after"
+    (if (and (equal (frame-parameter nil 'name)
+                    "dropdown_org-capture")
+             (not (eq this-command 'org-capture-refile)))
+        (delete-frame)))
+  
+  (defun org-hugo-new-subtree-post-capture-template ()
+    "Returns `org-capture' template string for new Hugo post.
+See `org-capture-templates' for more information."
+    (let* ((title (read-from-minibuffer "Post Title: ")) ;Prompt to enter the post title
+           (fname (org-hugo-slug title))
+           (commentp (y-or-n-p "Enable comments? ")))
+      (mapconcat #'identity
+                 `(
+                   ,(concat "* TODO " title)
+                   "\n:PROPERTIES:"
+                   ,(concat "\n:EXPORT_FILE_NAME: " fname
+                     "\n:EXPORT_HUGO_CUSTOM_FRONT_MATTER: :comments "
+                     (if commentp "true" "false"))
+                   "\n:END:"
+                   "\n%?\n") 
+                 ""))) 
+  
+  (pcase-dolist
+      (`(,key . ,template)
+       '(("t" "Add task" entry (file+headline "~/do.org" "Tasks")
+          "* TODO %?\n:PROPERTIES:\n:CREATED:  %U\n:END:\n%a\n%x\n" :prepend t)
+         ("c" "Add calendar entry" entry (file "~/org/gmail-cal.org")
+          "* %?\n%^{LOCATION}p\n:%(progn (require 'org-gcal) (symbol-value 'org-gcal-drawer-name)):
+%a\n:END:")
+         ("h" "Hugo post")
+         ("hb" "Hugo Blog section"
+          entry
+          ;; It is assumed that below file is present in `org-directory'
+          ;; and that it has a "Blog Ideas" heading. It can even be a
+          ;; symlink pointing to the actual location of all-posts.org!
+          (file+olp "posts.org" "Blog Ideas")
+          (function org-hugo-new-subtree-post-capture-template)
+          :kill-buffer t)
+         ("hs" "Hugo Software section"
+          entry
+          ;; It is assumed that below file is present in `org-directory'
+          ;; and that it has a "Blog Ideas" heading. It can even be a
+          ;; symlink pointing to the actual location of all-posts.org!
+          (file+olp "posts.org" "Software")
+          (function org-hugo-new-subtree-post-capture-template)
+          :kill-buffer t)))
+    (setf (alist-get key org-capture-templates nil nil #'equal)
+          template))
+  
   (defun make-orgcapture-frame ()
     "Create a new frame and run org-capture."
     (interactive)
     (make-frame '((name . "dropdown_org_capture") (window-system . x)))
     (select-frame-by-name "dropdown_org_capture")
     (org-capture)
-    (delete-other-windows)
-    )
-  )
+    (delete-other-windows)))
 
 ;; *** ORG-CRYPT
 (use-package org-crypt
@@ -874,50 +862,46 @@ parent."
 ;;;----------------------------------------------------------------
 (use-package ox-hugo
   :straight t
-  :after (org-capture)
+  :after (ox)
   :config
   (setq org-hugo-section "blog")
   (add-to-list 'org-hugo-special-block-type-properties
                '("sidenote" . (:trim-pre t :trim-post t)))
   (setq org-hugo-paired-shortcodes "%sidenote")
-  (with-eval-after-load 'org-capture
-
-  (defun org-hugo-new-subtree-post-capture-template ()
-    "Returns `org-capture' template string for new Hugo post.
-See `org-capture-templates' for more information."
-    (let* ((title (read-from-minibuffer "Post Title: ")) ;Prompt to enter the post title
-           (fname (org-hugo-slug title))
-           (commentp (y-or-n-p "Enable comments? ")))
-      (mapconcat #'identity
-                 `(
-                   ,(concat "* TODO " title)
-                   "\n:PROPERTIES:"
-                   ,(concat "\n:EXPORT_FILE_NAME: " fname
-                            "\n:EXPORT_HUGO_CUSTOM_FRONT_MATTER: :comments "
-                            (if commentp "true" "false"))
-                   "\n:END:"
-                   "\n%?\n")          ;Place the cursor here finally
-                 "")))
-
-  (add-to-list 'org-capture-templates '("h" "Hugo post"))
-  (add-to-list 'org-capture-templates
-               '("hb" "Hugo Blog section"
-                 entry
-                 ;; It is assumed that below file is present in `org-directory'
-                 ;; and that it has a "Blog Ideas" heading. It can even be a
-                 ;; symlink pointing to the actual location of all-posts.org!
-                 (file+olp "posts.org" "Blog Ideas")
-                 (function org-hugo-new-subtree-post-capture-template)
-                 :kill-buffer t))
-  (add-to-list 'org-capture-templates
-               '("hs" "Hugo Software section"
-                entry
-                ;; It is assumed that below file is present in `org-directory'
-                ;; and that it has a "Blog Ideas" heading. It can even be a
-                ;; symlink pointing to the actual location of all-posts.org!
-                (file+olp "posts.org" "Software")
-                (function org-hugo-new-subtree-post-capture-template)
-                :kill-buffer t))))
+  (define-minor-mode my/org-hugo-mode
+    "Helper mode for org-hugo previews."
+    :keymap (make-sparse-keymap)
+    :init-value nil)
+  (defun my/org-hugo-preview (&optional arg)
+    (interactive "P")
+    (pcase-let* ((sec nil)
+                 (`(,sec . ,title) 
+                 (save-excursion
+                   (org-previous-visible-heading 1)
+                   (let ((title (org-element-property
+                                 :EXPORT_FILE_NAME
+                                 (org-element-at-point))))
+                     (while (and (not sec) (org-up-heading-safe))
+                       (setq sec (org-element-property
+                                  :EXPORT_HUGO_SECTION
+                                  (org-element-at-point))
+                             title (or title
+                                       (org-element-property
+                                        :EXPORT_FILE_NAME
+                                        (org-element-at-point)))))
+                     (cons sec title)))))
+      (if-let ((_ title)
+               (url (concat
+                     "http://localhost:1313/"
+                     (if sec (downcase sec) "blog")
+                     "/" title)))
+          (progn (save-buffer)
+                 (unless org-hugo-auto-export-mode
+                   (org-hugo-export-wim-to-md))
+                 (if arg
+                     (progn (other-window 1) (eww url) (other-window -1))
+                   (browse-url url)))
+        (message "No preview url found.")))))
 
 ;;;----------------------------------------------------------------
 ;; ** OL-NOTMUCH
@@ -1061,6 +1045,17 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
            :auto-preamble t
            :completion-function (list my/org-publish-rsync-cyclostationarity)
            )
+          ("abode"
+           :base-directory "~/Documents/abode/"
+           :base-extension "org"
+           :publishing-directory "~/Documents/abode"
+           :remote-directory "root@abode.karthinks.com:/var/www/abode"
+           :recursive t
+           :publishing-function org-html-publish-to-html
+           :headline-levels 4
+           :auto-preamblle t
+           :completion-function (list my/org-publish-rsync)
+           )
           )
         )
 
@@ -1073,7 +1068,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
                          (file-name-as-directory
                           (plist-get project-plist :base-directory))))
                (destdir (plist-get project-plist :remote-directory)))
-          (start-process "rsync-project-dai" "*project-dai-output*"
+          (start-process "rsync-project-abode" "*project-abode-output*"
                          "rsync" "-a" "-v" "--exclude=*.org" "--delete"
                          basedir destdir))
 

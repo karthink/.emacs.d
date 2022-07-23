@@ -14,6 +14,14 @@
   (setq isearch-yank-on-move 'shift)
   (setq isearch-allow-scroll 'unlimited)
 
+  (defvar isearch-repeat-map
+    (let ((map (make-sparse-keymap)))
+      (define-key map "s" 'isearch-repeat-forward)
+      (define-key map "r" 'isearch-repeat-backward)
+      map))
+  (put 'isearch-repeat-forward  'repeat-map 'isearch-repeat-map)
+  (put 'isearch-repeat-backward 'repeat-map 'isearch-repeat-map)
+  
   (defun my/isearch-mark-and-exit ()
     "Mark the current search string and exit the search."
     (interactive)

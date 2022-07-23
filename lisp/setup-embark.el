@@ -3,7 +3,8 @@
 ;; Embark for actions
 (use-package embark
   :demand
-  :straight t
+  :straight (:host github :repo "oantolin/embark"
+             :files ("embark.el" "embark.texi"))
   :after minibuffer
   :hook ((embark-collect-mode . hl-line-mode))
   :bind (("M-s RET"  . embark-act)
@@ -202,7 +203,6 @@
     (defun embark-act-with-completing-read (&optional arg)
       (interactive "P")
       (let* ((embark-prompter 'embark-completing-read-prompter)
-             (act (propertize "Act" 'face 'highlight))
              (embark-indicators '(embark-minimal-indicator)))
         (embark-act arg)))
 
@@ -259,7 +259,7 @@ targets."
       :config
       (defun embark-vertico-indicator ()
         (let ((fr face-remapping-alist))
-          (lambda (&optional keymap _targets prefix)
+          (lambda (&optional keymap _targets _prefix)
             (when (bound-and-true-p vertico--input)
               (setq-local face-remapping-alist
                           (if keymap
@@ -267,8 +267,14 @@ targets."
                             fr))))))
       (add-to-list 'embark-indicators #'embark-vertico-indicator)))
 
+(use-package embark-org
+  :straight (:host github :repo "oantolin/embark"
+             :files ("embark-org.el"))
+  :after (embark org))
+
 (use-package embark-consult
-  :straight t
+  :straight (:host github :repo "oantolin/embark"
+             :files ("embark-consult.el"))
   :after (embark consult)
   :demand
   :bind (:map embark-become-file+buffer-map
@@ -354,6 +360,27 @@ highlighting."
               ("M-RET" . avy-embark-collect-choose)
               ("C-M-o" . avy-embark-collect-act)
               ("C-M-j" . avy-embark-collect-act)))
+
+(use-package embark
+  :defer
+  :config
+  (use-package straight
+    :defer
+    :config
+    (embark-define-keymap embark-straight-map
+      ("u" straight-visit-package-website)
+      ("r" straight-get-recipe)
+      ("i" straight-use-package)
+      ("c" straight-check-package)
+      ("F" straight-pull-package)
+      ("f" straight-fetch-package)
+      ("p" straight-push-package)
+      ("n" straight-normalize-package)
+      ("m" straight-merge-package))
+
+    (add-to-list 'embark-keymap-alist '(straight . embark-straight-map))
+
+    (add-to-list 'marginalia-prompt-categories '("recipe\\|package" . straight))))
 
 (provide 'setup-embark)
 ;; setup-embark.el ends here

@@ -240,16 +240,14 @@ This should be faster then `seq-uniq'.  Unlike
 not allow duplicates ever.
 Surrounding spaces are ignored when comparing."
     (let ((first (ring-ref ring 0))
-          (index 1))
-      (while (<= index (1- (ring-length ring)))
-        (if (string= (string-trim first)
-                     (string-trim (ring-ref ring index)))
-            ;; REVIEW: We could stop at the first match, it would be faster and it
-            ;; would eliminate duplicates if we started from a fresh history.
-            ;; From an existing history that would not clean up existing
-            ;; duplicates beyond the first one.
-            (ring-remove ring index)
-          (setq index (1+ index))))
+          (index 1)
+          (found))
+      (while (and (not found) (<= index (1- (ring-length ring))))
+        (if (not (string= (string-trim first)
+                          (string-trim (ring-ref ring index))))
+            (setq index (1+ index))
+          (ring-remove ring index)
+          (setq found t)))
       ring))
 
   (defun my/eshell-history-remove-duplicates ()
@@ -277,6 +275,22 @@ Surrounding spaces are ignored when comparing."
   (defalias 'eshell/v 'eshell-exec-visual)
   (defalias 'eshell/x #'eshell/exit)
 
+  (defun my/eshell-insert-args (&optional num)
+    "Insert the NUMth argument of the previous command.
+
+NUM counts from the end"
+    (interactive "p")
+    (let ((valid-pos)
+          (N (length eshell-last-arguments)))
+      (save-excursion
+        (beginning-of-line)
+        (if (looking-at eshell-prompt-regexp)
+            (setq valid-pos t)))
+      (if valid-pos
+          (insert (substring-no-properties
+                   (nth (- N num) eshell-last-arguments)))
+        (call-interactively #'xref-find-definitions))))
+  
   ;; From https://gist.github.com/minad/19df21c3edbd8232f3a7d5430daa103a
   (defun eshell/b (regexp)
     "Output buffer content of buffer matching REGEXP."
@@ -354,6 +368,7 @@ argument arg, Also copy the prompt and input."
   (add-hook
    'eshell-mode-hook
    (lambda ()
+     (define-key eshell-mode-map (kbd "M-.") 'my/eshell-insert-args)
      (define-key eshell-mode-map (kbd "C-c M-w") 'my/eshell-copy-output)
      (define-key eshell-hist-mode-map (kbd "C-c C-l") 'my/eshell-export-output)))
   
@@ -516,7 +531,13 @@ send a notification when the process has exited."
 (use-package shell
   :defer
   :config
-  (setq async-shell-command-buffer 'new-buffer))
+  (setq async-shell-command-buffer 'new-buffer)
+  (setq explicit-shell-file-name "/usr/bin/zsh")
+  (setq shell-file-name "zsh")
+  (setq explicit-zsh-args '("--login" "--interactive"))
+  (defun zsh-shell-mode-setup ()
+    (setq-local comint-process-echoes t))
+  (add-hook 'shell-mode-hook #'zsh-shell-mode-setup))
 
 ;; capf-autosuggest is a good idea, but it's too slow and laggy in practice.
 (use-package capf-autosuggest
@@ -574,5 +595,29 @@ output instead."
                                "cmake -G 'Unix Makefiles' .."))
                       (compile "cd build; make")))
     :defer))
+
+;; Testing: shelldon
+(use-package shelldon
+  :straight t
+  :bind (([remap async-shell-command] . my/shelldon-dwim))
+  :config
+  (defun my/shelldon-dwim (&optional arg)
+    (interactive "P")
+    (call-interactively
+     (if arg #'shelldon-loop #'shelldon)))
+  (setf (alist-get "*\\(shelldon.*\\)" display-buffer-alist nil t 'equal)
+        `((display-buffer-pop-up-window
+           display-buffer-reuse-window
+           display-buffer-in-previous-window)
+	  (direction . right)
+          (window-width . 80)
+          (body-function . (lambda (win)
+                             (select-window win)
+                             (goto-char (point-min))))
+          (reusable-frames . visible)))
+  (use-package sh-mode
+    :bind (:map sh-mode-map
+           ("C-c C-c" . shelldon-send-region)
+           ("C-c C-n" . shelldon-send-line-at-point))))
 
 (provide 'setup-shells)

@@ -74,8 +74,7 @@
                  ((output-dvi style-pstricks) "dvips and gv")
                  (output-dvi "xdvi")
                  (output-pdf "Zathura")
-                 (output-html "xdg-open")))))
-  (TeX-fold-mode 1))
+                 (output-html "xdg-open"))))))
 
 ;; Some structural navigation tweaks for Latex mode.
 (use-package latex
@@ -136,7 +135,7 @@ but mark is only pushed if region isn't active."
                   (re-search-forward "\\\\\\(begin\\|end\\)\\b"
                                      nil t direction))
         (cl-decf count)
-        (if (or (and (> direction 0) (looking-back "begin"))
+        (if (or (and (> direction 0) (looking-back "begin" (- (point) 7)))
                 (looking-at "\\\\end"))
             (unless (funcall (if (> direction 0)
                                  #'LaTeX-find-matching-end
@@ -174,7 +173,53 @@ but mark is only pushed if region isn't active."
   :config
   (setq ;; TeX-fold-folded-face '((t (:height 1.0 :foreground "SlateBlue1")))
         TeX-fold-auto t
-        TeX-fold-type-list '(env macro comment)))
+        TeX-fold-type-list '(macro comment))
+  (set-face-attribute 'TeX-fold-folded-face nil :foreground nil :inherit 'shadow)
+  ;; Custom folded display for labels and refs
+  (defun my/TeX-fold-ref (text)
+         (let* ((m (string-match "^\\([^:]+:\\)\\(.*\\)" text))
+                (cat (or (match-string 1 text) ""))
+                (ref (or (match-string 2 text) text)))
+           (setq ref
+                 (if (> (length ref) 18)
+                     (concat (substring ref 0 6) "..." (substring ref -11))
+                     ;; (concat "..." (substring ref -14))
+                   ref))
+           (concat "[" (propertize cat 'face 'shadow) ref "]")))
+  (defun my/TeX-fold-label (&rest texts)
+    (cl-loop for text in texts
+             for m = (string-match "^\\([^:]+:\\)\\(.*\\)" text)
+             for cat = (or (match-string 1 text) "")
+             for ref = (or (match-string 2 text) text)
+             collect (concat "[" (propertize cat 'face 'shadow) ref "]") into labels
+             finally return (mapconcat #'identity labels ",")))
+  (setq-default TeX-fold-macro-spec-list
+        '(("[f]" ("footnote" "marginpar"))
+          (my/TeX-fold-label ("cite"))
+          (my/TeX-fold-label ("label"))
+          (my/TeX-fold-ref ("ref" "pageref" "eqref" "footref"))
+          ("[i]" ("index" "glossary"))
+          ("[1]:||*" ("item"))
+          ("..." ("dots"))
+          ("(C)" ("copyright"))
+          ("(R)" ("textregistered"))
+          ("TM"  ("texttrademark"))
+          ;; (1 ("part" "chapter" "section" "subsection" "subsubsection"
+          ;;     "paragraph" "subparagraph"
+          ;;     "part*" "chapter*" "section*" "subsection*" "subsubsection*"
+          ;;     "paragraph*" "subparagraph*"
+          ;;     "emph" "textit" "textsl" "textmd" "textrm" "textsf" "texttt"
+          ;;     "textbf" "textsc" "textup"))
+          ))
+  
+  ;; (cl-delete-if (lambda (s) (or (equal s "[l]")
+  ;;                          (equal s "[r]")))
+  ;;               TeX-fold-macro-spec-list :key #'car)
+  ;; (setf (alist-get 'my/TeX-fold-ref TeX-fold-macro-spec-list)
+  ;;       '(("ref" "pageref" "eqref" "footref")))
+  ;; (setf (alist-get 'my/TeX-fold-label TeX-fold-macro-spec-list)
+  ;;       '(("label")))
+  )
 
 (use-package latex-extra
   :disabled

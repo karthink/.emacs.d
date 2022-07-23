@@ -188,9 +188,10 @@ project, as defined by `vc-root-dir'."
   ;; (diff-hl-change ((t (:foreground ,(face-background 'highlight) :background nil))))
   ;; (diff-hl-insert ((t (:background nil))))
   ;; (diff-hl-delete ((t (:background nil))))
-  :hook ((dired-mode . diff-hl-dired-mode))
+  ;; :hook ((dired-mode . diff-hl-dired-mode))
   :init
   (setq diff-hl-draw-borders t)
+  (setq-default diff-hl-inline-popup--height 4)
   (dolist (mode-hook +addons-enabled-modes)
     (add-hook mode-hook #'diff-hl-mode))
   :bind
@@ -217,32 +218,34 @@ project, as defined by `vc-root-dir'."
   (diff-hl-flydiff-mode 1)
 
   ;; Recenter to location of diff
-  (advice-add 'diff-hl-next-hunk :after (lambda (&optional _) (recenter)))
+  (advice-add 'diff-hl-next-hunk :after
+              (defun my/diff-hl-recenter
+                  (&optional _) (recenter)))
 
   ;; Set fringe style
   (setq-default fringes-outside-margins t)
 
-  (with-no-warnings
-    (defun my-diff-hl-fringe-bmp-function (_type _pos)
-      "Fringe bitmap function for use as `diff-hl-fringe-bmp-function'."
-      (define-fringe-bitmap 'my-diff-hl-bmp
-        (vector #b11111100) ;(if sys/macp #b11100000 #b11111100)
-        1 8
-        '(center t)))
-    (setq diff-hl-fringe-bmp-function #'my-diff-hl-fringe-bmp-function)
+  ;; (with-no-warnings
+  ;;   (defun my-diff-hl-fringe-bmp-function (_type _pos)
+  ;;     "Fringe bitmap function for use as `diff-hl-fringe-bmp-function'."
+  ;;     (define-fringe-bitmap 'my-diff-hl-bmp
+  ;;       (vector #b11111100) ;(if sys/macp #b11100000 #b11111100)
+  ;;       1 8
+  ;;       '(center t)))
+  ;;   (setq diff-hl-fringe-bmp-function #'my-diff-hl-fringe-bmp-function)
 
 
-    ;; (unless (display-graphic-p)
-    ;;   (setq diff-hl-margin-symbols-alist
-    ;;         '((insert . " ") (delete . " ") (change . " ")
-    ;;           (unknown . " ") (ignored . " ")))
-    ;;   ;; Fall back to the display margin since the fringe is unavailable in tty
-    ;;   (diff-hl-margin-mode 1)
-    ;;   ;; Avoid restoring `diff-hl-margin-mode'
-    ;;   (with-eval-after-load 'desktop
-    ;;     (add-to-list 'desktop-minor-mode-table
-    ;;                  '(diff-hl-margin-mode nil))))
-    )
+  ;;   (unless (display-graphic-p)
+  ;;     (setq diff-hl-margin-symbols-alist
+  ;;           '((insert . " ") (delete . " ") (change . " ")
+  ;;             (unknown . " ") (ignored . " ")))
+  ;;     ;; Fall back to the display margin since the fringe is unavailable in tty
+  ;;     (diff-hl-margin-mode 1)
+  ;;     ;; Avoid restoring `diff-hl-margin-mode'
+  ;;     (with-eval-after-load 'desktop
+  ;;       (add-to-list 'desktop-minor-mode-table
+  ;;                    '(diff-hl-margin-mode nil))))
+  ;;   )
 
     ;; Integration with magit
     (with-eval-after-load 'magit
@@ -277,7 +280,8 @@ project, as defined by `vc-root-dir'."
   :defer
   :config
   (setq forge-database-file
-        (dir-concat user-cache-directory "forge-database.sqlite")))
+        (dir-concat user-cache-directory "forge-database.sqlite")
+        forge-owned-accounts '(("karthink"))))
 
 ;; Misc git functions
 (use-package emacs

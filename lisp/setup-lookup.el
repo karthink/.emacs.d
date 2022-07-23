@@ -26,6 +26,9 @@ instead."
           (select-window (get-mru-window)))))))
   (unbind-key "C-h C-h"))
 
+(use-package find-func
+  :bind (("C-h M-." . find-function-on-key)))
+
 (use-package helpful
   :disabled
   :straight t

@@ -1,4 +1,4 @@
-;; emacs-i3.el -*- lexical-binding: t -*-
+;; emacs-wm.el -*- lexical-binding: t -*-
 ;; From Pavel Korytov, https://sqrtminusone.xyz/posts/2021-10-04-emacs-i3/
 
 (require 'windmove)
@@ -181,4 +181,4 @@
 ;;                          :family 'local
 ;;                          :service "/home/karthik/.cache/qtile/qtiletest")))
 
-(provide 'emacs-i3)
+(provide 'emacs-wm)

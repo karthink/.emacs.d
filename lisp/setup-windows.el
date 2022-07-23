@@ -182,13 +182,13 @@ If buffer-or-name is nil return current buffer's mode."
                                ;; (mode-line-format . (:eval (my/helper-window-mode-line-format)))
                                )))
 
-        ((lambda (buf act) (or (equal (buffer-mode buf) 'Custom-mode)
-                          (string-match-p "^\\*Customize" (buffer-name))))
-         (display-buffer-in-side-window)
-         (body-function . select-window)
-         (window-width . 74)
-         (side . right)
-         (slot . 5))
+        ;; ((lambda (buf act) (or (equal (buffer-mode buf) 'Custom-mode)
+        ;;                   (string-match-p "^\\*Customize" (buffer-name))))
+        ;;  (display-buffer-in-side-window)
+        ;;  (body-function . select-window)
+        ;;  (window-width . 74)
+        ;;  (side . right)
+        ;;  (slot . 5))
 
         ("\\*undo-tree\\*" ;; (lambda (buf act) (equal (buffer-mode buf) 'undo-tree-visualizer-mode))
           (display-buffer-in-direction)
@@ -239,11 +239,12 @@ If buffer-or-name is nil return current buffer's mode."
          )
 
         ("\\*\\(?:Warnings\\|Compile-Log\\|Messages\\|Tex Help\\|TeX errors\\)\\*"
-         (display-buffer-in-side-window display-buffer-at-bottom)
+         (display-buffer-at-bottom display-buffer-in-side-window display-buffer-in-direction)
          (window-height . (lambda (win) (fit-window-to-buffer
                                       win
                                       (floor (frame-height) 5))))
          (side . bottom)
+         (direction . below)
          (slot . -5)
          ;; (preserve-size . (nil . t))
          (window-parameters . ((split-window . #'ignore)
@@ -253,7 +254,7 @@ If buffer-or-name is nil return current buffer's mode."
 
         ("\\(?:[Oo]utput\\)\\*" display-buffer-in-side-window
          (window-height . (lambda (win)
-                            (fit-window-to-buffer win (floor (frame-height) 3))))
+                            (fit-window-to-buffer win (floor (frame-height) 2.5))))
          (side . bottom)
          (slot . -4)
          ;; (preserve-size . (nil . t))
@@ -261,7 +262,7 @@ If buffer-or-name is nil return current buffer's mode."
          ;;                       ;; (mode-line-format . (:eval (my/helper-window-mode-line-format)))
          ;;                       ))
          )
-
+        
         ("\\*Async Shell Command\\*" display-buffer-in-side-window
          (window-height . 0.20)
          (side . bottom)

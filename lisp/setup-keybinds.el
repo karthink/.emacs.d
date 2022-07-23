@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 (use-package general
   ;; :preface (setq use-package-ignore-unknown-keywords t)
   :straight t
@@ -274,49 +275,13 @@
   (defun my/repeat-mode ()
     (let ((inhibit-message t)
           (message-log-max nil))
-      (repeat-mode)))
-  
-  (use-package which-key
-    :after which-key
-    :config
-    ;; (advice-add 'repeat-post-hook :after
-    ;;             (defun my/which-key-repeat ()
-    ;;               (when-let ((cmd (or this-command real-this-command))
-    ;;                          (keymap (repeat--command-property 'repeat-map)))
-    ;;                 (run-at-time
-    ;;                  which-key-idle-delay nil
-    ;;                  (lambda () 
-    ;;                    (which-key--create-buffer-and-show
-    ;;                     nil (symbol-value keymap)))))))
+      (repeat-mode))))
 
-    (defun my/which-key-repeat-mode-dispatch ()
-      (interactive)
-      (setq this-command last-command)
-      (when-let (keymap (repeat--command-property 'repeat-map))
-        (which-key--create-buffer-and-show
-         nil (symbol-value keymap))))
-    
-    ;; (defun my/which-key-repeat-mode-binding ()
-    ;;   (when repeat-mode
-    ;;     (when-let* ((rep-map-sym (or repeat-map (repeat--command-property 'repeat-map)))
-    ;;                 (keymap (and (symbolp rep-map-sym) (symbol-value rep-map-sym))))
-    ;;       (set-transient-map
-    ;;        (make-composed-keymap
-    ;;         (let ((map (make-sparse-keymap)))
-    ;;           (define-key map (kbd "C-h") #'my/which-key-repeat-mode-dispatch)
-    ;;           map)
-    ;;         keymap)))))
-    
-    (defun my/which-key-repeat-mode-binding ()
-      (when repeat-mode
-        (when-let* ((rep-map-sym (or repeat-map (repeat--command-property 'repeat-map)))
-                    (keymap (and (symbolp rep-map-sym) (symbol-value rep-map-sym))))
-          (set-transient-map
-           (let ((map (make-sparse-keymap)))
-             (set-keymap-parent map keymap)
-             (define-key map (kbd "<f1>") #'my/which-key-repeat-mode-dispatch)
-             map)))))
-    (advice-add 'repeat-post-hook :after #'my/which-key-repeat-mode-binding)))
+(use-package repeat-help
+  :load-path "plugins/repeat-help/"
+  :hook (repeat-mode . repeat-help-mode)
+  :config
+  (setq repeat-help-key "<f1>"))
 
 
 

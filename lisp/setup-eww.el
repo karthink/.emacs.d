@@ -7,7 +7,7 @@
 
 (use-package eww
   :bind ("M-s W" . eww-search-words)
-  :hook (eww-after-render . visual-fill-column-mode)
+  :hook (eww-after-render . (lambda () (setq line-spacing 0.1)))
   :config
   (setq eww-browse-url-new-window-is-tab nil))
 

@@ -148,6 +148,7 @@ This relies on the external 'fd' executable."
   :straight t)
 
 (use-package dired-async
+  :disabled
   :after (dired async)
   :hook (dired-mode . dired-async-mode))
 
@@ -180,6 +181,7 @@ This relies on the external 'fd' executable."
       (error "no more than 2 files should be marked"))))
 
 (use-package dired-subtree
+  :disabled
   :straight t
   :after dired
   :config
@@ -191,6 +193,7 @@ This relies on the external 'fd' executable."
               ))
 
 (use-package peep-dired
+  :disabled
   :load-path "plugins/peep-dired/"
   :general
   (:states '(normal visual)
@@ -303,7 +306,9 @@ This relies on the external 'fd' executable."
       (ibuffer-sidebar-toggle-sidebar))
     (dired-sidebar-toggle-sidebar)))
 
+;; Disabled while testing dirvish
 (use-package dired-rsync
+  :disabled
   :straight t
   :bind (:map dired-mode-map
          ("r" . dired-rsync))
@@ -321,11 +326,58 @@ This relies on the external 'fd' executable."
   :hook (dired-mode . diredfl-mode))
 
 (use-package dired-hist
+  :disabled
   :load-path "plugins/dired-hist/"
   :after dired
   :bind (:map dired-mode-map
          ("l" . dired-hist-go-back)
          ("r" . dired-hist-go-forward))
   :config (dired-hist-mode 1))
+
+(use-package dirvish
+  :straight t
+  :after dired
+  :demand t
+  :config
+  (dirvish-override-dired-mode 1)
+  ;; (setq dired-listing-switches
+  ;;       "-l --almost-all --human-readable --time-style=long-iso --group-directories-first --no-group")
+  (setq dirvish-cache-dir
+        (expand-file-name
+         "dirvish" user-cache-directory))
+  (setq dirvish-attributes '(vc-state subtree-state collapse))
+  (defun my/dirvish-sort-toggle-or-edit (&optional arg)
+    (interactive "P")
+    (call-interactively
+     (if arg
+         #'dirvish-ls-switches-menu
+       #'dirvish-quicksort)))
+  :bind
+  ;; Bind `dirvish|dirvish-side|dirvish-dwim' as you see fit
+  (("M-s M-f" . dirvish-fd)
+   :map dired-mode-map ; Dirvish respects all the keybindings in this map
+   ;; ("h" . dired-up-directory)
+   ;; ("j" . dired-next-line)
+   ;; ("k" . dired-previous-line)
+   ;; ("l" . dired-find-file)
+   ;; ("i" . wdired-change-to-wdired-mode)
+   ;; ("." . dired-omit-mode)
+   ("b"   . dirvish-bookmark-jump)
+   ("f"   . dirvish-file-info-menu)
+   ("y"   . dirvish-yank-menu)
+   ("N"   . dirvish-narrow)
+   ("s"   . my/dirvish-sort-toggle-or-edit) ; remapped `dired-sort-toggle-or-edit'
+   ("?"   . dirvish-dispatch)  ; remapped `dired-summary'
+   ("TAB" . dirvish-subtree-toggle)
+   ("SPC" . dirvish-history-jump)
+   ("r" . dirvish-history-go-forward)
+   ("l" . dirvish-history-go-backward)
+   ;; ("M-l" . dirvish-ls-switches-menu)
+   ("M-*" . dirvish-mark-menu)
+   ("f" . dirvish-toggle-fullscreen)
+   ;; ("M-e" . dirvish-emerge-menu)
+   ;; ("M-j" . dirvish-fd-jump)
+   ;; ("M-s" . dirvish-setup-menu)
+   ))
 
 (provide 'setup-dired)

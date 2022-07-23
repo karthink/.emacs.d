@@ -289,6 +289,7 @@ When the number of characters in a buffer exceeds this threshold,
          :map embark-become-file+buffer-map
          ("d" . consult-dir))
   :config
+  (add-to-list 'consult-dir-sources 'consult-dir--source-tramp-ssh t)
   (setq consult-dir-shadow-filenames nil)
   (defun consult-dir-maybe ()
     (interactive)

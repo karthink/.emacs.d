@@ -35,32 +35,32 @@
               (const :tag "wide" 'wide)
               (const :tag "unspecified" nil))
      nil
-     (intern-soft (completing-read "Aspect ratio" '(tall wide))))
+     (intern-soft (completing-read "Aspect ratio: " '(tall wide))))
 
     (demo--define-infix
      "m" "mode-line-p" "mode-line?"
-     'boolean nil
+     'boolean t
      (not demo-mode-line-p))
 
     (demo--define-infix
      "h" "height" "Height in pixels"
-     'integer 640
+     'integer 840
      (pcase demo-aspect-ratio
-       ('tall 1080)
-       ('wide 640)
+       ('tall 840)
+       ('wide 800)
        (_ (read-number "Height (pixels): "))))
 
     (demo--define-infix
      "w" "width" "Width in pixels"
-     'integer 820
+     'integer 740
      (pcase demo-aspect-ratio
-       ('tall 610)
-       ('wide 820)
+       ('tall 740)
+       ('wide 1280)
        (_ (read-number "Width (pixels): "))))
 
     (demo--define-infix
      "t" "theme" "Theme"
-     'theme 'modus-vivendi
+     'theme 'modus-operandi
      (intern-soft
       (completing-read "Use theme: "
                        (mapcar #'symbol-name
@@ -69,17 +69,17 @@
 
     (demo--define-infix
      "f" "fontsize" "Font size"
-     'integer '150
+     'integer '125
      (read-number "Font size (points): "))
 
     (demo--define-infix
      "k" "keycast-p" "keycast-mode?"
-     'boolean nil
+     'boolean t
      (not demo-keycast-p))
 
     (demo--define-infix
      "c" "autocomplete-p" "autocompletion?"
-     'boolean nil
+     'boolean t
      (not demo-autocomplete-p))
     
     (demo--define-infix
@@ -91,7 +91,14 @@
      (pcase demo-popper-style
        ('t 'user)
        ('user 'nil)
-       ('nil 't))))
+       ('nil 't)))
+
+    (demo--define-infix
+     "vt" "truncate-lines-p"  "truncate lines?"
+     'boolean nil
+     (not demo-truncate-lines-p))
+
+    )
 
   (transient-define-prefix demo-transient ()
      "Turn on demo mode"
@@ -106,69 +113,60 @@
       (demo--set-mode-line-p)
       (demo--set-keycast-p)
       (demo--set-autocomplete-p)
-      (demo--set-popper-style)]
+      (demo--set-popper-style)
+      (demo--set-truncate-lines-p)]
      ["Action"
       ("RET" "Toggle demo-mode" demo-mode)]))
 
 (defvar my/current-themes custom-enabled-themes)
 (defvar my/frame-name nil)
-(define-minor-mode demo-mode ()
-    :global t
-    :keymap nil
-    (if demo-mode
-        (progn
-
-          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
-          ;; Elfeed demo
-          (with-eval-after-load 'elfeed-tube
-            (setq elfeed-tube-invidious-url "https://vid.puffyan.us"
-                  elfeed-tube-save-to-db-p nil))
-          
-          ;; For pasting
-          (kill-new "https://www.youtube.com/c/QuantaScienceChannel")
-          (kill-new "https://www.youtube.com/playlist?list=PLEoMzSkcN8oMc34dTjyFmTUWbXTKrNfZA")
-          (find-file "~/.emacs.orig/plugins/elfeed-tube/demo.org")
-          (setq x-gtk-use-system-tooltips nil)
-          (tooltip-mode 0)
-          (tooltip-mode 1)
-          (add-hook 'elfeed-tube-channels-mode-hook
-                    'hl-line-mode)
-          
-          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-          
-          ;; Always needed
-          (add-hook 'grep-mode-hook 'toggle-truncate-lines)
-
-          ;; Unneeded
-          (dolist (mode '(project-x-mode))
+(define-minor-mode demo-mode
+  "Mode for demos"
+  :global t
+  :keymap nil
+  (if demo-mode
+      (progn
+        ;; Always needed
+        (add-hook 'grep-mode-hook 'toggle-truncate-lines)
+        
+	;; Unneeded
+        (when (featurep 'project-x)
+	  (dolist (mode '(project-x-mode))
             (if (bound-and-true-p mode)
                 (funcall (symbol-function mode) 0)))
           
-          (project-x-mode 0)
-          
-          ;; Popups
-          (demo-popper-apply-settings demo-popper-style)
-          
-          ;; Autocompletion
-          (cond
-           ((fboundp 'corfu-mode) (corfu-mode (if demo-autocomplete-p 1 0)))
-           ((fboundp 'company-mode) (company-mode (if demo-autocomplete-p 1 0))))
+          (project-x-mode 0))
+        
+        ;; Popups
+        (demo-popper-apply-settings demo-popper-style)
+        
+        ;; Autocompletion
+        (cond
+         ((fboundp 'corfu-mode) (corfu-mode (if demo-autocomplete-p 1 0)))
+         ((fboundp 'company-mode) (company-mode (if demo-autocomplete-p 1 0))))
+        ;; Mode line
+        (unless demo-mode-line-p
+          (my/mode-line-hidden-mode 1))
+        ;; Keycast
+        (when (and demo-keycast-p)
+          (tab-bar-mode 1)
+	  (keycast-tab-bar-mode 1))
+        
+	;; Theme
+        (setq my/current-themes custom-enabled-themes)
+        (mapc (lambda (theme)
+                (disable-theme theme))
+              custom-enabled-themes)
+        (unless (member demo-theme custom-enabled-themes)
+          (load-theme demo-theme t))
 
-          ;; Mode line
-          (unless demo-mode-line-p
-            (my/mode-line-hidden-mode 1))
-          ;; Keycast
-          (if (and demo-keycast-p (not my/mode-line-hidden-mode))
-            (keycast-mode 1))
-          ;; Theme
-          (setq my/current-themes custom-enabled-themes)
-          (mapc (lambda (theme)
-                  (unless (eq demo-theme theme)
-                    (disable-theme theme)))
-                custom-enabled-themes)
-          (unless (member demo-theme custom-enabled-themes)
-            (load-theme demo-theme t))
-          ;; Font
+	(let ((inhibit-message t))
+	  (if demo-truncate-lines-p
+	      (toggle-truncate-lines 1)
+	    (toggle-truncate-lines -1)
+	    (visual-line-mode 1)))
+	  
+	  ;; Font
           (set-face-attribute
            'default nil
            :family "Monospace"
@@ -182,17 +180,16 @@
           (set-frame-size (selected-frame)
                           demo-width
                           demo-height
-                          'pixelwise)
-
-          (visual-line-mode 1))
+                          'pixelwise))
 
       ;; Restore popup behavior
       (demo-popper-apply-settings 'user)
       
       ;; Restore themes
-      (unless (member demo-theme my/current-themes)
-        (disable-theme demo-theme))
-      (mapc (lambda (theme) (load-theme theme t)) my/current-themes)
+      (mapc (lambda (t) (disable-theme t)) custom-enabled-themes)
+      ;; (unless (member demo-theme my/current-themes)
+      ;;   (disable-theme demo-theme))
+      ;; (mapc (lambda (theme) (load-theme theme t)) my/current-themes)
 
       ;; Restore font
       (set-face-attribute
@@ -201,17 +198,43 @@
        :slant 'normal
        :height 130
        :width 'normal)
-      (set-frame-parameter
-       nil 'name my/frame-name)
+      (set-frame-parameter nil 'name my/frame-name)
 
       ;; Restore mode-line
       (when demo-mode-line-p
         (my/mode-line-hidden-mode -1))
       (when demo-keycast-p
-        (keycast-mode -1))
+        (keycast-tab-bar-mode -1))
 
       ;; Restore frame
       (set-frame-size (selected-frame) 80 26)))
+
+          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
+          ;; Elfeed demo
+          ;; (with-eval-after-load 'elfeed-tube
+          ;;   (setq elfeed-tube-invidious-url "https://vid.puffyan.us"
+          ;;         elfeed-tube-save-to-db-p nil))
+          
+          ;; ;; For pasting
+          ;; (kill-new "https://www.youtube.com/c/QuantaScienceChannel")
+          ;; (kill-new "https://www.youtube.com/playlist?list=PLEoMzSkcN8oMc34dTjyFmTUWbXTKrNfZA")
+          ;; (find-file "~/.emacs.orig/plugins/elfeed-tube/demo.org")
+          ;; (setq x-gtk-use-system-tooltips nil)
+          ;; (tooltip-mode 0)
+          ;; (tooltip-mode 1)
+          ;; (add-hook 'elfeed-tube-channels-mode-hook
+          ;;           'hl-line-mode)
+          
+          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(define-minor-mode my/mode-line-hidden-mode
+    "Toggle modeline visibility in the current buffer."
+    :init-value nil
+    :global nil
+    (if my/mode-line-hidden-mode
+        (setq-local mode-line-format nil)
+      (kill-local-variable 'mode-line-format)
+      (force-mode-line-update)))
 
 ;; Popper mode
 (use-package popper
@@ -253,7 +276,10 @@
 ;; Completion
 (use-package emacs
   :config
-  (setq completion-in-region-function #'consult-completion-in-region))
+  (setq completion-in-region-function
+	(if (featurep 'consult)
+	    #'consult-completion-in-region
+	  #'completion--in-region)))
 
 ;; Elmo
 (use-package elmo

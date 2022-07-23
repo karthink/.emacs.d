@@ -724,3 +724,103 @@
 ;;               'scheme-send-definition-and-go)
 ;;             (define-key scheme-mode-map (kbd "C-c M-e") 
 ;;               'scheme-compile-definition-and-go)))
+
+;; (defmacro plist-shape (plst &rest forms)
+;;   (declare (indent defun))
+;;   (let ((calls `(,plst thread-last)))
+;;     (dolist (form forms)
+;;       (cl-typecase form
+;;         (atom (push (list form) calls))
+;;         (cons
+;;          (pcase (car form)
+
+;;            ((or 'get 'pick)
+;;             (push `(funcall (lambda (map) (pick map ,@(cdr form)))) calls))
+
+;;            ((or 'map 'each)
+;;             (if (or (functionp (car (cdr-safe form)))
+;;                     (and (atom (car (cdr-safe form)))
+;;                          (not (keywordp (car (cdr-safe form))))))
+;;                 (push `(seq-map (lambda (el) (funcall ',(cadr form) el))) calls)
+;;               (push `(seq-map (lambda (el) (map-nested-elt el ',(cdr form))))
+;;                     calls)))
+
+;;            ((or 'red 'reduce 'fold)
+;;             (if (not (functionp (car (cdr-safe form))))
+;;                 (push `(seq-map (lambda (el) (map-nested-elt el ',(cdr form)))) calls)
+;;               (push `(funcall (lambda (map) (seq-reduce
+;;                                         ',(cadr form) map ,(caddr form))))
+;;                     calls)))
+
+;;            ((or 'cat 'conc 'concat)
+;;             (dotimes (_ (or (nth 2 form) 1))
+;;               (push `(seq--into-list) calls)
+;;               (push `(apply #'seq-concatenate ',(or (cadr form) 'list)) calls)))
+
+;;            ((or 'merg 'merge)
+;;             (if (functionp (car (cdr-safe form)))
+;;                 (push `(funcall (lambda (m) (map-merge 'plist m
+;;                                         (funcall ',(cadr form) m))))
+;;                       calls)
+;;               (push `(funcall (lambda (m) (apply #'map-merge 'plist m ',(cdr form)))) calls)))
+
+;;            ((or 'filter 'fil 'only 'when)
+;;             (if (functionp (car (cdr-safe form)))
+;;                 (if (= 2 (car (func-arity (cadr form))))
+;;                   (push `(map-filter ',(cadr form)) calls)
+;;                 (push `(seq-filter ',(cadr form)) calls))
+;;               (push `(seq-filter (lambda (el) (map-nested-elt el ',(cdr form))))
+;;                     calls)
+;;               ;; (push `(funcall (lambda (m) (map-into m 'plist))) calls)
+;;               ))
+
+;;            ;; ('vals
+;;            ;;  (push '(map-values) calls))
+
+;;            ;; ('keys
+;;            ;;  (push '(map-keys) calls))
+
+;;            ((or 'onto 'into)
+;;             (pcase (car-safe (cdr form))
+;;               ('list (push '(seq--into-list) calls))
+;;               ('vector (push '(seq--into-vector) calls))
+;;               ('plist (push `(funcall (lambda (m) (map-into m 'plist))) calls))))
+
+;;            ('uniq
+;;             (push `(funcall (lambda (map) (seq-uniq map ',(car-safe (cdr form)))))
+;;                   calls))
+
+;;            ('sort
+;;             (if (null (cddr form))
+;;                 (push `(seq-sort ',(cadr form)) calls)
+;;               (push `(seq-sort (lambda (a b)
+;;                                  (let ((av (pick a ,@(cddr form)))
+;;                                        (bv (pick b ,@(cddr form))))
+;;                                   (funcall ',(cadr form) av bv))))
+;;                       calls)))
+
+;;            (_ (push form calls))))))
+
+;;     `(cl-letf (((symbol-function 'pick)
+;;                 (lambda (map &rest keys)
+;;                  (seq-reduce (lambda (result next)
+;;                                (cond
+;;                                 ((functionp next) (funcall next result))
+;;                                 ((or (numberp next)
+;;                                   (keywordp next))
+;;                                  (map-elt result next))
+;;                                 (t result)))
+;;                   keys
+;;                   map)))
+;;                ((symbol-function 'merge)
+;;                 (lambda (el &rest maps)
+;;                   (apply #'map-merge 'plist el maps)))
+;;                ((symbol-function 'each)
+;;                 (lambda (coll &rest keys-or-func)
+;;                   (if (functionp (car keys-or-func))
+;;                       (seq-map (car keys-or-func) coll)
+;;                     (seq-map (lambda (el) (map-nested-elt el keys-or-func)) coll))
+;;                   ))
+;;                ((symbol-function 'vals) #'map-values)
+;;                ((symbol-function 'keys) #'map-keys))
+;;       ,(reverse calls))))

@@ -19,6 +19,7 @@
   :straight t
   :commands (elfeed elfeed-update elfeed-search-bookmark-handler)
   :config
+  (use-package setup-reading)
   (setq elfeed-feeds my-elfeed-feeds)
   ;; (setq elfeed-feeds nil)
   
@@ -44,10 +45,10 @@
       (declare (indent defun))
       `(when-let ((win
                    (or (get-buffer-window "*elfeed-entry*")
-                    (cl-some (lambda (w)
-                               (and (eq
+                    (seq-some (lambda (w)
+                               (and (memq
                                      (buffer-mode (window-buffer w))
-                                     'elfeed-show-mode)
+                                     '(elfeed-show-mode eww-mode))
                                 w))
                      (window-list)))))
         (with-selected-window win
@@ -70,7 +71,7 @@
       (interactive "p")
       (forward-line (* times (or lines 0)))
       (recenter)
-      (let ((elfeed-show-entry-switch #'elfeed-display-buffer))
+      (let ((elfeed-show-entry-switch #'my/reader-display-buffer))
         (call-interactively #'elfeed-search-show-entry))
       (when-let ((win (get-buffer-window "*elfeed-search*")))
         (select-window win)
@@ -95,11 +96,32 @@
     (elfeed-with-open-entry
      (consult-imenu)))
   
-  (defun my/elfeed-search-quit-window ()
-    (interactive)
-    (or (elfeed-with-open-entry
-          (kill-buffer-and-window) t)
-        (call-interactively #'elfeed-search-quit-window)))
+  (defun elfeed-search-eww-open (&optional use-generic-p)
+    "Visit the current entry in your browser using `eww'."
+    (interactive "P")
+    (let ((buffer (current-buffer))
+          (entries (elfeed-search-selected))
+          (browse-url-browser-function #'eww-browse-url))
+      (cl-loop for entry in entries
+               do (elfeed-untag entry 'unread)
+               when (elfeed-entry-link entry)
+               do (elfeed-with-open-entry 
+                    (if use-generic-p
+                        (browse-url-generic it)
+                      (browse-url it))
+                    (add-hook 'eww-after-render-hook 'eww-readable nil t)))
+      (with-current-buffer buffer
+        (mapc #'elfeed-search-update-entry entries)
+        (unless (or elfeed-search-remain-on-entry (use-region-p))
+          (forward-line)))))
+  
+  ;; (defun my/elfeed-search-quit-window ()
+  ;;   (interactive)
+  ;;   (or (elfeed-with-open-entry
+  ;;         (pcase (buffer-mode (current-buffer))
+  ;;           ('elfeed-show-mode (kill-buffer-and-window) t)
+  ;;           ('eww-mode (quit-window) t)))
+  ;;       (call-interactively #'elfeed-search-quit-window)))
   
   (defun my/elfeed-show-quit-window ()
     (interactive)
@@ -109,19 +131,6 @@
           (select-window (get-buffer-window "*elfeed-search*")))
       (kill-buffer (current-buffer))))
   
-  (defun elfeed-display-buffer (buf &optional act)
-    (pop-to-buffer buf `((display-buffer-reuse-window display-buffer-in-direction)
-                         (direction . ,(if (> (window-width) 130)
-                                           'right 'above))
-                         (window-height . 0.72)
-                         (window-width . 0.6)))
-    ;; (set-window-text-height (get-buffer-window) (round (* 0.7 (frame-height))))
-    ) 
-  
-  ;; (advice-add 'elfeed-kill-buffer :after 'delete-window-if-not-single)
-  (advice-add 'elfeed-show-entry :after (defun elfeed-visual-lines-a (_entry)
-                                          (visual-line-mode 1)))
-
   (defun elfeed-scroll-up-command (&optional arg)
     "Scroll up or go to next feed item in Elfeed"
     (interactive "^P")
@@ -140,15 +149,22 @@
   
   (defun my/elfeed-search-scroll-up-command (&optional arg)
     (interactive "^P")
-   (if-let ((show-win (get-buffer-window "*elfeed-entry*"))
-             (_ (window-live-p show-win)))
+   (if-let ((show-win (seq-some
+                       (lambda (w)
+                         (let* ((bm (buffer-mode (window-buffer w))))
+                           (and (memq bm '(elfeed-show-mode eww-mode)) w)))
+                       (window-list))))
        (with-selected-window show-win
          (elfeed-scroll-up-command arg))
       (funcall (elfeed-search-show-entry-pre 1) 1)))
 
   (defun my/elfeed-search-scroll-down-command (&optional arg)
     (interactive "^P")
-   (if-let ((show-win (get-buffer-window "*elfeed-entry*"))
+   (if-let ((show-win (seq-some
+                       (lambda (w)
+                         (let* ((bm (buffer-mode (window-buffer w))))
+                           (and (memq bm '(elfeed-show-mode eww-mode)) w)))
+                       (window-list)))
              (_ (window-live-p show-win)))
        (with-selected-window show-win
          (elfeed-scroll-down-command arg))
@@ -195,13 +211,6 @@ MYTAG"
     (interactive "P")
     (let ((browse-url-browser-function #'eww-browse-url))
       (elfeed-show-visit use-generic-p)
-      (add-hook 'eww-after-render-hook 'eww-readable nil t)))
-
-  (defun elfeed-search-eww-open (&optional use-generic-p)
-    "open with eww"
-    (interactive "P")
-    (let ((browse-url-browser-function #'eww-browse-url))
-      (elfeed-search-browse-url use-generic-p)
       (add-hook 'eww-after-render-hook 'eww-readable nil t)))
 
   (defun elfeed-umpv-url (&optional use-single-p)
@@ -380,6 +389,19 @@ USE-SINGLE-P) with mpv."
   ;;   "Marks a 'read-later' Elfeed entry.")
   ;; (push '(later elfeed-entry-read-later)
   ;;       elfeed-search-face-alist)
+  (use-package setup-reading
+    :bind (:map elfeed-search-mode-map
+           ("RET" . my/reader-show)
+           ("M-n" . my/reader-next)
+           ("M-p" . my/reader-prev)
+           ("q" . my/reader-quit-window)
+           ("SPC" . my/reader-scroll-up-command)
+           ("S-SPC" . my/reader-scroll-down-command)
+           ("DEL" . my/reader-scroll-down-command)
+           ("M-s i" . my/reader-imenu)
+           ("i" . my/reader-imenu)
+           ("<tab>" . my/reader-push-button)
+           ("M-s u" . my/reader-browse-url)))
   :general
   (:states '(normal visual)
            :keymaps 'elfeed-search-mode-map
@@ -399,7 +421,6 @@ USE-SINGLE-P) with mpv."
   (:keymaps 'elfeed-show-mode-map
             "SPC" 'elfeed-scroll-up-command
             "S-SPC" 'elfeed-scroll-down-command
-            "W" 'elfeed-search-eww-open
             "w" 'elfeed-show-yank
             "B" 'elfeed-show-eww-open
             "x" 'elfeed-search-browse-url
@@ -408,22 +429,16 @@ USE-SINGLE-P) with mpv."
             "u" 'my/scroll-down-half
             [remap elfeed-kill-buffer] 'my/elfeed-show-quit-window)
   (:keymaps 'elfeed-search-mode-map
-            [remap elfeed-search-quit-window] 'my/elfeed-search-quit-window
-            "M-i" 'my/elfeed-search-imenu
-            "i" 'my/elfeed-search-imenu
-            "<tab>" 'my/elfeed-search-push-button
-            "M-s u" 'my/elfeed-search-browse-url
+            [remap elfeed-search-quit-window] 'my/reader-quit-window
+            "M-RET" 'elfeed-search-show-entry
             "w" 'elfeed-search-yank
             "C-<tab>" 'my/elfeed-quick-switch-filter
-            "SPC" 'my/elfeed-search-scroll-up-command
-            "DEL" 'my/elfeed-search-scroll-down-command
-            "S-SPC" 'my/elfeed-search-scroll-down-command
             "B" 'elfeed-search-eww-open
-            "W" 'elfeed-search-eww-open
             "x" 'elfeed-search-browse-url))
 
 ;; * WALLABAG
-(use-package wallabag
+(use-package wallabag-post
+  :disabled
   :load-path "plugins/wallabag"
   :commands wallabag-post-entry
   :config
@@ -440,8 +455,19 @@ USE-SINGLE-P) with mpv."
 ;; More integration: Send Elfeed entries to my Wallabag instance to read later
 (use-package elfeed
   :defer
+  :bind (:map elfeed-search-mode-map
+         ("W" . my/switch-to-wallabag))
   :config
-  (use-package wallabag
+  (defun my/switch-to-wallabag ()
+    (interactive)
+    (if-let ((buf (get-buffer "*wallabag-search*")))
+        (switch-to-buffer buf)
+      (if (featurep 'wallabag)
+          (wallabag)
+        (message "Wallabag not available."))))
+  
+  (use-package wallabag-post
+    :disabled
     :config 
     (defun elfeed-post-to-wallabag ()
       "Post current entry (or entry at point) to Wallabag"
@@ -523,6 +549,7 @@ USE-SINGLE-P) with mpv."
                   (when (require 'visual-fill-column nil t)
                     (setq-local visual-fill-column-center-text t
                                 visual-fill-column-width (1+ shr-width))
+                    (visual-line-mode 1)
                     (visual-fill-column-mode 1))
                   (setq-local
                    imenu-prev-index-position-function #'elfeed-tube-prev-heading

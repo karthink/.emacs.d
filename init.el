@@ -389,6 +389,8 @@
 (use-package visual-fill-column
   :straight t
   :commands visual-fill-column-mode
+  :hook ((eww-after-render . visual-fill-column-mode)
+         (eww-after-render . visual-line-mode))
   :config
   (setq-default visual-fill-column-center-text t))
 
@@ -680,6 +682,33 @@ Also kill this window, tab or frame if necessary."
                   ;; "\\*scratch.*\\*$"
                   "[Oo]utput\\*")))
 
+  (advice-add 'popper-cycle :after
+              (defun my/popper-cycle-repeated (&rest _)
+                "Continue to cycle popups with the grave key."
+                (set-transient-map
+                 (let ((map (make-sparse-keymap)))
+                   (define-key map (kbd "`") #'popper-cycle)
+                   map))))
+  
+  (setq popper-display-function
+        (defun my/popper-select-below (buffer &optional _alist)
+          (funcall (if (> (frame-width) 170)
+                       #'display-buffer-in-direction
+                     #'display-buffer-at-bottom)
+           buffer
+           `((window-height . ,popper-window-height)
+             (direction . below)
+             (body-function . ,#'select-window)))))
+  
+  (use-package embark
+    :defer
+    :bind (:map embark-buffer-map
+           ("_" . embark-popper-toggle))
+    :config
+    (defun embark-popper-toggle (buf)
+      "Toggle popup status."
+      (popper-toggle-type buf)))
+  
   (use-package popper-echo
     :defer 3
     :config
@@ -874,7 +903,7 @@ User buffers are those not starting with *."
    ("H-<up>" . windmove-swap-states-up)
    ("H-<left>" . windmove-swap-states-left))
   :config
-  (use-package emacs-i3))
+  (use-package emacs-wm))
 
 ;;----------------------------------------------------------------
 ;; ** Transpose-frame
@@ -955,6 +984,7 @@ surrounded by word boundaries."
 ;; #+INCLUDE: "./lisp/reb-fix.org" 
 ;;;----------------------------------------------------------------
 
+;;;################################################################
 ;; * UTILITY
 ;;;################################################################
 ;; Count words, print ASCII table, etc
@@ -1154,6 +1184,7 @@ If region is active, add its contents to the new buffer."
 ;; ** MARKDOWN
 ;;;----------------------------------------------------------------
 (use-package markdown-mode :straight t :defer)
+(use-package edit-indirect :straight t :defer)
 
 ;;;----------------------------------------------------------------
 ;; ** LSP SUPPORT
@@ -1221,14 +1252,37 @@ If region is active, add its contents to the new buffer."
 ;; ** EMACS-LISP
 ;;;----------------------------------------------------------------
 (use-package pp
-  :bind ([remap eval-last-sexp] . eval-sexp-maybe-pp)
+  :bind (([remap eval-last-sexp] . eval-sexp-maybe-pp)
+         ([remap eval-expression] . my/pp-eval-expression))
   :config
   (defun eval-sexp-maybe-pp (&optional arg)
     (interactive "P")
     (if arg
         (let ((current-prefix-arg '4))
           (call-interactively #'pp-eval-last-sexp))
-      (call-interactively #'eval-last-sexp))))
+      (call-interactively #'eval-last-sexp)))
+  
+  (defun my/pp-eval-expression (&optional insert-p)
+    "Call `pp-eval-expression' on EXPR. With prefix-arg INSERT-P,
+call `eval-expression' instead and insert the result into the
+current buffer without truncation."
+    (interactive "P")
+    (if insert-p
+        (let ((current-prefix-arg current-prefix-arg))
+          (call-interactively #'eval-expression))
+      (call-interactively #'pp-eval-expression)))
+  
+  (advice-add 'pp-display-expression :after
+              (defun my/pp-handle-output-buffer (_ out-buffer-name)
+                (when-let* ((win (get-buffer-window out-buffer-name))
+                            (_ (window-live-p win)))
+                  (select-window win)
+                  (view-mode 1)))))
+
+(use-package macrostep
+  :straight t
+  :bind (:map emacs-lisp-mode-map
+         ("C-c C-e" . macrostep-expand)))
 
 (use-package elisp-mode
   :defer t
@@ -1507,6 +1561,7 @@ If region is active, add its contents to the new buffer."
 ;;;################################################################
 ;; ** JSON
 (use-package jsonian
+  :disabled
   :straight (:host github :repo "iwahbe/jsonian")
   :init (add-to-list 'magic-fallback-mode-alist
                      '("^[{[]$" . jsonian-mode))
@@ -1516,6 +1571,7 @@ If region is active, add its contents to the new buffer."
          ("C-c '" . jsonian-edit-string)
          ("C-c C-w" . jsonian-path)
          ("C-M-e" . jsonian-enclosing-item)))
+
 ;; * PLUGINS
 ;;;################################################################
 
@@ -1630,9 +1686,9 @@ If region is active, add its contents to the new buffer."
   (setq strokes-file (dir-concat user-cache-directory "strokes"))
   (setq strokes-use-strokes-buffer t))
 
-;;;----------------------------------------------------------------
-;; ** ERRORS
-;;;----------------------------------------------------------------
+;; ;;;----------------------------------------------------------------
+;; ;; ** ERRORS
+;; ;;;----------------------------------------------------------------
 
 ;; This code makes it easy to repeat navigation to the next/previous error.
 ;; Emacs 28 has repeat-mode that does this by default.
@@ -1784,7 +1840,8 @@ is not visible. Otherwise delegates to regular Emacs next-error."
                #'browse-url-umpv)))
         (browse-url-at-point)))
 
-    (setq browse-url-generic-program "/usr/bin/qutebrowser")
+    (setq browse-url-generic-program "/usr/bin/qutebrowser"
+          browse-url-new-window-flag t)
     ;; (setq browse-url-browser-function
     ;;       '(("https:\\/\\/www\\.youtu\\.*be." . browse-url-umpv)
     ;;         ("." . browse-url-generic)))
@@ -1799,6 +1856,20 @@ is not visible. Otherwise delegates to regular Emacs next-error."
   :bind (("<f8>"  . toggle-modes)
          ("C-c t" . toggle-modes))
   :config
+  (defun mode-cycle (mode1 mode2)
+    "Cycle between mode1, mode2 and neither enabled."
+    (lambda ()
+      (interactive)
+      (cond 
+       ((bound-and-true-p (symbol-value mode1))
+        (progn (call-interactively (symbol-function mode1))
+               (call-interactively (symbol-function mode2))))
+       ((bound-and-true-p (symbol-value mode2))
+        (call-interactively (symbol-function mode2)))
+       (t (call-interactively (symbol-function mode1))))))
+  
+  (mode-cycle 'electric-pair-mode 'smartparens-mode)
+  
   (transient-bind-q-to-quit)
   (setq transient-display-buffer-action '(display-buffer-below-selected))
   (setq transient-history-file (dir-concat user-cache-directory "transient/history.el")
@@ -1831,15 +1902,24 @@ is not visible. Otherwise delegates to regular Emacs next-error."
                          (if (derived-mode-p 'prog-mode)
                              #'flyspell-prog-mode
                            #'flyspell-mode))))
-      ("V" "view mode" view-mode)
+      ;; ("V" "view mode" view-mode)
       ("o" "outline" outline-minor-mode)]
 
      ["Highlight"
       ("hl" "line" hl-line-mode)
-      ("hp" "paren" show-paren-mode)
+      ("hp" "paren" (lambda ()
+                        (interactive)
+                        (cond 
+                         ((bound-and-true-p paren-face-mode)
+                          (progn (call-interactively #'paren-face-mode)
+                                 (call-interactively #'rainbow-delimiters-mode)))
+                         ((bound-and-true-p rainbow-delimiters-mode)
+                          (call-interactively #'rainbow-delimiters-mode))
+                         (t (call-interactively #'paren-face-mode)))))
       ("hw" "whitespace" whitespace-mode)
       ("hd" "delimiters" rainbow-delimiters-mode)
-      ("hr" "rainbow" rainbow-mode)]
+      ("hr" "rainbow" rainbow-mode)
+      ("hc" "cursor" my/hide-cursor-mode)]
 
      ["Code"
       ("c" "completion" corfu-mode)
@@ -1854,9 +1934,9 @@ is not visible. Otherwise delegates to regular Emacs next-error."
       ;;  :reader (lambda () (interactive)
       ;;            (setq corfu-auto
       ;;                  (not corfu-auto))))
+      ("d" "debug?" toggle-debug-on-error)
       ("g" "vc gutter" diff-hl-mode)
       ("f" "flymake" flymake-mode)
-      ("e" "elec pair" electric-pair-mode)
       ("p" "smartparens" smartparens-mode)]]))
 
 ;;;----------------------------------------------------------------
@@ -1985,15 +2065,17 @@ _d_: subtree
 ;;;----------------------------------------------------------------
 ;; Testing: Beacon
 (use-package beacon
+  :disabled
   :straight t
   :bind ("C-x l" . beacon-blink)
   :defer 4
   :config
-  (setq beacon-blink-delay 0.1))
+  (setq beacon-blink-delay 0.1)
+  (beacon-mode 1))
 
 ;; Flash lines
 (use-package pulse
-  :disabled
+  :bind ("C-x l" . my/pulse-line)
   :custom-face
   (pulse-highlight-start-face ((t (:inherit region))))
   (pulse-highlight-face ((t (:inherit region))))
@@ -2010,6 +2092,12 @@ _d_: subtree
                 (setq pulse-flag t))))
   
   (with-no-warnings
+    (defun my/pulse-line ()
+      "Pulse line at point"
+      (interactive)
+      (let ((pulse-command-advice-flag t))
+        (pulse-line-hook-function)))
+    
     (defun my/pulse-momentary-line (&rest _)
       "Pulse the current line."
       (pulse-momentary-highlight-one-line (point)))
@@ -2033,7 +2121,7 @@ _d_: subtree
     (defun my/pulse-momentary-upper-bound (&rest _)
       "Pulse the upper scrolling bound of the screen."
       (let ((pulse-delay 0.08)
-            (pulse-iterations 20))
+            (pulse-iterations 14))
         (save-excursion
           (move-to-window-line (1- next-screen-context-lines))
           (my/pulse-momentary-line))))
@@ -2041,7 +2129,7 @@ _d_: subtree
     (defun my/pulse-momentary-lower-bound (&rest _)
       "Pulse the lower scrolling bound of the screen."
       (let ((pulse-delay 0.08)
-            (pulse-iterations 20))
+            (pulse-iterations 14))
         (save-excursion
           (move-to-window-line (- next-screen-context-lines))
           (my/pulse-momentary-line))))
@@ -2071,7 +2159,7 @@ _d_: subtree
   :disabled
   :defer t
   :load-path "plugins/wallabag/"
-  :commands wallabag
+  :commands wallabag-post-entry
   :config
   (setq wallabag-host my-wallabag-host)
   (setq wallabag-username my-wallabag-username)
@@ -2192,6 +2280,7 @@ _d_: subtree
         ("M-}"           . sp-forward-barf-sexp)
         ("M-U"           . sp-raise-sexp)
         ("M-C"           . sp-convolute-sexp)
+        ("M-D"           . my/sp-duplicate-sexp)
         ("M-J"           . sp-join-sexp)
         ("C-M-<up>"      . sp-raise-sexp)
         ("C-<right>"     . sp-forward-slurp-sexp)
@@ -2213,6 +2302,45 @@ _d_: subtree
               "Enable \\[electric-pair-mode] when \[[smartparens-mode]] is disabled."
               (electric-pair-local-mode +1)))
   :config
+  ;; Repeat actions
+  ;; Scratch buffer for: emacs-lisp-mode
+
+  (defun my/sp-duplicate-sexp (&optional arg)
+    (interactive "p")
+    (insert (buffer-substring 
+             (save-excursion
+               (backward-sexp)
+               (point))
+             (point))))
+  
+  (defvar lisp-navigation-map
+    (let ((map (make-sparse-keymap)))
+      (pcase-dolist (`(,k . ,f)
+                     '(("u" . backward-up-list)
+                       ("f" . forward-sexp)
+                       ("b" . backward-sexp)
+                       ("d" . down-list)
+                       ("n" . sp-next-sexp)
+                       ("p" . sp-previous-sexp)
+                       ("k" . sp-kill-sexp)
+                       ("]" . sp-forward-slurp-sexp)
+                       ("[" . sp-backward-slurp-sexp)
+                       ("}" . sp-forward-barf-sexp)
+                       ("{" . sp-backward-barf-sexp)
+                       ("r" . sp-raise-sexp)
+                       ("C" . sp-convolute-sexp)
+                       ("D" . my/sp-duplicate-sexp)
+                       ("\\" . indent-region)
+                       ("t" . transpose-sexps)
+                       ("<tab>" . hs-cycle)))
+        (define-key map (kbd k) f))
+      map))
+
+  (map-keymap
+   (lambda (_ cmd)
+     (put cmd 'repeat-map 'lisp-navigation-map))
+   lisp-navigation-map)
+  
   ;; (require 'smartparens-config)
   (sp-with-modes sp-lisp-modes
     ;; disable ', it's the quote character!
@@ -2379,6 +2507,9 @@ for details."
   :commands (sudo-find-file sudo-this-file)
   :bind ("C-x C-S-f" . sudo-find-file)
   :config
+  (add-to-list 'tramp-connection-properties
+               (list (regexp-quote "/sshx:abode.karthinks.com:")
+                     "direct-async-process" t))
   (defun sudo-find-file (file)
     "Open FILE as root."
     (interactive "FOpen file as root: ")
@@ -2750,6 +2881,7 @@ for details."
 ;;;----------------------------------------------------------------
 ;; ** ELFEED
 ;;;----------------------------------------------------------------
+;; (load (expand-file-name "lisp/setup-reading" user-emacs-directory))
 (load (expand-file-name "lisp/setup-elfeed" user-emacs-directory))
 
 ;;;----------------------------------------------------------------
@@ -3180,13 +3312,13 @@ buffer's text scale."
   :init
   (setq modus-themes-org-blocks nil
         modus-themes-org-blocks 'grayscale
-        modus-themes-fringes 'subtle
+        modus-themes-fringes nil
         modus-themes-intense-paren-match t
         modus-themes-bold-constructs t
         ;; modus-themes-italic-constructs t
         modus-themes-completions 'opinionated
         modus-themes-diffs 'desaturated
-        modus-themes-syntax '(faint) ;'(alt-syntax yellow-comments) ;'faint
+        modus-themes-syntax '(alt-syntax faint)
         modus-themes-links '(faint neutral-underline)
         modus-themes-prompts '(bold background)
         modus-themes-subtle-line-numbers t
@@ -3260,9 +3392,10 @@ buffer's text scale."
                '((aw-leading-char-face (:height 2.0 :foreground nil :inherit mode-line-emphasis)
                                        ace-window)
                  (aw-background-face (:inherit default :weight normal) ace-window)
-                 (org-level-1        (:height 1.22 :inherit outline-1) org)
-                 (org-level-2        (:height 1.17 :inherit outline-2) org)
-                 (org-level-3        (:height 1.12 :inherit outline-3) org)
+                 (outline-1        (:height 1.25) outline)
+                 (outline-2        (:height 1.20) outline)
+                 (outline-3        (:height 1.16) outline)
+                 (outline-4        (:height 1.12) outline)
                  (tab-bar            (:background "black" :height 1.0 :foreground "white")
                                      tab-bar)
                  (tab-bar-tab
@@ -3318,7 +3451,8 @@ buffer's text scale."
 (use-package url
   :defer
   :config
-  (setq url-configuration-directory (dir-concat user-cache-directory "url/")))
+  (setq url-configuration-directory (dir-concat user-cache-directory "url/"))
+  (setq url-automatic-caching t))
 
 (use-package request
   :defer

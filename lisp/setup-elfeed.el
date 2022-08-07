@@ -217,20 +217,21 @@ MYTAG"
     "Visit the current entry in umpv or (with prefix arg
 USE-SINGLE-P) with mpv."
     (interactive "P")
-    (let ((browse-url-browser-function (if use-single-p
-                                           (lambda (url &optional _) (browse-url-umpv url t))
-                                           #'browse-url-umpv)))
+    (let ((browse-url-browser-function
+           (if use-single-p
+               (lambda (url &optional _) (browse-url-umpv url t))
+             #'browse-url-umpv)))
       (pcase major-mode
         ('elfeed-search-mode (elfeed-search-browse-url))
         ('elfeed-show-mode (elfeed-show-visit)))))
   
   (defun elfeed-mpv-url (&optional enqueue-p)
-    "Visit the current entry in umpv or (with prefix arg
-USE-SINGLE-P) with mpv."
+    "Visit the current entry in mpv or (with prefix arg
+ENQUEUE-P) add to mpv's playlist."
     (interactive "P")
     (let ((browse-url-browser-function
            (if enqueue-p
-             #'browse-url-umpv-last
+               #'browse-url-mpv-enqueue
              #'browse-url-mpv)))
       (pcase major-mode
         ('elfeed-search-mode (elfeed-search-browse-url))
@@ -318,15 +319,16 @@ USE-SINGLE-P) with mpv."
                             (current-time))))
              (next-day (time-add this-day (days-to-time (or arg 1))))
              (next-next-day (time-add next-day (days-to-time (or arg 1))))
+             (next-next-next-day (time-add next-next-day (days-to-time (or arg 1))))
              (prev-day (time-subtract this-day (days-to-time (or arg 1))))
              from to)
         (pcase dir
-          ('next (setq from next-day
-                       to   next-next-day))
-          ('prev (setq from prev-day
-                       to   this-day))
-          (_     (setq from this-day
-                       to   next-day)))
+          ('next (setq from next-next-day
+                       to   next-next-next-day))
+          ('prev (setq from this-day
+                       to   next-day))
+          (_     (setq from next-day
+                       to   next-next-day)))
         (let ((elfeed-search-date-format '("%Y-%m-%d" 10 :left)))
           (setq elfeed-search-filter (concat (replace-regexp-in-string
                                               "@[^[:space:]]*" ""
@@ -338,42 +340,38 @@ USE-SINGLE-P) with mpv."
   (define-key elfeed-search-mode-map (kbd ".") (my/elfeed-search-by-day 'this))
   (define-key elfeed-search-mode-map (kbd "b") (my/elfeed-search-by-day 'next))
   (define-key elfeed-search-mode-map (kbd "f") (my/elfeed-search-by-day 'prev))
-        
-  (defvar elfeed-search-filter-map
-    (let ((map (make-sparse-keymap)))
-      (define-key map (kbd "+") (lambda () (interactive) (my/elfeed-search-tag-filter "+")))
-      (define-key map (kbd "-") (lambda () (interactive) (my/elfeed-search-tag-filter "-")))
-      (define-key map (kbd "@") (lambda () (interactive) (my/elfeed-search-tag-filter "@")))
-      (define-key map (kbd "RET") 'exit-minibuffer)
-      (define-key map (kbd "<tab>") 'minibuffer-force-complete-and-exit)
-      (define-key map (kbd "C-g") 'abort-recursive-edit)
-      map)
-    "Keymap active when entering filter terms in elfeed")
+  
+  (defvar my/elfeed-db-all-tags nil)
+  
+  (defun elfeed-search-live-filter (&optional refresh-tags)
+    "Filter the elfeed-search buffer as the filter is written.
 
-  (defun elfeed-search-live-filter ()
-    "Filter the elfeed-search buffer as the filter is written."
-    (interactive)
+With prefix-arg REFRESH-TAGS, refresh the cached completion metadata."
+    (interactive "P")
     (unwind-protect
-        (let ((elfeed-search-filter-active :live))
+        (let* ((elfeed-search-filter-active :live)
+               (completions (mapcan (lambda (tag) (list (concat "+" (symbol-name tag))
+                                                   (concat "-" (symbol-name tag))))
+                                    (if (or refresh-tags (not my/elfeed-db-all-tags))
+                                        (elfeed-db-get-all-tags)
+                                      my/elfeed-db-all-tags)))
+               (completion-styles '(basic partial-completion))
+               (minibuffer-completion-table
+                (completion-table-dynamic
+                 (lambda (string)
+                   (cond
+	            ((string-match "\\(^\\|.* (?\\)\\([^ ]*\\)$" string)
+                     (mapcar (lambda (compl)
+			       (concat (match-string-no-properties 1 string) compl))
+		             (all-completions (match-string-no-properties 2 string)
+					      completions)))
+	            (t (list string))))))
+               (keymap (copy-keymap minibuffer-local-map)))
+          (define-key keymap (kbd "TAB") 'minibuffer-complete)
           (setq elfeed-search-filter
-                (read-from-minibuffer "Filter: " elfeed-search-filter elfeed-search-filter-map)))
+                (read-from-minibuffer "Filter: " elfeed-search-filter keymap)))
       (elfeed-search-update :force)))
 
-  (defun my/elfeed-search-tag-filter (plus-minus)
-    "Filter `elfeed' by tags using completion."
-    (let ((elfeed-search-filter-active nil))
-      (if (equal plus-minus "@")
-          (insert (format "@%s "
-                          (replace-regexp-in-string
-                           " +" "-"
-                           (replace-regexp-in-string
-                            " to " "--" 
-                            (read-from-minibuffer "Date range: ")))))
-        (let* ((db-tags (elfeed-db-get-all-tags))
-               (tag (completing-read (format "%s %s" elfeed-search-filter plus-minus) db-tags nil t)))
-          (insert (concat plus-minus tag " ")))))
-    (elfeed-search-update :force))
-  
   (defun my/elfeed-quick-switch-filter ()
     (interactive)
     (bookmark-jump
@@ -537,23 +535,29 @@ USE-SINGLE-P) with mpv."
         elfeed-tube-auto-fetch-p t)
   (setq elfeed-tube-save-indicator t)
   (elfeed-tube-setup)
-  (advice-add 'elfeed-show-entry :after
-              (defun my/elfeed-show-settings-a (entry)
-                (with-current-buffer (elfeed-show--buffer-name entry)
-                  (dolist (f '(message-header-name
-                               message-header-subject
-                               elfeed-tube-chapter-face))
-                    (face-remap-add-relative
-                     f :height 1.1))
-                  (setq-local line-spacing 0.2)
-                  (when (require 'visual-fill-column nil t)
-                    (setq-local visual-fill-column-center-text t
-                                visual-fill-column-width (1+ shr-width))
-                    (visual-line-mode 1)
-                    (visual-fill-column-mode 1))
-                  (setq-local
-                   imenu-prev-index-position-function #'elfeed-tube-prev-heading
-                   imenu-extract-index-name-function #'elfeed-tube--line-at-point))))
+  (use-package setup-reading
+    :config
+    (advice-add 'elfeed-show-entry :after
+                (defun my/elfeed-show-settings-a (entry)
+                  (with-selected-window (get-buffer-window (elfeed-show--buffer-name entry))
+                    (dolist (f '(message-header-name
+                                 message-header-subject
+                                 elfeed-tube-chapter-face))
+                      (face-remap-add-relative
+                       f :height 1.1))
+                    (setq-local line-spacing 0.2)
+                    (when (require 'visual-fill-column nil t)
+                      (setq-local visual-fill-column-center-text t
+                                  visual-fill-column-width (1+ shr-width))
+                      (visual-line-mode 1)
+                      (visual-fill-column-mode 1))
+                    (setq-local
+                     imenu-prev-index-position-function #'elfeed-tube-prev-heading
+                     imenu-extract-index-name-function #'elfeed-tube--line-at-point))
+                  (with-selected-window (get-buffer-window
+                                         (elfeed-show--buffer-name entry))
+                    (let ((inhibit-read-only t))
+                      (my/reader-center-images))))))
   
   (advice-add 'elfeed-tube-next-heading :after
               (defun my/elfeed-jump-recenter (&rest _)

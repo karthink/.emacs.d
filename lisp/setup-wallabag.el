@@ -2,8 +2,7 @@
 (use-package wallabag
   :straight (:host github :repo "chenyanming/wallabag.el"
              :files ("*.el" "*.alist" "*.css"))
-  :hook ((wallabag-post-html-render . my/wallabag-display-settings)
-         (wallabag-post-html-render . visual-fill-column-mode))
+  :hook ((wallabag-post-html-render . my/wallabag-display-settings))
   :bind (:map wallabag-entry-mode-map
          ("SPC" . scroll-up-command)
          ("DEL" . scroll-down-command)
@@ -31,7 +30,9 @@
            ("M-s i" . my/reader-imenu)
            ("i" . my/reader-imenu)
            ("<tab>" . my/reader-push-button)
-           ("M-s u" . my/reader-browse-url)))
+           ("M-s u" . my/reader-browse-url))
+    :config
+    (add-hook 'wallabag-post-html-render-hook #'my/reader-center-images 'append))
   
   (defsubst wallabag-url (url)
       (wallabag-add-entry url ""))
@@ -78,6 +79,11 @@
   
   
   (defun my/wallabag-display-settings ()
+    (when (require 'visual-fill-column nil t)
+                    (setq-local visual-fill-column-center-text t
+                                visual-fill-column-width (1+ shr-width))
+                    (visual-line-mode 1)
+                    (visual-fill-column-mode 1))
     (setq-local line-spacing 0.2)
     (shr-heading-setup-imenu))
   (setq wallabag-show-entry-switch #'switch-to-buffer)

@@ -125,4 +125,25 @@
             t))
         (call-interactively (alist-get (buffer-mode) my/reader-list-quit-functions))))
 
+(defun my/reader-center-images ()
+    "Center images in document. Meant to be added to a post-render
+hook."
+    (let* ((inhibit-read-only t)
+           (pixel-buffer-width (shr-pixel-buffer-width))
+           match)
+      (save-excursion
+        (goto-char (point-min))
+        (while (setq match (text-property-search-forward
+                            'display nil
+                            (lambda (_ p) (eq (car-safe p) 'image))))
+          (when-let ((size (car (image-size
+                                 (prop-match-value match) 'pixels)))
+                     ((> size 150))
+                     (center-pixel (floor (- pixel-buffer-width size) 2))
+                     (center-pos (floor center-pixel (frame-char-width))))
+            (beginning-of-line)
+            (delete-horizontal-space)
+            (indent-to center-pos)
+            (end-of-line))))))
+
 (provide 'setup-reading)

@@ -47,7 +47,7 @@
          :map embark-url-map
          ("B"        . eww)
          ("m"        . browse-url-umpv)
-         ("C-M-m"    . browse-url-umpv-last)
+         ("C-M-m"    . browse-url-mpv-enqueue)
          ("M"        . browse-url-mpv))
   :config
   (setq embark-cycle-key (kbd "SPC"))

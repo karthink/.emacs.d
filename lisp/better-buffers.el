@@ -44,8 +44,12 @@
 The selected window is below.  The newly split-off window is
 below and displays the same buffer.  Return the new window."
   (interactive "P")
-  (split-window-right size)
-  (other-window 1)
+  (select-window 
+   (if size
+       (split-window (frame-root-window)
+                     (floor (frame-width) 2)
+                     t nil)
+     (split-window-right size)))
   (when (interactive-p)
     (if (featurep 'consult)
         (consult-buffer)
@@ -57,8 +61,12 @@ The selected window is on the left.  The newly split-off window
 is on the right and displays the same buffer.  Return the new
 window."
   (interactive "P")
-  (split-window-below size)
-  (other-window 1)
+  (select-window 
+   (if size
+       (split-window (frame-root-window)
+                     (floor (frame-height) 2)
+                     nil nil)
+     (split-window-below size)))
   (when (interactive-p)
     (if (featurep 'consult)
         (consult-buffer)

@@ -83,6 +83,22 @@
 	  ("important" . (:foreground "CornflowerBlue"))
           ("unread"    . (:inherit notmuch-search-unread-face))))
   
+  ;; Hide patches and diffs in notmuch-show by default. Note: To turn them into
+  ;; attachments from inline components you can customize
+  ;; `mm-inline-override-types' instead. This method simply toggles their inline
+  ;; display.
+  (advice-add 'notmuch-show-insert-bodypart :filter-args 'my/notmuch-hide-content)
+
+  (defvar my/notmuch-hide-content-types '("text/x-patch" "text/x-diff"))
+
+  (defun my/notmuch-hide-content (args)
+    (cl-destructuring-bind (msg part depth . hide) args
+      (list msg part depth
+            (if-let ((mime-type (notmuch-show-mime-type part))
+                     (_ (seq-some (lambda (type) (notmuch-match-content-type mime-type type))
+                                  my/notmuch-hide-content-types)))
+                t (car hide)))))
+  
   (defun my/notmuch-tree-browse-url (&optional arg)
     (interactive "P")
     (when (window-live-p notmuch-tree-message-window)

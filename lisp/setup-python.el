@@ -1,3 +1,12 @@
+;; -*- lexical-binding: t; -*-
+
+(use-package python-mode
+  :defer
+  :config
+  (when (executable-find "ipython3")
+    (setq python-shell-interpreter "ipython3"
+          python-shell-interpreter-args "--simple-prompt --classic")))
+
 (use-package pyvenv
   :disabled t
   :straight t

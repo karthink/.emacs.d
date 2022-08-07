@@ -166,13 +166,13 @@ If buffer-or-name is nil return current buffer's mode."
         ;; Windows on the side
         ;; ----------------------------------------------------------------
 
-        ((lambda (buf act) (member (buffer-mode buf) my/man-modes-list))
-         ;; "^\\*\\(?:Wo\\)?Man"
-         (display-buffer-in-side-window)
-         (body-function . select-window)
-         (window-width . 76)       ; See the :hook
-         (side . left)
-         (slot . 9))
+        ;; ((lambda (buf act) (member (buffer-mode buf) my/man-modes-list))
+        ;;  ;; "^\\*\\(?:Wo\\)?Man"
+        ;;  (display-buffer-in-side-window)
+        ;;  (body-function . select-window)
+        ;;  (window-width . 76)       ; See the :hook
+        ;;  (side . left)
+        ;;  (slot . 9))
 
         ("\\*Faces\\*" (display-buffer-in-side-window)
          (window-width . 0.25)

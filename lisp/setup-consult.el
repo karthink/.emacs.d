@@ -210,6 +210,18 @@ When the number of characters in a buffer exceeds this threshold,
                                (xref-push-marker-stack)
                                (push-mark)))))
 
+;; Attempt to use consult-ripgrep-all
+(use-package consult
+  :defer
+  :when (executable-find "rga")
+  :bind (("M-s M-g" . consult-ripgrep-all))
+  :config
+  (defun consult-ripgrep-all (&optional dir initial)
+    (interactive "P")
+    (let ((consult-ripgrep-args
+           "rga --null --line-buffered --color=never --max-columns=1000 --path-separator /   --smart-case --no-heading --line-number ."))
+      (consult--grep "Ripgrep All" #'consult--ripgrep-builder dir initial))))
+
 ;; Library support for consult-buffer
 (use-package consult
   :defer
@@ -311,7 +323,9 @@ When the number of characters in a buffer exceeds this threshold,
                 ("C-M-j" . consult-dir-jump-file)
                 ("H-M-j" . consult-dir-jump-file))))
 
+;; I never use this, disabling in favor of consult-grep et al.
 (use-package affe
+  :disabled
   :straight t
   :bind (("M-s M-f" . affe-find)
          ("M-s M-g" . affe-grep))
@@ -322,7 +336,9 @@ When the number of characters in a buffer exceeds this threshold,
     ;; Manual preview key for `affe-grep'
   (consult-customize affe-grep :preview-key (kbd "C-M-m")))
 
+;; Disable in favor of consult-recoll
 (use-package consult
+  :disabled
   :when (executable-find "ff-cache")
   :bind ("M-s /" . consult-dff)
   :config
@@ -350,6 +366,14 @@ When the number of characters in a buffer exceeds this threshold,
             :category 'file)))
       (find-file file-name)))
   (consult-customize consult-dff :preview-key (kbd "C-M-m")))
+
+(use-package consult-recoll
+  :straight t
+  :bind ("M-s /" . consult-recoll)
+  :config
+  (setq consult-recoll-inline-snippets nil)
+  (consult-customize consult-recoll :preview-key (kbd "C-M-m")))
+
 
 (provide 'setup-consult)
 ;; setup-consult.el ends here

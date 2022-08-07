@@ -1824,8 +1824,8 @@ is not visible. Otherwise delegates to regular Emacs next-error."
       (start-process "mpv" nil (if single "mpv" "umpv")
                      (shell-quote-wildcard-pattern url)))
     
-    (defun browse-url-umpv-last (url &optional single)
-      (start-process "umpv_last" nil (if single "mpv" "umpv_last")
+    (defun browse-url-mpv-enqueue (url &optional _)
+      (start-process "umpv_last" nil "umpv_last"
                      (shell-quote-wildcard-pattern url)))
 
     (defun browse-url-mpv (url &optional _)
@@ -2919,6 +2919,9 @@ for details."
          ("u" . my/scroll-down-half)
          ("d" . my/scroll-up-half))
   :config
+  (use-package setup-reading
+    :hook (nov-post-html-render . my/reader-center-images))
+  
   (setq nov-text-width 72
         nov-save-place-file (dir-concat user-cache-directory "nov-places"))
   ;; Pinched from https://tecosaur.github.io/emacs-config/config.html
@@ -3123,7 +3126,7 @@ the mode-line and switches to `variable-pitch-mode'."
   :straight t
   :commands presentation-mode
   :config
-  (setq presentation-default-text-scale 1.50
+  (setq presentation-default-text-scale 1.25
         presentation-mode-lighter " BIG"
         presentation-keep-last-text-scale nil))
 ;; ** SCREENCAST
@@ -3248,7 +3251,7 @@ buffer's text scale."
   (cond (IS-LINUX
          (set-fontset-font t 'unicode "Symbola" nil 'prepend)
          (pcase-let ((`(,vp ,fp) (if (equal system-name "x220")
-                                     '(120 130) '(120 130))))
+                                     '(120 130) '(110 120))))
            (custom-set-faces
             `(variable-pitch ((t (:family "Merriweather" :height ,vp
                                   :width semi-expanded))))
@@ -3360,19 +3363,20 @@ buffer's text scale."
                 (bg-tab-active . "#fdf6eb")
                 (bg-tab-inactive . "#c8bab8")
                 (fg-unfocused . "#55556f"))
-              modus-themes-vivendi-color-overrides
-              '((bg-main . "#100b17")
-                (bg-dim . "#161129")
-                (bg-alt . "#181732")
-                (bg-hl-line . "#191628")
-                (bg-active . "#282e46")
-                (bg-inactive . "#1a1e39")
-                (bg-region . "#393a53")
-                (bg-header . "#202037")
-                (bg-tab-bar . "#262b41")
-                (bg-tab-active . "#120f18")
-                (bg-tab-inactive . "#3a3a5a")
-                (fg-unfocused . "#9a9aab")))
+              ;; modus-themes-vivendi-color-overrides
+              ;; '((bg-main . "#100b17")
+              ;;   (bg-dim . "#161129")
+              ;;   (bg-alt . "#181732")
+              ;;   (bg-hl-line . "#191628")
+              ;;   (bg-active . "#282e46")
+              ;;   (bg-inactive . "#1a1e39")
+              ;;   (bg-region . "#393a53")
+              ;;   (bg-header . "#202037")
+              ;;   (bg-tab-bar . "#262b41")
+              ;;   (bg-tab-active . "#120f18")
+              ;;   (bg-tab-inactive . "#3a3a5a")
+              ;;   (fg-unfocused . "#9a9aab"))
+              )
       (setq modus-themes-operandi-color-overrides nil
             modus-themes-vivendi-color-overrides nil))))
 

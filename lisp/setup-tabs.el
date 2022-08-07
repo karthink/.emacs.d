@@ -1,7 +1,5 @@
 (use-package tab-bar
-  :if (not (version-list-<
-            (version-to-list emacs-version)
-            '(27 0 1 0)))
+  :if (>= emacs-major-version 28)
   :after cus-face
   :defer
   :bind-keymap ("H-t" . tab-prefix-map)
@@ -24,19 +22,11 @@
       "Produce the Menu button for the tab bar that shows the menu bar."
       `((menu-bar menu-item (propertize " 𝝺 " 'face 'tab-bar-tab-inactive)
                   tab-bar-menu-bar :help "Menu Bar")))
-    (defun tab-bar-tab-name-format-default (tab i)
-      (let ((current-p (eq (car tab) 'current-tab)))
-        (propertize
-         (concat " "
-                 (if tab-bar-tab-hints (format "%d " i) "")
-                 (alist-get 'name tab)
-                 (or (and tab-bar-close-button-show
-                          (not (eq tab-bar-close-button-show
-                                   (if current-p 'non-selected 'selected)))
-                          tab-bar-close-button)
-                     "")
-                 " ")
-         'face (funcall tab-bar-tab-face-function tab))))
+    (defun tab-bar-tab-name-format-comfortable (tab i)
+      (propertize (concat " " (tab-bar-tab-name-format-default tab i) " ")
+                  'face (funcall tab-bar-tab-face-function tab)))
+    (setq tab-bar-tab-name-format-function #'tab-bar-tab-name-format-comfortable)
+    
     (setq tab-bar-format '(tab-bar-format-menu-bar
                            ;; tab-bar-format-history
                            tab-bar-format-tabs
@@ -68,12 +58,7 @@
     "Show or hide tabs."
     (interactive)
     (setq tab-bar-show (if tab-bar-show nil 1)))
-   ;; (custom-set-faces
-   ;; '(tab-bar ((t (:inherit nil :height 1.1))))
-   ;; '(tab-bar-tab-inactive ((t (:inherit tab-bar :weight normal :height 0.9))))
-   ;; '(tab-bar-tab ((t (:inherit tab-bar :underline t :weight bold))))
-   ;; )
-
+   
   (advice-add 'tab-bar-rename-tab
               :after
               (defun my/tab-bar-name-upcase (_name &optional _arg)

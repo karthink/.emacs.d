@@ -9,7 +9,10 @@
   :bind ("M-s W" . eww-search-words)
   :hook (eww-after-render . (lambda () (setq line-spacing 0.1)))
   :config
-  (setq eww-browse-url-new-window-is-tab nil))
+  (setq eww-browse-url-new-window-is-tab nil)
+  (use-package setup-reading
+    :config
+    (add-hook 'eww-after-render-hook 'my/reader-center-images 99)))
 
 (use-package eww
   :when (< emacs-major-version 28)

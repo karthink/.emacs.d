@@ -332,6 +332,11 @@ an embedded LaTeX fragment, let `texmathp' do its job.
   :after org
   :hook (org-modern-mode-hook . my/org-modern-spacing)
   :config
+  (setq org-todo-keyword-faces
+        '(;; ("TODO"    :foreground "#6e90c8" :weight bold)
+          ("WAITING" :foreground "red" :weight bold)
+          ("MAYBE"   :foreground "#6e8996" :weight bold)
+          ("PROJECT" :foreground "#088e8e" :weight bold)))
   (defun my/org-modern-spacing ()
     (setq-local line-spacing
                 (if org-modern-mode
@@ -413,7 +418,8 @@ has no effect."
               ("W" . org-agenda-week-view)
               ("w" . org-agenda-refile))
   :config
-  (setq org-agenda-files '("~/Documents/org/do.org"
+  (setq org-agenda-files '("~/Documents/org/inbox.org"
+                           "~/Documents/org/do.org"
                            "~/Documents/org/gmail-cal.org"
                            "~/Documents/org/ucsb-cal.org"))
   (setq-default
@@ -500,7 +506,7 @@ has no effect."
           ("P" "All Projects" tags "TODO=\"PROJECT\"&LEVEL>1"
            ((org-agenda-overriding-header "All Projects")))
 
-          ("i" "Uncategorized items" tags "CATEGORY=\"Inbox\"&LEVEL=2"
+          ("i" "Uncategorized items" tags "CATEGORY=\"Inbox\"&LEVEL=1"
            ((org-agenda-overriding-header "Uncategorized items")))
 
           ("W" "Waiting tasks" tags "W-TODO=\"DONE\"|TODO={WAITING\\|DELEGATED}"
@@ -618,7 +624,7 @@ See `org-capture-templates' for more information."
   
   (pcase-dolist
       (`(,key . ,template)
-       '(("t" "Add task" entry (file+headline "~/do.org" "Tasks")
+       '(("t" "Add task" entry (file "~/org/inbox.org")
           "* TODO %?\n:PROPERTIES:\n:CREATED:  %U\n:END:\n%a\n%x\n" :prepend t)
          ("c" "Add calendar entry" entry (file "~/org/gmail-cal.org")
           "* %?\n%^{LOCATION}p\n:%(progn (require 'org-gcal) (symbol-value 'org-gcal-drawer-name)):
@@ -684,6 +690,7 @@ See `org-capture-templates' for more information."
                    ("\\paragraph{%s}" . "\\paragraph*{%s}")
                    ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
   (setq org-export-with-LaTeX-fragments t
+        org-export-with-smart-quotes t
         org-latex-prefer-user-labels t
         org-latex-hyperref-template nil)
   
@@ -1139,14 +1146,20 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
             (user-error "Not in an Org buffer"))
           (org-tree-slide-mode 1)
           (setq-local org-hide-emphasis-markers t)
+          (setq olivetti-style nil)
+          ;; (setq olivetti-margin-width 14)
+          ;; (setq olivetti-body-width 0.7)
           (my/olivetti-mode 1)
           ;; (org-indent-mode 1)
-          (text-scale-increase 3))
+          (setq visual-fill-column-width 80)
+          (visual-fill-column-mode 1)
+          (text-scale-increase 2))
       (org-tree-slide-mode -1)
       (kill-local-variable 'org-hide-emphasis-markers)
       (my/olivetti-mode -1)
       ;; (org-indent-mode)
-      (text-scale-decrease 3)
+      (visual-fill-column-mode -1)
+      (text-scale-decrease 2)
       (text-scale-mode -1)))
 
   :bind (("C-c P"      . my/org-presentation-mode)

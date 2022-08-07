@@ -596,8 +596,9 @@ output instead."
                       (compile "cd build; make")))
     :defer))
 
-;; Testing: shelldon
+;; Disabled: shelldon. Regular `async-shell-command' does enough for me.
 (use-package shelldon
+  :disabled
   :straight t
   :bind (([remap async-shell-command] . my/shelldon-dwim))
   :config
@@ -619,5 +620,15 @@ output instead."
     :bind (:map sh-mode-map
            ("C-c C-c" . shelldon-send-region)
            ("C-c C-n" . shelldon-send-line-at-point))))
+
+;; Testing: comint-mime and coterm
+(use-package comint-mime
+  :straight t
+  :hook ((shell-mode . comint-mime-setup)
+         (inferior-python-mode . comint-mime-setup)))
+
+(use-package coterm
+  :straight t
+  :defer)
 
 (provide 'setup-shells)

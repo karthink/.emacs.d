@@ -371,6 +371,7 @@ highlighting."
       ("u" straight-visit-package-website)
       ("r" straight-get-recipe)
       ("i" straight-use-package)
+      ("v" straight-visit-package-website)
       ("c" straight-check-package)
       ("F" straight-pull-package)
       ("f" straight-fetch-package)

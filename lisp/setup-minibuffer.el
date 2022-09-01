@@ -1,4 +1,4 @@
-;; setup-minibuffer
+;; setup-minibuffer  -*- lexical-binding: t; -*-
 
 (use-package minibuffer
   :hook (minibuffer-setup .  cursor-intangible-mode)
@@ -23,6 +23,20 @@
       ;;   (buffer (styles basic flex substring)))
 )
 
+  (defun minibuffer-replace-input ()
+    (interactive)
+    (when (and (minibufferp) (> (minibuffer-depth) 1))
+      (let* ((replacement (minibuffer-contents)))
+        (unwind-protect (minibuffer-quit-recursive-edit)
+          (run-at-time 0 nil
+                       (lambda (rep)
+                         (delete-minibuffer-contents)
+                         (insert rep)
+                         (pulse-momentary-highlight-one-line))
+                       replacement)))))
+
+  (define-key minibuffer-local-map (kbd "C-x C-i") 'minibuffer-replace-input)
+  
   (defun basic-remote-try-completion (string table pred point)
     (and (path-remote-p string)
          (completion-basic-try-completion string table pred point)))

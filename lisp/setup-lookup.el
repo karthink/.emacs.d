@@ -2,12 +2,30 @@
 ;; *** HELPFUl
 ;;;----------------------------------------------------------------
 (use-package emacs
+  :bind-keymap ("C-h a" . help-apropos-map)
   :bind (("C-h A" . info-apropos)
          ("C-h C-a" . customize-apropos)
          ("C-h ." . my/describe-symbol-at-point)
          ("C-h C-f". describe-face)
          ("C-h C-k" . describe-keymap))
   :config
+  (defvar help-apropos-map
+    (let ((map (make-sparse-keymap)))
+      (define-key map (kbd "a") #'apropos)
+      (define-key map (kbd "l") #'apropos-library)
+      (define-key map (kbd "f") #'apropos-function)
+      (define-key map (kbd "x") #'apropos-command)
+      (define-key map (kbd "v") #'apropos-variable)
+      (define-key map (kbd "V") #'apropos-local-variable)
+      (define-key map (kbd "u") #'apropos-user-option)
+      (define-key map (kbd "d") #'apropos-documentation)
+      (define-key map (kbd "C-f") #'customize-apropos-faces)
+      (define-key map (kbd "g") #'customize-apropos-groups)
+      (define-key map (kbd "o") #'customize-apropos-options)
+      (define-key map (kbd "c") #'customize-apropos)
+      (define-key map (kbd "i") #'info-apropos)
+      map))
+  ;; (define-prefix-command help-apropos-command help-apropos-map)
   (defun my/describe-symbol-at-point (&optional arg)
   "Get help (documentation) for the symbol at point.
 
@@ -63,6 +81,7 @@ instead."
 ;; first result in Google searches. For this purpose we use tuxi, an external
 ;; tool that queries Google.
 (use-package emacs
+  :disabled
   :config
   (defvar google-search-history nil
     "List of queries to google-search-string.")

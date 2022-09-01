@@ -345,7 +345,10 @@ This relies on the external 'fd' executable."
   (setq dirvish-cache-dir
         (expand-file-name
          "dirvish" user-cache-directory))
-  (setq dirvish-attributes '(vc-state subtree-state collapse))
+  (setq dirvish-attributes '(vc-state subtree-state collapse)
+        dirvish-hide-cursor nil)
+  (add-to-list 'dirvish-preview-disabled-exts "mat")
+  (add-to-list 'dirvish-preview-disabled-exts "bci")
   (defun my/dirvish-sort-toggle-or-edit (&optional arg)
     (interactive "P")
     (call-interactively

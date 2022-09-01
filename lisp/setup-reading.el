@@ -1,5 +1,8 @@
 ;; Window helpers for "Readers".  -*- lexical-binding: t; -*-
-(defun my/reader-display-buffer (buf &optional act)
+
+(defvar wallabag-show-entry-switch)
+
+(defun my/reader-display-buffer (buf &optional _)
   (pop-to-buffer buf `((display-buffer-reuse-window display-buffer-in-direction)
                        (direction . ,(if (> (window-width) 130)
                                          'right 'above))

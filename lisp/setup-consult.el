@@ -6,16 +6,16 @@
 ;; Consult built-in options
 (use-package consult
   :straight t
-  :hook (minibuffer-setup . consult-completion-enable-in-minibuffer)
+  ;; :hook (minibuffer-setup . consult-completion-enable-in-minibuffer)
   ;; :hook ((shell-mode eshell-mode) . (lambda () (setq completion-in-region-function
   ;;                                               #'consult-completion-in-region)))
   :init
-  (defun consult-completion-enable-in-minibuffer ()
-    "Enable consult-completion-in-region in the minibuffer if
-`completion-at-point' is bound."
-    (when (where-is-internal #'completion-at-point (list (current-local-map)))
-      ;; (setq-local corfu-auto nil) Enable/disable auto completion
-      (setq completion-in-region-function #'consult-completion-in-region)))
+  ;; (defun consult-completion-enable-in-minibuffer ()
+  ;;     "Enable consult-completion-in-region in the minibuffer if
+  ;; `completion-at-point' is bound."
+  ;;     (when (where-is-internal #'completion-at-point (list (current-local-map)))
+  ;;       ;; (setq-local corfu-auto nil) Enable/disable auto completion
+  ;;       (setq completion-in-region-function #'consult-completion-in-region)))
   :after minibuffer
   :config
   (setq consult-narrow-key "<")
@@ -136,6 +136,7 @@
     "Buffer size threshold for `my/consult-ripgrep-or-line'.
 When the number of characters in a buffer exceeds this threshold,
 `consult-ripgrep' will be used instead of `consult-line'."
+    :group 'consult
     :type 'integer)
 
   (defun my/consult-mark (&optional arg)
@@ -293,8 +294,8 @@ When the number of characters in a buffer exceeds this threshold,
   :commands (consult-dir consult-dir-maybe)
   :bind (("C-x C-d" . consult-dir)
          :map minibuffer-local-filename-completion-map
-         ("C-M-d" . consult-dir-maybe)
-         ("H-M-d" . consult-dir-maybe)
+         ("C-M-d" . consult-dir)
+         ("H-M-d" . consult-dir)
          ("C-M-j" . consult-dir-jump-file)
          ("H-M-j" . consult-dir-jump-file)
          ("M-s f" . consult-dir-jump-file)
@@ -303,22 +304,10 @@ When the number of characters in a buffer exceeds this threshold,
   :config
   (add-to-list 'consult-dir-sources 'consult-dir--source-tramp-ssh t)
   (setq consult-dir-shadow-filenames nil)
-  (defun consult-dir-maybe ()
-    (interactive)
-    (let* ((full-category (completion-metadata-get (embark--metadata) 'category))
-           (category (pcase full-category
-                       ('consult-multi (car (get-text-property
-                                             0 'consult-multi
-                                             (vertico--candidate))))
-                       (_ full-category))))
-      (if (member category '(file))
-          (call-interactively #'consult-dir)
-        (call-interactively (lookup-key global-map (kbd "C-M-d"))))))
   (use-package vertico
-    :defer
     :bind (:map vertico-map
-                ("C-M-d" . consult-dir-maybe)
-                ("H-M-d" . consult-dir-maybe)
+                ("C-M-d" . consult-dir)
+                ("H-M-d" . consult-dir)
                 ("M-s f" . consult-dir-jump-file)
                 ("C-M-j" . consult-dir-jump-file)
                 ("H-M-j" . consult-dir-jump-file))))

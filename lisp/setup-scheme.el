@@ -1,16 +1,16 @@
 (use-package geiser
   :defer
-  :if (not (version-list-<
-            (version-to-list emacs-version)
-            '(27 0 0 0)))
+  :if (> emacs-major-version 27)
   :straight t
   :init
-  (add-hook 'geiser-repl-mode-hook (lambda ()
-                                     (setq-local company-idle-delay nil)
-                                     ;; (company-mode-on)
-                                     ))
+  ;; (add-hook 'geiser-repl-mode-hook (lambda ()
+  ;;                                    (setq-local company-idle-delay nil)
+  ;;                                    ;; (company-mode-on)
+  ;;                                    ))
   :config
-  (setq geiser-default-implementation 'mit)
+  (when (not (fboundp 'run-geiser))
+    (defalias 'run-geiser 'geiser))
+  (setq geiser-default-implementation 'guile)
   ;; (setq geiser-mit-binary "mechanics")
   (setq geiser-mit-binary "mit-scheme"))
 
@@ -19,6 +19,12 @@
   :straight t
   :commands mechanics
   :config
+  (advice-add 'run-geiser :before
+              (defun mit-sicm-include (&rest _)
+                "Include SICM utils if running mit scheme."
+                (setenv "MITSCHEME_BAND" "mechanics.com")
+                (setenv "MITSCHEME_HEAP_SIZE" "100000")
+                (setq geiser-repl-skip-version-check-p t)))
   (defun mechanics ()
     "Run mit-scheme with SCMUTILS loaded, to work with (Structure
 and Interpretation of Classical Mechanics) - The book."

@@ -29,7 +29,7 @@
                  (window-height . 0.33)
                  (slot . 10)
                  (side . bottom)))
-  (setq ytel-invidious-api-url "https://invidious.osi.kr/")
+  (setq ytel-invidious-api-url "https://vid.puffyan.us")
   (defvar ytel-invidious-api-alt-urls
     (mapcar (lambda (url) (concat "https://" url))
             '("inv.riverside.rocks" "invidious.silkky.cloud"

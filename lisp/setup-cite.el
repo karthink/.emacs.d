@@ -1,7 +1,6 @@
-(use-package org :straight (:type built-in) :defer)
 (use-package citar
   :straight t
-  :after (latex reftex)
+  ;; :after (latex reftex)
   :bind (:map LaTeX-mode-map
          ("C-c ]" . citar-insert-citation)
          :map org-mode-map

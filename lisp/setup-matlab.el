@@ -5,8 +5,7 @@
   ;; :straight matlab-mode
   ;; :commands (matlab-mode matlab-shell matlab-shell-run-block)
   :mode ("\\.m\\'" . matlab-mode)
-  :hook ((matlab-mode . company-mode-on)
-         (matlab-mode . (lambda ()
+  :hook ((matlab-mode . (lambda ()
                           (setq-local buffer-file-coding-system 'us-ascii)
                           (outline-minor-mode)
                           (setq-local page-delimiter "%%+")
@@ -16,6 +15,7 @@
                           ;;   (make-local-variable 'xref-backend-functions)
                           ;;   (add-hook 'xref-backend-functions #'matlab-shell-xref-activate))
                           ))
+         ;; (matlab-mode . company-mode-on)
          (org-mode . (lambda ()
                        (when (require 'matlab-xref nil t)
                          (add-hook 'xref-backend-functions #'matlab-shell-xref-activate 10 t)))))

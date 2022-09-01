@@ -3,6 +3,7 @@
   :bind (:map julia-mode-map
               ("`" . my/julia-latexsub-or-indent))
   :config
+  (add-to-list 'julia-arguments "-t12")
   (defun my/julia-latexsub-or-indent ()
     (interactive)
     (require 'cdlatex nil t)
@@ -15,7 +16,13 @@
   :straight t
   :commands julia-repl-mode
   :config
-  (julia-repl-set-terminal-backend 'vterm))
+  (add-hook 'julia-repl-hook
+            (defun my/julia-repl-settings ()
+              (setq-local
+               term-prompt-regexp
+               "^\\(julia\\|help\\?\\|[)@(.pkgv0-9 ]+\\)> *")))
+  (julia-repl-set-terminal-backend 'vterm)
+  (setq julia-repl-switches "-t12 -q"))
 
 (use-package eglot-jl
   :straight t

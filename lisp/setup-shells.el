@@ -1,3 +1,10 @@
+;; * SHELL COMPLETION
+
+;; ** FISH-COMPLETION
+
+;; The =fish-completion= package provides completions (including docstrings) by
+;; querying fish. [[https://github.com/minad/marginalia/issues/87][As it turns
+;; out]] this can get convoluted, so it's disabled in favor of =pcmpl-args=.
 (use-package fish-completion
   :disabled
   :when (executable-find "fish")
@@ -71,7 +78,18 @@ Filenames are always matched by eshell."
                           completions)))))
         (eshell-complete-commands-list)))))
 
-;; Superceded by pcmpl-args
+;; ** CAPF-AUTOSUGGEST
+
+;; capf-autosuggest is a good idea, but it's too slow and laggy in practice.
+(use-package capf-autosuggest
+  ;; :straight t
+  :disabled
+  :hook ((comint-mode) . capf-autosuggest-mode))
+
+
+;; ** PCOMPLETE
+;; Emacs' Programmable Completion interface. These specific settings are
+;; superceded by =pcmpl-args=.
 (use-package pcomplete
   :disabled
   :config
@@ -88,6 +106,10 @@ Filenames are always matched by eshell."
     (funcall (or (pcomplete-find-completion-function (pcomplete-arg 1))
 	         pcomplete-default-completion-function))))
 
+;; ** PCMPL-ARGS
+
+;; Fully Emacs-native shell completions, including docstrings parsed on-the-fly
+;; from man-pages or --help output.
 (use-package pcmpl-args
   :straight t
   :hook ((eshell-mode . my/pcmpl-args-pcomplete-settings)
@@ -95,7 +117,7 @@ Filenames are always matched by eshell."
   :config
   (defun my/pcmpl-extras ()
     (dolist (cmd '("fd" "rg" "pacman" "systemctl"
-                   "aura" "stow" "rsync"))
+                   "aura" "stow" "rsync" "arbtt-stats"))
       (defalias
         (intern (concat "pcomplete/" cmd))
         'pcmpl-args-pcomplete-on-man)))
@@ -109,7 +131,9 @@ Filenames are always matched by eshell."
                   eshell-complete-lisp-symbols
                   t))))
 
-;; ** Eshell built-ins customizations
+;; * ESHELL
+
+;; ** Eshell built-ins
 (use-package eshell
   :hook ((eshell-mode . my/eshell-keys-and-modes)
          (eshell-first-time-mode . my/eshell-first-load-settings))
@@ -141,6 +165,8 @@ Filenames are always matched by eshell."
   (defun my/eshell-keys-and-modes ()
     (setq outline-regexp eshell-prompt-regexp)
     (abbrev-mode 1)
+    (setq-local imenu-generic-expression
+                  '(("λ: " " λ \\(.*\\)" 1)))
     (define-key eshell-mode-map (kbd "H-<return>") 'my/delete-window-or-delete-frame)
     (define-key eshell-hist-mode-map (kbd "M-s") nil)
     (define-key eshell-mode-map (kbd "C-c C-SPC") 'eshell-mark-output)
@@ -149,7 +175,12 @@ Filenames are always matched by eshell."
     ;; (setq-local completion-in-region-function #'consult-completion-in-region)
     (setq eshell-cmpl-cycle-cutoff-length 2)))
 
-;; ** Better paging
+;; ** Eshell paging
+
+;; There was an idea -- use Eshell as a pager (with ~SPC~ and ~S-SPC~) if not at
+;; the prompt.
+;;
+;; It was a bad idea.
 (use-package em-pager
   :disabled
   :after eshell
@@ -164,7 +195,7 @@ Filenames are always matched by eshell."
   (add-hook 'eshell-pre-command-hook #'eshell-pager-pre)
   (add-hook 'eshell-post-command-hook #'eshell-pager-post))
 
-;; ** Better buffer redirection
+;; ** Eshell buffer redirection
 (use-package eshell
   :defer
   :config
@@ -199,7 +230,7 @@ Filenames are always matched by eshell."
                       (buffer-substring-no-properties (line-beginning-position) (point))))))))
   (add-hook 'eshell-parse-argument-hook #'my/eshell-syntax-buffer-redirect))
 
-;; ** Better eshell history management
+;; ** Eshell history management
 (use-package eshell
   :hook ((eshell-mode . my/eshell-hist-use-global-history)
          (eshell-pre-command . eshell-save-some-history)
@@ -268,7 +299,9 @@ Surrounding spaces are ignored when comparing."
               (define-key eshell-hist-mode-map (kbd "M-r")
                 'my/eshell-previous-matching-input))))
 
-;; ** Custom functions for use in eshell
+;; ** Eshell extras
+
+;; Custom functions for use in eshell
 (use-package eshell
   :defer
   :config
@@ -430,7 +463,7 @@ send a notification when the process has exited."
           (when buffer
             (kill-buffer buffer)))))))
 
-;; Better region selection for eshell
+;; Better region selection for eshell.
 (use-package expand-region
   :defer
   :init
@@ -448,7 +481,9 @@ send a notification when the process has exited."
       (when (re-search-backward eshell-prompt-regexp nil t)
         (goto-char (match-end 0))))))
 
-;; ** Calling and exiting eshell
+;; ** Eshell spawning
+;;
+;; Calling and exiting eshell
 (use-package eshell
   :bind (("H-<return>" . eshell)
          ("H-!" . eshell-here))
@@ -473,7 +508,9 @@ send a notification when the process has exited."
           (insert (concat "ls"))
           (eshell-send-input)))))
 
-;; ** Eshell appearance and prompt
+;; ** Eshell appearance
+;;
+;; Including the prompt.
 (use-package eshell
   :defer
   :config
@@ -524,26 +561,23 @@ send a notification when the process has exited."
     "TODO"
     :group 'eshell))
 
+;; Bookmarks for eshell is built-into Emacs 28.
 (use-package eshell-bookmark
   :disabled
+  :if (>= emacs-major-version 28)
   :hook (eshell-mode . eshell-bookmark-setup))
 
+;; * COMINT & SHELL
 (use-package shell
   :defer
   :config
   (setq async-shell-command-buffer 'new-buffer)
   (setq explicit-shell-file-name "/usr/bin/zsh")
   (setq shell-file-name "zsh")
-  (setq explicit-zsh-args '("--login" "--interactive"))
+  ;; (setq explicit-zsh-args '("--login" "--interactive"))
   (defun zsh-shell-mode-setup ()
     (setq-local comint-process-echoes t))
   (add-hook 'shell-mode-hook #'zsh-shell-mode-setup))
-
-;; capf-autosuggest is a good idea, but it's too slow and laggy in practice.
-(use-package capf-autosuggest
-  ;; :straight t
-  :disabled
-  :hook ((comint-mode) . capf-autosuggest-mode))
 
 (use-package comint
   :commands (comint-mode shell-command-at-line)
@@ -582,19 +616,18 @@ output instead."
       (shell-command command t nil)
       (exchange-point-and-mark))))
 
-(unless IS-GUIX
-  (use-package vterm
-    :straight (:files
-               ("*.so" "*.el")
-               :pre-build
-               (progn (unless (file-directory-p "build")
-                        (make-directory "build"))
-                      (call-process
-                       "sh" nil "*vterm-prepare*" t "-c" 
-                       (concat "cd build; "
-                               "cmake -G 'Unix Makefiles' .."))
-                      (compile "cd build; make")))
-    :defer))
+;; ** COMINT EXTRAS
+
+;; Testing: comint-mime and coterm
+(use-package comint-mime
+  :straight t
+  :hook ((shell-mode . comint-mime-setup)
+         (inferior-python-mode . comint-mime-setup)))
+
+(use-package coterm
+  :straight t
+  :defer)
+
 
 ;; Disabled: shelldon. Regular `async-shell-command' does enough for me.
 (use-package shelldon
@@ -621,14 +654,41 @@ output instead."
            ("C-c C-c" . shelldon-send-region)
            ("C-c C-n" . shelldon-send-line-at-point))))
 
-;; Testing: comint-mime and coterm
-(use-package comint-mime
-  :straight t
-  :hook ((shell-mode . comint-mime-setup)
-         (inferior-python-mode . comint-mime-setup)))
+;; * VTERM
 
-(use-package coterm
-  :straight t
-  :defer)
+;; Vterm is a module, so the build declaration takes a little work.
+(unless IS-GUIX
+  (use-package vterm
+    :straight (:files
+               ("*.so" "*.el")
+               :pre-build
+               (progn (unless (file-directory-p "build")
+                        (make-directory "build"))
+                      (call-process
+                       "sh" nil "*vterm-prepare*" t "-c" 
+                       (concat "cd build; "
+                               "cmake -G 'Unix Makefiles' .."))
+                      (compile "cd build; make")))
+    :defer
+    :bind (:map vterm-mode-map
+           ("C-c C-p" . my/vterm-previous-prompt)
+           ("C-c C-n" . my/vterm-next-prompt))
+    :config
+    (add-to-list
+     'vterm-eval-cmds
+     '("update-pwd" (lambda (path) (setq default-directory path))))
+    
+    (defun my/vterm-next-prompt (&optional arg)
+      "next prompt"
+      (interactive "p")
+      (re-search-forward term-prompt-regexp nil t arg)
+      (when (< arg 0) (goto-char (match-end 0))))
+    (defun my/vterm-previous-prompt (&optional arg)
+      "previous prompt"
+      (interactive "p")
+      (beginning-of-line)
+      ;; (if (looking-at term-prompt-regexp)
+      ;;     (setq arg (1+ arg)))
+      (my/vterm-next-prompt (- (or arg 1))))))
 
 (provide 'setup-shells)

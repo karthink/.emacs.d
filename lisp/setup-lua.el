@@ -1,3 +1,5 @@
+;; -*- lexical-binding: t; -*-
+
 (use-package lua-mode :straight t :defer)
 (use-package eglot-lua
   :straight (:host github

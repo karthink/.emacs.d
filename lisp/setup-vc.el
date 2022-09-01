@@ -1,5 +1,6 @@
 ;; -*- lexical-binding: t; -*-
 
+;; VC gets the short-shrift in the age of Magit.
 (use-package vc
   :defer
   :config
@@ -192,7 +193,7 @@ project, as defined by `vc-root-dir'."
   :init
   (setq diff-hl-draw-borders t)
   (setq-default diff-hl-inline-popup--height 4)
-  (dolist (mode-hook +addons-enabled-modes)
+  (dolist (mode-hook my/addons-enabled-modes)
     (add-hook mode-hook #'diff-hl-mode))
   :bind
   (:map diff-hl-command-map

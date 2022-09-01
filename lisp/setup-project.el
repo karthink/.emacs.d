@@ -11,6 +11,14 @@
 
 (use-package project
     :init
+    (add-to-list
+     'frame-title-format
+     '(:eval (and-let* ((proj (project-current))
+                        (name (project-root proj))
+                        (name (file-name-nondirectory
+                               (directory-file-name name))))
+              (concat name ":"))))
+    
     (setq project-switch-commands
           '((?f "Find file" project-find-file)
             (?g "Find regexp" project-find-regexp)
@@ -65,7 +73,7 @@ The directory name must be absolute."
     (defun project-magit-status ()
       "Run magit-status in the current project's root."
       (interactive)
-      (magit-status (project-root (project-current t))))
+      (magit-status-setup-buffer (project-root (project-current t))))
     
     (defun my/project-remove-project ()
       "Remove project from `project--list' using completion."

@@ -33,24 +33,27 @@
         straight-vc-git-default-clone-depth 2)
   (load bootstrap-file nil 'nomessage))
 
-;; ** PACKAGE.EL
-;; "Activate" packages, /i.e./ autoload commands, set paths, info-nodes and so
-;; on. Set load paths for ELPA packages. This is unnecessary in Emacs 27 with an
-;; early-init.el, but I haven't checked.
-;; (package-initialize)
-;; (package-activate-all)
-;; (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
+(setf (alist-get 'stable straight-profiles)
+      (expand-file-name "stable.el" user-emacs-directory))
 
-;; Package repositories that are no longer used or included by default:
-;; #+begin_src emacs-lisp
-;; (add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/"))
-;; (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
-;; #+end_src
-
-;; This is a workaround for a bug that's probably been fixed by now!
-;; #+begin_src emacs-lisp
-;; (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
-;; #+end_src
+;;; ** PACKAGE.EL
+;;; "Activate" packages, /i.e./ autoload commands, set paths, info-nodes and so
+;;; on. Set load paths for ELPA packages. This is unnecessary in Emacs 27 with an
+;;; early-init.el, but I haven't checked.
+;;; (package-initialize)
+;;; (package-activate-all)
+;;; (add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
+  ; 
+;;; Package repositories that are no longer used or included by default:
+;;; #+begin_src emacs-lisp
+;;; (add-to-list 'package-archives '("marmalade" . "http://marmalade-repo.org/packages/"))
+;;; (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/"))
+;;; #+end_src
+  ; 
+;;; This is a workaround for a bug that's probably been fixed by now!
+;;; #+begin_src emacs-lisp
+;;; (setq gnutls-algorithm-priority "NORMAL:-VERS-TLS1.3")
+;;; #+end_src
 
 ;; ** USE PACKAGE
 
@@ -60,30 +63,31 @@
 ;; autoloads.
 ;;
 ;; The one thing it's not is a package manager!
-;; (unless (package-installed-p 'use-package)
-;;   (package-refresh-contents)
-;;   (package-install 'use-package))
+
+;;; (unless (package-installed-p 'use-package)
+;;;   (package-refresh-contents)
+;;;   (package-install 'use-package))
 (straight-use-package 'use-package)
 
 (eval-when-compile
-  ;; (defvar use-package-verbose t)
   (eval-after-load 'advice
     `(setq ad-redefinition-action 'accept))
   (require 'use-package)
-  ;; (setq use-package-verbose t
-  ;;       use-package-compute-statistics t
-  ;;       ;use-package-ignore-unknown-keywords t
-  ;;       use-package-minimum-reported-time 0.01)
+  (setq use-package-verbose t
+        use-package-compute-statistics t
+        ;use-package-ignore-unknown-keywords t
+        use-package-minimum-reported-time 0.01)
   )
 
 ;;; (require 'bind-key)
 
-;; (use-package package
-;;   :hook (package-menu-mode . hl-line-mode))
+;;; (use-package package
+;;;   :hook (package-menu-mode . hl-line-mode))
 
 ;; * PATHS
 
-;; I avoid defining too many custom helpers, =dir-concat= is an exception.
+;; I avoid defining too many custom helpers, =dir-concat= is an exception. Emacs
+;; 28 provides =file-name-concat=, but I'm on 27.2 some of the time.
 (use-package emacs
   :config
   (defun dir-concat (dir file)
@@ -127,17 +131,17 @@
   (error (setq gc-cons-threshold (* 16 1024 1024))))
 
 ;; setup-core is the first of many concerns to be shunted into its own file.
-;;;----------------------------------------------------------------
+;; ----------------------------------------------------------------
 ;; #+INCLUDE: "./lisp/setup-core.org"
-;;;----------------------------------------------------------------
+;; ----------------------------------------------------------------
 
 ;; * DAEMON
 ;;;################################################################
 
 ;; Hack: When starting a server, silently load all the "heavy" libraries and
-;; goodies I use. There are more elegant approaches to this issue, such as DOOM
-;; Emacs' =:defer-incrementally= =use-package= keyword, but this is good enough.
-;; A regular (non-daemon) Emacs session still launches in ~0.3 seconds.
+;; goodies I use. There are more elegant approaches, such as incremental
+;; deferring, but this is good enough. A regular (non-daemon) Emacs session
+;; still launches in ~0.3 seconds.
 (when (daemonp)
   (add-hook
    'after-init-hook
@@ -182,9 +186,9 @@
 ;;;################################################################
 (load (expand-file-name "lisp/setup-modeline" user-emacs-directory))
 
-;; ---------------------------
+;; ----------------------------------------------------------------
 ;; #+INCLUDE: "./lisp/setup-modeline.org" :minlevel 2
-;; ---------------------------
+;; ----------------------------------------------------------------
 
 ;;;################################################################
 ;; * MINIBUFFER
@@ -204,9 +208,9 @@
 ;; Miscellaneous UI preferences.
 (load (expand-file-name "lisp/setup-ui" user-emacs-directory))
 
-;;;----------------------------------------------------------------
+;; ----------------------------------------------------------------
 ;; #+INCLUDE: "./lisp/setup-ui.org"
-;;;----------------------------------------------------------------
+;; ----------------------------------------------------------------
 
 ;; * AUTOLOADS
 
@@ -246,9 +250,9 @@
 ;; evil-mode... which I don't use.
 (load (expand-file-name "lisp/setup-keybinds" user-emacs-directory))
 
-;; ---------------------------
+;; ----------------------------------------------------------------
 ;; #+INCLUDE: "./lisp/setup-keybinds.org" :minlevel 2
-;; ---------------------------
+;; ----------------------------------------------------------------
 
 ;;;################################################################
 ;; * SAVE AND BACKUP
@@ -283,7 +287,7 @@
                            (y-or-n-p-with-timeout prompt 2 nil)))
 
 (use-package uniquify
-  :init  (setq uniquify-buffer-name-style 'forward))
+  :init (setq uniquify-buffer-name-style 'forward))
 
 (use-package paren
   :defer 2
@@ -298,6 +302,17 @@
 
 ;; FULLSCREEN
 (global-set-key [f11] 'toggle-frame-fullscreen)
+
+;; Frame title
+(setq frame-title-format
+      '(""
+        (:eval
+         (if (and (boundp 'org-roam-directory)
+              (string-match-p org-roam-directory (or buffer-file-name "")))
+             (replace-regexp-in-string
+              ".*/[0-9]*-?" "roam:"
+              (subst-char-in-string ?_ ?  buffer-file-name))
+           "%b"))))
 
 ;; Byte-compile elisp files immediately after saving them if .elc exists:
 (defun auto-byte-recompile ()
@@ -324,14 +339,16 @@
 
 (use-package auth-source-pass
   :init (auth-source-pass-enable))
+
 ;; Consult clipboard before primary selection
 ;; http://www.gnu.org/software/emacs/manual/
 ;; html_node/emacs/Clipboard.html
-
 (use-package select
   :config
   (setq select-enable-clipboard t))
 
+;; Howard Abrams' piper lets you mix Shell and Emacs commands through "pipes"
+;; using Emacs buffers. A neat idea but I never use it.
 (use-package piper
   :disabled
   :bind ("C-x |" . piper)
@@ -341,11 +358,13 @@
     (interactive "P")
     (if arg (piper) (piper-user-interface))))
 
+;; For easy sharing of files/text.
 (use-package 0x0
   :straight t
   :commands (0x0-upload 0x0-dwim)
   :bind ("C-x U" . 0x0-dwim))
 
+;; Emacs is slow sometimes, I try to find out why.
 (use-package explain-pause-mode
   :straight (explain-pause-mode
              :host github
@@ -358,14 +377,18 @@
 ;; ** SHELL AND ESHELL PREFERENCES
 ;;;----------------------------------------------------------------
 ;; Settings for shell, eshell, comint and vterm
-(use-package setup-shells)
+(load (expand-file-name "lisp/setup-shells" user-emacs-directory))
+
+;; ----------------------------------------------------------------
+;; #+INCLUDE: "./lisp/setup-shells.org" :minlevel 2
+;; ----------------------------------------------------------------
 
 ;;;######################################################################
 ;; * LINE NUMBERS
 ;;;######################################################################
 (line-number-mode 1)
 
-(defvar +addons-enabled-modes (list 'prog-mode-hook
+(defvar my/addons-enabled-modes (list 'prog-mode-hook
                                     'conf-unix-mode-hook
                                     'conf-windows-mode-hook
                                     'conf-javaprop-mode-hook
@@ -375,7 +398,7 @@
   "List of modes where special features (like line numbers)
   should be enabled.")
 
-;; (dolist (mode-hook +addons-enabled-modes)
+;; (dolist (mode-hook my/addons-enabled-modes)
 ;;   (add-hook mode-hook (lambda () "Turn on line numbers for major-mode"
 ;;                         (interactive)
 ;;                         (display-line-numbers-mode))))
@@ -465,6 +488,7 @@
     (unless (equal cim "TeX")
       (run-at-time 0 nil (lambda () (activate-input-method cim)))))))
 
+;; Visual indicator when recording macros
 (use-package kmacro
   :defer
   :config
@@ -483,6 +507,7 @@
                 (cl-pushnew '(:eval (my/mode-line-macro-recording))
                             (default-value 'mode-line-format)
                             :test 'equal)))
+
 ;; * MANAGE STATE
 ;; ** RECENTF
 ;; Keep track of recently opened files. Also feeds into the list of recent
@@ -547,20 +572,16 @@
 ;; * BUFFER MANAGEMENT
 (load (expand-file-name "lisp/better-buffers" user-emacs-directory))
 
-;; ---------------------------
+;; ----------------------------------------------------------------
 ;; #+INCLUDE: "./lisp/better-buffers.org" :minlevel 2
-;; ---------------------------
-
-;;;----------------------------------------------------------------
-;; #+INCLUDE: "./lisp/better-buffers.org" :minlevel 2
-;;;----------------------------------------------------------------
+;; ----------------------------------------------------------------
 
 ;; ** IBUFFER
 (load (expand-file-name "lisp/setup-ibuffer" user-emacs-directory))
 
-;;;----------------------------------------------------------------
+;; ----------------------------------------------------------------
 ;; #+INCLUDE: "./lisp/setup-ibuffer.org" :minlevel 3
-;;;----------------------------------------------------------------
+;; ----------------------------------------------------------------
 
 ;;;################################################################
 ;; * WINDOW MANAGEMENT
@@ -613,9 +634,9 @@ Also kill this window, tab or frame if necessary."
       (kill-buffer-and-window))))
 
 ;; setup-windows:
-;; ---------------------------
+;; ---------------------------------------------------------------
 ;; #+INCLUDE: "./lisp/setup-windows.org" :minlevel 2
-;; ---------------------------
+;; ---------------------------------------------------------------
 
 
 ;;;----------------------------------------------------------------
@@ -637,28 +658,30 @@ Also kill this window, tab or frame if necessary."
          ("s-n" . my/next-buffer)
          ("s-p" . my/previous-buffer))
   :init
-  ;; (setq popper-group-function
-  ;;       (defun my/popper-group-by-heuristic ()
-  ;;         "Group popups according to heuristic rules suitable for
-  ;;         my usage."
-  ;;         (let ((dd (abbreviate-file-name default-directory)))
-  ;;           (cond
-  ;;            ((string-match-p "\\(?:~/\\.config/\\|~/dotfiles/\\)" dd)
-  ;;             'config)
-  ;;            ((or (string-match-p "local/share/git" dd)
-  ;;                 (string-match-p "plugins/" dd))
-  ;;             'projects)
-  ;;            ((string-match-p "\\(?:KarthikBa\\|research/\\)" dd)
-  ;;             'research)
-  ;;            ((string-match-p "karthinks" dd) 'website)
-  ;;            ((locate-dominating-file dd "research") 'documents)
-  ;;            ((locate-dominating-file dd "init.el") 'emacs)
-  ;;            (t (popper-group-by-project))))))
-  (setq popper-group-function nil)
+  (setq popper-group-function
+        (defun my/popper-group-by-heuristic ()
+          "Group popups according to heuristic rules suitable for
+          my usage."
+          (let ((dd (abbreviate-file-name default-directory)))
+            (cond
+             ((string-match-p "\\(?:~/\\.config/\\|~/dotfiles/\\)" dd)
+              'config)
+             ((or (string-match-p "local/share/git" dd)
+                  (string-match-p "plugins/" dd))
+              'projects)
+             ((string-match-p "\\(?:KarthikBa\\|research/\\)" dd)
+              'research)
+             ((string-match-p "karthinks" dd) 'website)
+             ((locate-dominating-file dd "research") 'documents)
+             ((locate-dominating-file dd "init.el") 'emacs)
+             (t (popper-group-by-project))))))
+  ;; (setq popper-group-function nil)
   (setq ;; popper-mode-line nil
         popper-reference-buffers
         (append my/help-modes-list
+                my/man-modes-list
                 my/repl-modes-list
+                my/repl-names-list
                 my/occur-grep-modes-list
                 ;; my/man-modes-list
                 '(Custom-mode
@@ -666,7 +689,7 @@ Also kill this window, tab or frame if necessary."
                   messages-buffer-mode)
                 '(("^\\*Warnings\\*$" . hide)
                   ("^\\*Compile-Log\\*$" . hide)
-                  "^\\*Matlab Help\\*"
+                  "^\\*Matlab Help.*\\*$"
                   ;; "^\\*Messages\\*$"
                   "^\\*Backtrace\\*"
                   "^\\*evil-registers\\*"
@@ -763,8 +786,7 @@ User buffers are those not starting with *."
   (funcall switch)
   (let ((i 0))
     (while (and (< i 50)
-                (or (popper-popup-p (current-buffer))
-                    (string-match "^*" (buffer-name))))
+                (popper-popup-p (current-buffer)))
       (setq i (1+ i)) (funcall switch))))
                            
   :general
@@ -1098,24 +1120,10 @@ To be used with `imenu-after-jump-hook' or equivalent."
   :straight t
   :config
   (defun my/scratch-buffer-setup ()
-  "Add contents to `scratch' buffer and name it accordingly.
+    "Add contents to `scratch' buffer and name it accordingly.
 If region is active, add its contents to the new buffer."
-  (let* ((mode major-mode)
-         (string (format "Scratch buffer for: %s\n\n" mode))
-         (region (with-current-buffer (current-buffer)
-                     (if (region-active-p)
-                         (buffer-substring-no-properties
-                          (region-beginning)
-                          (region-end)))
-                     ""))
-         (text (concat string region)))
-    (when scratch-buffer
-      (save-excursion
-        (insert text)
-        (goto-char (point-min))
-        (comment-region (point-at-bol) (point-at-eol)))
-      (forward-line 2))
-    (rename-buffer (format "*Scratch for %s*" mode) t)))
+    (let* ((mode major-mode))
+      (rename-buffer (format "*Scratch for %s*" mode) t)))
   :hook (scratch-create-buffer . my/scratch-buffer-setup)
   :bind ("C-c s" . scratch))
 
@@ -1245,6 +1253,7 @@ If region is active, add its contents to the new buffer."
   :config
   (setq eglot-put-doc-in-help-buffer nil)
   (setq eglot-events-buffer-size 0)
+  (setq eglot-extend-to-xref t)
   (add-to-list 'eglot-server-programs
                '(matlab-mode . ("~/.local/share/git/matlab-langserver/matlab-langserver.sh" ""))))
 
@@ -1558,6 +1567,10 @@ current buffer without truncation."
 ;;;----------------------------------------------------------------
 (load (expand-file-name "lisp/setup-lua" user-emacs-directory))
 
+;; ----------------------------------------------------------------
+;; #+INCLUDE: "./lisp/setup-lua.org" :minlevel 2
+;; ----------------------------------------------------------------
+
 ;;;################################################################
 ;; ** JSON
 (use-package jsonian
@@ -1574,18 +1587,6 @@ current buffer without truncation."
 
 ;; * PLUGINS
 ;;;################################################################
-
-;;;----------------------------------------------------------------
-;; ** FLYSPELL
-;;;----------------------------------------------------------------
-(use-package flyspell
-  :commands flyspell-mode
-  :bind (:map flyspell-mode-map
-              ("C-M-i" . nil)
-              ("C-;" . nil)
-              ("C-," . nil)
-              ("C-; C-;" . 'flyspell-auto-correct-previous-word)
-              ("C-; n" . 'flyspell-goto-next-error)))
 
 ;;;----------------------------------------------------------------
 ;; ** EMBRACE
@@ -1686,9 +1687,9 @@ current buffer without truncation."
   (setq strokes-file (dir-concat user-cache-directory "strokes"))
   (setq strokes-use-strokes-buffer t))
 
-;; ;;;----------------------------------------------------------------
-;; ;; ** ERRORS
-;; ;;;----------------------------------------------------------------
+;;;----------------------------------------------------------------
+;; ** ERRORS
+;;;----------------------------------------------------------------
 
 ;; This code makes it easy to repeat navigation to the next/previous error.
 ;; Emacs 28 has repeat-mode that does this by default.
@@ -1719,7 +1720,30 @@ current buffer without truncation."
 (use-package simple
   :if (> emacs-major-version 27)
   :config
-  (setq next-error-message-highlight 'keep
+  (defcustom my-next-error-functions nil
+    "Additional functions to use as `next-error-function'."
+    :group 'next-error
+    :type 'hook)
+  
+  (defun my-next-error-delegate (orig-fn &optional arg reset)
+    (if my-next-error-functions
+        (if-let* ((buf (ignore-errors (next-error-find-buffer t)))
+                  ((get-buffer-window buf)))
+            (funcall orig-fn arg reset)
+          (run-hook-with-args-until-success
+           'my-next-error-functions (or arg 1)))
+      (funcall orig-fn arg reset)))
+  
+  (defun my-next-error-register (fn)
+    "Add FUN to `my-next-error-functions'."
+    (lambda ()
+      (if (memq fn my-next-error-functions)
+          (remove-hook 'my-next-error-functions fn 'local)
+        (add-hook 'my-next-error-functions fn nil 'local))))
+  
+  (advice-add 'next-error :around #'my-next-error-delegate)
+  
+  (setq next-error-message-highlight t
         next-error-found-function #'next-error-quit-window))
 
 ;;;----------------------------------------------------------------
@@ -1763,42 +1787,62 @@ current buffer without truncation."
   (setq vundo-glyph-alist vundo-unicode-symbols))
 
 ;;;----------------------------------------------------------------
+;; ** SPELL CHECKING
+;; *** FLYSPELL
+;;;----------------------------------------------------------------
+(use-package flyspell
+  :commands flyspell-mode
+  :bind (:map flyspell-mode-map
+              ("C-M-i" . nil)
+              ("C-;" . nil)
+              ("C-," . nil)
+              ("C-; C-;" . 'flyspell-auto-correct-previous-word)
+              ("C-; n" . 'flyspell-goto-next-error)))
+
+;;;----------------------------------------------------------------
+;; *** SPELL-FU
+(use-package spell-fu
+  :straight t
+  :commands text-spell-fu-mode
+  :config
+  (add-hook 'spell-fu-mode-hook
+            (my-next-error-register
+             #'spell-fu--goto-next-or-previous-error))
+  (defun text-spell-fu-mode ()
+    (interactive)
+    (setq spell-fu-faces-exclude
+          '(org-block-begin-line
+            org-block-end-line
+            org-code
+            org-date
+            org-drawer org-document-info-keyword
+            org-ellipsis
+            org-link
+            org-meta-line
+            org-properties
+            org-properties-value
+            org-special-keyword
+            org-src
+            org-tag
+            org-verbatim))
+    (spell-fu-mode)))
+
+;;;----------------------------------------------------------------
+
 ;; ** FLYMAKE
 ;;;----------------------------------------------------------------
 (use-package flymake
   :defer
   :config
-  (defun flymake--take-over-error-a (orig-fn &optional arg reset)
-    "If there is no `next-error' locus use `next-error' to go to
-    flymake errors instead"
-    (interactive "P")
-    (let ((sys (+error-delegate)))
-      (cond
-       ((eq 'flymake sys) (funcall 'flymake-goto-next-error arg
-                                   (if current-prefix-arg
-                                       '(:error :warning))
-                                   t))
-       ((eq 'emacs sys) (funcall orig-fn arg reset)))))
-
-  (defun +error-delegate ()
-    "Decide which error API to delegate to.
-
-Delegates to flymake if it is enabled and the `next-error' buffer
-is not visible. Otherwise delegates to regular Emacs next-error."
-    (if (and (bound-and-true-p flymake-mode)
-             (let ((buf (ignore-errors (next-error-find-buffer t))))
-               (not (and buf (get-buffer-window buf)))))
-        'flymake
-      'emacs))
-
-  (advice-add 'next-error :around #'flymake--take-over-error-a))
+  (add-hook 'flymake-mode-hook
+            (my-next-error-register 'flymake-goto-next-error)))
 
 (use-package flymake-diagnostic-at-point
   :straight t
   :after flymake
   :hook (flymake-mode . flymake-diagnostic-at-point-mode)
   :config (setq flymake-diagnostic-at-point-display-diagnostic-function
-                'flymake-diagnostic-at-point-display-minibuffer))
+                'flymake-diagnostic-at-point-display-popup))
 
 (use-package package-lint :straight t :defer)
 
@@ -1896,12 +1940,12 @@ is not visible. Otherwise delegates to regular Emacs next-error."
       ("r" "read only" read-only-mode)
       ("n" "line numbers" display-line-numbers-mode)
       ("M-q" "auto fill" auto-fill-mode)
-      (";" "flyspell" (lambda ()
+      ("i" "ispell" (lambda ()
                         (interactive)
                         (call-interactively
-                         (if (derived-mode-p 'prog-mode)
-                             #'flyspell-prog-mode
-                           #'flyspell-mode))))
+                         (if (derived-mode-p 'text-mode)
+                             #'text-spell-fu-mode
+                           #'spell-fu-mode))))
       ;; ("V" "view mode" view-mode)
       ("o" "outline" outline-minor-mode)]
 
@@ -2056,9 +2100,9 @@ _d_: subtree
 ;;;----------------------------------------------------------------
 (load (expand-file-name "lisp/setup-tabs" user-emacs-directory))
 
-;; ---------------------------
+;; ----------------------------------------------------------------
 ;; #+INCLUDE: "./lisp/setup-tabs.org" :minlevel 2
-;; ---------------------------
+;; ----------------------------------------------------------------
 
 ;;;----------------------------------------------------------------
 ;; ** HIGHLIGHTS
@@ -2155,6 +2199,11 @@ _d_: subtree
 ;; ** WALLABAG
 ;;;----------------------------------------------------------------
 
+;; Wallabag is a self-hosted read-it-later service for webpages and articles.
+;; There are multiple ways of interacting with Wallabag in Emacs.
+;;
+;; The "minimal" version, disabled here, is a little library that provides a
+;; "post-to-wallabag" command, like a browser bookmarklet:
 (use-package wallabag
   :disabled
   :defer t
@@ -2167,6 +2216,15 @@ _d_: subtree
     (define-key embark-url-map (kbd "R")
       (defun embark-wallabag (url)
         (wallabag-post-entry url)))))
+
+;; The "full" version is a full-fledged Wallabag client, including a local
+;; database, reader, Elfeed-style listings and more. With some elbow grease, I
+;; can switch seamlessly from Elfeed ↔ Wallabag ↔ EWW ↔ Org, making some
+;; progress towards Emacs' promise of integration.
+
+;; ----------------------------------------------------------------
+;; #+INCLUDE: "./lisp/setup-wallabag.org" :minlevel 2
+;; ----------------------------------------------------------------
 
 ;;;----------------------------------------------------------------
 ;; ** +NAV-FLASH+
@@ -2282,12 +2340,13 @@ _d_: subtree
         ("M-C"           . sp-convolute-sexp)
         ("M-D"           . my/sp-duplicate-sexp)
         ("M-J"           . sp-join-sexp)
+        ("M-S"           . sp-split-sexp)
         ("C-M-<up>"      . sp-raise-sexp)
         ("C-<right>"     . sp-forward-slurp-sexp)
         ("C-<left>"      . sp-backward-slurp-sexp)
         ("M-<right>"     . sp-forward-barf-sexp)
         ("M-<left>"      . sp-backward-barf-sexp)
-        ("C-k"           . sp-kill-hybrid-sexp)
+        ("M-K"           . sp-kill-hybrid-sexp)
         ("C-x C-t"       . sp-transpose-hybrid-sexp)
         ("C-M-n"         . sp-next-sexp)
         ("C-M-p"         . sp-previous-sexp)
@@ -2323,6 +2382,7 @@ _d_: subtree
                        ("n" . sp-next-sexp)
                        ("p" . sp-previous-sexp)
                        ("k" . sp-kill-sexp)
+                       ("K" . sp-kill-hybrid-sexp)
                        ("]" . sp-forward-slurp-sexp)
                        ("[" . sp-backward-slurp-sexp)
                        ("}" . sp-forward-barf-sexp)
@@ -2330,6 +2390,8 @@ _d_: subtree
                        ("r" . sp-raise-sexp)
                        ("C" . sp-convolute-sexp)
                        ("D" . my/sp-duplicate-sexp)
+                       ("J" . sp-join-sexp)
+                       ("S" . sp-split-sexp)
                        ("\\" . indent-region)
                        ("t" . transpose-sexps)
                        ("<tab>" . hs-cycle)))
@@ -2510,6 +2572,7 @@ for details."
   (add-to-list 'tramp-connection-properties
                (list (regexp-quote "/sshx:abode.karthinks.com:")
                      "direct-async-process" t))
+  (add-to-list 'tramp-remote-path 'tramp-own-remote-path)
   (defun sudo-find-file (file)
     "Open FILE as root."
     (interactive "FOpen file as root: ")
@@ -2617,18 +2680,6 @@ for details."
 (load (expand-file-name "lisp/setup-marginalia" user-emacs-directory))
 (load (expand-file-name "lisp/setup-embark" user-emacs-directory))
 (load (expand-file-name "lisp/setup-consult" user-emacs-directory))
-
-;; ---------------------------
-;; #+INCLUDE: "./lisp/setup-marginalia.org" :minlevel 2
-;; ---------------------------
-;; #+INCLUDE: "./lisp/setup-orderless.org" :minlevel 2
-;; ---------------------------
-;; #+INCLUDE: "./lisp/setup-vertico.org" :minlevel 2
-;; ---------------------------
-;; #+INCLUDE: "./lisp/setup-embark.org" :minlevel 2
-;; ---------------------------
-;; #+INCLUDE: "./lisp/setup-consult.org" :minlevel 2
-;; ---------------------------
 
 
 ;;;----------------------------------------------------------------
@@ -2874,19 +2925,19 @@ for details."
 ;; used to manage your email.
 (load (expand-file-name "lisp/setup-email" user-emacs-directory))
 
-;;;----------------------------------------------------------------
+;; ----------------------------------------------------------------
 ;; #+INCLUDE: "./lisp/setup-email.org" :minlevel 3
-;;;----------------------------------------------------------------
+;; ----------------------------------------------------------------
 
 ;;;----------------------------------------------------------------
 ;; ** ELFEED
 ;;;----------------------------------------------------------------
-;; (load (expand-file-name "lisp/setup-reading" user-emacs-directory))
+;;; (load (expand-file-name "lisp/setup-reading" user-emacs-directory))
 (load (expand-file-name "lisp/setup-elfeed" user-emacs-directory))
 
-;;;----------------------------------------------------------------
+;; ----------------------------------------------------------------
 ;; #+INCLUDE: "./lisp/setup-elfeed.org" :minlevel 2
-;;;----------------------------------------------------------------
+;; ----------------------------------------------------------------
 
 ;;;----------------------------------------------------------------
 ;; ** EWW
@@ -2902,9 +2953,9 @@ for details."
 ;; Youtube.
 (use-package setup-ytel)
 
-;;;----------------------------------------------------------------
+;; ----------------------------------------------------------------
 ;; #+INCLUDE: "./lisp/setup-ytel.org" :minlevel 2
-;;;----------------------------------------------------------------
+;; ----------------------------------------------------------------
 
 ;;;----------------------------------------------------------------
 ;; ** NOV.EL
@@ -3065,7 +3116,7 @@ managers such as DWM, BSPWM refer to this state as 'monocle'."
   :commands (my/olivetti-mode)
   :straight t
   :config
-  (setq olivetti-body-width 0.6
+  (setq olivetti-body-width 0.72
         olivetti-minimum-body-width 72
         olivetti-recall-visual-line-mode-entry-state t)
 
@@ -3227,7 +3278,7 @@ currently loaded theme first."
     "Adjust the size of latex preview fragments when changing the
 buffer's text scale."
     (pcase major-mode
-      ('latex-mode 
+      ((or 'latex-mode (guard org-auctex-mode))
        (dolist (ov (overlays-in (point-min) (point-max)))
          (if (eq (overlay-get ov 'category)
                  'preview-overlay)
@@ -3270,8 +3321,6 @@ buffer's text scale."
           '(default ((t (:family "Consolas" :foundry "outline"
                                  :slant normal :weight normal
                                  :height 120 :width normal)))))))
-  ;; (custom-set-faces  '(region ((t (:inverse-video t))))
-  ;;                    '(font-lock-comment-face ((t (:foreground "IndianRed3")))))
   ;; (add-to-list 'default-frame-alist '(alpha 96 90))
   (use-package dracula-theme
     :disabled
@@ -3306,6 +3355,18 @@ buffer's text scale."
 ;;                             '(org-level-2 ((t (:height 1.1 ;; 
 
 ;; ** MODUS THEMES
+(use-package ef-themes
+  :straight t
+  :defer
+  :config
+  (setq ef-themes-headings
+        '((0 . (1.50))
+          (1 . (1.28))
+          (2 . (1.22))
+          (3 . (1.17))
+          (4 . (1.14))
+          (t . (1.1)))))
+
 ;; Protesilaos Stavrou's excellent high contrast themes, perfect for working in
 ;; bright sunlight (especially on my laptop's dim screen).
 (use-package modus-themes
@@ -3414,8 +3475,7 @@ buffer's text scale."
             (with-eval-after-load library
               (when (string-match-p "^doom-" (symbol-name theme))
                   (apply #'set-face-attribute face nil spec)))))))
-    (when (eq theme 'doom-rouge)
-      (set-face-attribute 'hl-line nil :background "#1f2a3f")))
+    (if (eq theme 'doom-rouge) (set-face-attribute 'hl-line nil :background "#1f2a3f")))
 
   (advice-add 'load-theme :after #'my/doom-theme-settings)
   
@@ -3423,7 +3483,9 @@ buffer's text scale."
   (doom-themes-org-config)
   (use-package doom-rouge-theme
     :config
-    (setq doom-rouge-padded-modeline nil))
+    (setq doom-rouge-padded-modeline nil
+          doom-rouge-brighter-comments t
+          doom-rouge-brighter-tabs t))
 
   (use-package doom-iosvkem-theme
     :disabled
@@ -3437,12 +3499,24 @@ buffer's text scale."
 ;;;################################################################
 ;; * EVIL-MODE
 ;;;################################################################
-;;(require 'setup-evil)
+;;;(require 'setup-evil)
+
+;;;################################################################
+;; * TERMINAL SETTINGS
+;;;################################################################
+(use-package term-keys
+  :disabled
+  :straight (:host github :repo "CyberShadow/term-keys"))
 
 ;;;################################################################
 ;; * MISC SETTINGS
 ;;;################################################################
 ;; Settings that I'm not sure where to put:
+(use-package kbd-mode
+  :straight (:host github
+             :repo "kmonad/kbd-mode")
+  :mode ("\\.kbd\\'" . kbd-mode))
+
 (use-package shr
   :defer
   :config

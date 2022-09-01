@@ -58,7 +58,8 @@
            (buffer flat (vertico-cycle . t))
            (t flat)))
    (setq vertico-multiform-commands
-         '((load-theme my/vertico-grid-mode reverse)
+         '((dired-goto-file unobtrusive)
+           (load-theme my/vertico-grid-mode reverse)
            (my/toggle-theme my/vertico-grid-mode reverse)
            (affe-find reverse)
            (execute-extended-command unobtrusive)

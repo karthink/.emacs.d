@@ -1,3 +1,6 @@
+;; -*- lexical-binding: t; -*-
+
+;; The tab bar has potential (since it sits up high).
 (use-package tab-bar
   :if (>= emacs-major-version 28)
   :after cus-face

@@ -3,10 +3,11 @@
   :straight t
   :commands (avy-goto-word-1 avy-goto-char-2 avy-goto-char-timer)
   :config
-  (setq avy-timeout-seconds 0.32)
+  (setq avy-timeout-seconds 0.25)
   (setq avy-keys '(?a ?s ?d ?f ?g ?j ?l ?o
                    ?v ?b ?n ?, ?/ ?u ?p ?e ?.
                    ?c ?q ?2 ?3 ?' ?\;))
+  (setq avy-single-candidate-jump nil)
   (setq avy-dispatch-alist '((?m . avy-action-mark)
                              (?i . avy-action-ispell)
                              (?z . avy-action-zap-to-char)
@@ -32,6 +33,10 @@
                              (?Y . avy-action-yank-whole-line)
                              (?T . avy-action-teleport-whole-line)))
   
+  (advice-add 'avy-goto-char-timer :around
+              (defun my/avy-with-single-candidate-jump (orig-fn &optional arg)
+                (let ((avy-single-candidate-jump t))
+                  (funcall orig-fn arg))))
   (defun avy-action-easy-copy (pt)
     (unless (require 'easy-kill nil t)
       (user-error "Easy Kill not found, please install."))
@@ -289,6 +294,8 @@ The current window is chosen if WIN is not specified."
    "M-s M-y"    '(avy-copy-region            :wk "Avy copy region above")
    "M-s M-k"    '(avy-kill-whole-line        :wk "Avy copy line as kill")
    "M-j"        '(avy-goto-char-2            :wk "Avy goto char 2")
+   "M-s p"      '(avy-goto-line-above        :wk "Avy goto line above")
+   "M-s n"      '(avy-goto-line-below        :wk "Avy goto line below")
    "M-s C-w"    '(avy-kill-region            :wk "Avy kill region")
    "M-s M-w"    '(avy-kill-ring-save-region  :wk "Avy copy as kill")
    "M-s t"      '(avy-move-line              :wk "Avy move line")

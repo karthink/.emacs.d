@@ -1,7 +1,8 @@
 (use-package corfu
-  :straight t
+  :straight (:host github :repo "minad/corfu")
   :hook (((prog-mode text-mode tex-mode) . corfu-mode)
-         ((shell-mode eshell-mode) . my/corfu-shell-settings))
+         ((shell-mode eshell-mode) . my/corfu-shell-settings)
+         (minibuffer-setup . contrib/corfu-enable-always-in-minibuffer))
   :bind (:map corfu-map
          ("TAB" . corfu-next)
          ([tab] . corfu-next)
@@ -13,7 +14,13 @@
          ("M-h" . nil)
          ("C-h" . corfu-show-documentation))
   :config
-  (setq corfu-auto  nil
+  (defun contrib/corfu-enable-always-in-minibuffer ()
+    "Enable Corfu in the minibuffer if Vertico is not active.
+Useful for prompts such as `eval-expression' and `shell-command'."
+    (unless (bound-and-true-p vertico--input)
+      (corfu-mode 1)))
+
+  (setq corfu-auto  t
         corfu-cycle t
         corfu-quit-no-match t
         corfu-preselect-first nil
@@ -35,6 +42,25 @@
       (eshell-send-input))
      ((derived-mode-p 'comint-mode)
       (comint-send-input)))))
+
+(use-package corfu-indexed
+  :disabled
+  :after corfu
+  :straight (:host github :repo "minad/corfu"
+             :files ("extensions/corfu-indexed.el")))
+
+(use-package corfu-quick
+  :after corfu
+  :straight (:host github :repo "minad/corfu"
+             :files ("extensions/corfu-quick.el"))
+  :bind (:map corfu-map
+         ("C-'" . corfu-quick-complete)))
+
+(use-package corfu-history
+  :disabled
+  :after corfu
+  :straight (:host github :repo "minad/corfu"
+             :files ("extensions/corfu-history.el")))
 
 (use-package kind-icon
   :straight t

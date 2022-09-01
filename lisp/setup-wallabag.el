@@ -1,4 +1,5 @@
 ;; -*- lexical-binding: t; -*-
+
 (use-package wallabag
   :straight (:host github :repo "chenyanming/wallabag.el"
              :files ("*.el" "*.alist" "*.css"))
@@ -39,9 +40,9 @@
   
   (use-package elfeed
     :bind (:map elfeed-search-mode-map
-           ("R" . wallabag-post-entry)
+           ("R" . elfeed-post-to-wallabag)
            :map elfeed-show-mode-map
-           ("R" . wallabag-post-entry))
+           ("R" . elfeed-post-to-wallabag))
     :config
     (defun elfeed-post-to-wallabag (entries)
       (interactive (list (pcase major-mode

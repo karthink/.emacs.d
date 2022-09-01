@@ -58,6 +58,7 @@
 ;;;----------------------------------------------------------------
 (unless IS-GUIX
   (use-package zmq
+    :disabled
     :straight (zmq :host github
                    ;;   :repo "nnicandro/emacs-zmq"
                    :repo "dakra/emacs-zmq"

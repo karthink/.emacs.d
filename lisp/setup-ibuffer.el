@@ -1,3 +1,5 @@
+;; -*- lexical-binding: t; -*-
+
 (use-package ibuffer
   :defer t
   :config
@@ -6,7 +8,6 @@
   (setq ibuffer-default-sorting-mode 'filename/process)
   (add-to-list 'ibuffer-help-buffer-modes 'helpful-mode)
   (add-to-list 'ibuffer-help-buffer-modes 'Man-mode)
-  ;; (setq ibuffer-use-header-line t)
   ;; (setq ibuffer-display-summary nil)
   ;; (setq ibuffer-use-other-window nil)
   ;; (setq ibuffer-movement-cycle nil)

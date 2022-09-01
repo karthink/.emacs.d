@@ -5,7 +5,8 @@
 ;;;----------------------------------------------------------------
 ;; Org settings to do with its default behavior
 (use-package org
-  :straight (:type built-in)
+  :straight t
+  ;;(:type built-in)
   :bind (("\C-cl" . org-store-link)
          ("\C-ca" . org-agenda)
          ("<f5>"  . org-capture)
@@ -75,6 +76,23 @@
   ;; Make org use `display-buffer' like every other Emacs citizen.
   (advice-add #'org-switch-to-buffer-other-window :override #'switch-to-buffer-other-window)
 
+  (add-hook 'org-metareturn-hook
+            (defun my/auto-checkbox (&rest _)
+              (when (org-at-item-checkbox-p)
+                ;; Checkbox: Insert new item with checkbox.
+                (org-insert-todo-heading nil) t)))
+
+  (when (>= emacs-major-version 28)
+    (defvar org-link-navigation-map
+            (let ((map (make-sparse-keymap)))
+              (define-key map (kbd "n") #'org-next-link)
+              (define-key map (kbd "p") #'org-previous-link)
+              map))
+    (map-keymap
+     (lambda (_ cmd)
+       (put cmd 'repeat-map 'org-link-navigation-map))
+     org-link-navigation-map))
+  
   (defun er/add-latex-in-org-mode-expansions ()
     ;; Make Emacs recognize \ as an escape character in org
     (modify-syntax-entry ?\\ "\\" org-mode-syntax-table)
@@ -215,7 +233,109 @@ an embedded LaTeX fragment, let `texmathp' do its job.
        (let (org-log-done org-log-states)   ; turn off logging
          (org-todo (if (= n-not-done 0) "DONE" "TODO"))))
 
-  (add-hook 'org-after-todo-statistics-hook #'org-summary-todo))
+  ;; Disabling this to try to use cookies with PROJECT.
+  ;; (add-hook 'org-after-todo-statistics-hook #'org-summary-todo)
+  )
+
+;; From alphapapa's unpackaged: https://github.com/alphapapa/unpackaged.el#org-return-dwim
+(use-package org
+  :bind (:map org-mode-map
+         ("RET" . my/org-return-dwim))
+  :config
+  
+  (defun my/org-element-descendant-of (type element)
+    "Return non-nil if ELEMENT is a descendant of TYPE.
+TYPE should be an element type, like `item' or `paragraph'.
+ELEMENT should be a list like that returned by `org-element-context'."
+    ;; MAYBE: Use `org-element-lineage'.
+    (when-let* ((parent (org-element-property :parent element)))
+      (or (eq type (car parent))
+          (my/org-element-descendant-of type parent))))
+
+  (defun my/org-return-dwim (&optional default)
+    "A helpful replacement for `org-return'.  With prefix, call `org-return'.
+
+On headings, move point to position after entry content.  In
+lists, insert a new item or end the list, with checkbox if
+appropriate.  In tables, insert a new row or end the table."
+    ;; Inspired by John Kitchin:
+    ;; http://kitchingroup.cheme.cmu.edu/blog/2017/04/09/A-better-return-in-org-mode/
+    (interactive "P")
+    (if default
+        (org-return)
+      (cond
+       ;; Act depending on context around point.
+       
+       ((and (eq 'link (car (org-element-context)))
+             org-return-follows-link)
+        ;; Link: Open it.
+        (org-open-at-point-global))
+
+       ((org-at-heading-p)
+        ;; Heading: Move to position after entry content.
+        ;; NOTE: This is probably the most interesting feature of this function.
+        (let ((heading-start (org-entry-beginning-position)))
+          (goto-char (org-entry-end-position))
+          (cond ((and (org-at-heading-p)
+                      (= heading-start (org-entry-beginning-position)))
+                 ;; Entry ends on its heading; add newline after
+                 (end-of-line)
+                 (insert "\n\n"))
+                (t
+                 ;; Entry ends after its heading; back up
+                 (forward-line -1)
+                 (end-of-line)
+                 (when (org-at-heading-p)
+                   ;; At the same heading
+                   (forward-line)
+                   (insert "\n")
+                   (forward-line -1))
+                 ;; FIXME: looking-back is supposed to be called with more arguments.
+                 (while (not (looking-back (rx (repeat 3 (seq (optional blank) "\n")))))
+                   (insert "\n"))
+                 (forward-line -1)))))
+
+       ((org-in-item-p)
+        ;; Plain list.  Yes, this gets a little complicated...
+        (let ((context (org-element-context)))
+          (if (or (eq 'plain-list (car context))  ; First item in list
+                  (and (eq 'item (car context))
+                       (not (eq (org-element-property :contents-begin context)
+                                (org-element-property :contents-end context))))
+                  (my/org-element-descendant-of 'item context))  ; Element in list item, e.g. a link
+              ;; Non-empty item: Add new item.
+              (if (org-at-item-checkbox-p)
+                  (org-insert-todo-heading nil)
+                (org-insert-item))
+            ;; Empty item: Close the list.
+            ;; TODO: Do this with org functions rather than operating on the
+            ;; text. Can't seem to find the right function.
+            (delete-region (line-beginning-position) (line-end-position))
+            (insert "\n"))))
+
+       ((when (fboundp 'org-inlinetask-in-task-p)
+          (org-inlinetask-in-task-p))
+        ;; Inline task: Don't insert a new heading.
+        (org-return))
+
+       ((org-at-table-p)
+        (cond ((save-excursion
+                 (beginning-of-line)
+                 ;; See `org-table-next-field'.
+                 (cl-loop with end = (line-end-position)
+                          for cell = (org-element-table-cell-parser)
+                          always (equal (org-element-property :contents-begin cell)
+                                        (org-element-property :contents-end cell))
+                          while (re-search-forward "|" end t)))
+               ;; Empty row: end the table.
+               (delete-region (line-beginning-position) (line-end-position))
+               (org-return))
+              (t
+               ;; Non-empty row: call `org-return'.
+               (org-return))))
+       (t
+        ;; All other cases: call `org-return'.
+        (org-return))))))
 
 ;;;----------------------------------------------------------------
 ;; ** ORG-APPEARANCE
@@ -223,13 +343,13 @@ an embedded LaTeX fragment, let `texmathp' do its job.
 
 ;; Org settings to do with its default appearance
 (use-package org
-  :straight (:type built-in)
   :hook ((org-mode . org-toggle-pretty-entities)
          (org-mode . visual-line-mode))
   :config
   (setq-default
    org-fontify-done-headline t
-   org-ellipsis " ▼ "
+   org-ellipsis " ▾"
+   ;; org-ellipsis "…"
    org-fontify-quote-and-verse-blocks t
    org-fontify-whole-heading-line t
    org-hidden-keywords nil
@@ -240,7 +360,7 @@ an embedded LaTeX fragment, let `texmathp' do its job.
    org-startup-with-inline-images nil
    org-highlight-latex-and-related '(native)
    org-indent-mode-turns-on-hiding-stars nil
-   org-use-sub-superscripts '{}
+   org-use-sub-superscripts t
    org-pretty-entities nil
    org-pretty-entities-include-sub-superscripts t
    ;; org-priority-faces '((?a . error) (?b . warning) (?c . success))
@@ -287,7 +407,6 @@ an embedded LaTeX fragment, let `texmathp' do its job.
 ;; TDOO Disabled while I test org-modern
 ;; Prettified symbols in org
 (use-package org
-  :straight (:type built-in)
   :disabled
   :hook (org-mode . my/org-prettify-symbols)
   :config
@@ -330,7 +449,7 @@ an embedded LaTeX fragment, let `texmathp' do its job.
   :straight (:host github
              :repo "minad/org-modern")
   :after org
-  :hook (org-modern-mode-hook . my/org-modern-spacing)
+  :hook (org-modern-mode . my/org-modern-spacing)
   :config
   (setq org-todo-keyword-faces
         '(;; ("TODO"    :foreground "#6e90c8" :weight bold)
@@ -416,7 +535,8 @@ has no effect."
   :bind (:map org-agenda-mode-map
               ("D" . org-agenda-day-view)
               ("W" . org-agenda-week-view)
-              ("w" . org-agenda-refile))
+              ("w" . org-agenda-refile)
+              ("S-SPC" . org-agenda-show-scroll-down))
   :config
   (setq org-agenda-files '("~/Documents/org/inbox.org"
                            "~/Documents/org/do.org"
@@ -506,7 +626,7 @@ has no effect."
           ("P" "All Projects" tags "TODO=\"PROJECT\"&LEVEL>1"
            ((org-agenda-overriding-header "All Projects")))
 
-          ("i" "Uncategorized items" tags "CATEGORY=\"Inbox\"&LEVEL=1"
+          ("i" "Inbox" tags "CATEGORY=\"Inbox\"&LEVEL=1"
            ((org-agenda-overriding-header "Uncategorized items")))
 
           ("W" "Waiting tasks" tags "W-TODO=\"DONE\"|TODO={WAITING\\|DELEGATED}"
@@ -624,8 +744,11 @@ See `org-capture-templates' for more information."
   
   (pcase-dolist
       (`(,key . ,template)
-       '(("t" "Add task" entry (file "~/org/inbox.org")
-          "* TODO %?\n:PROPERTIES:\n:CREATED:  %U\n:END:\n%a\n%x\n" :prepend t)
+       '(("r" "Add resource" entry (file "~/org/inbox.org")
+          "* TODO [[%c][%^{Title: }]] %^G\n:PROPERTIES:\n:CREATED:  %U\n:END:\n"
+          :prepend t :immediate-finish t)
+         ("t" "Add task" entry (file "~/org/inbox.org")
+          "* TODO %?\n:PROPERTIES:\n:CREATED:  %U\n:END:\n%a\n%c\n" :prepend t)
          ("c" "Add calendar entry" entry (file "~/org/gmail-cal.org")
           "* %?\n%^{LOCATION}p\n:%(progn (require 'org-gcal) (symbol-value 'org-gcal-drawer-name)):
 %a\n:END:")
@@ -694,16 +817,6 @@ See `org-capture-templates' for more information."
         org-latex-prefer-user-labels t
         org-latex-hyperref-template nil)
   
-  ;; Minted
-  (setq org-latex-listings 'minted)
-  (add-to-list 'org-latex-packages-alist
-               '("" "minted"))
-  (add-to-list 'org-latex-packages-alist
-               '("" "xcolor"))
-  (setq org-latex-minted-options
-        '(("frame" "lines")
-          ("linenos" "true")))
-  
   ;; (add-to-list 'org-latex-packages-alist '("" "listings"))
   ;; (add-to-list 'org-latex-packages-alist '("" "color"))
 
@@ -738,6 +851,26 @@ parent."
   (add-hook 'org-export-filter-parse-tree-functions 'my/org-export-ignore-headlines)
   
   )
+
+;; Code block export preferences.
+(use-package ox
+  :after ox
+  :config
+  (setq org-latex-listings 'minted)
+  (add-to-list 'org-latex-packages-alist
+               '("" "minted"))
+  (add-to-list 'org-latex-packages-alist
+               '("" "xcolor"))
+  (setq org-latex-minted-options
+        '(("frame" "lines")
+          ("linenos" "true")))
+  
+  (use-package engrave-faces
+    :disabled
+    :straight t
+    :config
+    ;; (setq org-latex-listings 'engraved)
+    (setq org-latex-src-block-backend 'engraved)))
 
 ;; *** ORG-CITE
 (use-package org
@@ -813,7 +946,7 @@ parent."
 (use-package ob
   :after org
   :commands org-babel-execute-src-block
-  :hook (org-babel-after-execute . org-redisplay-inline-images)
+  ;; :hook (org-babel-after-execute . org-redisplay-inline-images)
   :config
   (setq org-src-window-setup 'split-window-below
         org-confirm-babel-evaluate nil
@@ -821,13 +954,13 @@ parent."
   (org-babel-do-load-languages
    'org-babel-load-languages '((emacs-lisp . t)
                                (matlab . t)
-                               (octave . nil)
+                               (octave . t)
                                (python . t)
                                (R . nil)
                                (shell . t)
-                               (scheme . nil)
+                               (scheme . t)
                                (ditaa . nil)
-                               (julia . nil)
+                               (julia . t)
                                (jupyter . nil)))
   (setq org-ditaa-jar-path "/usr/bin/ditaa")
   (defun my/org-babel-goto-tangle-file ()
@@ -951,7 +1084,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
   (interactive)
   (if-let ((now (float-time (current-time)))
            (sync-p (or (< (- now my/org-gcal--last-sync-time)
-                          3600)
+                          7200)
                        ;; (seq-some (lambda (cal-file-pair)
                        ;;             (< (- now
                        ;;                   (float-time (file-attribute-modification-time
@@ -1136,6 +1269,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
                   (cdr (overlay-get ov 'display))
                   :scale (+ 1.0 (* 0.2 text-scale-mode-amount))))))))
 
+  (defvar olivetti-style)
   (define-minor-mode my/org-presentation-mode
     "Parameters for plain text presentations with `org-mode'."
     :init-value nil
@@ -1169,8 +1303,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
          ("<home>" . 'org-tree-slide-display-header-toggle)
          ("<C-down>"  . org-tree-slide-display-header-toggle)
          ("<C-right>" . org-tree-slide-move-next-tree)
-         ("<C-left>"  . org-tree-slide-move-previous-tree))
-  )
+         ("<C-left>"  . org-tree-slide-move-previous-tree)))
 
 ;;;----------------------------------------------------------------
 ;; ** ORG-MIME 
@@ -1315,5 +1448,20 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
   :bind (:map org-mode-map
          ("C-c )" . 'consult-reftex-insert-reference)))
 
+;;;----------------------------------------------------------------
+;; ** ORG-AUCTEX
+;;;----------------------------------------------------------------
+(use-package org-auctex
+  :load-path "plugins/org-auctex"
+  :commands org-auctex-mode
+  :after org
+  :defer)
+
+;;;----------------------------------------------------------------
+;; ** ORGLINK
+;;;----------------------------------------------------------------
+(use-package orglink
+  :straight t
+  :defer)
 (provide 'setup-org)
 

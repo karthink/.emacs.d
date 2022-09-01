@@ -120,26 +120,27 @@ Essentially a much simplified version of `next-line'."
 
   (defun hs-cycle (&optional level)
     (interactive "p")
-    (if (= level 1)
-        (pcase last-command
-          ('hs-cycle
-           (hs-hide-level 1)
-           (setq this-command 'hs-cycle-children))
-          ('hs-cycle-children
-           ;;TODO: Fix this case. `hs-show-block' needs to be called twice to
-           ;;open all folds of the parent block.
-           (save-excursion (hs-show-block))
-           (hs-show-block)
-           (setq this-command 'hs-cycle-subtree))
-          ('hs-cycle-subtree
-           (hs-hide-block))
-          (_
-           (if (not (hs-already-hidden-p))
+    (save-excursion
+      (if (= level 1)
+          (pcase last-command
+            ('hs-cycle
+             (hs-hide-level 1)
+             (setq this-command 'hs-cycle-children))
+            ('hs-cycle-children
+             ;;TODO: Fix this case. `hs-show-block' needs to be called twice to
+             ;;open all folds of the parent block.
+             (hs-show-block)
+             (hs-show-block)
+             (setq this-command 'hs-cycle-subtree))
+            ('hs-cycle-subtree
+             (hs-hide-block))
+            (_
+             (if (not (hs-already-hidden-p))
                  (hs-hide-block)
                (hs-hide-level 1)
                (setq this-command 'hs-cycle-children))))
-      (hs-hide-level level)
-      (setq this-command 'hs-hide-level)))
+        (hs-hide-level level)
+        (setq this-command 'hs-hide-level))))
   
   (defun hs-global-cycle ()
     (interactive)

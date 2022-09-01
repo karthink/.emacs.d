@@ -27,7 +27,7 @@ If buffer-or-name is nil return current buffer's mode."
                            eshell-mode
                            geiser-repl-mode
                            shell-mode
-                           vterm-mode
+                           ;; vterm-mode
                            inferior-python-mode
                            cider-repl-mode
                            fennel-repl-mode
@@ -124,6 +124,16 @@ If buffer-or-name is nil return current buffer's mode."
         ("^\\*[Ee]shell [Ee]xport: .*\\*$"
          (display-buffer-reuse-window display-buffer-use-some-window))
         
+        ("^\\*julia\\*"
+         (display-buffer-reuse-window
+          display-buffer-in-direction
+          display-buffer-in-side-window)
+         (window-height . .35)
+         (window-width .  .40)
+         ;; (preserve-size . (nil . t))
+         (direction . below)
+         (side . bottom)
+         (slot . 1))
         ;; ----------------------------------------------------------------
         ;; Windows on top
         ;; ----------------------------------------------------------------
@@ -191,7 +201,7 @@ If buffer-or-name is nil return current buffer's mode."
         ;;  (slot . 5))
 
         ("\\*undo-tree\\*" ;; (lambda (buf act) (equal (buffer-mode buf) 'undo-tree-visualizer-mode))
-          (display-buffer-in-direction)
+         (display-buffer-in-direction)
          (window-width . 35) ;; (lambda (win) (fit-window-to-buffer win nil nil 65 40 t)))
          (direction . right)
          (side . right)
@@ -241,8 +251,8 @@ If buffer-or-name is nil return current buffer's mode."
         ("\\*\\(?:Warnings\\|Compile-Log\\|Messages\\|Tex Help\\|TeX errors\\)\\*"
          (display-buffer-at-bottom display-buffer-in-side-window display-buffer-in-direction)
          (window-height . (lambda (win) (fit-window-to-buffer
-                                      win
-                                      (floor (frame-height) 5))))
+                                         win
+                                         (floor (frame-height) 5))))
          (side . bottom)
          (direction . below)
          (slot . -5)
@@ -355,15 +365,15 @@ If buffer-or-name is nil return current buffer's mode."
 
         ("^\\*eldoc\\*$"
          (display-buffer-reuse-window
-          display-buffer-in-side-window
-          display-buffer-in-direction)
+          display-buffer-in-direction
+          display-buffer-in-side-window)
          (body-function . select-window)
          ;; (direction . bottom)
          ;; (window-height . (lambda (win) (fit-window-to-buffer win 25 14)))
          (window-width . 82 ;; (lambda (win) (fit-window-to-buffer win nil nil 75 65))
                        )
-         (direction . right)
-         (side . right)
+         (direction . below)
+         (side . below)
          (slot . 2)
          (window-parameters . ((split-window . #'ignore)
                                ;; (no-other-window . t)

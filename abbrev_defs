@@ -1,7 +1,7 @@
 ;;-*-coding: utf-8;-*-
 (define-abbrev-table 'eshell-mode-abbrev-table
   '(
-    ("aur" "sudo aura" nil :count 2)
+    ("aur" "sudo aura" nil :count 5)
     ("dof" "dired-other-frame" nil :count 3)
     ("dow" "dired-other-window" nil :count 3)
     ("ec" "emacsclient -c" nil :count 3)
@@ -12,7 +12,7 @@
     ("jcu" "journalctl --user" nil :count 1)
     ("la" "ls -lAh" nil :count 1)
     ("ll" "ls -l" nil :count 4)
-    ("pac" "sudo pacman" nil :count 18)
+    ("pac" "sudo pacman" nil :count 21)
     ("qb" "qutebrowser" nil :count 3)
     ("qnb" "qutebrowser --temp-basedir --config ~/.config/qutebrowser/config.py --set \"colors.webpage.darkmode.enabled\" \"False\"" nil :count 4)
     ("qutenb" "qutebrowser --temp-basedir --config ~/.config/qutebrowser/config.py --set \"colors.webpage.darkmode.enabled\" \"False\"" nil :count 6)
@@ -23,6 +23,12 @@
     ("xo" "xdg-open" nil :count 4)
     ("yt" "youtube-dl -w -c -o '%(title)s.%(ext)s' -f 'bestvideo[height<=?1080]+bestaudio/best' --add-metadata" nil :count 2)
     ("yta" "youtube-dl -w -c -r 1M -o '%(playlist_index)s-%(title)s.%(ext)s' --add-metadata  -f 'bestaudio[ext=m4a]'" nil :count 2)
+   ))
+
+(define-abbrev-table 'notmuch-message-mode-abbrev-table
+  '(
+    ("K" "Karthik" nil :count 9)
+    ("k" "Karthik" nil :count 11)
    ))
 
 (define-abbrev-table 'org-mode-abbrev-table

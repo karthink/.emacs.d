@@ -11,9 +11,12 @@
 ;;   you move by day in =org-agenda=.
 ;; - Single key browsing (space to keep reading)
 ;; - Send entries to mpv
+;; - Send entries to Wallabag (which see)
 ;; - Easy taggers
 ;; - De-clickbait title entires
 ;; - tag completion
+;; - Narrow search to feed(s) at point
+;; - Better feed filtering (handle spaces)
 
 (use-package elfeed
   :straight t
@@ -24,20 +27,19 @@
   ;; (setq elfeed-feeds nil)
   
   (setq-default elfeed-db-directory
+                (dir-concat user-cache-directory "elfeed")
                 ;; (concat "~/Desktop/elfeed-"
                 ;;         (format-time-string "%Y-%m-%d-%H%M"))
-                (dir-concat user-cache-directory "elfeed")
                 elfeed-save-multiple-enclosures-without-asking t
                 elfeed-search-clipboard-type 'CLIPBOARD
                 elfeed-search-filter "#50 +unread "
-                elfeed-search-date-format '("%b %d" 6 :left)
-                elfeed-search-title-min-width 30
+                elfeed-search-date-format '("%Y-%m-%d" 10 :left) ;;'("%b %d" 6 :left)
                 ;; elfeed-show-entry-switch #'elfeed-display-buffer
-                )
+                elfeed-search-title-min-width 30)
   
-  ;;----------------------------------------------------------------------
-  ;;*** Helper functions
-  ;;----------------------------------------------------------------------
+;;----------------------------------------------------------------------
+;;*** Helper functions
+;;----------------------------------------------------------------------
 
   (eval-when-compile
     (defmacro elfeed-with-open-entry (&rest body)
@@ -331,9 +333,9 @@ ENQUEUE-P) add to mpv's playlist."
                        to   next-next-day)))
         (let ((elfeed-search-date-format '("%Y-%m-%d" 10 :left)))
           (setq elfeed-search-filter (concat (replace-regexp-in-string
-                                              "@[^[:space:]]*" ""
+                                              " @[^[:space:]]*" ""
                                               elfeed-search-filter)
-                                             "@"  (elfeed-search-format-date from)
+                                             " @"  (elfeed-search-format-date from)
                                              "--" (elfeed-search-format-date to))))
         (elfeed-search-update :force))))
   
@@ -372,6 +374,77 @@ With prefix-arg REFRESH-TAGS, refresh the cached completion metadata."
                 (read-from-minibuffer "Filter: " elfeed-search-filter keymap)))
       (elfeed-search-update :force)))
 
+  ;; Add tag-completion to the tag/untag commands in elfeed-search
+  (defun elfeed-search-tag-all (tag)
+    "Apply TAG to all selected entries."
+    (interactive (let* ((completions (if (not my/elfeed-db-all-tags)
+                                         (elfeed-db-get-all-tags)
+                                       my/elfeed-db-all-tags))
+                        (minibuffer-completion-table completions)
+                        (keymap (copy-keymap minibuffer-local-map)))
+                   (define-key keymap (kbd "TAB") 'minibuffer-complete)
+                   (list (intern (read-from-minibuffer "Tag: " nil keymap)))))
+    (let ((entries (elfeed-search-selected)))
+      (elfeed-tag entries tag)
+      (mapc #'elfeed-search-update-entry entries)
+      (unless (or elfeed-search-remain-on-entry (use-region-p))
+        (forward-line))))
+  
+  (defun elfeed-search-untag-all (tag)
+    "Remove TAG from all selected entries."
+    (interactive (let* ((completions
+                         (cl-reduce 
+                          (lambda (t1 e2) (cl-union t1 (elfeed-entry-tags e2)))
+                          (elfeed-search-selected) :initial-value nil))
+                        (minibuffer-completion-table completions)
+                        (keymap (copy-keymap minibuffer-local-map)))
+                   (define-key keymap (kbd "TAB") 'minibuffer-complete)
+                   (list (intern (read-from-minibuffer "Tag: " nil keymap)))))
+    (let ((entries (elfeed-search-selected)))
+      (elfeed-untag entries tag)
+      (mapc #'elfeed-search-update-entry entries)
+      (unless (or elfeed-search-remain-on-entry (use-region-p))
+        (forward-line))))
+  
+  (advice-add
+   'elfeed-search-parse-filter :filter-return
+   (defun my/elfeed-search-parse-filter-whitespace (parsed)
+     (prog1 parsed
+       (dolist (field '(:feeds :not-feeds))
+         (cl-callf (lambda (feed-list)
+                     (mapcar (lambda (feed) (replace-regexp-in-string "-" " " feed))
+                             feed-list))
+             (plist-get parsed field))))))
+  
+  (defun my/elfeed-search-make-feed-filter (filter-char)
+    "Narrow elfeed search to the current feed or its inverse."
+    (lambda (&optional reset)
+      (interactive "P")
+      (if reset
+          (let ((filter (split-string elfeed-search-filter)))
+            (setq elfeed-search-filter
+                  (string-join (cl-delete-if
+                                (lambda (s) (eq (aref s 0) filter-char))
+                                filter)
+                               " ")))
+        (when-let ((fc (concat " " (make-string 1 filter-char)))
+                   (feed-titles
+                    (cl-delete-duplicates
+                     (mapcar
+                      (lambda (e)
+                        (elfeed-feed-title
+                         (elfeed-entry-feed e)))
+                      (elfeed-search-selected)))))
+          (setq elfeed-search-filter
+                (concat elfeed-search-filter fc
+                        (mapconcat (lambda (title)
+                                     (replace-regexp-in-string " " "-" title))
+                                   feed-titles fc)))))
+      (elfeed-search-update :force)))
+  
+  (define-key elfeed-search-mode-map (kbd "~") (my/elfeed-search-make-feed-filter ?~))
+  (define-key elfeed-search-mode-map (kbd "=") (my/elfeed-search-make-feed-filter ?=))
+    
   (defun my/elfeed-quick-switch-filter ()
     (interactive)
     (bookmark-jump
@@ -434,7 +507,66 @@ With prefix-arg REFRESH-TAGS, refresh the cached completion metadata."
             "B" 'elfeed-search-eww-open
             "x" 'elfeed-search-browse-url))
 
-;; * WALLABAG
+;; ** UTILITIES
+;; 
+;; From alphapapa's unpackaged: Find RSS/Atom feeds for urls.
+(use-package elfeed
+  :defer
+  :config
+  (cl-defun my/elfeed-feed-for-url (url &key (prefer 'atom) (all t))
+    "Return feed URL for web page at URL.
+Interactively, insert the URL at point.  PREFER may be
+`atom' (the default) or `rss'.  When ALL is non-nil, return all
+feed URLs of all types; otherwise, return only one feed URL,
+preferring the preferred type."
+    (interactive (list
+                  (read-from-minibuffer
+                   "Feed for URL: "
+                   (cl-loop for item in
+                            (append (list (gui-get-selection 'CLIPBOARD)) kill-ring)
+                            when (and item (string-match (rx bol "http" (optional "s") "://") item))
+                            return item))))
+    (require 'esxml-query)
+    (cl-flet ((feed-p (type)
+                      ;; Return t if TYPE appears to be an RSS/ATOM feed
+                      (string-match-p (rx "application/" (or "rss" "atom") "+xml")
+                                      type)))
+      (let* ((preferred-type (format "application/%s+xml" (symbol-name prefer)))
+             (dom (with-current-buffer (elfeed-curl-retrieve-synchronously url :method "GET")
+                    (libxml-parse-html-region (point-min) (point-max))))
+             (potential-feeds (esxml-query-all "link[rel=alternate]" dom))
+             (return (if all
+                         ;; Return all URLs
+                         (cl-loop for (_tag attrs) in potential-feeds
+                                  when (feed-p (alist-get 'type attrs))
+                                  collect (url-expand-file-name (alist-get 'href attrs) url))
+                       (or
+                        ;; Return the first URL of preferred type
+                        (cl-loop for (_tag attrs) in potential-feeds
+                                 when (equal preferred-type (alist-get 'type attrs))
+                                 return (url-expand-file-name (alist-get 'href attrs) url))
+                        ;; Return the first URL of non-preferred type
+                        (cl-loop for (_tag attrs) in potential-feeds
+                                 when (feed-p (alist-get 'type attrs))
+                                 return (url-expand-file-name (alist-get 'href attrs) url))))))
+        (if (called-interactively-p 'interactive)
+            (thread-first
+              (get-buffer-create "*Elfeed Feed Search Output*")
+              (with-current-buffer
+                  (erase-buffer)
+                (dolist (link (ensure-list return))
+                  (insert link "\n"))
+                (beginning-of-buffer)
+                (current-buffer))
+              (display-buffer
+               `(display-buffer-at-bottom
+                 (window-height . ,#'fit-window-to-buffer)
+                 (body-function . ,#'select-window))))
+          return)))))
+
+;; ** +ELFEED & WALLABAG+
+
+;; Disabled: Elfeed integration with the minimal Wallabag client 
 (use-package wallabag-post
   :disabled
   :load-path "plugins/wallabag"
@@ -448,8 +580,9 @@ With prefix-arg REFRESH-TAGS, refresh the cached completion metadata."
             (client-id      . ,(nth 2 creds))
             (host           . ,(nth 4 creds))))))
 
-;; ** ELFEED + WALLABAG
+;; ** ELFEED & WALLABAG (Full)
 
+;; Elfeed integration with the full Wallabag client
 ;; More integration: Send Elfeed entries to my Wallabag instance to read later
 (use-package elfeed
   :defer
@@ -460,9 +593,9 @@ With prefix-arg REFRESH-TAGS, refresh the cached completion metadata."
     (interactive)
     (if-let ((buf (get-buffer "*wallabag-search*")))
         (switch-to-buffer buf)
-      (if (featurep 'wallabag)
-          (wallabag)
-        (message "Wallabag not available."))))
+      (unless (require 'setup-wallabag nil t)
+        (user-error "Wallabag not available."))
+      (if (require 'wallabag nil t) (wallabag))))
   
   (use-package wallabag-post
     :disabled
@@ -522,6 +655,21 @@ With prefix-arg REFRESH-TAGS, refresh the cached completion metadata."
       (elfeed-show-entry entry))))
 
 ;; ** ELFEED-TUBE
+
+;; Elfeed Tube is my preferred way of keeping up with Youtube subscriptions.
+;; 
+;; Youtube integration for Elfeed:
+;;
+;; - Get Youtube video descriptions,
+;; - Live transcripts,
+;; - Full-text video search,
+;; - MPV integration and a follow-along mode,
+;; - Historical feed-filling for Youtube feeds
+;;
+;; and more when following Youtube channels/playlists with Elfeed.
+
+;; I install the dependencies myself since Elfeed Tube lives in my config
+;; folder and is not installed by a package manager:
 (use-package aio :straight t :defer)
 (use-package mpv :straight t :defer)
 
@@ -532,8 +680,9 @@ With prefix-arg REFRESH-TAGS, refresh the cached completion metadata."
   :demand
   :config
   (setq elfeed-tube-auto-save-p nil
-        elfeed-tube-auto-fetch-p t)
+        elfeed-tube-auto-fetch-p nil)
   (setq elfeed-tube-save-indicator t)
+  (setq elfeed-log-level 'debug)
   (elfeed-tube-setup)
   (use-package setup-reading
     :config
@@ -553,9 +702,7 @@ With prefix-arg REFRESH-TAGS, refresh the cached completion metadata."
                       (visual-fill-column-mode 1))
                     (setq-local
                      imenu-prev-index-position-function #'elfeed-tube-prev-heading
-                     imenu-extract-index-name-function #'elfeed-tube--line-at-point))
-                  (with-selected-window (get-buffer-window
-                                         (elfeed-show--buffer-name entry))
+                     imenu-extract-index-name-function #'elfeed-tube--line-at-point)
                     (let ((inhibit-read-only t))
                       (my/reader-center-images))))))
   

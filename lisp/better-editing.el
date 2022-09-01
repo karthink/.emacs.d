@@ -240,6 +240,26 @@ go up/down the list instead."
 
 
 ;;;###autoload
+(defun listify (beg end &optional stringify)
+  (interactive "r\nP")
+  (save-excursion
+    (save-restriction
+      (narrow-to-region beg end)
+      (whitespace-cleanup)
+      (goto-char (point-min))
+      (when (bolp) (forward-char 1))
+      (insert "(")
+      (when stringify
+        (while (not (eobp))
+          (insert "\"")
+          (end-of-line)
+          (insert "\"")
+          (forward-line 1)))
+      (goto-char (point-max))
+      (when (bolp) (backward-char 1))
+      (insert ")"))))
+
+;;;###autoload
 (defun unfill-paragraph (&optional region)
   "Takes a multi-line paragraph and makes it into a single line of text."
   (interactive (progn (barf-if-buffer-read-only) '(t)))
@@ -272,12 +292,12 @@ go up/down the list instead."
                                           (line-end-position)))
     (copy-region-as-kill beg end)
     (if (region-active-p)
-        (progn (dotimes (n arg)
+        (progn (dotimes (_ arg)
                  (goto-char (region-end))
                  (yank))
                (exchange-point-and-mark)) 
       (save-excursion
-        (dotimes (n arg)
+        (dotimes (_ arg)
           (open-previous-line 1)
           (yank)
           (indent-according-to-mode))))))

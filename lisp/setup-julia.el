@@ -10,7 +10,7 @@
     (cl-letf (((symbol-function 'texmathp)
                (lambda () t)))
       (cdlatex-math-symbol)
-      (julia-latexsub-or-indent))))
+      (julia-latexsub-or-indent 0))))
 
 (use-package julia-repl
   :straight t

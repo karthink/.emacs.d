@@ -248,7 +248,7 @@ If buffer-or-name is nil return current buffer's mode."
          ;;                       ))
          )
 
-        ("\\*\\(?:Warnings\\|Compile-Log\\|Messages\\|Tex Help\\|TeX errors\\)\\*"
+        ("\\*\\(?:Warnings\\|Compile-Log\\|Messages\\)\\*" ;\\|Tex Help\\|TeX errors
          (display-buffer-at-bottom display-buffer-in-side-window display-buffer-in-direction)
          (window-height . (lambda (win) (fit-window-to-buffer
                                          win

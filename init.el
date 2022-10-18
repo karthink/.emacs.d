@@ -73,8 +73,8 @@
   (eval-after-load 'advice
     `(setq ad-redefinition-action 'accept))
   (require 'use-package)
-  (setq use-package-verbose t
-        use-package-compute-statistics t
+  (setq use-package-verbose nil
+        use-package-compute-statistics nil
         ;use-package-ignore-unknown-keywords t
         use-package-minimum-reported-time 0.01)
   )
@@ -786,7 +786,8 @@ User buffers are those not starting with *."
   (funcall switch)
   (let ((i 0))
     (while (and (< i 50)
-                (popper-popup-p (current-buffer)))
+                (member (buffer-local-value 'popper-popup-status (current-buffer))
+                        '(popup user-popup)))
       (setq i (1+ i)) (funcall switch))))
                            
   :general
@@ -3116,9 +3117,10 @@ managers such as DWM, BSPWM refer to this state as 'monocle'."
   :commands (my/olivetti-mode)
   :straight t
   :config
-  (setq olivetti-body-width 0.72
-        olivetti-minimum-body-width 72
-        olivetti-recall-visual-line-mode-entry-state t)
+  (setq-default
+   olivetti-body-width 0.80
+   olivetti-minimum-body-width 72
+   olivetti-recall-visual-line-mode-entry-state t)
 
   (define-minor-mode my/olivetti-mode
     "Toggle buffer-local `olivetti-mode' with additional parameters.

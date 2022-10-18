@@ -33,10 +33,10 @@
                              (?Y . avy-action-yank-whole-line)
                              (?T . avy-action-teleport-whole-line)))
   
-  (advice-add 'avy-goto-char-timer :around
-              (defun my/avy-with-single-candidate-jump (orig-fn &optional arg)
-                (let ((avy-single-candidate-jump t))
-                  (funcall orig-fn arg))))
+  ;; (advice-add 'avy-goto-char-timer :around
+  ;;             (defun my/avy-with-single-candidate-jump (orig-fn &optional arg)
+  ;;               (let ((avy-single-candidate-jump t))
+  ;;                 (funcall orig-fn arg))))
   (defun avy-action-easy-copy (pt)
     (unless (require 'easy-kill nil t)
       (user-error "Easy Kill not found, please install."))
@@ -289,11 +289,11 @@ The current window is chosen if WIN is not specified."
   
   :general
   ("C-'"        '(my/avy-goto-char-this-window :wk "Avy goto char")
-   "M-s j"      '(avy-goto-char-timer        :wk "Avy goto char timer")
+   "M-j"      '(avy-goto-char-timer        :wk "Avy goto char timer")
    "M-s y"      '(avy-copy-line              :wk "Avy copy line above")
    "M-s M-y"    '(avy-copy-region            :wk "Avy copy region above")
    "M-s M-k"    '(avy-kill-whole-line        :wk "Avy copy line as kill")
-   "M-j"        '(avy-goto-char-2            :wk "Avy goto char 2")
+   "M-s j"        '(avy-goto-char-2            :wk "Avy goto char 2")
    "M-s p"      '(avy-goto-line-above        :wk "Avy goto line above")
    "M-s n"      '(avy-goto-line-below        :wk "Avy goto line below")
    "M-s C-w"    '(avy-kill-region            :wk "Avy kill region")

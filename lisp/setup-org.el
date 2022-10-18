@@ -39,7 +39,6 @@
                 org-outline-path-complete-in-steps nil
                 org-use-tag-inheritance nil
                 org-tags-column 0
-                org-use-sub-superscripts t
                 org-special-ctrl-a/e t
                 org-special-ctrl-k t
                 org-log-done 'time
@@ -237,6 +236,11 @@ an embedded LaTeX fragment, let `texmathp' do its job.
   ;; (add-hook 'org-after-todo-statistics-hook #'org-summary-todo)
   )
 
+(use-package org-fold
+  :after org
+  :config
+  (setq org-fold-core-style 'overlays))
+
 ;; From alphapapa's unpackaged: https://github.com/alphapapa/unpackaged.el#org-return-dwim
 (use-package org
   :bind (:map org-mode-map
@@ -353,16 +357,16 @@ appropriate.  In tables, insert a new row or end the table."
    org-fontify-quote-and-verse-blocks t
    org-fontify-whole-heading-line t
    org-hidden-keywords nil
-   org-hide-emphasis-markers nil
+   org-hide-emphasis-markers t
    org-hide-leading-stars t
    org-startup-folded t
    org-startup-indented nil
    org-startup-with-inline-images nil
    org-highlight-latex-and-related '(native)
    org-indent-mode-turns-on-hiding-stars nil
-   org-use-sub-superscripts t
+   org-use-sub-superscripts '{}
    org-pretty-entities nil
-   org-pretty-entities-include-sub-superscripts t
+   org-pretty-entities-include-sub-superscripts nil
    ;; org-priority-faces '((?a . error) (?b . warning) (?c . success))
    
   ;; Display preferences for latex previews
@@ -455,7 +459,8 @@ appropriate.  In tables, insert a new row or end the table."
         '(;; ("TODO"    :foreground "#6e90c8" :weight bold)
           ("WAITING" :foreground "red" :weight bold)
           ("MAYBE"   :foreground "#6e8996" :weight bold)
-          ("PROJECT" :foreground "#088e8e" :weight bold)))
+          ("PROJECT" :foreground "#088e8e" :weight bold)
+          ("SUSPENDED" :foreground "#6e8996" :weight bold)))
   (defun my/org-modern-spacing ()
     (setq-local line-spacing
                 (if org-modern-mode
@@ -477,6 +482,11 @@ appropriate.  In tables, insert a new row or end the table."
   :config
   (setq-default
    org-src-tab-acts-natively t))
+
+(use-package org-src-context
+  :straight (:host github
+             :repo "karthink/org-src-context")
+  :after org-src)
 
 ;; *** ORG-CLOCK
 (use-package org-clock
@@ -546,7 +556,7 @@ has no effect."
    org-agenda-span 2
    org-agenda-restore-windows-after-quit t
    org-agenda-window-setup 'current-window
-   org-stuck-projects '("TODO=\"PROJECT\"" ("TODO" "DEFERRED") nil "")
+   org-stuck-projects '("TODO=\"PROJECT\"|TODO=\"SUSPENDED\"" ("TODO" "DEFERRED") nil "")
    org-agenda-use-time-grid nil
    org-agenda-todo-ignore-scheduled nil
    org-agenda-text-search-extra-files nil ;'(agenda-archives)
@@ -623,7 +633,7 @@ has no effect."
            ((org-agenda-overriding-header "Project Next Actions")
             (org-agenda-skip-function #'my/org-agenda-skip-all-siblings-but-first)))
 
-          ("P" "All Projects" tags "TODO=\"PROJECT\"&LEVEL>1"
+          ("P" "All Projects" tags "TODO=\"PROJECT\"&LEVEL>1|TODO=\"SUSPENDED\"|TODO=\"CLOSED\""
            ((org-agenda-overriding-header "All Projects")))
 
           ("i" "Inbox" tags "CATEGORY=\"Inbox\"&LEVEL=1"
@@ -687,6 +697,9 @@ has no effect."
                 (org-agenda-block-separator nil)
                 (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
                 (org-agenda-overriding-header "\n📅 Next three days\n")))
+            (tags "CATEGORY=\"Inbox\"&LEVEL=1"
+             ((org-agenda-block-separator nil)
+              (org-agenda-overriding-header "\n📧 Inbox\n")))
             (agenda ""
                     ((org-agenda-time-grid nil)
                      (org-agenda-start-on-weekday nil)
@@ -746,9 +759,9 @@ See `org-capture-templates' for more information."
       (`(,key . ,template)
        '(("r" "Add resource" entry (file "~/org/inbox.org")
           "* TODO [[%c][%^{Title: }]] %^G\n:PROPERTIES:\n:CREATED:  %U\n:END:\n"
-          :prepend t :immediate-finish t)
+          :immediate-finish t)
          ("t" "Add task" entry (file "~/org/inbox.org")
-          "* TODO %?\n:PROPERTIES:\n:CREATED:  %U\n:END:\n%a\n%c\n" :prepend t)
+          "* TODO %?\n:PROPERTIES:\n:CREATED:  %U\n:END:\n%a\n%c\n")
          ("c" "Add calendar entry" entry (file "~/org/gmail-cal.org")
           "* %?\n%^{LOCATION}p\n:%(progn (require 'org-gcal) (symbol-value 'org-gcal-drawer-name)):
 %a\n:END:")
@@ -850,27 +863,62 @@ parent."
 
   (add-hook 'org-export-filter-parse-tree-functions 'my/org-export-ignore-headlines)
   
-  )
+  (defun my/org-agenda-next-section (arg)
+    (interactive "p")
+    (when (> arg 0)
+      (dotimes (_ arg)
+        (when-let ((m (text-property-search-forward 'face 'org-agenda-structure t t)))
+          (goto-char (prop-match-beginning m))
+          (forward-char 1)))))
 
+  (defun my/org-agenda-previous-section (arg)
+    (interactive "p")
+    (when (> arg 0)
+      (dotimes (_ arg)
+        (when-let ((m (text-property-search-backward 'face 'org-agenda-structure nil nil)))
+          (goto-char (prop-match-end m))
+          ;; (forward-char 1)
+          )))))
+
+;; **** Code block export
 ;; Code block export preferences.
-(use-package ox
-  :after ox
+(use-package org
+  :defer
   :config
-  (setq org-latex-listings 'minted)
-  (add-to-list 'org-latex-packages-alist
-               '("" "minted"))
-  (add-to-list 'org-latex-packages-alist
-               '("" "xcolor"))
-  (setq org-latex-minted-options
-        '(("frame" "lines")
-          ("linenos" "true")))
   
-  (use-package engrave-faces
-    :disabled
-    :straight t
+  ;; Engrave faces, or
+  (use-package ox
+    :if (version<= "9.5.4" org-version)
+    :after ox
     :config
-    ;; (setq org-latex-listings 'engraved)
-    (setq org-latex-src-block-backend 'engraved)))
+    (use-package engrave-faces
+      :straight t
+      :config
+      ;; (setq org-latex-listings 'engraved)
+      (setq org-latex-src-block-backend 'engraved)))
+
+  ;; Minted
+  (use-package ox
+    :if (version< org-version "9.5.4")
+    :after ox
+    :config
+    (setq org-latex-listings 'minted)
+    (add-to-list 'org-latex-packages-alist
+                 '("" "minted"))
+    (add-to-list 'org-latex-packages-alist
+                 '("" "xcolor"))
+    (setq org-latex-minted-options
+          '(("frame" "lines")
+            ("linenos" "true")))))
+
+;; **** OX-CHAMELEON
+(use-package ox-chameleon
+  :straight (:host github :repo "tecosaur/ox-chameleon")
+  :after ox
+  :ensure t
+  :config
+  (add-to-list 'org-latex-packages-alist '("" "scrextend" nil))
+  (add-to-list 'org-latex-packages-alist '("" "xcolor" nil)))
 
 ;; *** ORG-CITE
 (use-package org
@@ -934,8 +982,25 @@ parent."
 (use-package ob-julia
   :straight (ob-julia :host github :repo "nico202/ob-julia"
                       :files ("*.el" "julia"))
-  :requires (ess ess-julia)
-  :defer)
+  :after ob
+  :config
+  (defun org-babel-julia-initiate-session (&optional session params)
+    "Create or switch to an ESS Julia session.
+
+Return the initialized session, if any."
+    (unless (string= session "none")
+      (let ((session (or session "*julia*")))
+        (if (org-babel-comint-buffer-livep session)
+            session
+          (save-window-excursion
+            (org-babel-prep-session:julia session params)))))))
+
+(use-package ob-svgbob
+  :when (executable-find "svgbob")
+  :after ob
+  :config
+  (unless (fboundp 'svgbob-mode)
+    (add-to-list 'org-src-lang-modes (cons "svgbob" 'artist))))
 
 (use-package ess
   :straight t
@@ -952,7 +1017,8 @@ parent."
         org-confirm-babel-evaluate nil
         org-export-use-babel t)
   (org-babel-do-load-languages
-   'org-babel-load-languages '((emacs-lisp . t)
+   'org-babel-load-languages '((svgbob . t)
+                               (emacs-lisp . t)
                                (matlab . t)
                                (octave . t)
                                (python . t)
@@ -1183,7 +1249,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
            :publishing-function org-html-publish-to-html
            :headline-levels 4
            :auto-preamble t
-           :completion-function (list my/org-publish-rsync-cyclostationarity)
+           :completion-function (list my/org-publish-rsync-html-and-figures-only)
            )
           ("abode"
            :base-directory "~/Documents/abode/"
@@ -1196,6 +1262,16 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
            :auto-preamblle t
            :completion-function (list my/org-publish-rsync)
            )
+          ("sicm"
+           :base-directory "~/Documents/courses/sicm/"
+           :base-extension "org"
+           :publishing-directory "~/Documents/abode/sicm"
+           :remote-directory "root@abode.karthinks.com:/var/www/abode/sicm"
+           :recursive t
+           :publishing-function org-html-publish-to-html
+           :headline-level 5
+           :auto-preamble t
+           :completion-function (list my/org-publish-rsync-html-and-figures-only))
           )
         )
 
@@ -1216,7 +1292,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
                        "Could not find RSYNC in PATH. Project not uploaded to server."
                        :warning)))
 
-  (defun my/org-publish-rsync-cyclostationarity (project-plist)
+  (defun my/org-publish-rsync-html-and-figures-only (project-plist)
     "Sync output of org project to a remote server using RSYNC.
 
  All files and folders except for ORG files will be synced."
@@ -1225,7 +1301,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
                          (file-name-as-directory
                           (plist-get project-plist :base-directory))))
                (destdir (plist-get project-plist :remote-directory)))
-          (start-process "rsync-project-cyclostationarity" "*project-cyclostationarity-output*"
+          (start-process "rsync-project-html-and-figures" "*project-rsync-html-output*"
                          "rsync" "-a" "-v" 
                          "--include=*.html"
                          "--include=/figures/***"

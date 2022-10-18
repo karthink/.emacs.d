@@ -350,6 +350,8 @@ but mark is only pushed if region isn't active."
   :init
   (dolist (cmd '(("vc" "Insert \\vect{}" "\\vect{?}"
                   cdlatex-position-cursor nil nil t)
+                 ("sfr" "Insert \\sfrac{}{}" "\\sfrac{?}{}"
+                  cdlatex-position-cursor nil nil t)
                  ("equ*" "Insert equation* env"
                   "\\begin{equation*}\n?\n\\end{equation*}"
                   cdlatex-position-cursor nil t nil)
@@ -366,6 +368,7 @@ but mark is only pushed if region isn't active."
 
   (setq cdlatex-math-symbol-alist '((?F ("\\Phi"))
                                     (?o ("\\omega" "\\mho" "\\mathcal{O}"))
+                                    (?. ("\\cdot" "\\circ"))
                                     (?6 ("\\partial"))
                                     (?v ("\\vee" "\\forall"))
                                     (?^ ("\\uparrow" "\\Updownarrow" "\\updownarrow"))))

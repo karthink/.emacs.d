@@ -340,6 +340,7 @@ This relies on the external 'fd' executable."
   :demand t
   :config
   (dirvish-override-dired-mode 1)
+  (setq dired-filter-revert 'always)
   ;; (setq dired-listing-switches
   ;;       "-l --almost-all --human-readable --time-style=long-iso --group-directories-first --no-group")
   (setq dirvish-cache-dir

@@ -5,6 +5,7 @@
   :bind (:map ytel-mode-map
               ("x" . ytel-watch-browse-url)
               ("m" . ytel-watch-umpv)
+              ("M" . ytel-watch-mpv)
               ("w" . ytel-url-kill-new)
               ("f" . ytel-search-next-page)
               ("b" . ytel-search-previous-page))
@@ -45,6 +46,14 @@
            (id (ytel-video-id video)))
       (concat "https://youtube.com/watch?v=" id)))
     
+  (defun ytel-watch-mpv (&optional enqueue-p)
+    (interactive "P")
+    (let ((browse-url-browser-function
+           (if enqueue-p
+               #'browse-url-mpv-enqueue
+             #'browse-url-mpv)))
+      (ytel-watch-browse-url)))
+  
   (defun ytel-watch-umpv (&optional arg)
     (interactive "P")
     (browse-url-umpv (ytel-video-url) arg)

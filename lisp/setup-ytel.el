@@ -9,7 +9,7 @@
               ("w" . ytel-url-kill-new)
               ("f" . ytel-search-next-page)
               ("b" . ytel-search-previous-page))
-  :hook ((ytel-mode . toggle-truncate-lines)
+  :hook (;; (ytel-mode . toggle-truncate-lines)
          (ytel-mode . hl-line-mode))
   :config
   (defun ytel ()

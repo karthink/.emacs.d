@@ -158,7 +158,8 @@
                                      "expand-region" "embrace"
                                      "ace-window" "avy" "yasnippet"
                                      "magit" "modus-themes" "diff-hl"
-                                     "dired" "ibuffer" "pdf-tools"))
+                                     "dired" "ibuffer" "pdf-tools"
+                                     "emacs-wm"))
                         (with-demoted-errors "Error: %S" (load-library lib)))
                       (when (featurep 'pdf-tools) (pdf-tools-install t))
                       (let ((elapsed (float-time (time-subtract (current-time)
@@ -459,6 +460,7 @@
          :map easy-kill-base-map
          ("," . easy-kill-expand))
   :config
+  (add-to-list 'easy-kill-alist '(40 sentence " "))
   (add-to-list 'easy-kill-alist '(62 page "\n"))
   (add-to-list 'easy-kill-alist '(104 paragraph "\n")))
 
@@ -716,7 +718,8 @@ Also kill this window, tab or frame if necessary."
   (setq popper-display-function
         (defun my/popper-select-below (buffer &optional _alist)
           (funcall (if (> (frame-width) 170)
-                       #'display-buffer-in-direction
+                       ;; #'display-buffer-in-direction
+                     #'popper-select-popup-at-bottom
                      #'display-buffer-at-bottom)
            buffer
            `((window-height . ,popper-window-height)
@@ -2492,7 +2495,8 @@ for details."
               (forward-sexp 1)
               (backward-char 1)
               (exchange-point-and-mark))
-             ((eq type 'sw-on) ;; \( and \[
+             ((or (eq type 'sw-on)
+                  (equal string "Org mode embedded math")) ;; \( and \[
               (re-search-forward texmathp-onoff-regexp)
               (backward-char 2)
               (set-mark (+ pos 2))

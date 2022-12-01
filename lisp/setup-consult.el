@@ -291,7 +291,7 @@ When the number of characters in a buffer exceeds this threshold,
 
 (use-package consult-dir
   :load-path "plugins/consult-dir/"
-  :commands (consult-dir consult-dir-maybe)
+  ;; :commands (consult-dir consult-dir-maybe)
   :bind (("C-x C-d" . consult-dir)
          :map minibuffer-local-filename-completion-map
          ("C-M-d" . consult-dir)
@@ -301,16 +301,17 @@ When the number of characters in a buffer exceeds this threshold,
          ("M-s f" . consult-dir-jump-file)
          :map embark-become-file+buffer-map
          ("d" . consult-dir))
-  :config
-  (add-to-list 'consult-dir-sources 'consult-dir--source-tramp-ssh t)
-  (setq consult-dir-shadow-filenames nil)
+  :init
   (use-package vertico
     :bind (:map vertico-map
-                ("C-M-d" . consult-dir)
-                ("H-M-d" . consult-dir)
-                ("M-s f" . consult-dir-jump-file)
-                ("C-M-j" . consult-dir-jump-file)
-                ("H-M-j" . consult-dir-jump-file))))
+           ("C-M-d" . consult-dir)
+           ("H-M-d" . consult-dir)
+           ("M-s f" . consult-dir-jump-file)
+           ("C-M-j" . consult-dir-jump-file)
+           ("H-M-j" . consult-dir-jump-file)))
+  :config
+  (add-to-list 'consult-dir-sources 'consult-dir--source-tramp-ssh t)
+  (setq consult-dir-shadow-filenames nil))
 
 ;; I never use this, disabling in favor of consult-grep et al.
 (use-package affe

@@ -73,8 +73,12 @@
                '(((output-dvi has-no-display-manager) "dvi2tty")
                  ((output-dvi style-pstricks) "dvips and gv")
                  (output-dvi "xdvi")
-                 (output-pdf "Zathura")
-                 (output-html "xdg-open"))))))
+                 (output-pdf "PDF Tools")
+                 ;; (output-pdf "Zathura")
+                 (output-html "xdg-open")))))
+  ;; Update PDF buffers after successful LaTeX runs
+  (add-hook 'TeX-after-compilation-finished-functions
+            #'TeX-revert-document-buffer))
 
 ;; Some structural navigation tweaks for Latex mode.
 (use-package latex
@@ -351,6 +355,8 @@ but mark is only pushed if region isn't active."
   (dolist (cmd '(("vc" "Insert \\vect{}" "\\vect{?}"
                   cdlatex-position-cursor nil nil t)
                  ("sfr" "Insert \\sfrac{}{}" "\\sfrac{?}{}"
+                  cdlatex-position-cursor nil nil t)
+                 ("abs" "Insert \\abs{}" "\\abs{?}"
                   cdlatex-position-cursor nil nil t)
                  ("equ*" "Insert equation* env"
                   "\\begin{equation*}\n?\n\\end{equation*}"

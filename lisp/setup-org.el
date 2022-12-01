@@ -1017,8 +1017,7 @@ Return the initialized session, if any."
         org-confirm-babel-evaluate nil
         org-export-use-babel t)
   (org-babel-do-load-languages
-   'org-babel-load-languages '((svgbob . t)
-                               (emacs-lisp . t)
+   'org-babel-load-languages '((emacs-lisp . t)
                                (matlab . t)
                                (octave . t)
                                (python . t)

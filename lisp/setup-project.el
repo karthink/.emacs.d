@@ -83,7 +83,8 @@ The directory name must be absolute."
              (dir (completing-read "REMOVE project from list: " projects nil t)))
         (setq project--list (delete (assoc dir projects) projects))))
 
-    (setq project-window-list-file (dir-concat user-cache-directory "project-window-list"))
+    (setq project-window-list-file (dir-concat user-cache-directory "project-window-list")
+          project-vc-merge-submodules nil)
 
     :bind-keymap ("H-p" . project-prefix-map)
     :bind (("C-x p q" . project-query-replace-regexp) ; C-x p is `project-prefix-map'

@@ -9,10 +9,9 @@
          ("S-TAB" . corfu-previous)
          ([backtab] . corfu-previous)
          ("M-." . corfu-show-location)
-         ("C-n" . nil)
-         ("C-p" . nil)
          ("M-h" . nil)
-         ("C-h" . corfu-show-documentation))
+         ("M-." . corfu-info-location)
+         ("C-h" . corfu-info-documentation))
   :config
   (defun contrib/corfu-enable-always-in-minibuffer ()
     "Enable Corfu in the minibuffer if Vertico is not active.
@@ -43,6 +42,11 @@ Useful for prompts such as `eval-expression' and `shell-command'."
      ((derived-mode-p 'comint-mode)
       (comint-send-input)))))
 
+(use-package corfu-info
+  :after corfu
+  :straight (:host github :repo "minad/corfu"
+             :files ("extensions/corfu-info.el")))
+
 (use-package corfu-indexed
   :disabled
   :after corfu
@@ -61,6 +65,14 @@ Useful for prompts such as `eval-expression' and `shell-command'."
   :after corfu
   :straight (:host github :repo "minad/corfu"
              :files ("extensions/corfu-history.el")))
+                                                     
+(use-package corfu-popupinfo
+  :after corfu
+  :config (corfu-popupinfo-mode 1)
+  :straight (:host github :repo "minad/corfu"
+             :files ("extensions/corfu-popupinfo.el"))
+  :bind (:map corfu-map
+         ([remap corfu-info-documentation] . corfu-popupinfo-toggle)))
 
 (use-package kind-icon
   :straight t
@@ -70,8 +82,10 @@ Useful for prompts such as `eval-expression' and `shell-command'."
   :config
   (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
 
-;; Corfu-doc shows help in an adjacent popup window (Testing)
+;; Corfu-doc shows help in an adjacent popup window
+;; (Package is deprecated, using corfu-popupinfo instead)
 (use-package corfu-doc
+    :disabled
     :straight (corfu-doc :host github :repo "galeo/corfu-doc")
     :after corfu
     :bind (:map corfu-map

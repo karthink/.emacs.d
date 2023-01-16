@@ -73,9 +73,27 @@
                              :node (org-roam-node-create :title title)
                              :props '(:finalize find-file))))
 
-      (org-roam-setup))
+      (org-roam-db-autosync-enable))
 ;; If using org-roam-protocol
 ;; (require 'org-roam-protocol)
+
+(use-package org-roam
+  :after (org-roam embark)
+  :config
+  (add-to-list 'embark-keymap-alist
+               '(org-roam-node . embark-org-roam-node-map))
+
+  (embark-define-keymap embark-org-roam-node-map
+    "Commands to act on current file or buffer."
+    ("i" org-roam-node-insert)
+    ("f" org-roam-node-find))
+  
+  (define-key embark-org-roam-node-map (kbd "o")
+    (my/embark-ace-action org-roam-node-find))
+  (define-key embark-org-roam-node-map (kbd "2")
+    (my/embark-split-action org-roam-node-find my/split-window-below))
+  (define-key embark-org-roam-node-map (kbd "3")
+    (my/embark-split-action org-roam-node-find my/split-window-right)))
 
 (use-package org-roam-ui
   :straight t

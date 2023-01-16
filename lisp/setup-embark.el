@@ -4,7 +4,7 @@
 (use-package embark
   :demand
   :straight (:host github :repo "oantolin/embark"
-             :files ("embark.el" "embark.texi"))
+             :files ("embark.el" "embark.texi" "embark-org.el"))
   :after minibuffer
   :hook ((embark-collect-mode . hl-line-mode))
   :bind (("M-s RET"  . embark-act)
@@ -35,6 +35,7 @@
          ("4"        . find-file-other-window)
          ("5"        . find-file-other-frame)
          ("C-="      . diff)
+         ("X"        . embark-drag-and-drop)
          :map embark-buffer-map
          ("d"        . diff-buffer-with-file) ;FIXME
          ("l"        . eval-buffer)
@@ -73,6 +74,12 @@
           (window-height . fit-window-to-buffer)))
   (setf (alist-get 'kill-buffer embark-pre-action-hooks) nil)
 
+  ;; Drag and drop
+  (defun embark-drag-and-drop (file)
+    (interactive (list (read-file-name "Drag and drop: ")))
+    (start-process "dragon" nil "dragon-drag-and-drop"
+                   file))
+  
   ;; Utility commands
   (defun embark-act-noexit ()
     (interactive)
@@ -80,7 +87,7 @@
 
   (defun my/find-file-dir (file)
     (interactive (list (read-file-name "Jump to dir of file: ")))
-                         (dired (file-name-directory file)))
+    (dired (file-name-directory file)))
   
   ;; Extra embark actions
   (eval-when-compile
@@ -251,26 +258,7 @@ targets."
                    ((and (pred keymapp) km) km)
                    (_ (key-binding prefix 'accept-default)))
                keymap)
-             nil nil t)))))
-    
-    ;; Vertico highlight indicator
-    (use-package vertico 
-      :defer
-      :config
-      (defun embark-vertico-indicator ()
-        (let ((fr face-remapping-alist))
-          (lambda (&optional keymap _targets _prefix)
-            (when (bound-and-true-p vertico--input)
-              (setq-local face-remapping-alist
-                          (if keymap
-                              (cons '(vertico-current . embark-target) fr)
-                            fr))))))
-      (add-to-list 'embark-indicators #'embark-vertico-indicator)))
-
-(use-package embark-org
-  :straight (:host github :repo "oantolin/embark"
-             :files ("embark-org.el"))
-  :after (embark org))
+             nil nil t))))))
 
 (use-package embark-consult
   :straight (:host github :repo "oantolin/embark"

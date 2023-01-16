@@ -3489,74 +3489,42 @@ buffer's text scale."
 (use-package modus-themes
   :straight t
   :defer
-  :commands my/modus-themes-tinted
   :init
-  (setq modus-themes-org-blocks nil
-        modus-themes-org-blocks 'grayscale
-        modus-themes-fringes nil
-        modus-themes-intense-paren-match t
+  (setq modus-themes-common-palette-overrides
+        `((date-common cyan)   ; default value (for timestamps and more)
+          (date-deadline red-warmer)
+          (date-event magenta-warmer)
+          (date-holiday blue) ; for M-x calendar
+          (date-now yellow-warmer)
+          (date-scheduled magenta-cooler)
+          (date-weekday cyan-cooler)
+          (date-weekend blue-faint)
+          (fg-heading-1 blue-warmer)
+          (fg-heading-2 yellow-cooler)
+          (fg-heading-3 cyan-cooler)
+          (fg-line-number-inactive "gray50")
+          (fg-line-number-active fg-main)
+          (bg-line-number-inactive unspecified)
+          (bg-line-number-active unspecified)
+          (bg-region bg-sage)
+          (fg-region unspecified)
+          (comment yellow-cooler)
+          (string green-cooler)
+          (fringe unspecified) ;; bg-blue-nuanced
+          (bg-mode-line-active bg-blue-intense)
+          (fg-mode-line-active fg-main)
+          (border-mode-line-active unspecified)
+          (border-mode-line-inactive unspecified)))
+  (setq modus-themes-org-blocks 'tinted-background
         modus-themes-bold-constructs t
-        ;; modus-themes-italic-constructs t
-        modus-themes-completions 'opinionated
-        modus-themes-diffs 'desaturated
-        modus-themes-syntax '(alt-syntax faint)
-        modus-themes-links '(faint neutral-underline)
         modus-themes-prompts '(bold background)
-        modus-themes-subtle-line-numbers t
-        modus-themes-tabs-accented t
-        modus-themes-paren-match '(bold intense)
-        modus-themes-region '(no-extend accented)
-        modus-themes-org-agenda
-        '((header-block . (variable-pitch scale-title))
-          (header-date . (bold-today grayscale scale))
-          (scheduled . rainbow)
-          (habit . traffic-light-deuteranopia))
         modus-themes-variable-pitch-ui nil
-        modus-themes-hl-line '(intense accented)
-        modus-themes-mode-line '(borderless accented)
         modus-themes-headings
-        '((1 . (background overline variable-pitch 1.28))
+        '((1 . (background variable-pitch 1.28))
           (2 . (variable-pitch 1.22))
           (3 . (semibold 1.17))
           (4 . (1.14))
-          (t . (monochrome))))
-  
-  :config
-  ;; From the modus themes manual
-  (define-minor-mode my/modus-themes-tinted
-    "Tweak some Modus themes colors."
-    :init-value nil
-    :global t
-    (if my/modus-themes-tinted
-        (setq modus-themes-operandi-color-overrides
-              '((bg-main . "#fefcf4")
-                (bg-dim . "#faf6ef")
-                (bg-alt . "#f7efe5")
-                (bg-hl-line . "#f4f0e3")
-                (bg-active . "#e8dfd1")
-                (bg-inactive . "#f6ece5")
-                (bg-region . "#c6bab1")
-                (bg-header . "#ede3e0")
-                (bg-tab-bar . "#dcd3d3")
-                (bg-tab-active . "#fdf6eb")
-                (bg-tab-inactive . "#c8bab8")
-                (fg-unfocused . "#55556f"))
-              ;; modus-themes-vivendi-color-overrides
-              ;; '((bg-main . "#100b17")
-              ;;   (bg-dim . "#161129")
-              ;;   (bg-alt . "#181732")
-              ;;   (bg-hl-line . "#191628")
-              ;;   (bg-active . "#282e46")
-              ;;   (bg-inactive . "#1a1e39")
-              ;;   (bg-region . "#393a53")
-              ;;   (bg-header . "#202037")
-              ;;   (bg-tab-bar . "#262b41")
-              ;;   (bg-tab-active . "#120f18")
-              ;;   (bg-tab-inactive . "#3a3a5a")
-              ;;   (fg-unfocused . "#9a9aab"))
-              )
-      (setq modus-themes-operandi-color-overrides nil
-            modus-themes-vivendi-color-overrides nil))))
+          (t . (monochrome)))))
 
 
 ;; ** DOOM THEMES

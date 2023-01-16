@@ -115,7 +115,8 @@
   (or (getenv "XDG_CACHE_HOME")
       (expand-file-name "~/.cache/qtile")))
 
-(defvar qtile--socket
+(defvar qtile--socket nil)
+(setq qtile--socket
   (let ((f (file-name-concat
             qtile--socket-dir
             (concat "qtilesocket."

@@ -242,6 +242,8 @@ Filenames are always matched by eshell."
          (eshell-pre-command . eshell-save-some-history)
          (eshell-pre-command . my/eshell-history-remove-duplicates))
   :config
+  (add-hook 'eshell-expand-input-functions
+            'eshell-expand-history-references)
   ;; https://gitlab.com/ambrevar/dotfiles/-/blob/master/.emacs.d/lisp/init-eshell.el
   (setq eshell-input-filter
         (lambda (str)
@@ -578,8 +580,8 @@ send a notification when the process has exited."
   :defer
   :config
   (setq async-shell-command-buffer 'new-buffer)
-  (setq explicit-shell-file-name "/usr/bin/zsh")
-  (setq shell-file-name "zsh")
+  (setq explicit-shell-file-name nil) ; "/usr/bin/zsh"
+  (setq shell-file-name "fish")
   ;; (setq explicit-zsh-args '("--login" "--interactive"))
   (defun zsh-shell-mode-setup ()
     (setq-local comint-process-echoes t))

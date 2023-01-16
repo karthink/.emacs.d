@@ -239,10 +239,10 @@ ENQUEUE-P) add to mpv's playlist."
         ('elfeed-search-mode (elfeed-search-browse-url))
         ('elfeed-show-mode (elfeed-show-visit)))))
 
-  (bind-key "m" #'elfeed-umpv-url elfeed-search-mode-map)
-  (bind-key "m" #'elfeed-umpv-url elfeed-show-mode-map)
-  (bind-key "M" #'elfeed-mpv-url elfeed-search-mode-map)
-  (bind-key "M" #'elfeed-mpv-url elfeed-show-mode-map)
+  (bind-key "M" #'elfeed-umpv-url elfeed-search-mode-map)
+  (bind-key "M" #'elfeed-umpv-url elfeed-show-mode-map)
+  (bind-key "m" #'elfeed-mpv-url elfeed-search-mode-map)
+  (bind-key "m" #'elfeed-mpv-url elfeed-show-mode-map)
   
   (add-hook 'elfeed-new-entry-hook
             (elfeed-make-tagger :feed-title "The Linux Experiment"

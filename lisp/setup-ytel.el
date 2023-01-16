@@ -4,12 +4,12 @@
   :commands ytel
   :bind (:map ytel-mode-map
               ("x" . ytel-watch-browse-url)
-              ("m" . ytel-watch-umpv)
-              ("M" . ytel-watch-mpv)
+              ("m" . ytel-watch-mpv)
+              ("M" . ytel-watch-umpv)
               ("w" . ytel-url-kill-new)
               ("f" . ytel-search-next-page)
               ("b" . ytel-search-previous-page))
-  :hook (;; (ytel-mode . toggle-truncate-lines)
+  :hook ((ytel-mode . visual-line-mode)
          (ytel-mode . hl-line-mode))
   :config
   (defun ytel ()
@@ -21,10 +21,10 @@
   (when (seq-empty-p ytel-search-term)
     (call-interactively #'ytel-search)))
   
-  (add-to-list 'display-buffer-alist
-               '((lambda (buf act) (equal (buffer-mode buf)
-                                     'ytel-mode))
-                 ;; "^\\*ytel\\*$"
+    (add-to-list 'display-buffer-alist
+               '(;; (lambda (buf act) (equal (buffer-mode buf)
+                 ;;                     'ytel-mode))
+                 "^\\*ytel\\*$"
                  (display-buffer-in-side-window)
                  (body-function . (lambda (win) (select-window win)))
                  (window-height . 0.33)

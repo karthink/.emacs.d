@@ -47,9 +47,9 @@
          ("5"        . bookmark-jump-other-frame)
          :map embark-url-map
          ("B"        . eww)
-         ("m"        . browse-url-umpv)
-         ("C-M-m"    . browse-url-mpv-enqueue)
-         ("M"        . browse-url-mpv))
+         ("M"        . browse-url-umpv)
+         ("C-S-m"    . browse-url-mpv-enqueue)
+         ("m"        . browse-url-mpv))
   :config
   (setq embark-cycle-key (kbd "SPC"))
   (setq embark-quit-after-action t)

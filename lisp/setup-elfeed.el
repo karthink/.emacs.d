@@ -22,7 +22,7 @@
   :straight t
   :commands (elfeed elfeed-update elfeed-search-bookmark-handler)
   :config
-  (use-package setup-reading)
+  ;; (use-package setup-reading)
   (setq elfeed-feeds my-elfeed-feeds)
   ;; (setq elfeed-feeds nil)
   
@@ -339,9 +339,31 @@ ENQUEUE-P) add to mpv's playlist."
                                              "--" (elfeed-search-format-date to))))
         (elfeed-search-update :force))))
   
+  (defun my/elfeed-random-date ()
+    (interactive)
+    (let* ((from
+            (time-to-seconds
+             (encode-time 
+              (parse-time-string
+               (format "%d-%02d-%02d 00:00:00 Z"
+                       (+ 2012 (cl-random 10))
+                       (1+ (cl-random 11))
+                       (1+ (cl-random 30)))))))
+           (to (time-add from (days-to-time 5)))
+           (date-string
+            (concat " @" (elfeed-search-format-date from)
+                    "--" (elfeed-search-format-date to))))
+      (setq elfeed-search-filter
+            (concat (replace-regexp-in-string
+                     " @[^[:space:]]*" ""
+                     elfeed-search-filter)
+                    date-string)))
+    (elfeed-search-update :force))
+  
   (define-key elfeed-search-mode-map (kbd ".") (my/elfeed-search-by-day 'this))
   (define-key elfeed-search-mode-map (kbd "b") (my/elfeed-search-by-day 'next))
   (define-key elfeed-search-mode-map (kbd "f") (my/elfeed-search-by-day 'prev))
+  (define-key elfeed-search-mode-map (kbd "`") 'my/elfeed-random-date)
   
   (defvar my/elfeed-db-all-tags nil)
   
@@ -461,6 +483,7 @@ With prefix-arg REFRESH-TAGS, refresh the cached completion metadata."
   ;; (push '(later elfeed-entry-read-later)
   ;;       elfeed-search-face-alist)
   (use-package setup-reading
+    :demand
     :bind (:map elfeed-search-mode-map
            ("RET" . my/reader-show)
            ("M-n" . my/reader-next)

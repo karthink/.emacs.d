@@ -44,7 +44,8 @@ If buffer-or-name is nil return current buffer's mode."
     "\\*Inferior .*\\*$"
     "^\\*julia.*\\*$"
     "^\\*cider-repl.*\\*$"
-    "\\*ielm\\*")
+    "\\*ielm\\*"
+    "\\*edebug\\*")
   "List of buffer names used in REPL buffers")
 
 (defvar my/help-modes-list '(helpful-mode
@@ -56,7 +57,8 @@ If buffer-or-name is nil return current buffer's mode."
 (defvar my/man-modes-list '(Man-mode woman-mode)
   "List of major-modes used in Man-type buffers")
 
-(defvar my/message-modes-list '(compilation-mode)
+(defvar my/message-modes-list '(compilation-mode
+                                edebug-eval-mode)
   "List of major-modes used in message buffers")
 
 (defun my/helper-window-mode-line-format ()

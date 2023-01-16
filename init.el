@@ -689,52 +689,53 @@ Also kill this window, tab or frame if necessary."
          ("s-n" . my/next-buffer)
          ("s-p" . my/previous-buffer))
   :init
-  (setq popper-group-function
-        (defun my/popper-group-by-heuristic ()
-          "Group popups according to heuristic rules suitable for
-          my usage."
-          (let ((dd (abbreviate-file-name default-directory)))
-            (cond
-             ((string-match-p "\\(?:~/\\.config/\\|~/dotfiles/\\)" dd)
-              'config)
-             ((or (string-match-p "local/share/git" dd)
-                  (string-match-p "plugins/" dd))
-              'projects)
-             ((string-match-p "\\(?:KarthikBa\\|research/\\)" dd)
-              'research)
-             ((string-match-p "karthinks" dd) 'website)
-             ((locate-dominating-file dd "research") 'documents)
-             ((locate-dominating-file dd "init.el") 'emacs)
-             (t (popper-group-by-project))))))
-  ;; (setq popper-group-function nil)
+  ;; (setq popper-group-function
+  ;;       (defun my/popper-group-by-heuristic ()
+  ;;         "Group popups according to heuristic rules suitable for
+  ;;         my usage."
+  ;;         (let ((dd (abbreviate-file-name default-directory)))
+  ;;           (cond
+  ;;            ((string-match-p "\\(?:~/\\.config/\\|~/dotfiles/\\)" dd)
+  ;;             'config)
+  ;;            ((or (string-match-p "local/share/git" dd)
+  ;;                 (string-match-p "plugins/" dd))
+  ;;             'projects)
+  ;;            ((string-match-p "\\(?:KarthikBa\\|research/\\)" dd)
+  ;;             'research)
+  ;;            ((string-match-p "karthinks" dd) 'website)
+  ;;            ((locate-dominating-file dd "research") 'documents)
+  ;;            ((locate-dominating-file dd "init.el") 'emacs)
+  ;;            (t (popper-group-by-project))))))
+  (setq popper-group-function nil)
   (setq ;; popper-mode-line nil
-        popper-reference-buffers
-        (append my/help-modes-list
-                my/man-modes-list
-                my/repl-modes-list
-                my/repl-names-list
-                my/occur-grep-modes-list
-                ;; my/man-modes-list
-                '(Custom-mode
-                  (compilation-mode . hide)
-                  messages-buffer-mode)
-                '(("^\\*Warnings\\*$" . hide)
-                  ("^\\*Compile-Log\\*$" . hide)
-                  "^\\*Matlab Help.*\\*$"
-                  ;; "^\\*Messages\\*$"
-                  "^\\*Backtrace\\*"
-                  "^\\*evil-registers\\*"
-                  "^\\*Apropos"
-                  "^Calc:"
-                  "^\\*eldoc\\*"
-                  "^\\*TeX errors\\*"
-                  "^\\*ielm\\*"
-                  "^\\*TeX Help\\*"
-                  "\\*Shell Command Output\\*"
-                  ("\\*Async Shell Command\\*" . hide)
-                  "\\*Completions\\*"
-                  ;; "\\*scratch.*\\*$"
-                  "[Oo]utput\\*")))
+   popper-reference-buffers
+   (append my/help-modes-list
+           my/man-modes-list
+           my/repl-modes-list
+           my/repl-names-list
+           my/occur-grep-modes-list
+           ;; my/man-modes-list
+           '(Custom-mode
+             (compilation-mode . hide)
+             messages-buffer-mode)
+           '(("^\\*Warnings\\*$" . hide)
+             ("^\\*Compile-Log\\*$" . hide)
+             "^\\*Matlab Help.*\\*$"
+             ;; "^\\*Messages\\*$"
+             "^\\*Backtrace\\*"
+             "^\\*evil-registers\\*"
+             "^\\*Apropos"
+             "^Calc:"
+             "^\\*eldoc\\*"
+             "^\\*TeX errors\\*"
+             "^\\*ielm\\*"
+             "^\\*TeX Help\\*"
+             "^\\*ChatGPT\\*$"
+             "\\*Shell Command Output\\*"
+             ("\\*Async Shell Command\\*" . hide)
+             "\\*Completions\\*"
+             ;; "\\*scratch.*\\*$"
+             "[Oo]utput\\*")))
 
   (advice-add 'popper-cycle :after
               (defun my/popper-cycle-repeated (&rest _)
@@ -748,12 +749,12 @@ Also kill this window, tab or frame if necessary."
         (defun my/popper-select-below (buffer &optional _alist)
           (funcall (if (> (frame-width) 170)
                        ;; #'display-buffer-in-direction
-                     #'popper-select-popup-at-bottom
+                       #'popper-select-popup-at-bottom
                      #'display-buffer-at-bottom)
-           buffer
-           `((window-height . ,popper-window-height)
-             (direction . below)
-             (body-function . ,#'select-window)))))
+                   buffer
+                   `((window-height . ,popper-window-height)
+                     (direction . below)
+                     (body-function . ,#'select-window)))))
   
   (use-package embark
     :defer
@@ -805,30 +806,65 @@ Also kill this window, tab or frame if necessary."
     (interactive)
     (switch-to-buffer (other-buffer)))
   (defun my/next-buffer (&optional arg)
-    (interactive "p")
-    (dotimes (or (abs arg) 1)
-      (my/switch-buffer-1 #'next-buffer)))
+    "Switch to the next non-popup buffer."
+    (interactive "P")
+    (if-let (((equal arg '(4)))
+             (win (other-window-for-scrolling)))
+        (with-selected-window win
+          (my/next-buffer)
+          (setq prefix-arg current-prefix-arg))
+      (dotimes (or (abs (prefix-numeric-value arg)) 1)
+        (my/switch-buffer-1 #'next-buffer))))
   (defun my/previous-buffer (&optional arg)
-    (interactive "p")
-    (dotimes (or (abs arg) 1)
-      (my/switch-buffer-1 #'previous-buffer)))
+    "Switch to the previous non-popup buffer."
+    (interactive "P")
+    (if-let (((equal arg '(4)))
+             (win (other-window-for-scrolling)))
+        (with-selected-window win
+          (my/previous-buffer)
+          (setq prefix-arg current-prefix-arg))
+      (dotimes (or (abs (prefix-numeric-value arg)) 1)
+      (my/switch-buffer-1 #'previous-buffer))))
   (defun my/switch-buffer-1 (switch)
-  "Switch to the next user buffer in cyclic order.
+    "Switch to the next user buffer in cyclic order.
 User buffers are those not starting with *."
-  (funcall switch)
-  (let ((i 0))
-    (while (and (< i 50)
-                (member (buffer-local-value 'popper-popup-status (current-buffer))
-                        '(popup user-popup)))
-      (setq i (1+ i)) (funcall switch))))
-                           
+    (funcall switch)
+    (let ((i 0))
+      (while (and (< i 50)
+                  (member (buffer-local-value 'popper-popup-status (current-buffer))
+                          '(popup user-popup)))
+        (setq i (1+ i)) (funcall switch))))
+  
+  (define-key global-map (kbd "C-x C-p") #'my/previous-buffer)
+  (define-key global-map (kbd "C-x C-n") #'my/next-buffer)
+  (define-key global-map (kbd "C-x n g") #'set-goal-column)
+  (defvar my/buffer-cycle-map
+    (let ((map (make-sparse-keymap)))
+      (define-key map (kbd "n") #'my/next-buffer)
+      (define-key map (kbd "p") #'my/previous-buffer)
+      (define-key map (kbd "b")
+        (defun my/switch-buffer () (interactive)
+               "Switch to consult-buffer"
+               (run-at-time 0 nil
+                            (lambda (&optional arg)
+                              (interactive "P")
+                              (if-let (((equal arg '(4)))
+                                       (win (other-window-for-scrolling)))
+                                  (with-selected-window win (consult-buffer))
+                                (consult-buffer)))
+                            current-prefix-arg)))
+      map))
+  (map-keymap
+   (lambda (_ cmd) (put cmd 'repeat-map 'my/buffer-cycle-map))
+   my/buffer-cycle-map)
+  
   :general
   (:states 'motion
-           "C-w ^" '(popper-raise-popup :wk "raise popup")
-           "C-w _" '(popper-lower-to-popup :wk "lower to popup"))
+   "C-w ^" '(popper-raise-popup :wk "raise popup")
+   "C-w _" '(popper-lower-to-popup :wk "lower to popup"))
   (:keymaps 'space-menu-window-map
-            "^" '(my/popup-raise-popup :wk "raise popup")
-            "_" '(my/popup-lower-to-popup :wk "lower to popup")))
+   "^" '(my/popup-raise-popup :wk "raise popup")
+   "_" '(my/popup-lower-to-popup :wk "lower to popup")))
 
 ;;----------------------------------------------------------------
 ;; ** WINUM

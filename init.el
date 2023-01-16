@@ -2343,7 +2343,7 @@ _d_: subtree
 ;; ** ABBREV MODE
 ;;;----------------------------------------------------------------
 (use-package abbrev
-  :defer
+  :hook ((prog-mode text-mode) . abbrev-mode)
   :config
   ;; (setq abbrev-file-name (expand-file-name (dir-concat user-cache-directory "abbvev-defs")))
   (setq abbrev-file-name (dir-concat user-emacs-directory "abbrev_defs"))

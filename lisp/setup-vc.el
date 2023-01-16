@@ -174,6 +174,7 @@ project, as defined by `vc-root-dir'."
 
 (use-package smerge-mode
   :defer
+  :bind-keymap ("C-c m" . smerge-basic-map)
   :config
   (map-keymap
    (lambda (_key cmd)

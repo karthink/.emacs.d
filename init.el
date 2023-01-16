@@ -453,7 +453,20 @@
 
 (use-package iedit
   :straight t
-  :bind ("C-M-;" . iedit-mode))
+  :bind (("C-M-;" . iedit-mode)
+         ("M-n" . my/iedit-1-down)
+         ("M-p" . my/iedit-1-up))
+  :config
+  (defun my/iedit-1-down (arg)
+    (interactive "p")
+    (let ((current-prefix-arg '(1)))
+      (call-interactively #'iedit-mode)
+      (iedit-expand-down-to-occurrence)))
+  (defun my/iedit-1-up (arg)
+    (interactive "p")
+    (let ((current-prefix-arg '(1)))
+      (call-interactively #'iedit-mode)
+      (iedit-expand-up-to-occurrence))))
 
 (use-package replace
   :defer
@@ -1337,7 +1350,13 @@ If region is active, add its contents to the new buffer."
 (use-package pp
   :bind (([remap eval-last-sexp] . eval-sexp-maybe-pp)
          ([remap eval-expression] . my/pp-eval-expression))
+  :hook (eval-expression-minibuffer-setup . my/eval-with-threading)
   :config
+  (defun my/eval-with-threading ()
+    "Pre-insert a threading macro for easy chaining"
+    (insert "(->  )")
+    (backward-char 2))
+  
   (defun eval-sexp-maybe-pp (&optional arg)
     (interactive "P")
     (if arg
@@ -2472,6 +2491,7 @@ _d_: subtree
                        ("S" . sp-split-sexp)
                        ("\\" . indent-region)
                        ("t" . transpose-sexps)
+                       ("x" . eval-defun)
                        ("<tab>" . hs-cycle)))
         (define-key map (kbd k) f))
       map))
@@ -2484,7 +2504,8 @@ _d_: subtree
   ;; (require 'smartparens-config)
   (sp-with-modes sp-lisp-modes
     ;; disable ', it's the quote character!
-    (sp-local-pair "'" nil :actions nil)))
+    (sp-local-pair "'" nil :actions nil)
+    (sp-local-pair "`" "'")))
 
 ;;;----------------------------------------------------------------
 ;; ** EXPAND-REGION
@@ -2506,14 +2527,16 @@ _d_: subtree
     (interactive)
     (when (er--point-is-in-comment-p)
       (let ((p (point)))
-        (while (and (er--point-is-in-comment-p) (not (eobp)))
-          (forward-word 1))
+        (while (or (> (skip-syntax-forward " ") 0)
+                   (and (er--point-is-in-comment-p) (not (eobp))))
+          (forward-char 1))
         (while (not (or (er--point-is-in-comment-p) (bobp)))
           (forward-char -1))
         (set-mark (point))
         (goto-char p)
-        (while (er--point-is-in-comment-p)
-          (forward-word -1))
+        (while (or (< (skip-syntax-backward " ") 0)
+                   (er--point-is-in-comment-p))
+          (forward-char -1))
         (while (not (or (er--point-is-in-comment-p) (eobp)))
           (forward-char 1)))))
   

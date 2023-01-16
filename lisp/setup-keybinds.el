@@ -282,7 +282,8 @@
   :load-path "plugins/repeat-help/"
   :hook (repeat-mode . repeat-help-mode)
   :config
-  (setq repeat-help-key "<f1>"))
+  (setq repeat-help-key "<f1>"
+        repeat-help-popup-type 'embark))
 
 
 

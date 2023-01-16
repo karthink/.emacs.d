@@ -8,21 +8,51 @@
          ([tab] . corfu-next)
          ("S-TAB" . corfu-previous)
          ([backtab] . corfu-previous)
+         ("RET" . nil)
          ("M-." . corfu-show-location)
          ("M-h" . nil)
+         ([remap next-line] . nil)
+         ([remap previous-line] . nil)
          ("M-." . corfu-info-location)
          ("C-h" . corfu-info-documentation))
   :config
   (defun contrib/corfu-enable-always-in-minibuffer ()
-    "Enable Corfu in the minibuffer if Vertico is not active.
-Useful for prompts such as `eval-expression' and `shell-command'."
-    (unless (bound-and-true-p vertico--input)
-      (corfu-mode 1)))
+  "Enable Corfu in the minibuffer if Vertico is not active."
+  (unless (or ;; (bound-and-true-p mct--active)
+              (bound-and-true-p vertico--input)
+              (eq (current-local-map) read-passwd-map))
+    ;; (setq-local corfu-auto nil) ;; Enable/disable auto completion
+    (setq-local corfu-echo-delay nil ;; Disable automatic echo and popup
+                corfu-popupinfo-delay nil)
+    (corfu-mode 1)))
 
-  (setq corfu-auto  t
+  (use-package consult
+    :bind (:map corfu-map
+           ("M-m" . corfu-move-to-minibuffer)
+           ("C-<tab>" . corfu-move-to-minibuffer))
+    :config
+    (defun corfu-move-to-minibuffer ()
+      (interactive)
+      (let ((completion-extra-properties corfu--extra)
+            completion-cycle-threshold completion-cycling)
+        (setq this-command #'consult-completion-in-region)
+        (apply #'consult-completion-in-region completion-in-region--data))))
+
+  (use-package orderless
+    :hook (corfu-mode . my/corfu-comp-style)
+    :config
+    (defun my/corfu-comp-style ()
+      "Set/unset a fast completion style for corfu"
+      (if corfu-mode
+          (setq-local completion-styles '(orderless-fast))
+        (kill-local-variable 'completion-styles))))
+    
+  (setq corfu-auto-prefix 3
+        corfu-auto-delay 0.05
+        corfu-auto  t
         corfu-cycle t
-        corfu-quit-no-match t
-        corfu-preselect-first nil
+        corfu-quit-no-match 'separator
+        corfu-preselect 'prompt
         corfu-scroll-margin 5)
   (defun my/corfu-shell-settings ()
     (setq-local corfu-quit-no-match t
@@ -58,7 +88,9 @@ Useful for prompts such as `eval-expression' and `shell-command'."
   :straight (:host github :repo "minad/corfu"
              :files ("extensions/corfu-quick.el"))
   :bind (:map corfu-map
-         ("C-'" . corfu-quick-complete)))
+         ("'" . corfu-quick-complete))
+  :config
+  (setq corfu-quick1 "asdfghjkl;"))
 
 (use-package corfu-history
   :disabled
@@ -117,7 +149,11 @@ Useful for prompts such as `eval-expression' and `shell-command'."
   :bind (("C-; i" . cape-ispell)
          ("C-; e" . cape-line)
          ("C-; f" . cape-file)
-         ("C-; /" . cape-dabbrev))
+         ("C-; /" . cape-dabbrev)
+         ("C-M-/" . cape-dabbrev)
+         :map corfu-map
+         ("M-/" . cape-dabbrev)
+         ("C-x C-f" . cape-file))
   ;; Bind dedicated completion commands
   ;; :bind (("C-c p p" . completion-at-point) ;; capf
   ;;        ("C-c p t" . complete-tag)        ;; etags

@@ -9,16 +9,15 @@
   :config
   (setq orderless-component-separator #'split-string-and-unquote)
   (setq completion-styles '(orderless partial-completion))
-  (setq orderless-matching-styles
-        '(orderless-regexp
-          orderless-initialism
-          ;; orderless-strict-leading-initialism
-          )
-        orderless-style-dispatchers
-        '(my/orderless-flex-dispatcher
+  (setq orderless-style-dispatchers
+        '(;; my/orderless-flex-dispatcher
           my/orderless-literal-dispatcher
           my/orderless-initialism-dispatcher
           my/orderless-exclude-dispatcher))
+
+  (defun orderless-fast-dispatch (word index total)
+  (and (= index 0) (= total 1) (length< word 4)
+       `(orderless-regexp . ,(concat "^" (regexp-quote word)))))
 
   (defun my/orderless-flex-dispatcher (pattern _index _total)
     (when (or (string-suffix-p "`" pattern)
@@ -31,12 +30,17 @@
 
   (defun my/orderless-initialism-dispatcher (pattern _index _total)
     (when (string-suffix-p "," pattern)
-      `(orderless-strict-full-initialism . ,(substring pattern 0 -1))))
+      `(orderless-initialism . ,(substring pattern 0 -1))))
 
   (defun my/orderless-exclude-dispatcher (pattern _index _total)
     (when (string-prefix-p "!" pattern)
       `(orderless-without-literal . ,(substring pattern 1))))
-
+  
+  (orderless-define-completion-style orderless-fast
+    (orderless-style-dispatchers '(orderless-fast-dispatch
+                                   my/orderless-initialism-dispatcher))
+    (orderless-matching-styles '(orderless-literal orderless-regexp)))
+  
   ;; These were removed from Orderless, I use them.
   (defun orderless--strict-*-initialism (component &optional anchored)
     "Match a COMPONENT as a strict initialism, optionally ANCHORED.

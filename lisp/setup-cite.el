@@ -1,6 +1,6 @@
 (use-package citar
   :straight t
-  ;; :after (latex reftex)
+  :after latex
   :bind (:map LaTeX-mode-map
          ("C-c ]" . citar-insert-citation)
          :map org-mode-map

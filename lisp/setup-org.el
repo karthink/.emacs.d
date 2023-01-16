@@ -28,7 +28,7 @@
   (setq-default org-adapt-indentation nil 
                 org-cycle-include-plain-lists t 
                 org-footnote-auto-label 'confirm
-                org-image-actual-width 400 
+                org-image-actual-width nil
                 ;; org-refile-targets '((nil :maxlevel . 2) (org-agenda-files :maxlevel . 3)) 
                 org-refile-targets '((nil :level . 1) (org-agenda-files :todo . "PROJECT"))
                 org-refile-target-verify-function nil
@@ -53,6 +53,7 @@
                 org-default-notes-file "~/org/do.org"
                 org-M-RET-may-split-line '((headline) (default . nil))
                 org-fast-tag-selection-single-key 'expert
+                org-link-elisp-confirm-function nil
                 ;; org-indent-indentation-per-level 2 
                 org-return-follows-link t)
   
@@ -360,12 +361,8 @@ appropriate.  In tables, insert a new row or end the table."
   :straight t
   :hook (org-mode . org-appear-mode)
   :config
-  (defun my/org-appear-markers ()
-    (setq-local
-     org-hide-emphasis-markers
-     (if org-appear-mode t nil)))
-   ;; (setq org-hide-emphasis-markers t)
-   (setq org-appear-autoemphasis t
+  (setq-default org-hide-emphasis-markers t)
+  (setq org-appear-autoemphasis t
         org-appear-autosubmarkers t))
 
 ;; TDOO Disabled while I test org-modern
@@ -420,7 +417,8 @@ appropriate.  In tables, insert a new row or end the table."
   :straight (:host github
              :repo "minad/org-modern")
   :after org
-  :hook (org-modern-mode . my/org-modern-spacing)
+  :hook ((org-modern-mode . my/org-modern-spacing)
+         (org-mode . org-modern-mode))
   :config
   (setq org-todo-keyword-faces
         '(;; ("TODO"    :foreground "#6e90c8" :weight bold)
@@ -778,27 +776,6 @@ See `org-capture-templates' for more information."
   :commands org-export-dispatch
   :config
   (setq org-html-htmlize-output-type 'css)
-  (with-eval-after-load 'ox-latex
-    (setq org-latex-caption-above nil)
-    (setq org-latex-default-packages-alist
-          (delete '("" "hyperref" nil) org-latex-default-packages-alist))
-    (push '("hidelinks" "hyperref" nil) (cdr (last org-latex-default-packages-alist)))
-    (when (executable-find "latexmk")
-      (setq org-latex-pdf-process
-            '("latexmk -f -pdf -%latex -shell-escape -interaction=nonstopmode -output-directory=%o %f")))
-    (add-to-list 'org-latex-classes
-                 '("IEEEtran"
-                   "\\documentclass[conference]{IEEEtran}"
-                   ("\\section{%s}" . "\\section*{%s}")
-                   ("\\subsection{%s}" . "\\subsection*{%s}")
-                   ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
-                   ("\\paragraph{%s}" . "\\paragraph*{%s}")
-                   ("\\subparagraph{%s}" . "\\subparagraph*{%s}"))))
-  (setq org-export-with-LaTeX-fragments t
-        org-export-with-smart-quotes t
-        org-latex-prefer-user-labels t
-        org-latex-hyperref-template nil)
-  
   ;; (add-to-list 'org-latex-packages-alist '("" "listings"))
   ;; (add-to-list 'org-latex-packages-alist '("" "color"))
 
@@ -848,6 +825,69 @@ parent."
           (goto-char (prop-match-end m))
           ;; (forward-char 1)
           )))))
+
+(use-package ox-latex
+  :after ox
+  :defer
+  :config
+  (when (executable-find "latexmk")
+    (setq org-latex-pdf-process
+          '("latexmk -f -pdf -%latex -shell-escape -interaction=nonstopmode -output-directory=%o %f")))
+  (dolist (package '((""           "longtable" nil)
+                     (""           "booktabs"  nil)
+                     (""           "color"     nil)
+                     (""           "cancel"    t)
+                     ;; ;FIXME: Some documentclasses load these themselves,
+                     ;; ;causing all manner of conflicts.
+                     ;; ("capitalize" "cleveref"  nil)
+                     ;; (""           "amsmath"   t)
+                     ;; (""           "amssymb"   t)
+                     ))
+    (cl-pushnew package org-latex-packages-alist
+                :test (lambda (a b) (equal (cadr a) (cadr b)))))
+  (let* ((article-sections '(("\\section{%s}"       . "\\section*{%s}")
+                             ("\\subsection{%s}"    . "\\subsection*{%s}")
+                             ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+                             ("\\paragraph{%s}"     . "\\paragraph*{%s}")
+                             ("\\subparagraph{%s}"  . "\\subparagraph*{%s}"))))
+    (pcase-dolist (`(,name ,class-string . ,extra)
+                   `(("IEEEtran" "\\documentclass[conference]{IEEEtran}")
+                     ("article" "\\documentclass{scrartcl}")
+                     ("report" "\\documentclass{scrreprt}")
+                     ("blank" "[NO-DEFAULT-PACKAGES]\n[NO-PACKAGES]\n[EXTRA]")
+                     ("book" "\\documentclass[twoside=false]{scrbook}"
+                      ("\\chapter{%s}" . "\\chapter*{%s}"))))
+      (setf (alist-get name org-latex-classes nil nil #'equal)
+            (append (list class-string) extra article-sections))))
+  (setq
+   org-latex-caption-above nil
+   org-export-with-LaTeX-fragments t
+   org-latex-tables-booktabs t
+   org-export-with-smart-quotes t
+   org-latex-prefer-user-labels t
+   org-latex-reference-command "\\cref{%s}"
+   ;; From https://git.tecosaur.net/tec/emacs-config, the default link colors
+   ;; are hideous.
+   org-latex-hyperref-template
+   "\\providecolor{url}{HTML}{0077bb}
+\\providecolor{link}{HTML}{882255}
+\\providecolor{cite}{HTML}{999933}
+\\hypersetup{
+  pdfauthor={%a},
+  pdftitle={%t},
+  pdfkeywords={%k},
+  pdfsubject={%d},
+  pdfcreator={%c},
+  pdflang={%L},
+  breaklinks=true,
+  colorlinks=true,
+  linkcolor=link,
+  urlcolor=url,
+  citecolor=cite}
+\\urlstyle{same}
+%% hide links styles in toc
+\\NewCommandCopy{\\oldtoc}{\\tableofcontents}
+\\renewcommand{\\tableofcontents}{\\begingroup\\hypersetup{hidelinks}\\oldtoc\\endgroup}"))
 
 ;; **** Code block export
 ;; Code block export preferences.
@@ -953,7 +993,9 @@ parent."
   :straight (ob-julia :host github :repo "nico202/ob-julia"
                       :files ("*.el" "julia"))
   :after ob
+  :init (setq ob-julia-insert-latex-environment-advice nil)
   :config
+  (setq ess-eval-visibly 'nowait)
   (defun org-babel-julia-initiate-session (&optional session params)
     "Create or switch to an ESS Julia session.
 
@@ -965,8 +1007,14 @@ Return the initialized session, if any."
           (save-window-excursion
             (org-babel-prep-session:julia session params)))))))
 
+(use-package ob-clojure
+  :after (ob cider)
+  :config
+  (setq org-babel-clojure-backend 'cider))
+
 (use-package ob-svgbob
   :when (executable-find "svgbob")
+  :straight t
   :after ob
   :config
   (unless (fboundp 'svgbob-mode)
@@ -987,7 +1035,8 @@ Return the initialized session, if any."
         org-confirm-babel-evaluate nil
         org-export-use-babel t)
   (org-babel-do-load-languages
-   'org-babel-load-languages '((emacs-lisp . t)
+   'org-babel-load-languages '((clojure . t)
+                               (emacs-lisp . t)
                                (matlab . t)
                                (octave . t)
                                (python . t)

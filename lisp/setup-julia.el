@@ -1,8 +1,13 @@
 (use-package julia-mode
   :straight t
+  :mode ("\\.jl\\'" . julia-mode)
   :bind (:map julia-mode-map
               ("`" . my/julia-latexsub-or-indent))
   :config
+  (add-hook 'julia-mode-hook
+            (defun my/julia-mode-settings ()
+              (setq-local outline-regexp "^##+")
+              (outline-minor-mode 1)))
   (add-to-list 'julia-arguments "-t12")
   (defun my/julia-latexsub-or-indent ()
     (interactive)
@@ -15,7 +20,11 @@
 (use-package julia-repl
   :straight t
   :commands julia-repl-mode
+  :bind (:map julia-repl-mode-map
+         ("C-c C-p" . nil)
+         ("C-c p" . julia-repl-cd))
   :config
+  (make-variable-buffer-local 'julia-repl-inferior-buffer-name-suffix)
   (add-hook 'julia-repl-hook
             (defun my/julia-repl-settings ()
               (setq-local
@@ -45,8 +54,10 @@
   ;;        ("`" . my/ess-julia-cdlatex-symbol)
   ;;        :map inferior-ess-julia-mode-map
   ;;        ("`" . my/ess-julia-cdlatex-symbol))
-  :mode ("\\.jl\\'" . ess-julia-mode)
   :config
+  (setq auto-mode-alist
+        (delete '("\\.jl\\'" . ess-julia-mode)
+                auto-mode-alist))
   (setq inferior-julia-args "-t12 -q")
   (defun my/ess-julia-cdlatex-symbol ()
     (interactive)

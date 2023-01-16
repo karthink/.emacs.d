@@ -1,5 +1,9 @@
 ;; -*- lexical-binding: t -*-
 
+;; Dired's been 
+;; Many of these settings are overridden by =dirvish= below, but I'm undecided
+;; for now if I'm going to stick with it.
+
 (use-package dired
   :commands dired
   :hook ((dired-mode . hl-line-mode)
@@ -129,6 +133,11 @@ This relies on the external 'fd' executable."
             ("\\.html?\\'" ,cmd)
             ("\\.md\\'" ,cmd)))))
 
+;; =find-dired= produces dired listings of the find (or equivalent) command. I
+;; used to use it all the time until around 2018. Now it's another utility that
+;; is superceded by the consistent export interface of Embark combined with a
+;; Consult command.
+
 (use-package find-dired
   :disabled
   :defer
@@ -144,13 +153,15 @@ This relies on the external 'fd' executable."
         ;; '("-ls" . "-AGFhlv --group-directories-first"))
   (setq find-name-arg "-iname"))
 
-(use-package async
-  :straight t)
+;; dirvish handles dired actions asynchronously by default so =dired-async= is
+;; disabled for now.
 
 (use-package dired-async
   :disabled
   :after (dired async)
   :hook (dired-mode . dired-async-mode))
+
+;; wdired: The first time Emacs blew my mind, back in halcyon 2005.
 
 (use-package wdired
   :after dired
@@ -378,7 +389,7 @@ This relies on the external 'fd' executable."
    ("l" . dirvish-history-go-backward)
    ;; ("M-l" . dirvish-ls-switches-menu)
    ("M-*" . dirvish-mark-menu)
-   ("f" . dirvish-toggle-fullscreen)
+   ("f" . dirvish-layout-toggle)
    ;; ("M-e" . dirvish-emerge-menu)
    ;; ("M-j" . dirvish-fd-jump)
    ;; ("M-s" . dirvish-setup-menu)

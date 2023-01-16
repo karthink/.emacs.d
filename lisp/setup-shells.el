@@ -4,7 +4,9 @@
 
 ;; The =fish-completion= package provides completions (including docstrings) by
 ;; querying fish. [[https://github.com/minad/marginalia/issues/87][As it turns
-;; out]] this can get convoluted, so it's disabled in favor of =pcmpl-args=.
+;; out]] this can get convoluted, so it's disabled in favor of =pcmpl-args=
+;; ([[*PCMPL-ARGS][which see]]).
+
 (use-package fish-completion
   :disabled
   :when (executable-find "fish")
@@ -107,6 +109,10 @@ Filenames are always matched by eshell."
 	         pcomplete-default-completion-function))))
 
 ;; ** PCMPL-ARGS
+;;;-------------
+;; :PROPERTIES:
+;; :CUSTOM_ID: pcmpl-args
+;; :END:
 
 ;; Fully Emacs-native shell completions, including docstrings parsed on-the-fly
 ;; from man-pages or --help output.

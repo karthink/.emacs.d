@@ -1,5 +1,6 @@
 ;; -*- lexical-binding: t -*-
 
+;; #+options: prop:t
 ;; #+begin_quote
 ;;                                       my dot emacs grows
 ;;
@@ -2268,6 +2269,10 @@ _d_: subtree
 ;;;----------------------------------------------------------------
 (load (expand-file-name "lisp/setup-folds" user-emacs-directory))
 
+;; ------------------------------------------------------------------
+;; #+INCLUDE: "./lisp/setup-folds.org" :minlevel 2 :only-contents nil
+;; ------------------------------------------------------------------
+
 ;;;----------------------------------------------------------------
 ;; ** DIFF 
 ;;;----------------------------------------------------------------
@@ -3584,6 +3589,12 @@ buffer's text scale."
   (setq srecode-map-save-file (dir-concat user-cache-directory "srecode-map.el")))
 
 ;; * LOCAL-VARIABLES
+
+;; This is not a literate config tangled from an Org-mode document! So I include
+;; some file-specific settings to make it easier to parse. Specifically, the
+;; outline that you see in this document is represented in the Lisp files as
+;; Org-style collapsible outline headings. See [[*OUTLINE MODE][Outline Mode]].
+
 ;; Local Variables:
 ;; outline-regexp: ";; \\*+"
 ;; page-delimiter: ";; \\**"

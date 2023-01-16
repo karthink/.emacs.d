@@ -1,4 +1,5 @@
 ;; -*- lexical-binding: t; -*-
+
 (use-package general
   ;; :preface (setq use-package-ignore-unknown-keywords t)
   :straight t

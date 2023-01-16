@@ -1,6 +1,10 @@
 ;;;----------------------------------------------------------------
-;; ** OUTLINE MODE (built-in)
+;; * OUTLINE MODE
 ;;;----------------------------------------------------------------
+;; :PROPERTIES:
+;; :CUSTOM_ID: outline-mode
+;; :END:
+
 (use-package outline
   :bind (:map outline-minor-mode-map
               ("TAB" . outline-cycle)
@@ -87,7 +91,7 @@ Essentially a much simplified version of `next-line'."
   (put 'outline-cycle 'repeat-map 'outline-navigation-repeat-map))
 
 ;;;----------------------------------------------------------------
-;; ** HIDESHOW (built in)
+;; * HIDESHOW (built in)
 ;;;----------------------------------------------------------------
 (use-package hideshow ; built-in
   :commands (hs-cycle

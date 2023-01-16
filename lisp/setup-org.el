@@ -5,8 +5,7 @@
 ;;;----------------------------------------------------------------
 ;; Org settings to do with its default behavior
 (use-package org
-  :straight t
-  ;;(:type built-in)
+  ;; :straight (:type built-in)
   :bind (("\C-cl" . org-store-link)
          ("\C-ca" . org-agenda)
          ("<f5>"  . org-capture)
@@ -145,86 +144,32 @@
 
   (defun my/org-cdlatex-settings ()
     (define-key org-cdlatex-mode-map (kbd "$") 'cdlatex-dollar)
-    (ad-unadvise #'texmathp)
-    (defadvice texmathp (around org-math-always-on activate)
-      "Always return t in Org buffers.
-This is because we want to insert math symbols without dollars even outside
-the LaTeX math segments.  If Org mode thinks that point is actually inside
-an embedded LaTeX fragment, let `texmathp' do its job.
-`\\[org-cdlatex-mode-map]'"
-      (interactive)
-      (let (p)
-        (cond
-         ((not (derived-mode-p 'org-mode)) ad-do-it)
-         ((eq this-command 'cdlatex-math-symbol)
-	  (setq ad-return-value t
-	        texmathp-why '("cdlatex-math-symbol in org-mode" . 0)))
-         (t
-	  (let ((p (org-inside-LaTeX-fragment-p)))
-            (if (and p (cl-member (car p) (plist-get org-format-latex-options :matchers)
-                                  :test (lambda (a b) (string-match (regexp-quote b) a))))
-	        ad-do-it
-	      ad-do-it
-              ;; (setq ad-return-value t
-	      ;;       texmathp-why '("Org mode embedded math" . 0))
-	      ;; (when p ad-do-it)
-              )))))))
-
-  ;; From https://github.com/jkitchin/scimax
-  ;; Numbered equations all have (1) as the number for fragments with vanilla
-  ;; org-mode. This code injects the correct numbers into the previews so they
-  ;; look good.
-  (defun my/org-renumber-environment (orig-func &rest args)
-    "A function to inject numbers in LaTeX fragment previews."
-    (let ((results '())
-	  (counter -1)
-	  (numberp))
-      (setq results (cl-loop for (begin .  env) in
-			     (org-element-map (org-element-parse-buffer) 'latex-environment
-			       (lambda (env)
-			         (cons
-			          (org-element-property :begin env)
-			          (org-element-property :value env))))
-			     collect
-			     (cond
-			      ((and (string-match "\\\\begin{equation}" env)
-			            (not (string-match "\\\\tag{" env)))
-			       (cl-incf counter)
-			       (cons begin counter))
-			      ((string-match "\\\\begin{align}" env)
-			       (prog2
-			           (cl-incf counter)
-			           (cons begin counter)
-			         (with-temp-buffer
-			           (insert env)
-			           (goto-char (point-min))
-			           ;; \\ is used for a new line. Each one leads to a number
-			           (cl-incf counter (count-matches "\\\\$"))
-			           ;; unless there are nonumbers.
-			           (goto-char (point-min))
-			           (cl-decf counter (count-matches "\\nonumber")))))
-			      (t
-			       (cons begin nil)))))
-
-      (when (setq numberp (cdr (assoc (point) results)))
-        (setf (car args)
-	      (concat
-	       (format "\\setcounter{equation}{%s}\n" numberp)
-	       (car args)))))
-
-    (apply orig-func args))
-
-  (defun my/toggle-latex-equation-numbering ()
-    "Toggle whether LaTeX fragments are numbered."
-    (interactive)
-    (if (not (get 'my/org-renumber-environment 'enabled))
-        (progn
-	  (advice-add 'org-create-formula-image :around #'my/org-renumber-environment)
-	  (put 'my/org-renumber-environment 'enabled t)
-	  (message "Latex numbering enabled"))
-      (advice-remove 'org-create-formula-image #'my/org-renumber-environment)
-      (put 'my/org-renumber-environment 'enabled nil)
-      (message "Latex numbering disabled.")))
+    ;; (ad-unadvise #'texmathp)
+    (advice-remove 'texmathp #'org--math-always-on)
+    ;; (defadvice texmathp (around org-math-always-on activate)
+;;       "Always return t in Org buffers.
+;; This is because we want to insert math symbols without dollars even outside
+;; the LaTeX math segments.  If Org mode thinks that point is actually inside
+;; an embedded LaTeX fragment, let `texmathp' do its job.
+;; `\\[org-cdlatex-mode-map]'"
+;;       (interactive)
+;;       (let (p)
+;;         (cond
+;;          ((not (derived-mode-p 'org-mode)) ad-do-it)
+;;          ((eq this-command 'cdlatex-math-symbol)
+;; 	  (setq ad-return-value t
+;; 	        texmathp-why '("cdlatex-math-symbol in org-mode" . 0)))
+;;          (t
+;; 	  (let ((p (org-inside-LaTeX-fragment-p)))
+;;             (if (and p (cl-member (car p) (plist-get org-format-latex-options :matchers)
+;;                                   :test (lambda (a b) (string-match (regexp-quote b) a))))
+;; 	        ad-do-it
+;; 	      ad-do-it
+;;               ;; (setq ad-return-value t
+;; 	      ;;       texmathp-why '("Org mode embedded math" . 0))
+;; 	      ;; (when p ad-do-it)
+;;               ))))))
+    )
 
   ;; From the Org manual
   (defun org-summary-todo (n-done n-not-done)
@@ -369,11 +314,25 @@ appropriate.  In tables, insert a new row or end the table."
    org-pretty-entities-include-sub-superscripts nil
    ;; org-priority-faces '((?a . error) (?b . warning) (?c . success))
    
-  ;; Display preferences for latex previews
-  ;; Larger equations
+   ;; Display preferences for latex previews
+   ;; Larger equations
    org-format-latex-options
-   (progn (plist-put org-format-latex-options :background 'default)
-          (plist-put org-format-latex-options :scale 1.75)))
+   (progn (plist-put org-format-latex-options :background "Transparent")
+          (plist-put org-format-latex-options :scale 1.0)
+          (plist-put org-format-latex-options :zoom 1.1))
+   
+   org-latex-preview-options
+   (progn (plist-put  org-latex-preview-options :background "Transparent")
+          (plist-put org-latex-preview-options :scale 1.0)
+          (plist-put org-latex-preview-options :zoom 1.1))
+
+   org-latex-preview-header
+   "\\documentclass{article}
+\\usepackage[usenames]{color}
+[DEFAULT-PACKAGES]
+[PACKAGES]
+\\setlength{\\textwidth}{0.8\\paperwidth}
+\\addtolength{\\textwidth}{-2cm}")
   
   ;; Pretty symbols
   ;; (add-hook 'org-mode-hook 'org-toggle-pretty-entities)
@@ -385,9 +344,17 @@ appropriate.  In tables, insert a new row or end the table."
   ;; Keyword faces for reftex labels and references in Org
   (font-lock-add-keywords
    'org-mode
-   '(("\\(\\(?:\\\\\\(?:label\\|ref\\)\\)\\){\\(.+?\\)}"
+   '(("\\(\\(?:\\\\\\(?:label\\|ref\\|eqref\\)\\)\\){\\(.+?\\)}"
       (1 font-lock-keyword-face)
-      (2 font-lock-constant-face)))))
+      (2 font-lock-constant-face))))
+
+  (advice-add 'org-src-font-lock-fontify-block
+              :after
+              (defun my/no-latex-background-face (lang start end)
+                (when (equal lang "latex")
+                  (alter-text-property
+                   start end 'face
+                   (lambda (l) (remove 'org-block l)))))))
 
 (use-package org-appear
   :straight t
@@ -469,7 +436,9 @@ appropriate.  In tables, insert a new row or end the table."
         org-modern-hide-stars nil))
 
 ;; *** Modify latex previews to respect the theme
+;; Not needed with the next gen latex previews
 (use-package themed-ltximg
+  :disabled
   :after org)
 
 ;;;----------------------------------------------------------------------
@@ -918,6 +887,7 @@ parent."
   :ensure t
   :config
   (add-to-list 'org-latex-packages-alist '("" "scrextend" nil))
+  ;; xcolor is added anyway, this is a failsafe
   (add-to-list 'org-latex-packages-alist '("" "xcolor" nil)))
 
 ;; *** ORG-CITE
@@ -1321,7 +1291,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
   :straight t
   :after org
   :commands my/org-presentation-mode
-  :hook (org-tree-slide-after-narrow . my/org-tree-slide-enlarge-latex-preview)
+  ;; :hook (org-tree-slide-after-narrow . my/org-tree-slide-enlarge-latex-preview)
   :config
   (setq org-tree-slide-never-touch-face nil
         org-tree-slide-skip-outline-level 8
@@ -1358,16 +1328,11 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
           (setq olivetti-style nil)
           ;; (setq olivetti-margin-width 14)
           ;; (setq olivetti-body-width 0.7)
-          (my/olivetti-mode 1)
-          ;; (org-indent-mode 1)
-          (setq visual-fill-column-width 80)
-          (visual-fill-column-mode 1)
-          (text-scale-increase 2))
+          (text-scale-increase 2)
+          (my/olivetti-mode 1))
       (org-tree-slide-mode -1)
       (kill-local-variable 'org-hide-emphasis-markers)
       (my/olivetti-mode -1)
-      ;; (org-indent-mode)
-      (visual-fill-column-mode -1)
       (text-scale-decrease 2)
       (text-scale-mode -1)))
 

@@ -182,6 +182,34 @@
 (setq user-full-name my-full-name)
 (setq user-mail-address my-email-address)
 
+(use-package org
+  :defer
+  :straight (org
+             :host nil
+             :repo "https://git.savannah.gnu.org/git/emacs/org-mode.git"
+             :fork (:host nil
+                    :repo "https://git.tecosaur.net/tec/org-mode.git"
+                    :branch "dev"
+                    :remote "tecosaur")
+             :files (:defaults "etc")
+             :build t
+             :pre-build
+             (with-temp-file "org-version.el"
+               (require 'lisp-mnt)
+               (let ((version
+                     (with-temp-buffer
+                       (insert-file-contents "lisp/org.el")
+                       (lm-header "version")))
+                     (git-version
+                     (string-trim
+                      (with-temp-buffer
+                        (call-process "git" nil t nil "rev-parse" "--short" "HEAD")
+                        (buffer-string)))))
+                 (insert
+                  (format "(defun org-release () \"The release version of Org.\" %S)\n" version)
+                  (format "(defun org-git-version () \"The truncate git commit hash of Org mode.\" %S)\n" git-version)
+                  "(provide 'org-version)\n")))
+             :pin nil))
 ;;;################################################################
 ;; * MODELINE
 ;;;################################################################
@@ -3277,14 +3305,16 @@ currently loaded theme first."
   ;; (load-theme 'atom-one-dark t)
   )
 
+;; Disabled while I work on the new org latex preview system.
 (use-package face-remap
+  :disabled
   :hook (text-scale-mode . my/text-scale-adjust-latex-previews)
   :config
   (defun my/text-scale-adjust-latex-previews ()
     "Adjust the size of latex preview fragments when changing the
 buffer's text scale."
     (pcase major-mode
-      ((or 'latex-mode (guard org-auctex-mode))
+      ((or 'latex-mode (guard 'org-auctex-mode))
        (dolist (ov (overlays-in (point-min) (point-max)))
          (if (eq (overlay-get ov 'category)
                  'preview-overlay)

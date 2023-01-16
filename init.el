@@ -445,7 +445,8 @@
   :hook ((eww-after-render . visual-fill-column-mode)
          (eww-after-render . visual-line-mode))
   :config
-  (setq-default visual-fill-column-center-text t))
+  (setq-default visual-fill-column-center-text t
+                visual-fill-column-width 94))
 
 (use-package so-long
   :hook (after-init . global-so-long-mode))
@@ -1200,6 +1201,10 @@ If region is active, add its contents to the new buffer."
   "Delete window if not the only one."
   (when (not (one-window-p))
     (delete-window)))
+
+(use-package hl-todo
+  :straight t
+  :hook (prog-mode . hl-todo-mode))
 
 ;; (defun multi-replace-regexp-in-string (replacements-list string &optional rest)
 ;;   "Replace multiple regexps in a string, in the order of listing.
@@ -3180,9 +3185,19 @@ managers such as DWM, BSPWM refer to this state as 'monocle'."
 ;; ** MIXED-PITCH-MODE
 ;;;----------------------------------------------------------------
 (use-package mixed-pitch
-  :defer
   :straight t
-  :config (add-to-list 'mixed-pitch-fixed-pitch-faces 'line-number))
+  :hook (mixed-pitch-mode . my/mixed-pitch-spacing)
+  :config
+  (add-to-list 'mixed-pitch-fixed-pitch-faces 'line-number)
+  (add-to-list 'mixed-pitch-fixed-pitch-faces 'corfu-default)
+  (add-to-list 'mixed-pitch-fixed-pitch-faces 'corfu-current)
+  (add-to-list 'mixed-pitch-fixed-pitch-faces 'org-cite)
+  (add-to-list 'mixed-pitch-fixed-pitch-faces 'error)
+  (setq mixed-pitch-set-height t)
+  (defun my/mixed-pitch-spacing ()
+    (if mixed-pitch-mode
+        (setq line-spacing 0.12)
+      (setq line-spacing 0.0))))
 
 ;;;----------------------------------------------------------------
 ;; ** OLIVETTI
@@ -3191,8 +3206,8 @@ managers such as DWM, BSPWM refer to this state as 'monocle'."
   :straight t
   :config
   (setq-default
-   olivetti-body-width 0.80
-   olivetti-minimum-body-width 72
+   olivetti-body-width 80
+   olivetti-minimum-body-width 76
    olivetti-recall-visual-line-mode-entry-state t)
 
   (define-minor-mode my/olivetti-mode
@@ -3210,16 +3225,18 @@ becomes a blinking bar. Evil-mode (if bound) is disabled."
           (olivetti-mode 1)
           (set-window-fringes (selected-window) 0 0)
           (unless (derived-mode-p 'prog-mode)
-            (my/mode-line-hidden-mode 1)
+            ;; (my/mode-line-hidden-mode 1)
             (mixed-pitch-mode 1))
           (if (bound-and-true-p evil-mode)
               (evil-emacs-state))
+          (setq-local line-spacing 0.16)
           (setq-local cusor-type '(bar . 2)))
       (olivetti-mode -1)
       (set-window-fringes (selected-window) nil) ; Use default width
       (mixed-pitch-mode -1)
-      (unless (derived-mode-p 'prog-mode)
-        (my/mode-line-hidden-mode -1))
+      (kill-local-variable 'line-spacing)
+      ;; (unless (derived-mode-p 'prog-mode)
+      ;;   (my/mode-line-hidden-mode -1))
       (when (and (bound-and-true-p evil-mode)
                  (evil-emacs-state-p))
         (evil-exit-emacs-state))

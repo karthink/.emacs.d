@@ -184,10 +184,7 @@
 (setq user-mail-address my-email-address)
 
 (use-package org
-  :defer
-  :straight (org
-             :host nil
-             :repo "https://git.savannah.gnu.org/git/emacs/org-mode.git"
+  :straight `(org
              :fork (:host nil
                     :repo "https://git.tecosaur.net/tec/org-mode.git"
                     :branch "dev"
@@ -3100,6 +3097,26 @@ for details."
 ;; ---------------------------
 ;; #+INCLUDE: "./lisp/setup-lookup.org" :minlevel 2
 ;; ---------------------------
+
+;;;----------------------------------------------------------------
+;; *** ChatGPT
+;;;----------------------------------------------------------------
+(use-package chatgpt
+  :straight (:host github :repo "joshcho/ChatGPT.el" :files ("dist" "*.el"))
+  :config
+  (setq chatgpt-repo-path
+        (straight--repos-dir "ChatGPT.el"))
+  (require 'python)
+  (defvaralias 'python-interpreter 'python-shell-interpreter)
+  (defun my/chatgpt-change-mode ()
+    "Switch to markdown-mode if it's available"
+    (interactive)
+    (with-current-buffer (get-buffer "*ChatGPT*")
+      (and (eq major-mode 'fundamental-mode)
+           (featurep 'markdown-mode)
+           (markdown-mode))))
+  (advice-add 'chatgpt-display :after #'my/chatgpt-change-mode)
+  :bind ("C-h C-q" . chatgpt-query))
 
 ;;;----------------------------------------------------------------
 ;; * PROJECTS

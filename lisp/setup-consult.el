@@ -1,8 +1,5 @@
 ;; -*- lexical-binding: t -*-
 
-;; Needed for consult
-(use-package compat :straight t :defer)
-
 ;; Consult built-in options
 (use-package consult
   :straight t

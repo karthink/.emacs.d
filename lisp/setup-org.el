@@ -57,15 +57,6 @@
                 ;; org-indent-indentation-per-level 2 
                 org-return-follows-link t)
   
-  ;; (defun save-org-mode-files ()
-  ;;   (dolist (buf (buffer-list))
-  ;;     (with-current-buffer buf
-  ;;       (when (eq major-mode 'org-mode)
-  ;;         (if (and (buffer-modified-p) (buffer-file-name))
-  ;;             (save-buffer))))))
-
-  ;; (run-with-idle-timer 120 t 'save-org-mode-files)
-
   ;; My defaults
   (setq org-file-apps '((auto-mode . emacs)
                         ("\\.mm\\'" . default)
@@ -146,31 +137,7 @@
   (defun my/org-cdlatex-settings ()
     (define-key org-cdlatex-mode-map (kbd "$") 'cdlatex-dollar)
     ;; (ad-unadvise #'texmathp)
-    (advice-remove 'texmathp #'org--math-always-on)
-    ;; (defadvice texmathp (around org-math-always-on activate)
-;;       "Always return t in Org buffers.
-;; This is because we want to insert math symbols without dollars even outside
-;; the LaTeX math segments.  If Org mode thinks that point is actually inside
-;; an embedded LaTeX fragment, let `texmathp' do its job.
-;; `\\[org-cdlatex-mode-map]'"
-;;       (interactive)
-;;       (let (p)
-;;         (cond
-;;          ((not (derived-mode-p 'org-mode)) ad-do-it)
-;;          ((eq this-command 'cdlatex-math-symbol)
-;; 	  (setq ad-return-value t
-;; 	        texmathp-why '("cdlatex-math-symbol in org-mode" . 0)))
-;;          (t
-;; 	  (let ((p (org-inside-LaTeX-fragment-p)))
-;;             (if (and p (cl-member (car p) (plist-get org-format-latex-options :matchers)
-;;                                   :test (lambda (a b) (string-match (regexp-quote b) a))))
-;; 	        ad-do-it
-;; 	      ad-do-it
-;;               ;; (setq ad-return-value t
-;; 	      ;;       texmathp-why '("Org mode embedded math" . 0))
-;; 	      ;; (when p ad-do-it)
-;;               ))))))
-    )
+    (advice-remove 'texmathp #'org--math-always-on))
 
   ;; From the Org manual
   (defun org-summary-todo (n-done n-not-done)
@@ -327,13 +294,14 @@ appropriate.  In tables, insert a new row or end the table."
           (plist-put org-latex-preview-options :scale 1.0)
           (plist-put org-latex-preview-options :zoom 1.1))
 
-   org-latex-preview-header
-   "\\documentclass{article}
-\\usepackage[usenames]{color}
-[DEFAULT-PACKAGES]
-[PACKAGES]
-\\setlength{\\textwidth}{0.8\\paperwidth}
-\\addtolength{\\textwidth}{-2cm}")
+   ;; org-latex-preview-header
+;;    "\\documentclass{article}
+;; \\usepackage[usenames]{color}
+;; [DEFAULT-PACKAGES]
+;; [PACKAGES]
+;; \\setlength{\\textwidth}{0.8\\paperwidth}
+;; \\addtolength{\\textwidth}{-2cm}"
+   )
   
   ;; Pretty symbols
   ;; (add-hook 'org-mode-hook 'org-toggle-pretty-entities)
@@ -888,6 +856,20 @@ parent."
 %% hide links styles in toc
 \\NewCommandCopy{\\oldtoc}{\\tableofcontents}
 \\renewcommand{\\tableofcontents}{\\begingroup\\hypersetup{hidelinks}\\oldtoc\\endgroup}"))
+
+(use-package ox-beamer
+  :defer
+  :after ox
+  :init
+  (defun org-beamer-backend-p (info)
+    (eq 'beamer (and (plist-get info :back-end)
+                     (org-export-backend-name (plist-get info :back-end)))))
+
+  (add-to-list 'org-export-conditional-features
+               '(org-beamer-backend-p . beamer) t)
+  :config
+  (setq org-beamer-theme "metropolis"
+        org-beamer-frame-level 2))
 
 ;; **** Code block export
 ;; Code block export preferences.

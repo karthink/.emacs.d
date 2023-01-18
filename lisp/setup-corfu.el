@@ -20,7 +20,8 @@
   "Enable Corfu in the minibuffer if Vertico is not active."
   (unless (or ;; (bound-and-true-p mct--active)
               (bound-and-true-p vertico--input)
-              (eq (current-local-map) read-passwd-map))
+              (memq (current-local-map)
+                    (list read-passwd-map elfeed-search-filter-map)))
     ;; (setq-local corfu-auto nil) ;; Enable/disable auto completion
     (setq-local corfu-echo-delay nil ;; Disable automatic echo and popup
                 corfu-popupinfo-delay nil)

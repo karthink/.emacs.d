@@ -367,6 +367,11 @@ ENQUEUE-P) add to mpv's playlist."
   
   (defvar my/elfeed-db-all-tags nil)
   
+  (defvar elfeed-search-filter-map
+    (let ((map (copy-keymap minibuffer-local-map)))
+      (define-key map (kbd "TAB") 'minibuffer-complete)
+      map))
+  
   (defun elfeed-search-live-filter (&optional refresh-tags)
     "Filter the elfeed-search buffer as the filter is written.
 
@@ -389,11 +394,9 @@ With prefix-arg REFRESH-TAGS, refresh the cached completion metadata."
 			       (concat (match-string-no-properties 1 string) compl))
 		             (all-completions (match-string-no-properties 2 string)
 					      completions)))
-	            (t (list string))))))
-               (keymap (copy-keymap minibuffer-local-map)))
-          (define-key keymap (kbd "TAB") 'minibuffer-complete)
+	            (t (list string)))))))
           (setq elfeed-search-filter
-                (read-from-minibuffer "Filter: " elfeed-search-filter keymap)))
+                (read-from-minibuffer "Filter: " elfeed-search-filter elfeed-search-filter-map)))
       (elfeed-search-update :force)))
 
   ;; Add tag-completion to the tag/untag commands in elfeed-search
@@ -402,10 +405,9 @@ With prefix-arg REFRESH-TAGS, refresh the cached completion metadata."
     (interactive (let* ((completions (if (not my/elfeed-db-all-tags)
                                          (elfeed-db-get-all-tags)
                                        my/elfeed-db-all-tags))
-                        (minibuffer-completion-table completions)
-                        (keymap (copy-keymap minibuffer-local-map)))
-                   (define-key keymap (kbd "TAB") 'minibuffer-complete)
-                   (list (intern (read-from-minibuffer "Tag: " nil keymap)))))
+                        (minibuffer-completion-table completions))
+                   (list (intern (read-from-minibuffer
+                                  "Tag: " nil elfeed-search-filter-map)))))
     (let ((entries (elfeed-search-selected)))
       (elfeed-tag entries tag)
       (mapc #'elfeed-search-update-entry entries)
@@ -418,10 +420,9 @@ With prefix-arg REFRESH-TAGS, refresh the cached completion metadata."
                          (cl-reduce 
                           (lambda (t1 e2) (cl-union t1 (elfeed-entry-tags e2)))
                           (elfeed-search-selected) :initial-value nil))
-                        (minibuffer-completion-table completions)
-                        (keymap (copy-keymap minibuffer-local-map)))
-                   (define-key keymap (kbd "TAB") 'minibuffer-complete)
-                   (list (intern (read-from-minibuffer "Tag: " nil keymap)))))
+                        (minibuffer-completion-table completions))
+                   (list (intern (read-from-minibuffer
+                                  "Tag: " nil elfeed-search-filter-map)))))
     (let ((entries (elfeed-search-selected)))
       (elfeed-untag entries tag)
       (mapc #'elfeed-search-update-entry entries)
@@ -720,7 +721,7 @@ preferring the preferred type."
                     (setq-local line-spacing 0.2)
                     (when (require 'visual-fill-column nil t)
                       (setq-local visual-fill-column-center-text t
-                                  visual-fill-column-width (1+ shr-width))
+                                  visual-fill-column-width (+ shr-width 5))
                       (visual-line-mode 1)
                       (visual-fill-column-mode 1))
                     (setq-local

@@ -955,8 +955,8 @@ parent."
   (setq org-download-backend 'curl)
   (setq-default org-download-image-dir "./figures")
   (setq org-download-image-attr-list
-        '("#+attr_html: :width 70% :align center"
-          "#+attr_latex: :width 0.6\\textwidth")))
+        '("#+attr_html: :width 40% :align center"
+          "#+attr_latex: :width 0.5\\textwidth")))
 
 ;;;----------------------------------------------------------------
 ;; ** ORG-BABEL
@@ -965,29 +965,28 @@ parent."
   :after ob-octave)
 
 (use-package ob-julia
-  ;; Source: https://git.nixo.xyz/nixo/ob-julia.git
-  :disabled
-  :straight (ob-julia :host github :repo "nixo/ob-julia")
-  :requires ess
-  :defer)
-
-(use-package ob-julia
   :straight (ob-julia :host github :repo "nico202/ob-julia"
-                      :files ("*.el" "julia"))
+                      :files ("*.el" "julia")
+                      :fork (:host github
+                             :repo "karthink/ob-julia"
+                             :branch "main"))
   :after ob
+  :hook (org-babel-julia-after-async-execute . my/org-redisplay-babel-result)
   :init (setq ob-julia-insert-latex-environment-advice nil)
   :config
-  (setq ess-eval-visibly 'nowait)
-  (defun org-babel-julia-initiate-session (&optional session params)
-    "Create or switch to an ESS Julia session.
+  (setq org-babel-julia-backend 'julia-snail)
+  (when (featurep 'ess)
+    (setq ess-eval-visibly 'nowait)
+    (defun org-babel-julia-initiate-session (&optional session params)
+      "Create or switch to an ESS Julia session.
 
 Return the initialized session, if any."
-    (unless (string= session "none")
-      (let ((session (or session "*julia*")))
-        (if (org-babel-comint-buffer-livep session)
-            session
-          (save-window-excursion
-            (org-babel-prep-session:julia session params)))))))
+      (unless (string= session "none")
+        (let ((session (or session "*julia*")))
+          (if (org-babel-comint-buffer-livep session)
+              session
+            (save-window-excursion
+              (org-babel-prep-session:julia session params))))))))
 
 (use-package ob-clojure
   :after (ob cider)
@@ -1003,6 +1002,7 @@ Return the initialized session, if any."
     (add-to-list 'org-src-lang-modes (cons "svgbob" 'artist))))
 
 (use-package ess
+  :disabled
   :straight t
   :after ob-julia
   :config
@@ -1011,8 +1011,18 @@ Return the initialized session, if any."
 (use-package ob
   :after org
   :commands org-babel-execute-src-block
-  ;; :hook (org-babel-after-execute . org-redisplay-inline-images)
+  :hook (org-babel-after-execute . my/org-redisplay-babel-result)
   :config
+  (defun my/org-redisplay-babel-result ()
+    (save-excursion
+      (condition-case err
+          (when-let* ((beg (org-babel-where-is-src-block-result))
+                      (elem (and (goto-char beg) (org-element-context)))
+                      (end (- (org-element-property :end elem)
+                              (org-element-property :post-blank elem))))
+            (org-display-inline-images nil 'refresh beg end))
+        (error (message "Could not display images: %S" err)))))
+
   (setq org-src-window-setup 'split-window-below
         org-confirm-babel-evaluate nil
         org-export-use-babel t)

@@ -7,7 +7,8 @@
              :files ("embark.el" "embark.texi" "embark-org.el"))
   :after minibuffer
   :hook ((embark-collect-mode . hl-line-mode))
-  :bind (("M-s RET"  . embark-act)
+  :bind (("C-H-SPC" . embark-dwim)
+         ("M-s RET"  . embark-act)
          ;; ("s-o"      . embark-act)
          ("H-SPC"    . embark-act)
          ("C-S-SPC"  . embark-act)
@@ -57,12 +58,11 @@
   (setq prefix-help-command #'embark-prefix-help-command)
 
   ;; Embark indicators
-  (setq embark-indicators '(;; embark-which-key-indicator
-                            ;; embark-minimal-indicator
-                            embark-mixed-indicator
-                            embark-highlight-indicator
-                            embark-isearch-highlight-indicator))
-  ;; (add-to-list 'embark-indicators 'embark-mixed-indicator)
+  (mapc (lambda (ind) (add-hook 'embark-indicators ind))
+        '(embark-mixed-indicator
+          embark-highlight-indicator
+          embark-isearch-highlight-indicator))
+  
   (setq embark-mixed-indicator-delay 0.8)
   ;; (setq embark-verbose-indicator-display-action
   ;;       '(display-buffer-at-bottom
@@ -144,27 +144,32 @@
     (add-to-list 'embark-exporters-alist
                  '(project-file . embark-export-dired))
     
-    (embark-define-keymap this-buffer-file-map
-      "Commands to act on current file or buffer."
-      ("l" load-file)
-      ("b" byte-compile-file)
-      ("S" sudo-find-file)
-      ("r" rename-file-and-buffer)
-      ("d" my/diff-buffer-dwim)
-      ("=" ediff-buffers)
-      ("C-=" ediff-files)
-      ("!" shell-command)
-      ("&" async-shell-command)
-      ("x" consult-file-externally)
-      ("C-a" mml-attach-file)
-      ("c" copy-file)
-      ("k" kill-buffer)
-      ("#" recover-this-file)
-      ("z" bury-buffer)
-      ("|" embark-shell-command-on-buffer)
-      ;; ("l" org-store-link)
-      ("U" 0x0-dwim)
-      ("g" revert-buffer))
+    ;; Commands to act on current file or buffer.
+    (defvar this-buffer-file-map
+      (let ((map (make-sparse-keymap)))
+        (pcase-dolist
+            (`(,key ,command) 
+             '(("l" load-file)
+               ("b" byte-compile-file)
+               ("S" sudo-find-file)
+               ( "r" rename-file-and-buffer)
+               ("d" my/diff-buffer-dwim)
+               ("=" ediff-buffers)
+               ("C-=" ediff-files)
+               ("!" shell-command)
+               ("&" async-shell-command)
+               ("x" consult-file-externally)
+               ("C-a" mml-attach-file)
+               ("c" copy-file)
+               ("k" kill-buffer)
+               ;; ("l" org-store-link)
+               ("#" recover-this-file)
+               ("z" bury-buffer)
+               ("|" embark-shell-command-on-buffer)
+               ("U" 0x0-dwim)
+               ("g" revert-buffer)))
+          (define-key map (kbd key) command))
+        map))
 
     (add-to-list 'embark-keymap-alist '(this-buffer-file . this-buffer-file-map))
     ;; (cl-pushnew 'revert-buffer embark-allow-edit-actions)
@@ -271,24 +276,6 @@ targets."
          ("j" . consult-find))
   :config
   
-;; (setq embark-collect-initial-view-alist
-;;       '((file           . list)
-;;         (project-file   . list)
-;;         (virtual-buffer . list)
-;;         (buffer         . list)
-;;         (consult-multi  . list)
-;;         (consult-location . list)
-;;         (consult-compile-error . list)
-;;         (consult-flymake-error . list)
-;;         (symbol         . grid)
-;;         (command        . grid)
-;;         (imenu          . grid)
-;;         (line           . list)
-;;         (xref-location  . list)
-;;         (kill-ring      . zebra)
-;;         (face           . list)
-;;         (t              . grid)))
-
   (add-to-list
    'embark-exporters-alist
    '(consult-flymake-error . embark-export-flymake))
@@ -300,7 +287,7 @@ targets."
   ;;   (add-to-list 'embark-collect-initial-view-alist
   ;;                pair))
   :bind (:map embark-file-map
-              ("x" . consult-file-externally)))
+              ("x" . embark-open-externally)))
 
 ;;; Embark-Collect overlays
 ;; Disabled - don't need this with embark-live-mode (elm) active
@@ -355,17 +342,22 @@ highlighting."
   (use-package straight
     :defer
     :config
-    (embark-define-keymap embark-straight-map
-      ("u" straight-visit-package-website)
-      ("r" straight-get-recipe)
-      ("i" straight-use-package)
-      ("v" straight-visit-package-website)
-      ("c" straight-check-package)
-      ("F" straight-pull-package)
-      ("f" straight-fetch-package)
-      ("p" straight-push-package)
-      ("n" straight-normalize-package)
-      ("m" straight-merge-package))
+    (defvar embark-straight-map
+      (let ((map (make-sparse-keymap)))
+        (pcase-dolist
+            (`(,key ,command) 
+             '(("u" straight-visit-package-website)
+               ("r" straight-get-recipe)
+               ("i" straight-use-package)
+               ("v" straight-visit-package-website)
+               ("c" straight-check-package)
+               ("F" straight-pull-package)
+               ("f" straight-fetch-package)
+               ("p" straight-push-package)
+               ("n" straight-normalize-package)
+               ("m" straight-merge-package)))
+          (define-key map (kbd key) command))
+        map))
 
     (add-to-list 'embark-keymap-alist '(straight . embark-straight-map))
 

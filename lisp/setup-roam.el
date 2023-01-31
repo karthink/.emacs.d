@@ -83,17 +83,17 @@
   (add-to-list 'embark-keymap-alist
                '(org-roam-node . embark-org-roam-node-map))
 
-  (embark-define-keymap embark-org-roam-node-map
-    "Commands to act on current file or buffer."
-    ("i" org-roam-node-insert)
-    ("f" org-roam-node-find))
-  
-  (define-key embark-org-roam-node-map (kbd "o")
-    (my/embark-ace-action org-roam-node-find))
-  (define-key embark-org-roam-node-map (kbd "2")
-    (my/embark-split-action org-roam-node-find my/split-window-below))
-  (define-key embark-org-roam-node-map (kbd "3")
-    (my/embark-split-action org-roam-node-find my/split-window-right)))
+  (defvar embark-org-roam-node-map
+    (let ((map (make-sparse-keymap)))
+      (define-key map "i" #'org-roam-node-insert)
+      (define-key map "f" #'org-roam-node-find)
+      (define-key embark-org-roam-node-map "o"
+        (my/embark-ace-action org-roam-node-find))
+      (define-key embark-org-roam-node-map "2"
+        (my/embark-split-action org-roam-node-find my/split-window-below))
+      (define-key embark-org-roam-node-map "3"
+        (my/embark-split-action org-roam-node-find my/split-window-right))
+      map)))
 
 (use-package org-roam-ui
   :straight t

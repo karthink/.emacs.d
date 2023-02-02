@@ -974,6 +974,11 @@ parent."
   :hook (org-babel-julia-after-async-execute . my/org-redisplay-babel-result)
   :init (setq ob-julia-insert-latex-environment-advice nil)
   :config
+  (add-to-list 'org-structure-template-alist
+               '("j" . "src julia"))
+  (setq org-babel-default-header-args:julia
+        '((:session . nil)
+          (:async   . "yes")))
   (setq org-babel-julia-backend 'julia-snail)
   (when (featurep 'ess)
     (setq ess-eval-visibly 'nowait)
@@ -1008,11 +1013,16 @@ Return the initialized session, if any."
   :config
   (use-package ess-julia))
 
+(use-package org-tempo
+  :after org)
+
 (use-package ob
   :after org
   :commands org-babel-execute-src-block
   :hook (org-babel-after-execute . my/org-redisplay-babel-result)
   :config
+  (setf (alist-get :eval org-babel-default-header-args)
+        "no-export")
   (defun my/org-redisplay-babel-result ()
     (save-excursion
       (condition-case err

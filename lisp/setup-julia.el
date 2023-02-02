@@ -17,7 +17,22 @@
       (cdlatex-math-symbol)
       (julia-latexsub-or-indent 0))))
 
+(use-package julia-snail
+  :straight t
+  :hook (julia-mode . julia-snail-mode)
+  :config
+  ;; (with-eval-after-load 'julia-snail/ob-julia
+  ;;   (setq-default
+  ;;    julia-snail/ob-julia-capture-io nil
+  ;;    julia-snail/ob-julia-use-error-pane t))
+  (setq-default
+   julia-snail-extra-args '("-t12" "-q")
+   julia-snail-multimedia-enable t
+   julia-snail-multimedia-buffer-style :single-new
+   julia-snail-show-error-window t))
+
 (use-package julia-repl
+  :disabled
   :straight t
   :commands julia-repl-mode
   :bind (:map julia-repl-mode-map
@@ -46,8 +61,9 @@
 ;;;----------------------------------------------------------------
 ;; ** ESS
 ;;;----------------------------------------------------------------
-;; Need this for ob-julia
+;; Need this for ob-julia -- disabled while I try julia-snail
 (use-package ess-julia
+  :disabled
   :straight ess
   :after ob-julia
   ;; :bind (:map ess-julia-mode-map

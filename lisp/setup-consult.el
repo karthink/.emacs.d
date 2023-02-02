@@ -19,12 +19,13 @@
   (setq consult-line-numbers-widen t)
   (setq consult-preview-key 'any)
   (consult-customize
-   consult-ripgrep consult-git-grep consult-grep 
-   consult-bookmark consult--source-buffer consult-recent-file consult-xref
+   ;; consult-ripgrep consult-git-grep consult-grep consult-xref
+   consult-bookmark consult--source-buffer consult-recent-file
    consult--source-recent-file consult--source-project-recent-file
    consult--source-bookmark consult--source-project-buffer
-   :preview-key (kbd "C-M-m")
-   consult-theme (list :debounce 1.0 (kbd "C-M-m")))
+   consult-info
+   :preview-key "C-M-m"
+   consult-theme :preview-key (list :debounce 1.0 "C-M-m"))
 
   (when (executable-find "plocate")
     (setq consult-locate-args "plocate --ignore-case --existing --regexp"))
@@ -284,7 +285,7 @@ When the number of characters in a buffer exceeds this threshold,
                   (hash-table-keys ht)))
       :state ,#'consult--library-state))
   (add-to-list 'consult-buffer-sources 'consult--source-library)
-  (consult-customize consult--source-library :preview-key (kbd "C-M-m")))
+  (consult-customize consult--source-library :preview-key "C-M-m"))
 
 (use-package consult-dir
   :load-path "plugins/consult-dir/"
@@ -352,14 +353,14 @@ When the number of characters in a buffer exceeds this threshold,
             :history 'dff-file-name-history
             :category 'file)))
       (find-file file-name)))
-  (consult-customize consult-dff :preview-key (kbd "C-M-m")))
+  (consult-customize consult-dff :preview-key "C-M-m"))
 
 (use-package consult-recoll
   :straight t
   :bind ("M-s /" . consult-recoll)
   :config
   (setq consult-recoll-inline-snippets nil)
-  (consult-customize consult-recoll :preview-key (kbd "C-M-m")))
+  (consult-customize consult-recoll :preview-key "C-M-m"))
 
 
 (provide 'setup-consult)

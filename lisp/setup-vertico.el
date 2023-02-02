@@ -54,6 +54,7 @@
            (xref-location reverse)
            (history reverse)
            (url reverse)
+           (consult-info buffer)
            (consult-compile-error reverse)
            (buffer flat (vertico-cycle . t))
            (t flat)))

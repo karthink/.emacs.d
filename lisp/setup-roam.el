@@ -8,13 +8,17 @@
              ("C-c n g" . org-roam-graph)
              ("C-c n i" . org-roam-node-insert)
              ("C-c n c" . org-roam-capture)
-             ("C-c n r" . my/org-roam-node-from-cite)
-             ;; Dailies
-             ("C-c n j" . org-roam-dailies-goto-today))
+             ("C-c n r" . my/org-roam-node-from-cite))
       :config
+      (setf (alist-get "^\\*org-roam\\*$" display-buffer-alist
+                       nil nil #'equal)
+            '((display-buffer-reuse-window
+               display-buffer-reuse-mode-window
+               display-buffer-below-selected)
+              (window-height . (lambda (win)
+                                 (fit-window-to-buffer
+                                  win 30)))))
       (setq org-roam-directory (file-truename "~/Documents/roam/"))
-      (setq org-roam-dailies-directory "journal")
-      
       (defun org-roam-node-insert-immediate (arg &rest args)
         (interactive "P")
         (let ((args (cons arg args))
@@ -94,6 +98,36 @@
       (define-key embark-org-roam-node-map "3"
         (my/embark-split-action org-roam-node-find my/split-window-right))
       map)))
+
+(use-package org-roam-dailies
+  :after org-roam
+  :commands org-roam-dailies-goto-today
+  :bind ("C-c n j" . org-roam-dailies-map)
+  :config
+  (setq org-roam-dailies-directory "journal")
+  ;; Redefine org-roam-dailies-map, the default bindings are terrible.
+  (pcase-dolist
+      (`(,key ,cmd)
+       '(("j" org-roam-dailies-goto-today)
+         ("n" org-roam-dailies-goto-next-note)
+         ("p" org-roam-dailies-goto-previous-note)
+         ("r" org-roam-dailies-capture-today)
+         ;; ("" org-roam-dailies-capture-date)
+         ("c" org-roam-dailies-goto-date)
+         ("." org-roam-dailies-find-directory)
+         ("f" org-roam-dailies-goto-tomorrow)
+         ("b" org-roam-dailies-goto-yesterday)))
+    (define-key org-roam-dailies-map (kbd key) cmd))
+  (defvar org-roam-dailies-repeat-map
+    (let ((map (make-sparse-keymap)))
+      (prog1 map
+        (pcase-dolist
+            (`(,key ,cmd)
+             '(("n" org-roam-dailies-goto-next-note)
+               ("p" org-roam-dailies-goto-previous-note)
+               ("." org-roam-dailies-find-directory)))
+          (define-key map key cmd)
+          (put cmd 'repeat-map 'org-roam-dailies-repeat-map))))))
 
 (use-package org-roam-ui
   :straight t

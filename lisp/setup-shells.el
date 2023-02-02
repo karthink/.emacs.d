@@ -118,16 +118,22 @@ Filenames are always matched by eshell."
 ;; from man-pages or --help output.
 (use-package pcmpl-args
   :straight t
-  :hook ((eshell-mode . my/pcmpl-args-pcomplete-settings)
-         (eshell-first-time-mode . my/pcmpl-extras))
+  :hook ((eshell-mode . my/pcmpl-args-eshell-settings)
+         ((eshell-mode shell-mode) . my/pcmpl-args-capf-ensure))
   :config
-  (defun my/pcmpl-extras ()
-    (dolist (cmd '("fd" "rg" "pacman" "systemctl"
-                   "aura" "stow" "rsync" "arbtt-stats"))
-      (defalias
-        (intern (concat "pcomplete/" cmd))
-        'pcmpl-args-pcomplete-on-man)))
-  (defun my/pcmpl-args-pcomplete-settings ()
+  (defun my/pcmpl-args-prepare ()
+    (let ((pfunc
+           (thread-first
+             "pcomplete/"
+             (concat (car (pcomplete-parse-arguments)))
+             (intern))))
+      (unless (fboundp pfunc)
+        (defalias pfunc 'pcmpl-args-pcomplete-on-man)))
+    (list nil :exclusive 'no))
+  (defun my/pcmpl-args-capf-ensure ()
+    (add-hook 'completion-at-point-functions
+              'my/pcmpl-args-prepare -90 t))
+  (defun my/pcmpl-args-eshell-settings ()
     (setq-local pcomplete-try-first-hook
                 '(eshell-complete-host-reference
                   eshell-complete-history-reference
@@ -580,10 +586,8 @@ send a notification when the process has exited."
   :defer
   :config
   (setq async-shell-command-buffer 'new-buffer)
-  (setq explicit-shell-file-name nil) ; "/usr/bin/zsh"
-  (setq shell-file-name "fish")
-  ;; (setq explicit-zsh-args '("--login" "--interactive"))
   (defun zsh-shell-mode-setup ()
+    ;; (setq-local shell-prompt-pattern "^[^#$%\n]*[#$%>❯] *" )
     (setq-local comint-process-echoes t))
   (add-hook 'shell-mode-hook #'zsh-shell-mode-setup))
 
@@ -601,8 +605,7 @@ send a notification when the process has exited."
   (add-hook 'comint-output-filter-functions
             'comint-watch-for-password-prompt)
 
-  (setq ansi-color-for-comint-mode t ; package ansi-color
-        shell-command-switch "-ic")
+  (setq ansi-color-for-comint-mode t)
   
   ;; Auto-kill buffer and window of comint process when done
   (advice-add 'comint-send-eof :after
@@ -616,18 +619,26 @@ send a notification when the process has exited."
 replace the line with output. With a prefix argument, append the
 output instead."
     (interactive "P")
-    (let ( (command (thing-at-point 'line)) )
-      (cond ((null prefix)
+    (let ((command
+            (if (use-region-p)
+                (buffer-substring-no-properties
+                 (region-beginning)
+                 (region-end))
+              (thing-at-point 'line))))
+      (cond ((use-region-p)
+             (call-interactively #'delete-region))
+            ((null prefix)
              (kill-whole-line)
              (indent-according-to-mode))
             (t (newline-and-indent)))
-      (shell-command command t nil)
+      (insert (string-trim (shell-command-to-string command)))
       (exchange-point-and-mark))))
 
 ;; ** COMINT EXTRAS
 
 ;; Testing: comint-mime and coterm
 (use-package comint-mime
+  :disabled
   :straight t
   :hook ((shell-mode . comint-mime-setup)
          (inferior-python-mode . comint-mime-setup)))

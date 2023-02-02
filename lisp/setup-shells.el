@@ -636,16 +636,35 @@ output instead."
 
 ;; ** COMINT EXTRAS
 
-;; Testing: comint-mime and coterm
+;; comint-mime and coterm: disabled while I test eat
 (use-package comint-mime
   :disabled
   :straight t
   :hook ((shell-mode . comint-mime-setup)
          (inferior-python-mode . comint-mime-setup)))
 
+;; Disabled while I test eat
 (use-package coterm
   :straight t
   :defer)
+
+(use-package eat
+  :defer
+  :straight
+  '(:type git
+    :host codeberg
+    :repo "akib/emacs-eat"
+    :files ("*.el" ("term" "term/*.el") "*.texi"
+            "*.ti" ("terminfo/e" "terminfo/e/*")
+            ("terminfo/65" "terminfo/65/*")
+            ("integration" "integration/*")
+            (:exclude ".dir-locals.el" "*-tests.el")))
+  :config
+  ;; (add-to-list 'eat-semi-char-non-bound-keys [?\e ?o])
+  ;; (add-to-list 'eat-semi-char-non-bound-keys [?\e ?`])
+  ;; (add-to-list 'eat-semi-char-non-bound-keys (kbd "C-`"))
+  (dolist (key '([?\e ?o] [?\e ?`] (kbd "C-`") [?\e 67108960]))
+    (push key eat-semi-char-non-bound-keys)))
 
 
 ;; Disabled: shelldon. Regular `async-shell-command' does enough for me.

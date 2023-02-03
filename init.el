@@ -1712,6 +1712,27 @@ current buffer without truncation."
          ("C-c C-w" . jsonian-path)
          ("C-M-e" . jsonian-enclosing-item)))
 
+;; ** PLANTUML
+(use-package plantuml-mode
+  :straight t
+  :defer
+  :init
+  (add-hook 'plantuml-mode-hook
+          (lambda () (add-hook
+                 'completion-at-point-functions
+                 'my/plantuml-complete nil t)))
+  :config
+  ;; Add rudimentary CAPF support to plantuml-mode
+  (defun my/plantuml-complete ()
+    (unless (seq-contains-p
+             [? ?	13 10] (char-before))
+      (list (save-excursion
+              (re-search-backward
+               (rx word-boundary (1+ wordchar)) nil t)
+              (point))
+            (point)
+            plantuml-kwdList))))
+
 ;; * PLUGINS
 ;;;################################################################
 

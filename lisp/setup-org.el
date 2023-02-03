@@ -188,6 +188,19 @@ appropriate.  In tables, insert a new row or end the table."
         ;; Link: Open it.
         (org-open-at-point-global))
 
+       ((or (eq
+             (get-char-property (min (1+ (point)) (point-max)) 'org-overlay-type)
+             'org-latex-overlay)
+            (let ((context (org-element-context)))
+              (and (memq (org-element-type context)
+                         '(latex-fragment latex-environment))
+                   (eq (point)
+                       (save-excursion
+                         (goto-char (org-element-property :end context))
+                         (skip-chars-backward "\n\r\t ")
+                         (point))))))
+        (org-latex-preview))
+
        ((org-at-heading-p)
         ;; Heading: Move to position after entry content.
         ;; NOTE: This is probably the most interesting feature of this function.
@@ -279,29 +292,8 @@ appropriate.  In tables, insert a new row or end the table."
    org-indent-mode-turns-on-hiding-stars nil
    org-use-sub-superscripts '{}
    org-pretty-entities nil
-   org-pretty-entities-include-sub-superscripts nil
    ;; org-priority-faces '((?a . error) (?b . warning) (?c . success))
-   
-   ;; Display preferences for latex previews
-   ;; Larger equations
-   org-format-latex-options
-   (progn (plist-put org-format-latex-options :background "Transparent")
-          (plist-put org-format-latex-options :scale 1.0)
-          (plist-put org-format-latex-options :zoom 1.1))
-   
-   org-latex-preview-options
-   (progn (plist-put  org-latex-preview-options :background "Transparent")
-          (plist-put org-latex-preview-options :scale 1.0)
-          (plist-put org-latex-preview-options :zoom 1.1))
-
-   ;; org-latex-preview-header
-;;    "\\documentclass{article}
-;; \\usepackage[usenames]{color}
-;; [DEFAULT-PACKAGES]
-;; [PACKAGES]
-;; \\setlength{\\textwidth}{0.8\\paperwidth}
-;; \\addtolength{\\textwidth}{-2cm}"
-   )
+   org-pretty-entities-include-sub-superscripts nil)
   
   ;; Pretty symbols
   ;; (add-hook 'org-mode-hook 'org-toggle-pretty-entities)
@@ -324,6 +316,35 @@ appropriate.  In tables, insert a new row or end the table."
                   (alter-text-property
                    start end 'face
                    (lambda (l) (remove 'org-block l)))))))
+
+;; Settings to do with org-latex-preview
+(use-package org
+  :hook (org-mode . org-latex-preview-auto-mode)
+  :bind (:map org-mode-map
+         ("C-c C-x SPC" . org-latex-preview-clear-cache))
+  :config
+  ;; Display preferences for latex previews
+  ;; Larger equations
+  (setq-default
+   ;; org-latex-preview-header
+   ;;    "\\documentclass{article}
+   ;; \\usepackage[usenames]{color}
+   ;; [DEFAULT-PACKAGES]
+   ;; [PACKAGES]
+   ;; \\setlength{\\textwidth}{0.8\\paperwidth}
+   ;; \\addtolength{\\textwidth}{-2cm}"
+
+   org-format-latex-options
+   (progn (plist-put org-format-latex-options :background "Transparent")
+          (plist-put org-format-latex-options :scale 1.0)
+          (plist-put org-format-latex-options :zoom 1.1))
+
+   org-latex-preview-options
+   (progn (plist-put  org-latex-preview-options :background "Transparent")
+          (plist-put org-latex-preview-options :scale 1.0)
+          (plist-put org-latex-preview-options :zoom 1.1))
+
+   org-latex-preview-processing-indicator nil))
 
 (use-package org-appear
   :straight t
@@ -798,6 +819,10 @@ parent."
   :after ox
   :defer
   :config
+  ;; Temporary fix while ox-latex is borked for previews
+  (setf (car org-latex-default-packages-alist)
+        '("utf8" "inputenc" t ("pdflatex")))
+  ;; General preferences
   (when (executable-find "latexmk")
     (setq org-latex-pdf-process
           '("latexmk -f -pdf -%latex -shell-escape -interaction=nonstopmode -output-directory=%o %f")))
@@ -805,11 +830,12 @@ parent."
                      (""           "booktabs"  nil)
                      (""           "color"     nil)
                      (""           "cancel"    t)
-                     ;; ;FIXME: Some documentclasses load these themselves,
-                     ;; ;causing all manner of conflicts.
-                     ;; ("capitalize" "cleveref"  nil)
-                     ;; (""           "amsmath"   t)
-                     ;; (""           "amssymb"   t)
+                     ;; ;DONE: Some documentclasses load these themselves, in
+                     ;; ;which case we should add [NO-DEFAULT-PACKAGES] to their
+                     ;; ;strings in `org-latex-classes'.
+                     ("capitalize" "cleveref"  nil)
+                     (""           "amsmath"   t)
+                     (""           "amssymb"   t)
                      ))
     (cl-pushnew package org-latex-packages-alist
                 :test (lambda (a b) (equal (cadr a) (cadr b)))))
@@ -1556,6 +1582,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
 ;; ** ORG-AUCTEX
 ;;;----------------------------------------------------------------
 (use-package org-auctex
+  :disabled
   :load-path "plugins/org-auctex"
   :commands org-auctex-mode
   :after org

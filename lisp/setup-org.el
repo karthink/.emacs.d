@@ -942,6 +942,15 @@ parent."
        org-cite-global-bibliography citar-bibliography))))
 
 ;;;----------------------------------------------------------------------
+;; ** ORG-IMAGE-PREVIEW
+;;;----------------------------------------------------------------------
+(use-package org-image-preview
+  :straight (:host github :repo "karthink/org-image-preview")
+  :after org
+  :bind (:map org-mode-map
+         ([remap org-toggle-inline-images] . org-image-preview)))
+
+;;;----------------------------------------------------------------------
 ;; ** ORG-DOWNLOAD
 ;;;----------------------------------------------------------------------
 (use-package org-download
@@ -1030,9 +1039,13 @@ Return the initialized session, if any."
                       (elem (and (goto-char beg) (org-element-context)))
                       (end (- (org-element-property :end elem)
                               (org-element-property :post-blank elem))))
-            (org-display-inline-images nil 'refresh beg end))
+            (funcall
+             (if (featurep 'org-image-preview)
+                 #'org-image-preview--in-region
+               #'org-display-inline-images)
+             nil 'refresh beg end))
         (error (message "Could not display images: %S" err)))))
-
+  
   (setq org-src-window-setup 'split-window-below
         org-confirm-babel-evaluate nil
         org-export-use-babel t)

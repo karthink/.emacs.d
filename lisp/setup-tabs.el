@@ -25,10 +25,10 @@
       "Produce the Menu button for the tab bar that shows the menu bar."
       `((menu-bar menu-item (propertize " 𝝺 " 'face 'tab-bar-tab-inactive)
                   tab-bar-menu-bar :help "Menu Bar")))
-    (defun tab-bar-tab-name-format-comfortable (tab i)
+    (defun my/tab-bar-tab-name-format-comfortable (tab i)
       (propertize (concat " " (tab-bar-tab-name-format-default tab i) " ")
                   'face (funcall tab-bar-tab-face-function tab)))
-    (setq tab-bar-tab-name-format-function #'tab-bar-tab-name-format-comfortable)
+    (setq tab-bar-tab-name-format-function #'my/tab-bar-tab-name-format-comfortable)
     
     (setq tab-bar-format '(tab-bar-format-menu-bar
                            ;; tab-bar-format-history
@@ -41,19 +41,20 @@
   
   (setq  tab-bar-close-last-tab-choice 'tab-bar-mode-disable
          tab-bar-show                   (when (version< "28.0" emacs-version) 1)
-         tab-bar-tab-name-truncated-max 14
+         tab-bar-tab-name-truncated-max 12
          tab-bar-new-tab-choice        'ibuffer
-         tab-bar-tab-name-function '(lambda nil
-                                      "Use directory as tab name."
-                                      (let ((dir (expand-file-name
-                                                  (or (if (fboundp 'project-root)
-                                                          (project-root (project-current)))
-                                                      default-directory))))
-                                        (substring dir (1+ (string-match "/[^/]+/$" dir)) -1 )))
-         ;; tab-bar-select-tab-modifiers  '(meta)
-         ;; tab-bar-tab-name-function 'tab-bar-tab-name-truncated
-         ;; tab-bar-tab-name-function '(lambda nil (upcase (tab-bar-tab-name-truncated)))
-         )
+         tab-bar-tab-name-function
+         (lambda nil "Use project as tab name."
+            (let ((dir (expand-file-name
+                        (or (if (fboundp 'project-root)
+                                (project-root (project-current)))
+                         default-directory))))
+              (or
+               (and dir
+                    (let ((name (substring dir (1+ (string-match "/[^/]+/$" dir)) -1)))
+                      (truncate-string-to-width name
+                       tab-bar-tab-name-truncated-max nil nil ?  t)))
+               (buffer-name)))))
 
   (setq tab-bar-select-tab-modifiers '(meta hyper))
 
@@ -61,16 +62,16 @@
     "Show or hide tabs."
     (interactive)
     (setq tab-bar-show (if tab-bar-show nil 1)))
-   
-  (advice-add 'tab-bar-rename-tab
-              :after
-              (defun my/tab-bar-name-upcase (_name &optional _arg)
-                "Upcase current tab name"
-                (let* ((tab (assq 'current-tab (frame-parameter nil 'tabs)))
-                       (tab-name (alist-get 'name tab)))
-                  (setf (alist-get 'name tab) (upcase tab-name)
-                        (alist-get 'explicit-name tab) t))))
-  
+
+  ;; (advice-add 'tab-bar-rename-tab
+  ;;             :after
+  ;;             (defun my/tab-bar-name-upcase (_name &optional _arg)
+  ;;               "Upcase current tab name"
+  ;;               (let* ((tab (assq 'current-tab (frame-parameter nil 'tabs)))
+  ;;                      (tab-name (alist-get 'name tab)))
+  ;;                 (setf (alist-get 'name tab) (upcase tab-name)
+  ;;                       (alist-get 'explicit-name tab) t))))
+
   ;; Workaround for wrong tab-bar right alignment with unicode chars
   (advice-add 'tab-bar-format-align-right :override
               (defun my/tab-bar-fix-align-a ()

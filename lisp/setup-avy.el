@@ -3,7 +3,7 @@
   :straight t
   :commands (avy-goto-word-1 avy-goto-char-2 avy-goto-char-timer)
   :config
-  (setq avy-timeout-seconds 0.25)
+  (setq avy-timeout-seconds 0.20)
   (setq avy-keys '(?a ?s ?d ?f ?g ?j ?l ?o
                    ?v ?b ?n ?, ?/ ?u ?p ?e ?.
                    ?c ?q ?2 ?3 ?' ?\;))
@@ -243,7 +243,8 @@
 The current window is chosen if WIN is not specified." 
     (with-selected-window (or win
                               (setq win (selected-window)))
-      (let* (match shr-buttons ov-buttons all-buttons)
+      (let* ((avy-single-candidate-jump t)
+             match shr-buttons ov-buttons all-buttons)
 
         ;; SHR links
         (save-excursion
@@ -285,25 +286,65 @@ The current window is chosen if WIN is not specified."
           (let ((cursor-type nil))
             (avy-process all-buttons))))))
   
-  (set-face-attribute 'avy-lead-face nil :inherit 'default)
+  (custom-set-faces
+   '(avy-lead-face
+     ((((background dark))
+       :foreground "LightCoral" :background "Black"
+       :weight bold :underline t)
+      (((background light))
+       :foreground "DarkRed" :background "White"
+       :weight bold :underline t)))
+   '(avy-lead-face-0 ((t :inherit avy-lead-face)))
+   '(avy-lead-face-1 ((t :inherit avy-lead-face)))
+   '(avy-lead-face-2 ((t :inherit avy-lead-face))))
+
+  ;; Jump to all paren types with [ and ]
+  (advice-add 'avy-jump :filter-args
+              (defun my/avy-jump-parens (args)
+                (let ((new-regex
+                       (my/avy-replace-syntax-class (car args))))
+                  (cons new-regex (cdr args)))))
+
+  (defun my/avy-replace-syntax-class (regex)
+    (thread-last regex
+                 (string-replace "\\[" "\\s(")
+                 (string-replace "\\]" "\\s)")
+                 (string-replace ";" "\\(?:;\\|:\\)")
+                 (string-replace "'" "\\(?:'\\|\"\\)")))
+
+  (defun my/avy-goto-char-timer (&optional arg)
+  "Read one or many consecutive chars and jump to the first one.
+The window scope is determined by `avy-all-windows' (ARG negates it).
+
+This differs from Avy's goto-char-timer in how it processes parens."
+  (interactive "P")
+  (let ((avy-all-windows (if arg
+                             (not avy-all-windows)
+                           avy-all-windows)))
+    (avy-with avy-goto-char-timer
+      (setq avy--old-cands (avy--read-candidates
+                            (lambda (str) (my/avy-replace-syntax-class
+                                      (regexp-quote str)))))
+      (avy-process avy--old-cands))))
   
   :general
-  ("C-'"        '(my/avy-goto-char-this-window :wk "Avy goto char")
-   "M-j"      '(avy-goto-char-timer        :wk "Avy goto char timer")
-   "M-s y"      '(avy-copy-line              :wk "Avy copy line above")
-   "M-s M-y"    '(avy-copy-region            :wk "Avy copy region above")
-   "M-s M-k"    '(avy-kill-whole-line        :wk "Avy copy line as kill")
-   "M-s j"        '(avy-goto-char-2            :wk "Avy goto char 2")
-   "M-s p"      '(avy-goto-line-above        :wk "Avy goto line above")
-   "M-s n"      '(avy-goto-line-below        :wk "Avy goto line below")
-   "M-s C-w"    '(avy-kill-region            :wk "Avy kill region")
-   "M-s M-w"    '(avy-kill-ring-save-region  :wk "Avy copy as kill")
-   "M-s t"      '(avy-move-line              :wk "Avy move line")
-   "M-s M-t"    '(avy-move-region            :wk "Avy move region")
-   "M-s s"      '(my/avy-next-char-2         :wk "Avy snipe forward")
-   "M-s r"      '(my/avy-previous-char-2     :wk "Avy snipe backward")
-   "M-g l"      '(avy-goto-end-of-line       :wk "Avy goto line")
-   "M-s z"      '(my/avy-copy-line-no-prompt :wk "Avy copy and zap"))
+  ("C-M-'"      'avy-resume
+   "C-'"        '(my/avy-goto-char-this-window :wk "Avy goto char")
+   "M-j"        '(my/avy-goto-char-timer       :wk "Avy goto char timer")
+   "M-s y"      '(avy-copy-line                :wk "Avy copy line above")
+   "M-s M-y"    '(avy-copy-region              :wk "Avy copy region above")
+   "M-s M-k"    '(avy-kill-whole-line          :wk "Avy copy line as kill")
+   "M-s j"      '(avy-goto-char-2              :wk "Avy goto char 2")
+   "M-s M-p"    '(avy-goto-line-above          :wk "Avy goto line above")
+   "M-s M-n"    '(avy-goto-line-below          :wk "Avy goto line below")
+   "M-s C-w"    '(avy-kill-region              :wk "Avy kill region")
+   "M-s M-w"    '(avy-kill-ring-save-region    :wk "Avy copy as kill")
+   "M-s t"      '(avy-move-line                :wk "Avy move line")
+   "M-s M-t"    '(avy-move-region              :wk "Avy move region")
+   "M-s s"      '(my/avy-next-char-2           :wk "Avy snipe forward")
+   "M-s r"      '(my/avy-previous-char-2       :wk "Avy snipe backward")
+   "M-g l"      '(avy-goto-end-of-line         :wk "Avy goto line")
+   "M-s z"      '(my/avy-copy-line-no-prompt   :wk "Avy copy and zap"))
   ;; (:states '(normal visual)
   ;;  :prefix "g"
   ;;  "s" 'avy-goto-char-timer)

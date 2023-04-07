@@ -3673,8 +3673,12 @@ buffer's text scale."
   :config
   (cond (IS-LINUX
          (set-fontset-font t 'unicode "Symbola" nil 'prepend)
-         (pcase-let ((`(,vp ,fp) (if (equal system-name "x220")
-                                     '(120 130) '(110 120))))
+         (pcase-let ((`(,vp ,fp)
+                      (cond
+                       ((equal system-name "x220") '(120 130))
+                       ((string= (getenv "XDG_SESSION_TYPE") "wayland")
+                        '(125 135))
+                       (t '(105 110)))))
            (custom-set-faces
             `(variable-pitch ((t (:family "Merriweather" :height ,vp
                                   :width semi-expanded))))
@@ -3715,17 +3719,18 @@ buffer's text scale."
                             '(org-level-1 ((t (:foreground "#0072b2" :inherit bold :height 1.3))))
                             '(org-level-2 ((t (:foreground "#d55e00" :inherit bold :height 1.1))))
                             '(org-document-title ((t (:inherit bold :height 1.5))))
-                            )))
-;;   (use-package gruvbox-theme
-;;     :disabled
-;;     :defer
-;;     :config
-;;     (custom-theme-set-faces 'gruvbox
-;;                             '(aw-leading-char-face
-;;                               ((t (:height 2.5 :weight normal))))
-;;                             '(org-level-1 ((t (:height 1.3 :foreground "#83a598" :inherit (bold) ))))
-;;                             '(org-level-2 ((t (:height 1.1 ;; 
-
+                            ))
+  (use-package gruvbox-theme
+    :disabled
+    :defer
+    :config
+    (custom-theme-set-faces 'gruvbox-dark-hard
+                            ;; '(aw-leading-char-face
+                            ;;   ((t (:height 2.5 :weight normal))))
+                            '(outline-1 ((t (:height 1.3))))
+                            '(outline-2 ((t (:height 1.1))))
+                            '(org-level-1 ((t (:inherit outline-1))))
+                            '(org-level-2 ((t (:inherit outline-2)))))))
 ;; ** MODUS THEMES
 (use-package ef-themes
   :straight t
@@ -3737,7 +3742,15 @@ buffer's text scale."
           (2 . (1.22))
           (3 . (1.17))
           (4 . (1.14))
-          (t . (1.1)))))
+          (t . (1.1))))
+  (defun my/ef-themes-extra-faces ()
+    "Tweak the style of the mode lines."
+    (ef-themes-with-colors
+      (custom-set-faces
+       `(aw-leading-char-face ((,c :foreground ,fg-mode-line
+                                :height 1.5 :weight semi-bold))))))
+
+  (add-hook 'ef-themes-post-load-hook #'my/ef-themes-extra-faces))
 
 ;; Protesilaos Stavrou's excellent high contrast themes, perfect for working in
 ;; bright sunlight (especially on my laptop's dim screen).
@@ -3793,32 +3806,35 @@ buffer's text scale."
   (defun my/doom-theme-settings (theme &rest args)
     "Additional face settings for doom themes"
     (when (string-match-p "^doom-" (symbol-name theme))
-      (dolist (face-spec
-               '((aw-leading-char-face (:height 2.0 :foreground nil :inherit mode-line-emphasis)
-                                       ace-window)
-                 (aw-background-face (:inherit default :weight normal) ace-window)
-                 (outline-1        (:height 1.25) outline)
-                 (outline-2        (:height 1.20) outline)
-                 (outline-3        (:height 1.16) outline)
-                 (outline-4        (:height 1.12) outline)
-                 (tab-bar            (:background "black" :height 1.0 :foreground "white")
-                                     tab-bar)
-                 (tab-bar-tab
-                  (:bold t :height 1.10 :foreground nil :inherit mode-line-emphasis)
-                  tab-bar)
-                 (tab-bar-tab-inactive
-                  (:inherit 'mode-line-inactive :height 1.10 :background "black")
-                  tab-bar)))
-        (cl-destructuring-bind (face spec library) face-spec
-          (if (featurep library)
-              (apply #'set-face-attribute face nil spec)
-            (with-eval-after-load library
-              (when (string-match-p "^doom-" (symbol-name theme))
-                  (apply #'set-face-attribute face nil spec)))))))
-    (if (eq theme 'doom-rouge) (set-face-attribute 'hl-line nil :background "#1f2a3f")))
+      (let ((class '((class color) (min-colors 256))))
+        (dolist (face-spec
+                 '((aw-leading-char-face (:height 2.0 :foreground nil :inherit mode-line-emphasis)
+                    ace-window)
+                   (aw-background-face (:inherit default :weight normal) ace-window)
+                   (outline-1        (:height 1.25) outline)
+                   (outline-2        (:height 1.20) outline)
+                   (outline-3        (:height 1.16) outline)
+                   (outline-4        (:height 1.12) outline)
+                   (tab-bar            (:background "black" :height 1.0 :foreground "white")
+                    tab-bar)
+                   (tab-bar-tab
+                    (:bold t :height 1.10 :foreground nil :inherit mode-line-emphasis)
+                    tab-bar)
+                   (tab-bar-tab-inactive
+                    (:inherit 'mode-line-inactive :height 1.10 :background "black")
+                    tab-bar)))
+          (cl-destructuring-bind (face spec library) face-spec
+            (if (featurep library)
+                (custom-set-faces `(,face ((,class ,@spec))))
+              (with-eval-after-load library
+                (when (string-match-p "^doom-" (symbol-name theme))
+                  (custom-set-faces `(,face ((,class ,@spec)))))))))
+        ;; (when (eq theme 'doom-rouge)
+        ;;   (custom-set-faces `(hl-line ((,class :background "#1f2a3f")))))
+        )))
 
-  (advice-add 'load-theme :after #'my/doom-theme-settings)
-  
+  (advice-add 'load-theme :before #'my/doom-theme-settings)
+
   :config
   (doom-themes-org-config)
   (use-package doom-rouge-theme

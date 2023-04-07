@@ -99,7 +99,7 @@
 (use-package org-roam-dailies
   :after org-roam
   :commands org-roam-dailies-goto-today
-  :bind ("C-c n j" . org-roam-dailies-map)
+  :bind-keymap ("C-c n j" . org-roam-dailies-map)
   :config
   (setq org-roam-dailies-directory "journal")
   ;; Redefine org-roam-dailies-map, the default bindings are terrible.

@@ -3,6 +3,7 @@
 
 # Packaging
 .cask
+elpaca/*
 
 # Personal files
 ido.last

@@ -151,7 +151,9 @@
 
 ;; Easy keys to traverse paragraphs
 (global-set-key (kbd "M-]") 'forward-paragraph)
-(global-set-key (kbd "M-[") 'backward-paragraph)
+;; tty emacs has mouse trouble with this binding:
+(when window-system
+    (global-set-key (kbd "M-[") 'backward-paragraph))
 
 ;; Re-search forward
 ;;; Superceded by iy-go-to-char
@@ -198,10 +200,10 @@
 ;; Keybindings for occur inside isearch
 ;; (define-key isearch-mode-map (kbd "C-o") 'isearch-occur)
 
-(global-set-key [M-up] 'move-text-up)    
+(global-set-key [M-up] 'move-text-up)
 (global-set-key [M-down] 'move-text-down)
 
-;; Unfill-region 
+;; Unfill-region
 (define-key global-map "\M-Q" 'unfill-paragraph)
 
 ;; Register commands

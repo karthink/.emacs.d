@@ -2489,6 +2489,7 @@ _d_: subtree
         ("M-{"           . sp-backward-barf-sexp)
         ("M-}"           . sp-forward-barf-sexp)
         ("M-U"           . sp-raise-sexp)
+        ("M-R"           . raise-sexp)
         ("M-C"           . sp-convolute-sexp)
         ("M-D"           . my/sp-duplicate-sexp)
         ("M-J"           . sp-join-sexp)
@@ -2539,15 +2540,17 @@ _d_: subtree
                        ("[" . sp-backward-slurp-sexp)
                        ("}" . sp-forward-barf-sexp)
                        ("{" . sp-backward-barf-sexp)
-                       ("r" . sp-raise-sexp)
+                       ("r" . raise-sexp)
+                       (";" . sp-comment)
                        ("C" . sp-convolute-sexp)
                        ("D" . my/sp-duplicate-sexp)
                        ("J" . sp-join-sexp)
                        ("S" . sp-split-sexp)
+                       ("R" . sp-raise-sexp)
                        ("\\" . indent-region)
                        ("t" . transpose-sexps)
                        ("x" . eval-defun)
-                       ("<tab>" . hs-cycle)))
+                       ("e" . eval-last-sexp)))
         (define-key map (kbd k) f))
       map))
 
@@ -2555,12 +2558,13 @@ _d_: subtree
    (lambda (_ cmd)
      (put cmd 'repeat-map 'lisp-navigation-map))
    lisp-navigation-map)
-  
+  (put 'kill-sexp 'repeat-map 'lisp-navigation-map)
+
   ;; (require 'smartparens-config)
   (sp-with-modes sp-lisp-modes
     ;; disable ', it's the quote character!
-    (sp-local-pair "'" nil :actions nil)
-    (sp-local-pair "`" "'")))
+    ;; (sp-local-pair "`" "'")
+    (sp-local-pair "'" nil :actions nil)))
 
 ;;;----------------------------------------------------------------
 ;; ** EXPAND-REGION

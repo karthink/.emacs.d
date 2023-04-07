@@ -273,6 +273,7 @@
   :bind ("H-z" . repeat)
   :hook (after-init . my/repeat-mode)
   :config
+  (setq repeat-keep-prefix t)
   (defun my/repeat-mode ()
     (let ((inhibit-message t)
           (message-log-max nil))

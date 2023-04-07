@@ -1602,8 +1602,13 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
 ;;;----------------------------------------------------------------
 ;; ** ORGLINK
 ;;;----------------------------------------------------------------
+;; TODO: Orglink is bugged: turning it on changes overlay
+;; information across the buffer, causing packages like macrostep,
+;; iedit and hl-todo to misbehave.
 (use-package orglink
   :straight t
+  :after org
+  ;; :hook (prog-mode . orglink-mode)
   :defer)
 (provide 'setup-org)
 

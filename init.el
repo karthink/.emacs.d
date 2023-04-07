@@ -451,8 +451,8 @@
 (use-package iedit
   :straight t
   :bind (("C-M-;" . iedit-mode)
-         ("M-n" . my/iedit-1-down)
-         ("M-p" . my/iedit-1-up))
+         ("M-s n" . my/iedit-1-down)
+         ("M-s p" . my/iedit-1-up))
   :config
   (defun my/iedit-1-down (arg)
     (interactive "p")
@@ -1760,6 +1760,92 @@ current buffer without truncation."
 ;;;################################################################
 
 ;;;----------------------------------------------------------------
+;; ** MACRURSORS
+;;;----------------------------------------------------------------
+;; Testing fast multiple cursors
+(use-package macrursors
+  :straight (:host github :repo "corytertel/macrursors"
+             :fork (:repo "karthink/macrursors"))
+  :hook ((macrursors-pre-finish macrursors-post-finish)
+         . corfu-mode)
+  :bind-keymap ("C-;" . macrursors-mark-map)
+  :bind (("M-n" . macrursors-mark-next-instance-of)
+         ("M-p" . macrursors-mark-previous-instance-of)
+         :map macrursors-mode-map
+         ("C-;" . nil)
+         ("C-; C-;" . macrursors-end)
+         ("C-; C-j" . macrursors-end)
+         :map isearch-mode-map
+         ("C-;" . macrursors-mark-from-isearch)
+         ("M-s n" . macrursors-mark-next-from-isearch)
+         ("M-s p" . macrursors-mark-previous-from-isearch)
+         :map macrursors-mark-map
+         ("C-n" . macrursors-mark-next-line)
+         ("C-p" . macrursors-mark-previous-line)
+         ("C-SPC" . nil)
+         ("." . macrursors-mark-all-instances-of)
+         ("o" . macrursors-mark-all-instances-of)
+         ("SPC" . macrursors-select)
+         ("C-g" . macrursors-select-clear)
+         ("l" . macrursors-mark-all-lists)
+         ("s" . macrursors-mark-all-symbols)
+         ("w" . macrursors-mark-all-words)
+         ("C-M-e" . macrursors-mark-all-sexps)
+         ("d" . macrursors-mark-all-defuns)
+         ("n" . macrursors-mark-all-numbers)
+         (")" . macrursors-mark-all-sentences)
+         ("M-e" . macrursors-mark-all-sentences)
+         ("e" . macrursors-mark-all-lines))
+  :config
+  (use-package macrursors-select-expand
+    :bind
+    (:map macrursors-mark-map
+     ("," . macrursors-select-expand)
+     :map macrursors-select-map
+     ("-" . macrursors-select-contract)
+     ("," . macrursors-select-expand)))
+
+  (setq macrursors-match-cursor-style t
+        ;; macrursors-apply-keys "C-; C-;"
+        )
+
+  (defvar macrursors-repeat-map
+    (let ((map (make-sparse-keymap)))
+      (define-key map "n" #'macrursors-mark-next-instance-of)
+      (define-key map "p" #'macrursors-mark-previous-instance-of)
+      map))
+  (map-keymap (lambda (_ cmd)
+                (put cmd 'repeat-map 'macrursors-repeat-map))
+              macrursors-repeat-map)
+  (dolist (cmd '(macrursors-mark-next-from-isearch
+                 macrursors-mark-previous-from-isearch
+                 macrursors-mark-next-line
+                 macrursors-mark-previous-line))
+    (put cmd 'repeat-map 'macrursors-repeat-map))
+
+  (define-prefix-command 'macrursors-mark-map)
+  (global-set-key (kbd "C-;") 'macrursors-mark-map)
+  (setf macrursors-mode-line nil)
+  (defsubst my/mode-line-macro-recording ()
+    "Display macro being recorded."
+    (when (or defining-kbd-macro executing-kbd-macro)
+      (let ((sep (propertize " " 'face 'highlight ))
+            (vsep (propertize " " 'face '(:inherit variable-pitch))))
+        ;; "●"
+        (propertize
+         (concat
+          sep "REC" vsep
+          (number-to-string kmacro-counter) vsep "▶" vsep
+          (when macrursors-mode
+            (if macrursors--overlays
+                (format (concat "[%d/%d]" vsep)
+                        (1+ (cl-count-if (lambda (p) (< p (point))) macrursors--overlays
+                                         :key #'overlay-start))
+                        (1+ (length macrursors--overlays)))
+              (concat "[1/1]" vsep))))
+         'face 'highlight)))))
+
+;;;----------------------------------------------------------------
 ;; ** EMBRACE
 ;;;----------------------------------------------------------------
 (use-package embrace
@@ -1967,8 +2053,9 @@ current buffer without truncation."
               ("C-M-i" . nil)
               ("C-;" . nil)
               ("C-," . nil)
-              ("C-; C-;" . 'flyspell-auto-correct-previous-word)
-              ("C-; n" . 'flyspell-goto-next-error)))
+              ("C-; C-4" . 'flyspell-auto-correct-previous-word)
+              ;; ("C-; n" . 'flyspell-goto-next-error)
+              ))
 
 ;;;----------------------------------------------------------------
 ;; *** SPELL-FU

@@ -689,6 +689,7 @@ Also kill this window, tab or frame if necessary."
 (use-package popper
   :load-path "plugins/popper/"
   :after (setup-windows setup-project)
+  :hook (emacs-startup . popper-mode)
   :commands popper-mode
   :bind (("C-`" . popper-toggle-latest)
          ("C-M-`" . popper-cycle)
@@ -717,9 +718,13 @@ Also kill this window, tab or frame if necessary."
   ;;            ((locate-dominating-file dd "research") 'documents)
   ;;            ((locate-dominating-file dd "init.el") 'emacs)
   ;;            (t (popper-group-by-project))))))
-  (setq popper-group-function nil)
-  (setq ;; popper-mode-line nil
-   popper-reference-buffers
+  ;; (setq popper-group-function
+  ;;       (lambda ()
+  ;;         (let ((tabs (funcall tab-bar-tabs-function)))
+  ;;           (alist-get 'name (nth (tab-bar--current-tab-index tabs)
+  ;;                                 tabs)))))
+
+  (setq popper-reference-buffers
    (append my/help-modes-list
            my/man-modes-list
            my/repl-modes-list
@@ -727,7 +732,7 @@ Also kill this window, tab or frame if necessary."
            my/occur-grep-modes-list
            ;; my/man-modes-list
            '(Custom-mode
-             (compilation-mode . hide)
+             compilation-mode
              messages-buffer-mode)
            '(("^\\*Warnings\\*$" . hide)
              ("^\\*Compile-Log\\*$" . hide)
@@ -748,25 +753,6 @@ Also kill this window, tab or frame if necessary."
              ;; "\\*scratch.*\\*$"
              "[Oo]utput\\*")))
 
-  (advice-add 'popper-cycle :after
-              (defun my/popper-cycle-repeated (&rest _)
-                "Continue to cycle popups with the grave key."
-                (set-transient-map
-                 (let ((map (make-sparse-keymap)))
-                   (define-key map (kbd "`") #'popper-cycle)
-                   map))))
-  
-  (setq popper-display-function
-        (defun my/popper-select-below (buffer &optional _alist)
-          (funcall (if (> (frame-width) 170)
-                       ;; #'display-buffer-in-direction
-                       #'popper-select-popup-at-bottom
-                     #'display-buffer-at-bottom)
-                   buffer
-                   `((window-height . ,popper-window-height)
-                     (direction . below)
-                     (body-function . ,#'select-window)))))
-  
   (use-package embark
     :defer
     :bind (:map embark-buffer-map
@@ -775,7 +761,7 @@ Also kill this window, tab or frame if necessary."
     (defun embark-popper-toggle (buf)
       "Toggle popup status."
       (popper-toggle-type buf)))
-  
+
   (use-package popper-echo
     :defer 3
     :config
@@ -840,16 +826,51 @@ display names.")
     (setq popper-echo-transform-function #'popper-message-shorten)
     (setq popper-echo-dispatch-keys '(?0 ?1 ?2 ?3 ?4 ?5 ?6 ?7 ?8 ?9)
           popper-echo-dispatch-actions t)
-    (advice-add 'popper-echo :around
-                (defun my/popper-echo-no-which-key (orig-fn)
-                  (let ((which-key-show-transient-maps nil))
-                    (funcall orig-fn))))
+    ;; (advice-add 'popper-echo :around
+    ;;             (defun my/popper-echo-no-which-key (orig-fn)
+    ;;               (let ((which-key-show-transient-maps nil))
+    ;;                 (funcall orig-fn))))
     (popper-echo-mode +1))
 
   :config
   (setq popper-display-control 'user)
-  (popper-mode 1)
-  
+
+  (defun my/popper-switch-to-popup (buf)
+    ";TODO: "
+    (interactive (list (completing-read
+                        "Switch to popup: "
+                        (let ((grp-symb (when popper-group-function
+                                          (funcall popper-group-function))))
+                          (thread-last
+                            (alist-get grp-symb popper-buried-popup-alist nil nil 'equal)
+                            (mapcar #'cdr)
+                            (cl-remove-if-not #'buffer-live-p)
+                            (mapcar #'buffer-name)))
+                        nil t)))
+    (popper-close-latest)
+    (display-buffer buf))
+
+  (defvar popper-repeat-map
+    (let ((map (make-sparse-keymap)))
+      (define-key map (kbd "`") #'popper-cycle)
+      (define-key map (kbd "b") #'my/popper-switch-to-popup)
+      map))
+  (put 'popper-cycle 'repeat-map 'popper-repeat-map)
+  (put 'popper-toggle-latest 'repeat-map 'popper-repeat-map)
+
+  (setq popper-group-function #'selected-frame)
+
+  (setq popper-display-function
+        (defun my/popper-select-below (buffer &optional _alist)
+          (funcall (if (> (frame-width) 170)
+                       ;; #'display-buffer-in-direction
+                       #'popper-select-popup-at-bottom
+                     #'display-buffer-at-bottom)
+                   buffer
+                   `((window-height . ,popper-window-height)
+                     (direction . below)
+                     (body-function . ,#'select-window)))))
+
   (defun my/switch-to-other-buffer (&optional _arg)
     (interactive)
     (switch-to-buffer (other-buffer)))
@@ -941,7 +962,9 @@ User buffers are those not starting with *."
   ;; If evil-mode is enabled further mode-line customization is needed before
   ;; enabling winum:
   (unless (bound-and-true-p evil-mode)
-    (winum-mode 1)))
+    (winum-mode 1))
+  :config
+  (setq winum-scope 'visible))
 
 ;;----------------------------------------------------------------
 ;; ** +WINNER+

@@ -2409,6 +2409,9 @@ _d_: subtree
          ((bookmark-after-jump
            magit-diff-visit-file
            next-error) . my/recenter-and-pulse-line))
+  :config
+  (setq pulse-delay 0.01
+        pulse-iterations 15)
   :init
   (add-hook 'server-after-make-frame-hook
             (defun my/pulse-type ()
@@ -2445,16 +2448,16 @@ _d_: subtree
 
     (defun my/pulse-momentary-upper-bound (&rest _)
       "Pulse the upper scrolling bound of the screen."
-      (let ((pulse-delay 0.08)
-            (pulse-iterations 14))
+      (let ((pulse-delay 0.02)
+            (pulse-iterations 10))
         (save-excursion
           (move-to-window-line (1- next-screen-context-lines))
           (my/pulse-momentary-line))))
 
     (defun my/pulse-momentary-lower-bound (&rest _)
       "Pulse the lower scrolling bound of the screen."
-      (let ((pulse-delay 0.08)
-            (pulse-iterations 14))
+      (let ((pulse-delay 0.02)
+            (pulse-iterations 10))
         (save-excursion
           (move-to-window-line (- next-screen-context-lines))
           (my/pulse-momentary-line))))

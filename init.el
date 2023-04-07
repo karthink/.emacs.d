@@ -2959,6 +2959,11 @@ for details."
 ;; ** COMPANY-MODE
 ;;;----------------------------------------------------------------
 ;; (load-library "setup-company")
+(use-package company
+  :straight t
+  :bind (:map company-active-map
+         ("C-w" . nil)
+         ("M-." . company-show-location)))
 
 ;;;----------------------------------------------------------------
 ;; ** CORFU + CAPE

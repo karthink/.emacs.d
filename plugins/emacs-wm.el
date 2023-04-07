@@ -112,8 +112,10 @@
 
 
 (defvar qtile--socket-dir
-  (or (getenv "XDG_CACHE_HOME")
-      (expand-file-name "~/.cache/qtile")))
+  (file-name-concat
+   (or (getenv "XDG_CACHE_HOME")
+       (expand-file-name "~/.cache/"))
+   "qtile/"))
 
 (defvar qtile--socket nil)
 (setq qtile--socket

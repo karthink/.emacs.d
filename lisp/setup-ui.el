@@ -29,7 +29,7 @@
 ;; Middle-click paste at point, not at cursor.
 (setq mouse-yank-at-point t)
 ;; Mouse available in terminal
-(add-hook 'tty-setup-hook #'xterm-mouse-mode)
+;; (add-hook 'tty-setup-hook #'xterm-mouse-mode)
 
 ;; Scrolling
 (setq scroll-margin 0

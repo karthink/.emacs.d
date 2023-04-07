@@ -3310,11 +3310,14 @@ for details."
 ;;;----------------------------------------------------------------
 ;; *** ChatGPT
 ;;;----------------------------------------------------------------
+;; Disabled: I wrote gptel instead
 (use-package chatgpt
+  :disabled
   :straight (:host github :repo "joshcho/ChatGPT.el" :files ("dist" "*.el"))
   :config
   (setq chatgpt-repo-path
-        (straight--repos-dir "ChatGPT.el"))
+        (straight--repos-dir "ChatGPT.el")
+        chatgpt-display-on-query nil)
   (require 'python)
   (defvaralias 'python-interpreter 'python-shell-interpreter)
   (defun my/chatgpt-change-mode ()
@@ -3323,9 +3326,29 @@ for details."
     (with-current-buffer (get-buffer "*ChatGPT*")
       (and (eq major-mode 'fundamental-mode)
            (featurep 'markdown-mode)
-           (markdown-mode))))
+           (markdown-mode))
+      (unless outline-minor-mode
+        (setq-local outline-regexp "^cg\\?\\[.+")
+        (outline-minor-mode 1))
+      (goto-char (point-max))
+      (when (re-search-backward outline-regexp nil t)
+        (set-window-start nil (line-beginning-position -1)))))
   (advice-add 'chatgpt-display :after #'my/chatgpt-change-mode)
   :bind ("C-h C-q" . chatgpt-query))
+
+;; GPTel: A simple ChatGPT client
+(use-package gptel
+  :straight (:local-repo "~/.local/share/git/gptel/")
+  :commands (gptel gptel-send)
+  :bind (("C-c RET" . gptel-send-menu))
+  :init
+  (setf (alist-get "^\\*ChatGPT.*\\*$"
+                   display-buffer-alist
+                   nil nil #'equal)
+        '((display-buffer-use-some-window)
+          (body-function . select-window)))
+  :config
+  (setq gptel-default-mode 'org-mode))
 
 ;;;----------------------------------------------------------------
 ;; * PROJECTS

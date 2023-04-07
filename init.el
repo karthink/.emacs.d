@@ -2059,17 +2059,34 @@ current buffer without truncation."
 
 ;;;----------------------------------------------------------------
 ;; *** SPELL-FU
+;; Disabled while I test Jinx
 (use-package spell-fu
+  :disabled
   :straight t
   :commands text-spell-fu-mode
   :config
   (add-hook 'spell-fu-mode-hook
             (my-next-error-register
              #'spell-fu--goto-next-or-previous-error))
+  (add-hook 'spell-fu-mode-hook
+            (lambda ()
+              (spell-fu-dictionary-add
+               (spell-fu-get-personal-dictionary
+                "en-personal"
+                (concat user-cache-directory
+                        ".aspell.en.pws")))))
   (defun text-spell-fu-mode ()
     (interactive)
     (setq spell-fu-faces-exclude
-          '(org-block-begin-line
+          '(font-lock-function-name-face
+            font-lock-comment-face
+            font-lock-keyword-face
+            font-latex-math-face
+            font-lock-variable-name-face
+            font-lock-type-face
+            font-lock-constant-face
+            font-latex-sedate-face
+            org-block-begin-line
             org-block-end-line
             org-code
             org-date
@@ -2086,6 +2103,12 @@ current buffer without truncation."
     (spell-fu-mode)))
 
 ;;;----------------------------------------------------------------
+;; *** JINX
+(use-package jinx
+  :straight t
+  :hook ((text-mode prog-mode conf-mode) . jinx-mode)
+  :bind ([remap ispell-word] . jinx-correct))
+
 
 ;; ** FLYMAKE
 ;;;----------------------------------------------------------------

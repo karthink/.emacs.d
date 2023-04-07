@@ -354,6 +354,12 @@ This relies on the external 'fd' executable."
   (setq dired-filter-revert 'always)
   ;; (setq dired-listing-switches
   ;;       "-l --almost-all --human-readable --time-style=long-iso --group-directories-first --no-group")
+  (advice-add
+   'dirvish-dired-noselect-a
+   :before-until
+   (defun my/dirvish-dired-noselect-on-lists (&rest args)
+     (and (listp (cadr args))
+          (apply (car args) (cdr args)))))
   (setq dirvish-cache-dir
         (expand-file-name
          "dirvish" user-cache-directory))

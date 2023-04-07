@@ -42,33 +42,33 @@ The directory name must be absolute."
     :config
     (setq project-list-file (dir-concat user-cache-directory "projects"))
 
-    (when (executable-find "fd")
-      (defun my/project-files-in-directory (dir)
-        "Use `fd' to list files in DIR`"
-        (let* ((default-directory dir)
-               (localdir (file-local-name (expand-file-name dir)))
-               (command (format "fd -t f -0 . %s" localdir)))
-          (project--remote-file-names
-           (sort (split-string (shell-command-to-string command) "\0" t)
-                 #'string<))))
+    ;; (when (executable-find "fd")
+    ;;   (defun my/project-files-in-directory (dir)
+    ;;     "Use `fd' to list files in DIR`"
+    ;;     (let* ((default-directory dir)
+    ;;            (localdir (file-local-name (expand-file-name dir)))
+    ;;            (command (format "fd -t f -0 . %s" localdir)))
+    ;;       (project--remote-file-names
+    ;;        (sort (split-string (shell-command-to-string command) "\0" t)
+    ;;              #'string<))))
 
-      (cl-defmethod project-files ((project (head vc)) &optional dirs)
-        (mapcan
-         (lambda (dir)
-           (let (backend)
-             (if (and (file-equal-p dir (cdr project))
-                      (setq backend (vc-responsible-backend dir))
-                      (cond
-                       ((eq backend 'Hg))
-                       ((and (eq backend 'Git)
-                             (or
-                              (not project-vc-ignores)
-                              (version<= "1.9" (vc-git--program-version)))))))
-                 (project--vc-list-files dir backend project-vc-ignores)
-               (my/project-files-in-directory dir)
-               )))
-         (or dirs
-             (list (project-root project))))))
+    ;;   (cl-defmethod project-files ((project (head vc)) &optional dirs)
+    ;;     (mapcan
+    ;;      (lambda (dir)
+    ;;        (let (backend)
+    ;;          (if (and (file-equal-p dir (cdr project))
+    ;;                   (setq backend (vc-responsible-backend dir))
+    ;;                   (cond
+    ;;                    ((eq backend 'Hg))
+    ;;                    ((and (eq backend 'Git)
+    ;;                          (or
+    ;;                           (not project-vc-ignores)
+    ;;                           (version<= "1.9" (vc-git--program-version)))))))
+    ;;              (project--vc-list-files dir backend project-vc-ignores)
+    ;;            (my/project-files-in-directory dir)
+    ;;            )))
+    ;;      (or dirs
+    ;;          (list (project-root project))))))
     
     (defun project-magit-status ()
       "Run magit-status in the current project's root."
@@ -103,6 +103,7 @@ The directory name must be absolute."
   :load-path "plugins/project-x/"
   :after project
   :config
+  (setq project-x-local-identifier '(".project" "Project.toml"))
   (setq project-x-window-list-file (dir-concat user-cache-directory "project-window-list")
         project-x-save-interval nil)
   (project-x-mode 1))

@@ -40,14 +40,8 @@
   (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
   
   (use-package consult-flymake
-    :bind ("M-g f" . consult-flymake)
-    :config
-    (advice-add 'consult-flymake :before
-                #'my/consult-flymake-ensure)
-    (defun my/consult-flymake-ensure ()
-      (interactive)
-      (flymake-mode 1)))
-  
+    :bind ("M-g f" . consult-flymake))
+
   (use-package org
     :defer
     :bind (:map org-mode-map
@@ -76,6 +70,8 @@
          ("M-'" . consult-register-load)
          ("M-y" . consult-yank-pop)
          ("C-x `" . consult-compile-error)
+         :map help-map
+         ("TAB" . consult-info)
          :map ctl-x-r-map
          ("b" . consult-bookmark)
          ("x" . consult-register)
@@ -190,12 +186,12 @@ When the number of characters in a buffer exceeds this threshold,
                  (`(,re . ,hl) (funcall consult--regexp-compiler
                                         arg 'extended nil)))
       (when re
-        (list :command (append
-                        (list consult--fd-command
-                              "--color=never" "--full-path"
-                              (consult--join-regexps re 'extended))
-                        opts)
-              :highlight hl))))
+        (cons (append
+               (list consult--fd-command
+                     "--color=never" "--full-path" "--hidden"
+                     (consult--join-regexps re 'extended))
+               opts)
+              hl))))
 
   (defun consult-fd (&optional dir initial)
     (interactive "P")
@@ -360,6 +356,10 @@ When the number of characters in a buffer exceeds this threshold,
   :bind ("M-s /" . consult-recoll)
   :config
   (setq consult-recoll-inline-snippets nil)
+  (setf (alist-get "application/epub+zip"
+                   consult-recoll-open-fns
+                   nil nil #'equal)
+        #'find-file)
   (consult-customize consult-recoll :preview-key "C-M-m"))
 
 

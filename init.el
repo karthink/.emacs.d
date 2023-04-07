@@ -2109,6 +2109,12 @@ current buffer without truncation."
   :hook ((text-mode prog-mode conf-mode) . jinx-mode)
   :bind ([remap ispell-word] . jinx-correct))
 
+;; ** ELDOC
+(use-package eldoc
+  :defer
+  :config
+  (setq eldoc-documentation-strategy
+        'eldoc-documentation-compose-eagerly))
 
 ;; ** FLYMAKE
 ;;;----------------------------------------------------------------

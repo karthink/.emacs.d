@@ -91,12 +91,9 @@
     (let ((map (make-sparse-keymap)))
       (define-key map "i" #'org-roam-node-insert)
       (define-key map "f" #'org-roam-node-find)
-      (define-key embark-org-roam-node-map "o"
-        (my/embark-ace-action org-roam-node-find))
-      (define-key embark-org-roam-node-map "2"
-        (my/embark-split-action org-roam-node-find my/split-window-below))
-      (define-key embark-org-roam-node-map "3"
-        (my/embark-split-action org-roam-node-find my/split-window-right))
+      (define-key map "o" (my/embark-ace-action org-roam-node-find))
+      (define-key map "2" (my/embark-split-action org-roam-node-find my/split-window-below))
+      (define-key map "3" (my/embark-split-action org-roam-node-find my/split-window-right))
       map)))
 
 (use-package org-roam-dailies

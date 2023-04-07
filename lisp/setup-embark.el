@@ -52,7 +52,7 @@
          ("C-S-m"    . browse-url-mpv-enqueue)
          ("m"        . browse-url-mpv))
   :config
-  (setq embark-cycle-key (kbd "SPC"))
+  (setq embark-cycle-key "SPC")
   (setq embark-quit-after-action t)
   ;; Use Embark instead of `describe-prefix-bindings'
   (setq prefix-help-command #'embark-prefix-help-command)

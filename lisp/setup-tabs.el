@@ -158,5 +158,68 @@
         (setq frame-title-format
               '(:eval (my-title-bar-format))))))
 
+;; Experimental: tabspaces
+(use-package tabspaces
+  :disabled
+  :straight (:type git :host github :repo "mclear-tools/tabspaces")
+  :hook ((tabspaces-mode . my/consult-tabspaces))
+  :bind-keymap ("H-t" . tabspaces-command-map)
+  :bind (:map tabspaces-command-map
+         ("2" . tab-new)
+         ("0" . tabspaces-close-workspace)
+         ("p" . project-other-tab-command)
+         ("k" . tabspaces-kill-buffers-close-workspace)
+         ("DEL" . 'tabspaces-remove-current-buffer)
+         ("r" . nil)
+         ("d" . nil)
+         ("o" . nil))
+  :commands (tabspaces-switch-or-create-workspace
+             tabspaces-open-or-create-project-and-workspace)
+  :config
+  (setq tabspaces-use-filtered-buffers-as-default t
+        tabspaces-default-tab "Default"
+        tabspaces-remove-to-default t
+        tabspaces-include-buffers '("*scratch*")
+        ;; sessions
+        tabspaces-session t
+        tabspaces-session-auto-restore t)
+  (defun my/consult-tabspaces ()
+    "Deactivate isolated buffers when not using tabspaces."
+    (require 'consult)
+    (cond (tabspaces-mode
+           ;; hide full buffer list (still available with "b")
+           (consult-customize consult--source-buffer
+                              :hidden t :default nil :preview-key "M-RET")
+           (add-to-list 'consult-buffer-sources 'consult--source-workspace))
+          (t
+           ;; reset consult-buffer to show all buffers 
+           (consult-customize consult--source-buffer
+                              :hidden nil :default t :preview-key "M-RET")
+           (setq consult-buffer-sources
+                 (remove #'consult--source-workspace consult-buffer-sources)))))
+  (use-package consult
+    :defer
+    :config
+    ;; set consult-workspace buffer list
+    (defvar consult--source-workspace
+      (list :name     "Workspace Buffers"
+            :narrow   ?w
+            :history  'buffer-name-history
+            :category 'buffer
+            :state    #'consult--buffer-state
+            :default  t
+            :items    (lambda () (consult--buffer-query
+                             :predicate #'tabspaces--local-buffer-p
+                             :sort 'visibility
+                             :as #'buffer-name)))
+
+      "Set workspace buffer list for consult-buffer.")
+    (consult-customize consult--source-workspace :preview-key "M-RET")
+    (add-to-list 'consult-buffer-sources 'consult--source-workspace))
+  (use-package embark
+    :defer
+    :bind (:map embark-buffer-map
+           ("DEL" . 'tabspaces-remove-selected-buffer))))
+
 
 (provide 'setup-tabs)

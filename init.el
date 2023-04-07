@@ -73,12 +73,13 @@
 (eval-when-compile
   (eval-after-load 'advice
     `(setq ad-redefinition-action 'accept))
-  (require 'use-package)
   (setq use-package-verbose nil
         use-package-compute-statistics nil
         ;use-package-ignore-unknown-keywords t
-        use-package-minimum-reported-time 0.01)
-  )
+        use-package-minimum-reported-time 0.01
+        ;; use-package-expand-minimally t
+        use-package-enable-imenu-support t)
+  (require 'use-package))
 
 ;;; (require 'bind-key)
 
@@ -184,6 +185,7 @@
 (setq user-mail-address my-email-address)
 
 (use-package org
+  :defer
   :straight `(org
              :fork (:host nil
                     :repo "https://git.tecosaur.net/tec/org-mode.git"
@@ -365,7 +367,8 @@
     (setq shell-file-name "C:/cygwin/cygwin.bat"))
 
 (use-package auth-source-pass
-  :init (auth-source-pass-enable))
+  :defer
+  :config (auth-source-pass-enable))
 
 ;; Consult clipboard before primary selection
 ;; http://www.gnu.org/software/emacs/manual/
@@ -2037,6 +2040,7 @@ current buffer without truncation."
   :config (setq undo-tree-enable-undo-in-region  t))
 
 (use-package vundo
+  :disabled
   :straight (:host github :repo "casouri/vundo")
   :bind ("C-x u" . vundo)
   :config

@@ -9,15 +9,16 @@
               ("w" . ytel-url-kill-new)
               ("f" . ytel-search-next-page)
               ("b" . ytel-search-previous-page))
-  :hook ((ytel-mode . visual-line-mode)
-         (ytel-mode . hl-line-mode))
+  :hook ((ytel-mode . hl-line-mode))
   :config
   (defun ytel ()
   "Enter ytel."
   (interactive)
   (pop-to-buffer (ytel-buffer))
   (unless (eq major-mode 'ytel-mode)
-    (ytel-mode))
+    (ytel-mode)
+    (visual-line-mode -1)
+    (toggle-truncate-lines 1))
   (when (seq-empty-p ytel-search-term)
     (call-interactively #'ytel-search)))
   

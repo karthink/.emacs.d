@@ -270,8 +270,8 @@ ENQUEUE-P) add to mpv's playlist."
                (feed (elfeed-entry-feed entry))
                (feed-url (elfeed-feed-url feed))
                (youtube-p (string-match-p "youtube\\.com" feed-url)))
-      (setf (elfeed-meta entry :title)
-            (elfeed-title-transform title))))
+      (plist-put (elfeed-meta--plist entry) :title
+                 (elfeed-title-transform title))))
 
   (defun elfeed-title-transform (title)
     "Declickbait string TITLE."
@@ -723,6 +723,7 @@ preferring the preferred type."
                       (setq-local visual-fill-column-center-text t
                                   visual-fill-column-width (+ shr-width 5))
                       (visual-line-mode 1)
+                      (when (featurep 'iscroll) (iscroll-mode 1))
                       (visual-fill-column-mode 1))
                     (setq-local
                      imenu-prev-index-position-function #'elfeed-tube-prev-heading

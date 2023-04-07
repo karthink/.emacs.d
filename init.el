@@ -3255,6 +3255,12 @@ This function is meant to be mapped to a key in `rg-mode-map'."
            "i" 'wgrep-change-to-wgrep-mode))
 
 ;; * VISUALS AND PRESENTATION
+;; ** ISCROLL
+;; Smooth scrolling through images.  What a pain Emacs' default behavior is here.
+(use-package iscroll
+  :straight t
+  :hook ((text-mode eww-mode) . iscroll-mode))
+
 ;; ** MONOCLE-MODE
 (use-package emacs
   :bind (("H-m" . my/monocle-mode)

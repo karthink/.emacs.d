@@ -188,18 +188,18 @@ appropriate.  In tables, insert a new row or end the table."
         ;; Link: Open it.
         (org-open-at-point-global))
 
-       ((or (eq
-             (get-char-property (min (1+ (point)) (point-max)) 'org-overlay-type)
-             'org-latex-overlay)
-            (let ((context (org-element-context)))
-              (and (memq (org-element-type context)
-                         '(latex-fragment latex-environment))
-                   (eq (point)
-                       (save-excursion
-                         (goto-char (org-element-property :end context))
-                         (skip-chars-backward "\n\r\t ")
-                         (point))))))
-        (org-latex-preview))
+       ;; ((or (eq
+       ;;       (get-char-property (min (1+ (point)) (point-max)) 'org-overlay-type)
+       ;;       'org-latex-overlay)
+       ;;      (let ((context (org-element-context)))
+       ;;        (and (memq (org-element-type context)
+       ;;                   '(latex-fragment latex-environment))
+       ;;             (eq (point)
+       ;;                 (save-excursion
+       ;;                   (goto-char (org-element-property :end context))
+       ;;                   (skip-chars-backward "\n\r\t ")
+       ;;                   (point))))))
+       ;;  (org-latex-preview))
 
        ((org-at-heading-p)
         ;; Heading: Move to position after entry content.
@@ -309,6 +309,13 @@ appropriate.  In tables, insert a new row or end the table."
       (1 font-lock-keyword-face)
       (2 font-lock-constant-face))))
 
+  (setq org-todo-keyword-faces
+        '(;; ("TODO"    :foreground "#6e90c8" :weight bold)
+          ("WAITING" :foreground "red" :weight bold)
+          ("MAYBE"   :foreground "#6e8996" :weight bold)
+          ("PROJECT" :foreground "#088e8e" :weight bold)
+          ("SUSPENDED" :foreground "#6e8996" :weight bold)))
+  
   (advice-add 'org-src-font-lock-fontify-block
               :after
               (defun my/no-latex-background-face (lang start end)
@@ -318,7 +325,8 @@ appropriate.  In tables, insert a new row or end the table."
                    (lambda (l) (remove 'org-block l)))))))
 
 ;; Settings to do with org-latex-preview
-(use-package org
+(use-package org-latex-preview
+  :after org
   :hook (org-mode . org-latex-preview-auto-mode)
   :bind (:map org-mode-map
          ("C-c C-x SPC" . org-latex-preview-clear-cache))
@@ -337,12 +345,14 @@ appropriate.  In tables, insert a new row or end the table."
    org-format-latex-options
    (progn (plist-put org-format-latex-options :background "Transparent")
           (plist-put org-format-latex-options :scale 1.0)
-          (plist-put org-format-latex-options :zoom 1.1))
+          (plist-put org-format-latex-options :zoom
+                     (/ (face-attribute 'default :height) 100.0)))
 
    org-latex-preview-options
    (progn (plist-put  org-latex-preview-options :background "Transparent")
           (plist-put org-latex-preview-options :scale 1.0)
-          (plist-put org-latex-preview-options :zoom 1.1))
+          (plist-put org-latex-preview-options :zoom
+                     (/ (face-attribute 'default :height) 100.0)))
 
    org-latex-preview-processing-indicator nil))
 
@@ -407,20 +417,19 @@ appropriate.  In tables, insert a new row or end the table."
              :repo "minad/org-modern")
   :after org
   :hook ((org-modern-mode . my/org-modern-spacing)
-         (org-mode . org-modern-mode))
+         ;; (org-mode . org-modern-mode)
+         )
   :config
-  (setq org-todo-keyword-faces
-        '(;; ("TODO"    :foreground "#6e90c8" :weight bold)
-          ("WAITING" :foreground "red" :weight bold)
-          ("MAYBE"   :foreground "#6e8996" :weight bold)
-          ("PROJECT" :foreground "#088e8e" :weight bold)
-          ("SUSPENDED" :foreground "#6e8996" :weight bold)))
   (defun my/org-modern-spacing ()
     (setq-local line-spacing
                 (if org-modern-mode
                     0.1 0.0)))
   (setq org-modern-todo nil
-        org-modern-hide-stars nil))
+        org-modern-hide-stars nil
+        org-modern-horizontal-rule nil
+        org-modern-keyword "‣ "
+        ;; org-modern-block-fringe 0 
+        org-modern-table nil))
 
 ;; *** Modify latex previews to respect the theme
 ;; Not needed with the next gen latex previews
@@ -987,7 +996,7 @@ parent."
   :config
   ;; (setq org-download-backend (if IS-LINUX "curl" "url-retrieve"))
   (setq org-download-heading-lvl nil)
-  (setq org-download-backend 'curl)
+  (setq org-download-backend "curl")
   (setq-default org-download-image-dir "./figures")
   (setq org-download-image-attr-list
         '("#+attr_html: :width 40% :align center"
@@ -1177,12 +1186,14 @@ Return the initialized session, if any."
 ;;;----------------------------------------------------------------
 ;; ** ORG-GCAL
 ;;;----------------------------------------------------------------
+;; Disabled since org-gcal is broken for me right now.
 (use-package org-gcal
   :straight t
   :after org
   :commands (org-gcal-sync org-gcal-fetch my/org-gcal-sync-maybe)
   :hook (org-agenda-mode . my/org-gcal-sync-maybe)
   :config
+  (setq plstore-cache-passphrase-for-symmetric-encryption t)
   (setq org-gcal-dir (dir-concat user-cache-directory "org-gcal/"))
   ;; (add-hook 'org-capture-after-finalize-hook (lambda () (org-gcal-sync)))
   (setq org-gcal-client-id my-org-gcal-client-id
@@ -1209,7 +1220,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
   (interactive)
   (if-let ((now (float-time (current-time)))
            (sync-p (or (< (- now my/org-gcal--last-sync-time)
-                          7200)
+                          104000)
                        ;; (seq-some (lambda (cal-file-pair)
                        ;;             (< (- now
                        ;;                   (float-time (file-attribute-modification-time

@@ -1392,13 +1392,16 @@ If region is active, add its contents to the new buffer."
 ;; ** EGLOT - LSP
 ;;;----------------------------------------------------------------
 (use-package eglot
-  ;; :disabled t
   :straight t
   :commands eglot
   :bind (:map eglot-mode-map
               ("C-h ." . eldoc))
+  :hook ((eglot-managed-mode . my/eglot-eldoc-settings))
   :config
-  (setq eglot-put-doc-in-help-buffer nil)
+  (defun my/eglot-eldoc-settings ()
+    (setq eldoc-documentation-strategy
+          'eldoc-documentation-compose-eagerly))
+  ;; (setq eglot-put-doc-in-help-buffer nil)
   (setq eglot-events-buffer-size 0)
   (setq eglot-extend-to-xref t)
   (add-to-list 'eglot-server-programs

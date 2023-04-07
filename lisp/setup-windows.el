@@ -1,6 +1,11 @@
 (setq fit-window-to-buffer-horizontally t
       fit-frame-to-buffer t)
 
+(setq display-buffer-base-action
+      '((display-buffer-reuse-window
+         display-buffer-in-previous-window
+         display-buffer-reuse-mode-window)))
+
 ;;;###autoload
 (defun buffer-mode (&optional buffer-or-name)
   "Returns the major mode associated with a buffer.
@@ -52,6 +57,7 @@ If buffer-or-name is nil return current buffer's mode."
 (defvar my/help-modes-list '(helpful-mode
                            help-mode
                            pydoc-mode
+                           eldoc-mode
                            TeX-special-mode)
   "List of major-modes used in documentation buffers")
 
@@ -126,11 +132,13 @@ If buffer-or-name is nil return current buffer's mode."
 
         ("^\\*[Ee]shell [Ee]xport: .*\\*$"
          (display-buffer-reuse-window display-buffer-use-some-window))
-        
+
         ("^\\*julia\\*"
-         (display-buffer-reuse-window
+         (display-buffer-reuse-mode-window
+          display-buffer-reuse-window
           display-buffer-in-direction
           display-buffer-in-side-window)
+         (body-function . select-window)
          (window-height . .35)
          (window-width .  .40)
          ;; (preserve-size . (nil . t))
@@ -142,9 +150,10 @@ If buffer-or-name is nil return current buffer's mode."
         ;; ----------------------------------------------------------------
 
         ("\\*\\(?:Org Select\\|Agenda Commands\\)\\*"
-         (display-buffer-in-side-window)
+         (display-buffer-below-selected
+          display-buffer-in-side-window)
          (body-function . select-window)
-         (window-height . (lambda (win) (fit-window-to-buffer win)))
+         (window-height . (lambda (win) (fit-window-to-buffer win nil 12)))
          (side . top)
          (slot . -2)
          (preserve-size . (nil . t))
@@ -265,7 +274,7 @@ If buffer-or-name is nil return current buffer's mode."
                                ;; (mode-line-format . (:eval (my/helper-window-mode-line-format)))
                                )))
 
-        ("\\(?:[Oo]utput\\)\\*" display-buffer-in-side-window
+        ("[Oo]utput\\*" display-buffer-in-side-window
          (window-height . (lambda (win)
                             (fit-window-to-buffer win (floor (frame-height) 2.5))))
          (side . bottom)

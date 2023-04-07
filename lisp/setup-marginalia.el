@@ -12,8 +12,14 @@
   :bind (:map vertico-map
          ("M-]" . marginalia-cycle))
   :config
-  (add-to-list 'marginalia-prompt-categories '("\\burl\\b" . url))
-  (add-to-list 'marginalia-prompt-categories '("\\bHistory\\b" . history)))
+  (pcase-dolist (`(,regexp . ,category)
+                 '(("\\burl\\b" . url)
+                   ("\\bHistory\\b" . history)
+                   ("\\bdefinitions?\\b" . xref-location)
+                   ("\\bxref\\b" . xref-location)))
+    (setf (alist-get regexp marginalia-prompt-categories
+                     nil nil #'equal)
+          category)))
 
 (provide 'setup-marginalia)
 ;; setup-marginalia.el ends here

@@ -30,7 +30,12 @@
   (setq vertico-count 10
         vertico-cycle t
         vertico-resize t)
-  (advice-add #'tmm-add-prompt :after #'minibuffer-hide-completions))
+  (advice-add #'tmm-add-prompt :after #'minibuffer-hide-completions)
+  (advice-add #'ffap-menu-ask :around
+              (lambda (&rest args)
+                (cl-letf (((symbol-function #'minibuffer-completion-help)
+                           #'ignore))
+                  (apply args)))))
 
 (use-package vertico-multiform
   :commands vertico-multiform-mode
@@ -55,14 +60,19 @@
            (history reverse)
            (url reverse)
            (consult-info buffer)
+           (kill-ring reverse)
            (consult-compile-error reverse)
            (buffer flat (vertico-cycle . t))
            (t flat)))
    (setq vertico-multiform-commands
-         '((tab-bookmark-open reverse)
+         '((jinx-correct reverse)
+           (tab-bookmark-open reverse)
            (dired-goto-file unobtrusive)
            (load-theme my/vertico-grid-mode reverse)
            (my/toggle-theme my/vertico-grid-mode reverse)
+           (org-refile reverse)
+           (org-agenda-refile reverse)
+           (org-capture-refile reverse)
            (affe-find reverse)
            (execute-extended-command unobtrusive)
            (dired-goto-file flat)
@@ -72,7 +82,8 @@
            (consult-flymake reverse)
            (consult-history reverse)
            (consult-completion-in-region reverse)
-           (consult-recoll)
+           (consult-recoll reverse)
+           (citar-insert-citation reverse)
            (completion-at-point reverse)
            (org-roam-node-find reverse)
            (embark-completing-read-prompter reverse)
@@ -81,6 +92,7 @@
            (embark-bindings reverse)
            (consult-org-heading reverse)
            (consult-dff unobtrusive)
+           (embark-find-definition reverse)
            (xref-find-definitions reverse)
            (my/eshell-previous-matching-input reverse)
            (tmm-menubar reverse)))
@@ -115,8 +127,8 @@
   :after vertico
   :bind (:map vertico-map
          ("M-i" . vertico-quick-insert)
-         ("C-'" . vertico-quick-exit)
-         ("C-o" . vertico-quick-embark))
+         ("'" . vertico-quick-exit)
+         ("C-'" . vertico-quick-embark))
   :config
   (defun vertico-quick-embark (&optional arg)
     "Embark on candidate using quick keys."

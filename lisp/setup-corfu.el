@@ -21,7 +21,8 @@
   (unless (or ;; (bound-and-true-p mct--active)
               (bound-and-true-p vertico--input)
               (memq (current-local-map)
-                    (list read-passwd-map elfeed-search-filter-map)))
+                    (list read-passwd-map ;elfeed-search-filter-map
+                          )))
     ;; (setq-local corfu-auto nil) ;; Enable/disable auto completion
     (setq-local corfu-echo-delay nil ;; Disable automatic echo and popup
                 corfu-popupinfo-delay nil)
@@ -147,10 +148,9 @@
 ;; Add extensions
 (use-package cape
   :straight t
-  :bind (("C-; i" . cape-ispell)
-         ("C-; e" . cape-line)
-         ("C-; f" . cape-file)
-         ("C-; /" . cape-dabbrev)
+  :bind (("C-$" . cape-ispell)
+         ;; ("C-; e" . cape-line)
+         ("C-S-f" . cape-file)
          ("C-M-/" . cape-dabbrev)
          :map corfu-map
          ("M-/" . cape-dabbrev)

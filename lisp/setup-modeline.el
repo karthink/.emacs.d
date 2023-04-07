@@ -174,10 +174,12 @@
 (use-package moody
   :disabled
   :straight t
-  :after (modus-themes smart-mode-line)
+  :after smart-mode-line
   :config
   (setq x-underline-at-descent-line t)
   (moody-replace-sml/mode-line-buffer-identification)
-  (moody-replace-vc-mode))
+  (moody-replace-vc-mode)
+  (moody-replace-eldoc-minibuffer-message-function)
+  (advice-remove 'split-window #'moody-redisplay))
 
 (provide 'setup-modeline)

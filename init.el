@@ -3358,6 +3358,11 @@ for details."
   (setq gptel-default-mode 'org-mode))
 
 ;;;----------------------------------------------------------------
+;; *** Codeium (testing)
+;;;----------------------------------------------------------------
+(load (expand-file-name "lisp/setup-codeium" user-emacs-directory))
+
+;;;----------------------------------------------------------------
 ;; * PROJECTS
 ;;;----------------------------------------------------------------
 (load (expand-file-name "lisp/setup-project" user-emacs-directory))

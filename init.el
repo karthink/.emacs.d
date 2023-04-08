@@ -3491,7 +3491,7 @@ managers such as DWM, BSPWM refer to this state as 'monocle'."
   :straight t
   :config
   (setq-default
-   olivetti-body-width 80
+   olivetti-body-width 90
    olivetti-minimum-body-width 76
    olivetti-recall-visual-line-mode-entry-state t)
 

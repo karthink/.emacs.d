@@ -43,3 +43,6 @@
 [submodule "plugins/elfeed-tube"]
 	path = plugins/elfeed-tube
 	url = git@github.com:karthink/elfeed-tube.git
+[submodule "plugins/repeat-help"]
+	path = plugins/repeat-help
+	url = git@github.com:karthink/repeat-help

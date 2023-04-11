@@ -138,7 +138,7 @@ active region use it instead."
               ("M-p" . sdcv-previous-dictionary)))
 
 (use-package dictionary
-  :straight t
+  :straight (:type built-in)
   :commands (dictionary-lookup-definition dictionary-search)
   :config
   (define-key help-map (kbd "C-d") 'apropos-documentation)

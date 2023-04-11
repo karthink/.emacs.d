@@ -2124,6 +2124,28 @@ current buffer without truncation."
   (setq eldoc-documentation-strategy
         'eldoc-documentation-compose-eagerly))
 
+;; ** EDEBUG
+;;;----------------------------------------------------------------
+(use-package edebug
+  :defer
+  :after eldoc
+  :bind (:map edebug-mode-map
+         ("A" . my/elisp-add-to-watch))
+  :config
+  (defun my/elisp-add-to-watch (&optional region-start region-end)
+    "Add the current variable to the *EDebug* window"
+    (interactive "r")
+    (let ((statement
+           (if (and region-start region-end (use-region-p))
+               (buffer-substring region-start region-end)
+             (symbol-name (eldoc-current-symbol)))))
+      (edebug-visit-eval-list)
+      (goto-char (point-max))
+      (newline)
+      (insert statement)
+      (edebug-update-eval-list)
+      (edebug-where))))
+
 ;; ** FLYMAKE
 ;;;----------------------------------------------------------------
 (use-package flymake

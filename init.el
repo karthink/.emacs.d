@@ -749,7 +749,8 @@ Also kill this window, tab or frame if necessary."
              "^\\*TeX errors\\*"
              "^\\*ielm\\*"
              "^\\*TeX Help\\*"
-             "^\\*ChatGPT\\*$"
+             "^\\*ChatGPT\\*"
+             "^\\*gptel-quick\\*"
              "\\*Shell Command Output\\*"
              ("\\*Async Shell Command\\*" . hide)
              "\\*Completions\\*"
@@ -3347,15 +3348,48 @@ for details."
 (use-package gptel
   :straight (:local-repo "~/.local/share/git/gptel/")
   :commands (gptel gptel-send)
-  :bind (("C-c RET" . gptel-send-menu))
+  :hook (gptel-mode . visual-fill-column-mode)
+  :bind (("C-c C-<return>" . gptel-menu)
+         ("C-c <return>" . my/gptel-send)
+         ("C-h C-q" . gptel-quick))
   :init
-  (setf (alist-get "^\\*ChatGPT.*\\*$"
+  (setf (alist-get "^\\*ChatGPT\\*.*$"
                    display-buffer-alist
-                   nil nil #'equal)
-        '((display-buffer-use-some-window)
-          (body-function . select-window)))
+                   nil t #'equal)
+        '((display-buffer-in-direction)
+          (direction . below)
+          (window-height . 0.4)))
   :config
-  (setq gptel-default-mode 'org-mode))
+  (auth-source-pass-enable)
+  (defun my/gptel-send (&optional arg)
+    (interactive "P")
+    (if (or gptel-mode (< (point) 2000) (use-region-p))
+        (gptel-send arg)
+      (if (y-or-n-p "Prompt has more than 2000 chars, send to ChatGPT?")
+          (gptel-send arg)
+        (message "ChatGPT: Request cancelled."))))
+  (setq gptel-default-mode 'org-mode)
+  (setf (alist-get "^\\*gptel-quick\\*" display-buffer-alist
+                   nil nil #'equal)
+        `((display-buffer-in-side-window)
+          (side . bottom)
+          (window-height . ,#'fit-window-to-buffer)))
+  (defvar gptel-quick--history nil)
+  (defun gptel-quick (prompt)
+    (interactive (list (read-string "Ask ChatGPT: " nil gptel-quick--history)))
+    (when (string= prompt "") (user-error "A prompt is required."))
+    (gptel-request
+     prompt
+     :callback
+     (lambda (response info)
+       (if (not response)
+           (message "gptel-quick failed with message: %s" (plist-get info :status))
+         (with-current-buffer (get-buffer-create "*gptel-quick*")
+           (let ((inhibit-read-only t))
+             (erase-buffer)
+             (insert response))
+           (special-mode)
+           (display-buffer (current-buffer))))))))
 
 ;;;----------------------------------------------------------------
 ;; *** Codeium (testing)

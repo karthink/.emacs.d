@@ -1,6 +1,7 @@
 (use-package citar
   :straight t
   :after latex
+  :defer
   :bind (:map LaTeX-mode-map
          ("C-c ]" . citar-insert-citation)
          :map org-mode-map
@@ -22,5 +23,11 @@
     (setf (alist-get "cite{" cdlatex-command-alist nil nil 'equal)
           '("Make a citation interactively"
             "cite{" my/cdlatex-bibtex-action nil t nil))))
+
+(use-package citar-embark
+  :straight t
+  :after citar
+  :config
+  (citar-embark--enable))
 
 (provide 'setup-cite)

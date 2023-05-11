@@ -1217,6 +1217,9 @@ Return the initialized session, if any."
                                              (file-name-as-directory org-directory)
                                              "ucsb-cal.org")))
         org-gcal-recurring-events-mode 'top-level)
+  
+  ;; Without this 'org-gcal is not registered as an oauth provider
+  (org-gcal-reload-client-id-secret)
 
   (defvar my/org-gcal--last-sync-time 0
     "Last time `org-gcal-sync' was run.")

@@ -3542,7 +3542,7 @@ managers such as DWM, BSPWM refer to this state as 'monocle'."
   (add-to-list 'mixed-pitch-fixed-pitch-faces 'corfu-current)
   (add-to-list 'mixed-pitch-fixed-pitch-faces 'org-cite)
   (add-to-list 'mixed-pitch-fixed-pitch-faces 'error)
-  (setq mixed-pitch-set-height t)
+  (setq mixed-pitch-set-height nil)
   (defun my/mixed-pitch-spacing ()
     (if mixed-pitch-mode
         (setq line-spacing 0.12)
@@ -3799,7 +3799,8 @@ buffer's text scale."
                             ;; '(aw-leading-char-face
                             ;;   ((t (:height 2.5 :weight normal))))
                             '(outline-1 ((t (:height 1.3))))
-                            '(outline-2 ((t (:height 1.1))))
+                            '(outline-2 ((t (:height 1.1)))))
+    (custom-theme-set-faces 'gruvbox-dark-hard
                             '(org-level-1 ((t (:inherit outline-1))))
                             '(org-level-2 ((t (:inherit outline-2)))))))
 ;; ** MODUS THEMES

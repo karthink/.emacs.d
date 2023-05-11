@@ -373,6 +373,11 @@ This relies on the external 'fd' executable."
      (if arg
          #'dirvish-ls-switches-menu
        #'dirvish-quicksort)))
+  (use-package dirvish-side
+    :defer
+    :config
+    (setq dirvish-side-display-alist
+          '((side . right) (slot . 20))))
   :bind
   ;; Bind `dirvish|dirvish-side|dirvish-dwim' as you see fit
   (("M-s M-f" . dirvish-fd)

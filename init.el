@@ -537,6 +537,18 @@
 (use-package kmacro
   :defer
   :config
+  ;; ;; Undo in blocks, borrowed from Omar Antolin Camarena
+  ;; (defun my/block-undo (fn &rest args)
+  ;;   (let ((marker (prepare-change-group)))
+  ;;     (unwind-protect (apply fn args)
+  ;;       (undo-amalgamate-change-group marker))))
+
+  ;; (dolist (fn '(kmacro-call-macro
+  ;;               kmacro-exec-ring-item
+  ;;               dot-mode-execute
+  ;;               apply-macro-to-region-lines))
+  ;;   (advice-add fn :around #'my/block-undo))
+  
   (defsubst my/mode-line-macro-recording ()
     "Display macro being recorded."
     (when (or defining-kbd-macro executing-kbd-macro)
@@ -2147,7 +2159,28 @@ current buffer without truncation."
       (newline)
       (insert statement)
       (edebug-update-eval-list)
-      (edebug-where))))
+      (edebug-where)))
+  
+  ;; From jdtsmith: https://gist.github.com/jdtsmith/1fbcacfe677d74bbe510aec80ac0050c
+  ;;;; Power debugging
+  (defun my/reraise-error (func &rest args)
+    "Call function FUNC with ARGS and re-raise any error which occurs.
+Useful for debugging post-command hooks and filter functions, which
+normally have their errors suppressed."
+    (condition-case err
+        (apply func args)
+      ((debug error) (signal (car err) (cdr err)))))
+
+  (defun toggle-debug-on-hidden-errors (func)
+    "Toggle hidden error debugging for function FUNC."
+    (interactive "a")
+    (cond
+     ((advice-member-p #'my/reraise-error func)
+      (advice-remove func #'my/reraise-error)
+      (message "Debug on hidden errors disabled for %s" func))
+     (t
+      (advice-add func :around #'my/reraise-error)
+      (message "Debug on hidden errors enabled for %s" func)))))
 
 ;; ** FLYMAKE
 ;;;----------------------------------------------------------------

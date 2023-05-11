@@ -6,6 +6,42 @@
          display-buffer-in-previous-window
          display-buffer-reuse-mode-window)))
 
+(defun my/display-buffer-reuse-minor-mode-window (buffer alist)
+    (let* ((alist-entry (assq 'reusable-frames alist))
+           (alist-mode-entry (assq 'minor-mode alist))
+	   (frames (cond (alist-entry (cdr alist-entry))
+		         ((if (eq pop-up-frames 'graphic-only)
+			      (display-graphic-p)
+			    pop-up-frames)
+			  0)
+		         (display-buffer-reuse-frames 0)
+		         (t (last-nonminibuffer-frame))))
+           (inhibit-same-window-p (cdr (assq 'inhibit-same-window alist)))
+	   (windows (window-list-1 nil 'nomini frames))
+           (allowed-modes (if alist-mode-entry
+                              (cdr alist-mode-entry)))
+           (curwin (selected-window))
+           (curframe (selected-frame)))
+      (unless (listp allowed-modes)
+        (setq allowed-modes (list allowed-modes)))
+      (let ((same-mode-same-frame)
+            (same-mode-other-frame))
+        (dolist (window windows)
+          (let ((mode?
+                 (with-current-buffer (window-buffer window)
+                   (cl-some (lambda (m) (and (boundp m) (symbol-value m) 'same))
+                            allowed-modes))))
+            (when (and mode? (not (and inhibit-same-window-p (eq window curwin))))
+              (push window (if (eq curframe (window-frame window))
+                               same-mode-same-frame
+                             same-mode-other-frame)))))
+        (let ((window (car (nconc same-mode-same-frame
+                                  same-mode-other-frame))))
+          (when (window-live-p window)
+            (prog1 (window--display-buffer buffer window 'reuse alist)
+              (unless (cdr (assq 'inhibit-switch-frame alist))
+                (window--maybe-raise-frame (window-frame window)))))))))
+
 ;;;###autoload
 (defun buffer-mode (&optional buffer-or-name)
   "Returns the major mode associated with a buffer.

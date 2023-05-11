@@ -3378,9 +3378,12 @@ for details."
   (setf (alist-get "^\\*ChatGPT\\*.*$"
                    display-buffer-alist
                    nil t #'equal)
-        '((display-buffer-in-direction)
+        '((my/display-buffer-reuse-minor-mode-window
+           display-buffer-in-direction)
           (direction . below)
-          (window-height . 0.4)))
+          (minor-mode . (gptel-mode julia-snail-message-buffer-mode))
+          (window-height . 0.4)
+          (body-function . select-window)))
   :config
   (auth-source-pass-enable)
   (defun my/gptel-send (&optional arg)

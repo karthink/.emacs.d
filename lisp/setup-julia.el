@@ -20,11 +20,20 @@
 (use-package julia-snail
   :straight t
   :hook (julia-mode . julia-snail-mode)
+  :bind (:map julia-snail-mode-map
+         ("C-h ." . my/julia-snail-doc-at-point))
   :config
   ;; (with-eval-after-load 'julia-snail/ob-julia
   ;;   (setq-default
   ;;    julia-snail/ob-julia-capture-io nil
   ;;    julia-snail/ob-julia-use-error-pane t))
+  (defun my/julia-snail-doc-at-point ()
+    (interactive)
+    (let ((win (selected-window)))
+      (julia-snail-doc-lookup
+       (julia-snail--identifier-at-point))
+      (and (window-live-p win)
+          (select-window win))))
   (setq-default
    julia-snail-extra-args '("-t12" "-q")
    julia-snail-multimedia-enable t

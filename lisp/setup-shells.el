@@ -710,7 +710,8 @@ output instead."
     :defer
     :bind (:map vterm-mode-map
            ("C-c C-p" . my/vterm-previous-prompt)
-           ("C-c C-n" . my/vterm-next-prompt))
+           ("C-c C-n" . my/vterm-next-prompt)
+           ("M-v" . vterm-copy-mode))
     :config
     (add-to-list
      'vterm-eval-cmds

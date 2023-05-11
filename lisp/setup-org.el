@@ -333,6 +333,8 @@ appropriate.  In tables, insert a new row or end the table."
   :config
   ;; Display preferences for latex previews
   ;; Larger equations
+  (add-hook 'org-latex-preview-auto-blacklist 'iscroll-next-line)
+  (add-hook 'org-latex-preview-auto-blacklist 'iscroll-previous-line)
   (setq-default
    ;; org-latex-preview-header
    ;;    "\\documentclass{article}
@@ -349,11 +351,13 @@ appropriate.  In tables, insert a new row or end the table."
                      (/ (face-attribute 'default :height) 100.0)))
 
    org-latex-preview-options
-   (progn (plist-put  org-latex-preview-options :background "Transparent")
-          (plist-put org-latex-preview-options :scale 1.0)
+   (progn (plist-put org-latex-preview-options :scale 1.0)
           (plist-put org-latex-preview-options :zoom
                      (/ (face-attribute 'default :height) 100.0)))
 
+   org-latex-preview-debounce 1.0
+   org-latex-preview-throttle 2.0
+   org-latex-preview-auto-generate 'live
    org-latex-preview-processing-indicator nil))
 
 (use-package org-appear
@@ -446,7 +450,8 @@ appropriate.  In tables, insert a new row or end the table."
   :after org
   :config
   (setq-default
-   org-src-tab-acts-natively t))
+   org-src-tab-acts-natively t
+   org-src-preserve-indentation t))
 
 (use-package org-src-context
   :straight (:host github
@@ -890,7 +895,8 @@ parent."
 \\urlstyle{same}
 %% hide links styles in toc
 \\NewCommandCopy{\\oldtoc}{\\tableofcontents}
-\\renewcommand{\\tableofcontents}{\\begingroup\\hypersetup{hidelinks}\\oldtoc\\endgroup}"))
+\\renewcommand{\\tableofcontents}{\\begingroup\\hypersetup{hidelinks}\\oldtoc\\endgroup}"
+   org-latex-precompile nil))
 
 (use-package ox-beamer
   :defer

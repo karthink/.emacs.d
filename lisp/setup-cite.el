@@ -26,7 +26,7 @@
 
 (use-package citar-embark
   :straight t
-  :after citar
+  :after (citar embark)
   :config
   (citar-embark--enable))
 

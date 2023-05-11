@@ -1070,6 +1070,8 @@ Return the initialized session, if any."
   :after org
   :commands org-babel-execute-src-block
   :hook (org-babel-after-execute . my/org-redisplay-babel-result)
+  :bind (:map org-mode-map
+         ("C-M-x" . org-babel-do-key-sequence-in-edit-buffer))
   :config
   (setf (alist-get :eval org-babel-default-header-args)
         "no-export")

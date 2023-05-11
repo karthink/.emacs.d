@@ -196,6 +196,7 @@ project, as defined by `vc-root-dir'."
   (setq-default diff-hl-inline-popup--height 4)
   (dolist (mode-hook my/addons-enabled-modes)
     (add-hook mode-hook #'diff-hl-mode))
+  (remove-hook 'text-mode-hook #'diff-hl-mode)
   :bind
   (:map diff-hl-command-map
    ("n" . diff-hl-next-hunk)
@@ -281,6 +282,7 @@ project, as defined by `vc-root-dir'."
   :straight t
   :defer
   :config
+  (auth-source-pass-enable)
   (setq forge-database-file
         (dir-concat user-cache-directory "forge-database.sqlite")
         forge-owned-accounts '(("karthink"))))

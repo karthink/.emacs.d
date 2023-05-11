@@ -4,7 +4,8 @@
 (use-package embark
   :demand
   :straight (:host github :repo "oantolin/embark"
-             :files ("embark.el" "embark.texi" "embark-org.el"))
+             ;; :files ("embark.el" "embark.texi" "embark-org.el")
+             )
   :after minibuffer
   :hook ((embark-collect-mode . hl-line-mode))
   :bind (("C-H-SPC" . embark-dwim)

@@ -501,11 +501,34 @@
   :bind (([remap kill-ring-save] . #'easy-kill)
          ([remap mark-sexp]      . #'easy-mark)
          :map easy-kill-base-map
-         ("," . easy-kill-expand))
+         ("," . easy-kill-expand-region)
+         ("." . easy-kill-contract-region))
   :config
-  (add-to-list 'easy-kill-alist '(40 sentence " "))
+  ;; (add-to-list 'easy-kill-alist '(40 sentence " "))
   (add-to-list 'easy-kill-alist '(62 page "\n"))
-  (add-to-list 'easy-kill-alist '(104 paragraph "\n")))
+  (add-to-list 'easy-kill-alist '(104 paragraph "\n"))
+  (defun easy-kill-expand-region ()
+    "Expand kill according to expand-region."
+    (interactive)
+    (let* ((thing (easy-kill-get nil))
+           (bounds (easy-kill--bounds)))
+      (save-mark-and-excursion
+        (set-mark (cdr bounds))
+        (goto-char (car bounds))
+        (er/expand-region 1)
+        (deactivate-mark)
+        (easy-kill-adjust-candidate thing (point) (mark)))))
+  (defun easy-kill-contract-region ()
+    "Expand kill according to expand-region."
+    (interactive)
+    (let* ((thing (easy-kill-get nil))
+           (bounds (easy-kill--bounds)))
+      (save-mark-and-excursion
+        (set-mark (cdr bounds))
+        (goto-char (car bounds))
+        (er/contract-region 1)
+        (deactivate-mark)
+        (easy-kill-adjust-candidate thing (point) (mark))))))
 
 (use-package goto-chg
   :straight t
@@ -2778,14 +2801,37 @@ _d_: subtree
 ;; ** EXPAND-REGION
 ;;;----------------------------------------------------------------
 (use-package expand-region
-  :straight t
+  :straight '(:host github :repo "karthink/expand-region.el")
   :commands expand-region
   :bind ("C-," . 'er/expand-region)
   :config
   (add-to-list 'expand-region-exclude-text-mode-expansions 'org-mode)
   (add-to-list 'expand-region-exclude-text-mode-expansions 'LaTeX-mode)
-  (set-default 'er--show-expansion-message t)
-  (setq expand-region-show-usage-message nil)
+  (set-default 'er--show-expansion-message nil)
+  (setq expand-region-show-usage-message nil
+        expand-region-fast-keys-enabled nil)
+  (defvar expand-region-repeat-map
+    (let ((map (make-sparse-keymap)))
+      (define-key map "," #'er/expand-region)
+      (define-key map "-" #'er/contract-region)
+      (define-key map "." #'er/contract-region)
+      map))
+  ;; Expand 0-9 times by pressing 0-9
+  (dotimes (i 9)
+    (define-key expand-region-repeat-map
+      (kbd (number-to-string i))
+      (lambda () (interactive)
+        (er/expand-region i)
+        (setq this-command 'er/expand-region))))
+  (put 'er/expand-region 'repeat-map 'expand-region-repeat-map)
+  (put 'er/contract-region 'repeat-map 'expand-region-repeat-map)
+  (advice-add 'er--first-invocation
+              :override
+              (defun my/er--first-invocation ()
+                "t if this is the first invocation of er/expand-region or er/contract-region"
+                (not (memq last-command
+                           '(er/expand-region er/contract-region
+                             easy-kill-expand-region easy-kill-contract-region)))))
   
   ;; The default er/mark-comment is both expensive and incorrect for block
   ;; comments.
@@ -2822,7 +2868,9 @@ _d_: subtree
         (goto-char start)
         (while (and (not (= parity 0))
                     (re-search-forward open-close nil t))
-          (if (looking-back close)
+          (if (looking-back
+               close
+               (- (point) (length (match-string-no-properties 0))))
               (setq parity (1+ parity))
             (setq parity (1- parity))))
         (when (= parity 0) (cons end (point))))))
@@ -2839,11 +2887,9 @@ _d_: subtree
     :config
     (add-hook 'LaTeX-mode-hook 'er/set-latex-mode-expansions 90)
     (defun er/mark-latex-text-sentence ()
-      (unless(texmathp) (er/mark-text-sentence)))
+      (unless (texmathp) (er/mark-text-sentence)))
     (defun er/mark-latex-text-paragraph ()
       (unless (texmathp) (er/mark-text-paragraph)))
-    (defun er/mark-latex-inside-pairs ()
-      (unless (texmathp) (er/mark-inside-pairs)))
     (defun er/mark-LaTeX-inside-math ()
       "Mark text inside LaTeX math delimiters. See `er/mark-LaTeX-math'
 for details."
@@ -2866,37 +2912,52 @@ for details."
               (set-mark (+ pos 2))
               (exchange-point-and-mark))
              (t (error (format "Unknown reason to be in math mode: %s" type)))))))
+    ;; ;; FIXME
+    ;; (defun er/mark-latex-macro ()
+    ;;   (interactive)
+    ;;   (when (texmathp)
+    ;;     (when (> (point) (mark))
+    ;;       (exchange-point-and-mark))
+    ;;     (when (looking-back "\\\\[a-zA-Z_]+\\*?{?" (line-beginning-position))
+    ;;       (set-mark (save-excursion
+    ;;                   (goto-char (match-beginning 0))
+    ;;                   (point)))
+    ;;       (exchange-point-and-mark))))
+    (defun er/mark-latex-inside-pairs ()
+      (if (texmathp)
+          (cl-destructuring-bind (beg . end)
+              (my/find-bounds-of-regexps " *[{([|<]"
+                                         " *[]})|>]")
+            (when-let ((n (length (match-string-no-properties 0))))
+              (set-mark (save-excursion
+                          (goto-char beg)
+                          (forward-char n)
+                          (skip-chars-forward er--space-str)
+                          (point)))
+              (goto-char end)
+              (backward-char n)
+              (if (looking-back "\\\\right\\\\*\\|\\\\" (- (point) 7))
+                  (backward-char (length (match-string-no-properties 0)))))
+            (skip-chars-backward er--space-str)
+            (exchange-point-and-mark))
+        (er/mark-inside-pairs)))
     (defun er/mark-latex-outside-pairs ()
-      (unless (texmathp) (er/mark-outside-pairs)))
-    (defun er/mark-latex-outside-delimiters ()
-      (cl-destructuring-bind (beg . end)
-          (my/find-bounds-of-regexps "\\\\left\\\\*[{([|<]"
-                                     "\\\\right\\\\*[]})|>]")
-        (set-mark (save-excursion
-                    (goto-char beg)
-                    (skip-chars-forward er--space-str)
-                    (point)))
-        (goto-char end)
-        (skip-chars-backward er--space-str)
-        (exchange-point-and-mark)))
-    (defun er/mark-latex-inside-delimiters ()
-      (when (texmathp)
-        (cl-destructuring-bind (beg . end)
-            (my/find-bounds-of-regexps "\\\\left\\\\*[{([|<]"
-                                       "\\\\right\\\\*[]})|>]")
-          (when-let ((n (length (match-string-no-properties 0))))
+      (if (texmathp)
+          (cl-destructuring-bind (beg . end)
+              (my/find-bounds-of-regexps " *[{([|<]"
+                                         " *[]})|>]")
             (set-mark (save-excursion
                         (goto-char beg)
+                        ;; (forward-char 1)
+                        (if (looking-back "\\\\left\\\\*\\|\\\\" (- (point) 6))
+                            (backward-char (length (match-string-no-properties 0))))
                         (skip-chars-forward er--space-str)
-                        (forward-char n)
                         (point)))
             (goto-char end)
             (skip-chars-backward er--space-str)
-            (backward-char n))
-          (exchange-point-and-mark))))
-    ;;  LaTeX-mark-environment LaTeX-mark-section
-    ;;  er/mark-LaTeX-inside-environment er/mark-LaTeX-math
-    ;;  er/mark-method-call 
+            ;; (backward-char 1)
+            (exchange-point-and-mark))
+        (er/mark-outside-pairs)))
     (defun er/set-latex-mode-expansions ()
       (make-variable-buffer-local 'er/try-expand-list)
       (setq er/try-expand-list
@@ -2904,7 +2965,6 @@ for details."
               er/mark-next-accessor  er/mark-inside-quotes er/mark-outside-quotes
               er/mark-LaTeX-inside-math
               er/mark-latex-inside-pairs er/mark-latex-outside-pairs
-              er/mark-latex-inside-delimiters er/mark-latex-outside-delimiters
               er/mark-comment er/mark-url er/mark-email ;er/mark-defun
               er/mark-latex-text-sentence er/mark-latex-text-paragraph))
       (er/add-latex-mode-expansions))))

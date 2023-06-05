@@ -22,7 +22,7 @@
   :hook ((org-mode . turn-on-org-cdlatex)
          (org-cdlatex-mode . my/org-cdlatex-settings)
          (org-mode . er/add-latex-in-org-mode-expansions))
-  
+  :init (setq org-fold-core-style 'text-properties)
   :config
   ;; General preferences
   (setq-default org-adapt-indentation nil 
@@ -92,11 +92,14 @@
     ;; Latex mode expansions
     (with-eval-after-load 'expand-region
       (set (make-local-variable 'er/try-expand-list)
-           (append (remove #'er/mark-method-call er/try-expand-list)
+           (append (cl-set-difference er/try-expand-list
+                                      '(er/mark-method-call
+                                        er/mark-inside-pairs
+                                        er/mark-outside-pairs))
                    '(LaTeX-mark-environment 
                      er/mark-LaTeX-inside-math
-                     er/mark-latex-inside-delimiters
-                     er/mark-latex-outside-delimiters
+                     er/mark-latex-inside-pairs
+                     er/mark-latex-outside-pairs
                      er/mark-LaTeX-math)))))
   
   (defun org-cdlatex-pbb (&rest _arg)
@@ -152,7 +155,7 @@
 (use-package org-fold
   :after org
   :config
-  (setq org-fold-core-style 'overlays))
+  (setq org-fold-core-style 'text-properties))
 
 ;; From alphapapa's unpackaged: https://github.com/alphapapa/unpackaged.el#org-return-dwim
 (use-package org

@@ -1804,6 +1804,12 @@ current buffer without truncation."
 ;;;################################################################
 
 ;;;----------------------------------------------------------------
+;; ** VISIBLE MARK
+(use-package visible-mark
+  :straight t
+  :hook ((text-mode prog-mode conf-mode) . visible-mark-mode)
+  :config
+  (setq visible-mark-max 1))
 ;; ** MACRURSORS
 ;;;----------------------------------------------------------------
 ;; Testing fast multiple cursors
@@ -1847,6 +1853,7 @@ current buffer without truncation."
      ("," . macrursors-select-expand)
      :map macrursors-select-map
      ("-" . macrursors-select-contract)
+     ("." . macrursors-select-contract)
      ("," . macrursors-select-expand)))
 
   (setq macrursors-match-cursor-style t

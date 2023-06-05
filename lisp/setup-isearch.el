@@ -27,6 +27,7 @@
     (interactive)
     (push-mark isearch-other-end t 'activate)
     (setq deactivate-mark nil)
+    (activate-mark)
     (isearch-done))
 
   (defun my/isearch-other-end ()

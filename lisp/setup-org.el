@@ -66,6 +66,10 @@
   ;; Make org use `display-buffer' like every other Emacs citizen.
   (advice-add #'org-switch-to-buffer-other-window :override #'switch-to-buffer-other-window)
 
+  (unless transient-mark-mode
+    (advice-add 'org-mark-element :after #'my/activate-mark)
+    (advice-add 'org-mark-subtree :after #'my/activate-mark))
+
   (add-hook 'org-metareturn-hook
             (defun my/auto-checkbox (&rest _)
               (when (org-at-item-checkbox-p)

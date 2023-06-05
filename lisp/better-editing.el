@@ -27,7 +27,6 @@
 ;; /Enable/DISABLE cua-selection mode, for awesome rectangle selects
 ;; (Set cua-selection-mode for rectangle editing)
 ;; (cua-selection-mode 1)
-(transient-mark-mode t)
 ;; (delete-selection-mode 0)
 
 ;; Prevent Emacs from bugging me about C-x n n not being
@@ -68,8 +67,19 @@
 ;;; Prevent Extraneous Tabs
 (setq-default indent-tabs-mode nil)
 
-;; Turn on transient-mark-mode
-(transient-mark-mode 1)
+;; Turn off transient-mark-mode
+(transient-mark-mode -1)
+;; With tmm turned off, make unit-selections activate mark
+(defun my/activate-mark (&rest _)
+  (activate-mark))
+(dolist (command '(mark-word
+                   mark-sexp
+                   mark-paragraph
+                   mark-defun
+                   mark-page
+                   mark-whole-buffer
+                   rectangle-mark-mode))
+  (advice-add command :after #'my/activate-mark))
 
 ;;; Text mode and Auto Fill mode
 ; Set default Emacs mode to text-mode. In addition, turn on

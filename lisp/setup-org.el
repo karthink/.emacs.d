@@ -330,7 +330,8 @@ appropriate.  In tables, insert a new row or end the table."
 ;; Settings to do with org-latex-preview
 (use-package org-latex-preview
   :after org
-  :hook (org-mode . org-latex-preview-auto-mode)
+  :hook ((org-mode . org-latex-preview-auto-mode)
+         (org-mode . my/org-latex-preview-precompile-idle))
   :bind (:map org-mode-map
          ("C-c C-x SPC" . org-latex-preview-clear-cache))
   :config
@@ -351,17 +352,104 @@ appropriate.  In tables, insert a new row or end the table."
    (progn (plist-put org-format-latex-options :background "Transparent")
           (plist-put org-format-latex-options :scale 1.0)
           (plist-put org-format-latex-options :zoom
-                     (/ (face-attribute 'default :height) 100.0)))
+                     (+ 0.01 (/ (face-attribute 'default :height) 100.0))))
 
    org-latex-preview-options
    (progn (plist-put org-latex-preview-options :scale 1.0)
           (plist-put org-latex-preview-options :zoom
-                     (/ (face-attribute 'default :height) 100.0)))
+                     (+ 0.01 (/ (face-attribute 'default :height) 100.0))))
 
    org-latex-preview-debounce 1.0
-   org-latex-preview-throttle 2.0
+   org-latex-preview-throttle 1.0
    org-latex-preview-auto-generate 'live
-   org-latex-preview-processing-indicator nil))
+   org-latex-preview-processing-indicator nil)
+
+  ;; Precompilation freezes emacs, do it in the background when possible.
+  (defun my/org-latex-preview-precompile-idle ()
+    (when (featurep 'async)
+      (run-with-idle-timer
+       2 nil #'my/org-latex-preview-precompile-async
+       (current-buffer))))
+
+  (defun my/org-latex-preview-precompile-async (&optional org-buf)
+    (when (buffer-live-p org-buf)
+      (with-current-buffer org-buf
+        (when org-latex-preview-precompile
+          (let* ((org-location (org-find-library-dir "org"))
+                 (compiler-keywords
+                  (org-collect-keywords
+                   '("LATEX_PREVIEW_COMPILER" "LATEX_COMPILER")
+                   '("LATEX_PREVIEW_COMPILER" "LATEX_COMPILER")))
+                 (compiler
+                  (or (cdr (assoc "LATEX_PREVIEW_COMPILER" compiler-keywords))
+                      (and (boundp 'org-latex-preview-compiler)
+                           org-latex-preview-compiler)
+                      (cdr (assoc "LATEX_COMPILER" compiler-keywords))
+                      org-latex-compiler))
+                 (header (concat
+                          (or org-latex-preview--preamble-content
+                              (org-latex-preview--get-preamble))
+                          org-latex-preview--include-preview-string))
+                 (relative-file-p
+                  (string-match-p "\\(?:\\\\input{\\|\\\\include{\\)[^/]" header))
+                 (remote-file-p (file-remote-p default-directory)))
+            (when (and (equal compiler "pdflatex") (not remote-file-p))
+              (async-start
+               `(lambda ()
+                  (add-to-list 'load-path ,org-location)
+                  (require 'ox)
+                  (require 'org-latex-preview)
+                  (org-latex--precompile
+                   (list :latex-compiler ,compiler
+                    :precompile-format-spec
+                    (let ((org-tex-compiler
+                           (cdr (assoc ,compiler org-latex-preview-compiler-command-map))))
+                     `((?l . ,org-tex-compiler)
+                       (?L . ,(car (split-string org-tex-compiler))))))
+                   ,header
+                   (not ,relative-file-p)))
+               (lambda (result)
+                 (let ((inhibit-message t))
+                   (org-persist--load-index)
+                   (message "Precompiled in background: %S"
+                            (file-name-base result)))))))))))
+
+  ;; org-html-format-latex from Org 9.6 - this is needed because the new version does not work with ox-hugo
+  (defun org-html-format-latex (latex-frag processing-type info)
+    "Format a LaTeX fragment LATEX-FRAG into HTML.
+PROCESSING-TYPE designates the tool used for conversion.  It can
+be `mathjax', `verbatim', `html', nil, t or symbols in
+`org-preview-latex-process-alist', e.g., `dvipng', `dvisvgm' or
+`imagemagick'.  See `org-html-with-latex' for more information.
+INFO is a plist containing export properties."
+    (let ((cache-relpath "") (cache-dir ""))
+      (unless (or (eq processing-type 'mathjax)
+                  (eq processing-type 'html))
+        (let ((bfn (or (buffer-file-name)
+                       (make-temp-name
+                        (expand-file-name "latex" temporary-file-directory))))
+              (latex-header
+               (let ((header (plist-get info :latex-header)))
+                 (and header
+                      (concat (mapconcat
+                               (lambda (line) (concat "#+LATEX_HEADER: " line))
+                               (org-split-string header "\n")
+                               "\n")
+                              "\n")))))
+          (setq cache-relpath
+                (concat (file-name-as-directory org-preview-latex-image-directory)
+                        (file-name-sans-extension
+                         (file-name-nondirectory bfn)))
+                cache-dir (file-name-directory bfn))
+          ;; Re-create LaTeX environment from original buffer in
+          ;; temporary buffer so that dvipng/imagemagick can properly
+          ;; turn the fragment into an image.
+          (setq latex-frag (concat latex-header latex-frag))))
+      (with-temp-buffer
+        (insert latex-frag)
+        (org-format-latex cache-relpath nil nil cache-dir nil
+                          "Creating LaTeX Image..." nil processing-type)
+        (buffer-string)))))
 
 (use-package org-appear
   :straight t
@@ -447,6 +535,12 @@ appropriate.  In tables, insert a new row or end the table."
 ;;;----------------------------------------------------------------------
 ;; ** ORG FEATURES
 ;;;----------------------------------------------------------------------
+
+;; *** ORG-ATTACH
+(use-package org-attach
+  :defer
+  :config
+  (setq org-attach-store-link-p 'attached))
 
 ;; *** ORG-SRC
 (use-package org-src
@@ -899,7 +993,7 @@ parent."
 %% hide links styles in toc
 \\NewCommandCopy{\\oldtoc}{\\tableofcontents}
 \\renewcommand{\\tableofcontents}{\\begingroup\\hypersetup{hidelinks}\\oldtoc\\endgroup}"
-   org-latex-precompile nil))
+   org-latex-precompile t))
 
 (use-package ox-beamer
   :defer
@@ -1467,12 +1561,13 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
 (use-package org-mime
   :straight t
   :after (notmuch org)
-  :defer 2
+  :defer
   :config
   (setq org-mime-export-options '(:with-latex dvipng
                                   :section-numbers nil
                                   :with-author nil
                                   :with-toc nil))
+  (setq org-mime-org-html-with-latex-default 'dvipng)
   
   ;; (add-hook 'message-send-hook 'org-mime-confirm-when-no-multipart)
   ;; (setq org-mime-export-ascii 'latin1)

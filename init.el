@@ -892,8 +892,10 @@ display names.")
   (defvar popper-repeat-map
     (let ((map (make-sparse-keymap)))
       (define-key map (kbd "`") #'popper-cycle)
+      (define-key map (kbd "~") #'popper-cycle-backwards)
       (define-key map (kbd "b") #'my/popper-switch-to-popup)
       map))
+  (put 'popper-cycle-backwards 'repeat-map 'popper-repeat-map)
   (put 'popper-cycle 'repeat-map 'popper-repeat-map)
   (put 'popper-toggle-latest 'repeat-map 'popper-repeat-map)
 

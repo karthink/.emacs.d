@@ -40,6 +40,7 @@
                 org-tags-column 0
                 org-special-ctrl-a/e t
                 org-special-ctrl-k t
+                org-use-fast-todo-selection 'expert
                 org-log-done 'time
                 org-catch-invisible-edits 'smart
                 org-use-speed-commands t
@@ -1509,7 +1510,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
   (setq org-tree-slide-never-touch-face nil
         org-tree-slide-skip-outline-level 8
         org-tree-slide-heading-emphasis nil
-        org-tree-slide-cursor-init t
+        org-tree-slide-cursor-init nil
         org-tree-slide-slide-in-effect nil
         org-tree-slide-activate-message
         (propertize "ORG PRESENTATION STARTED" 'face 'success)

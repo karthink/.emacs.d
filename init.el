@@ -171,18 +171,10 @@
 ;;;################################################################
 ;; * PERSONAL INFO
 ;;;################################################################
-;; Store personal information in a GPG encrypted file. This keeps the config
-;; user agnostic. Starting Emacs requires both this file and my GPG keys to be
-;; present. If you want to use this configuration wholesale (a terrible idea),
-;; you'll need to set the my-* variables appropriately.
-(let* ((personal-file (concat user-emacs-directory "lisp/personal.el.gpg"))
-       (personal-file-bc (concat personal-file ".elc")))
-  (unless (file-exists-p personal-file-bc)
-    (epa-file-enable)
-    (byte-compile-file personal-file)))
-(with-demoted-errors "Error (personal info): %S" (load-library "personal.el.gpg"))
-(setq user-full-name my-full-name)
-(setq user-mail-address my-email-address)
+(with-demoted-errors "Error (personal info): %S"
+  (load-library "personal")
+  (setq user-full-name my-full-name)
+  (setq user-mail-address my-email-address))
 
 (use-package org
   :defer

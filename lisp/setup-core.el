@@ -17,7 +17,7 @@
 (defconst IS-GUIX    (and IS-LINUX
                           (with-temp-buffer
                             (insert-file-contents "/etc/os-release")
-                            (search-forward "ID=guix" nil t))))
+                            (re-search-forward "ID=\\(?:guix\\|nixos\\)" nil t))))
 ;; Disable bidirectional text rendering for a modest performance boost. Just
 ;; need to remember to turn it on when displaying a right-to-left language!
 (setq-default bidi-display-reordering 'left-to-right)

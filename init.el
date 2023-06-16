@@ -2148,13 +2148,14 @@ current buffer without truncation."
 
 ;;;----------------------------------------------------------------
 ;; *** JINX
-(use-package jinx
-  :straight t
-  :hook ((text-mode prog-mode conf-mode) . my/jinx-mode)
-  :bind ([remap ispell-word] . jinx-correct)
-  :config
-  (defun my/jinx-mode ()
-    (unless buffer-read-only (jinx-mode 1))))
+(unless IS-GUIX
+  (use-package jinx
+    :straight t
+    :hook ((text-mode prog-mode conf-mode) . my/jinx-mode)
+    :bind ([remap ispell-word] . jinx-correct)
+    :config
+    (defun my/jinx-mode ()
+      (unless buffer-read-only (jinx-mode 1)))))
 
 ;; ** ELDOC
 (use-package eldoc

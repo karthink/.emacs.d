@@ -24,7 +24,7 @@
 	url = git@github.com:karthink/consult-reftex.git
 [submodule "plugins/wallabag"]
 	path = plugins/wallabag
-	url = git@github.com:karthink/wallabag.el.git
+	url = git@github.com:karthink/wallabag-post.git
 [submodule "plugins/peep-dired"]
 	path = plugins/peep-dired
 	url = git@github.com:karthink/peep-dired.git

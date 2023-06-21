@@ -48,6 +48,7 @@
   :config
   (setq vertico-multiform-categories
          '((file my/vertico-grid-mode reverse)
+           (jinx grid (vertico-grid-annotate . 20))
            (project-file my/vertico-grid-mode reverse)
            (imenu buffer)
            (consult-location buffer)

@@ -1366,6 +1366,11 @@ If region is active, add its contents to the new buffer."
 ;;;################################################################
 
 ;;;----------------------------------------------------------------
+;; ** NIX
+(when IS-GUIX
+  (use-package nix-mode
+    :straight t
+    :defer))
 ;; ** MARKDOWN
 ;;;----------------------------------------------------------------
 (use-package markdown-mode :straight t :defer)
@@ -2148,14 +2153,13 @@ current buffer without truncation."
 
 ;;;----------------------------------------------------------------
 ;; *** JINX
-(unless IS-GUIX
-  (use-package jinx
-    :straight t
-    :hook ((text-mode prog-mode conf-mode) . my/jinx-mode)
-    :bind ([remap ispell-word] . jinx-correct)
-    :config
-    (defun my/jinx-mode ()
-      (unless buffer-read-only (jinx-mode 1)))))
+(unless IS-GUIX (straight-use-package 'jinx))
+(use-package jinx
+  :hook ((text-mode prog-mode conf-mode) . my/jinx-mode)
+  :bind ([remap ispell-word] . jinx-correct)
+  :config
+  (defun my/jinx-mode ()
+    (unless buffer-read-only (jinx-mode 1))))
 
 ;; ** ELDOC
 (use-package eldoc

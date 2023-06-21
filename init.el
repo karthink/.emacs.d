@@ -3989,14 +3989,15 @@ buffer's text scale."
                    (outline-2        (:height 1.20) outline)
                    (outline-3        (:height 1.16) outline)
                    (outline-4        (:height 1.12) outline)
-                   (tab-bar            (:background "black" :height 1.0 :foreground "white")
-                    tab-bar)
-                   (tab-bar-tab
-                    (:bold t :height 1.10 :foreground nil :inherit mode-line-emphasis)
-                    tab-bar)
-                   (tab-bar-tab-inactive
-                    (:inherit 'mode-line-inactive :height 1.10 :background "black")
-                    tab-bar)))
+                   ;; (tab-bar            (:background "black" :height 1.0 :foreground "white")
+                   ;;  tab-bar)
+                   ;; (tab-bar-tab
+                   ;;  (:bold t :height 1.10 :foreground nil :inherit mode-line-emphasis)
+                   ;;  tab-bar)
+                   ;; (tab-bar-tab-inactive
+                   ;;  (:inherit 'mode-line-inactive :height 1.10 :background "black")
+                   ;;  tab-bar)
+                   ))
           (cl-destructuring-bind (face spec library) face-spec
             (if (featurep library)
                 (custom-set-faces `(,face ((,class ,@spec))))

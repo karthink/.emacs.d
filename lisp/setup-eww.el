@@ -6,7 +6,14 @@
 (declare-function bookmark-get-bookmark-record "bookmark" (bmk))
 
 (use-package eww
-  :bind ("M-s W" . eww-search-words)
+  :bind (("M-s W" . eww-search-words)
+         :map eww-mode-map
+         ("D" . eww-download)
+         ("d" . my/scroll-up-half)
+         ("u" . my/scroll-down-half)
+         ("U" . eww-up-url)
+         ("^" . eww-up-url)
+         ("i" . imenu))
   :hook (eww-after-render . (lambda () (setq line-spacing 0.1)))
   :config
   (setq eww-browse-url-new-window-is-tab nil)

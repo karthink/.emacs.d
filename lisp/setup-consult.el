@@ -175,13 +175,11 @@ When the number of characters in a buffer exceeds this threshold,
         (let ((current-prefix-arg (or arg nil)))
           (call-interactively #'consult-ripgrep)))))
 
-  (defvar consult--fd-command nil)
+  (defvar consult--fd-command (or (executable-find "fdfind")
+                                  (executable-find "fd")))
   (defun consult--fd-builder (input)
     (unless consult--fd-command
-      (setq consult--fd-command
-            (if (eq 0 (call-process-shell-command "fdfind"))
-                "fdfind"
-              "fd")))
+      (setq consult--fd-command "fd"))
     (pcase-let* ((`(,arg . ,opts) (consult--command-split input))
                  (`(,re . ,hl) (funcall consult--regexp-compiler
                                         arg 'extended nil)))
@@ -195,9 +193,9 @@ When the number of characters in a buffer exceeds this threshold,
 
   (defun consult-fd (&optional dir initial)
     (interactive "P")
-    (let* ((prompt-dir (consult--directory-prompt "Fd" dir))
-           (default-directory (cdr prompt-dir)))
-      (find-file (consult--find (car prompt-dir) #'consult--fd-builder initial))))
+    (pcase-let* ((`(,prompt ,paths ,dir) (consult--directory-prompt "Fd" dir))
+                 (default-directory dir))
+      (find-file (consult--find prompt #'consult--fd-builder initial))))
 
   (dolist (func '(consult-fd consult-git-grep
                   consult-ripgrep consult-grep))
@@ -215,7 +213,7 @@ When the number of characters in a buffer exceeds this threshold,
     (interactive "P")
     (let ((consult-ripgrep-args
            "rga --null --line-buffered --color=never --max-columns=1000 --path-separator /   --smart-case --no-heading --line-number ."))
-      (consult--grep "Ripgrep All" #'consult--ripgrep-builder dir initial))))
+      (consult--grep "Ripgrep All" #'consult--ripgrep-make-builder dir initial))))
 
 ;; Library support for consult-buffer
 (use-package consult

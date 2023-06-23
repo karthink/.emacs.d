@@ -83,7 +83,7 @@
            (consult-flymake reverse)
            (consult-history reverse)
            (consult-completion-in-region reverse)
-           (consult-recoll reverse)
+           (consult-recoll buffer)
            (citar-insert-citation reverse)
            (completion-at-point reverse)
            (org-roam-node-find reverse)

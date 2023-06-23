@@ -780,6 +780,7 @@ Also kill this window, tab or frame if necessary."
              "^\\*gptel-quick\\*"
              "\\*Shell Command Output\\*"
              ("\\*Async Shell Command\\*" . hide)
+             ("\\*Detached Shell Command\\*" . hide)
              "\\*Completions\\*"
              ;; "\\*scratch.*\\*$"
              "[Oo]utput\\*")))
@@ -1801,6 +1802,25 @@ current buffer without truncation."
 ;;;################################################################
 
 ;;;----------------------------------------------------------------
+;; ** DETACHED
+;; Testing detached
+(use-package detached
+  :straight t
+  :init
+  (detached-init)
+  :bind (;; Replace `async-shell-command' with `detached-shell-command'
+         ([remap async-shell-command] . detached-shell-command)
+         ;; Replace `compile' with `detached-compile'
+         ;; ([remap compile] . detached-compile)
+         ;; ([remap recompile] . detached-compile-recompile)
+         ;; Replace built in completion of sessions with `consult'
+         ([remap detached-open-session] . detached-consult-session))
+  :custom ((detached-show-output-on-attach t)
+           (detached-terminal-data-command system-type)
+           (detached-session-directory
+            (file-name-concat user-cache-directory "sessions"))))
+
+;;;----------------------------------------------------------------
 ;; ** VISIBLE MARK
 (use-package visible-mark
   :straight t
@@ -2247,11 +2267,12 @@ normally have their errors suppressed."
   :config
   (when IS-LINUX
     (defun browse-url-umpv (url &optional single)
-      (start-process "mpv" nil (if single "mpv" "umpv")
+      (start-process "mpv" nil "setsid" "-f"
+                     (if single "mpv" "umpv")
                      (shell-quote-wildcard-pattern url)))
     
     (defun browse-url-mpv-enqueue (url &optional _)
-      (start-process "umpv_last" nil "umpv_last"
+      (start-process "umpv_last" nil "setsid" "-f" "umpv_last"
                      (shell-quote-wildcard-pattern url)))
 
     (defun browse-url-mpv (url &optional _)

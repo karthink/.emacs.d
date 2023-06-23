@@ -2,7 +2,7 @@
   :straight (:host github :repo "minad/corfu")
   :hook (((prog-mode text-mode tex-mode) . corfu-mode)
          ((shell-mode eshell-mode) . my/corfu-shell-settings)
-         (minibuffer-setup . contrib/corfu-enable-always-in-minibuffer))
+         (minibuffer-setup . my/corfu-enable-always-in-minibuffer))
   :bind (:map corfu-map
          ("TAB" . corfu-next)
          ([tab] . corfu-next)
@@ -17,17 +17,17 @@
          ("M-." . corfu-info-location)
          ("C-h" . corfu-info-documentation))
   :config
-  (defun contrib/corfu-enable-always-in-minibuffer ()
-  "Enable Corfu in the minibuffer if Vertico is not active."
-  (unless (or ;; (bound-and-true-p mct--active)
-              (bound-and-true-p vertico--input)
-              (memq (current-local-map)
-                    (list read-passwd-map ;elfeed-search-filter-map
-                          )))
-    ;; (setq-local corfu-auto nil) ;; Enable/disable auto completion
-    (setq-local corfu-echo-delay nil ;; Disable automatic echo and popup
-                corfu-popupinfo-delay nil)
-    (corfu-mode 1)))
+  (defvar my-corfu-minibuffer-exclude-modes (list read-passwd-map)
+    "Minibuffer-local keymaps for which Corfu should be disabled.")
+  (defun my/corfu-enable-always-in-minibuffer ()
+    "Enable Corfu in the minibuffer if Vertico is not active."
+    (unless (or (bound-and-true-p vertico--input)
+                (memq (current-local-map)
+                      my-corfu-minibuffer-exclude-modes))
+      ;; (setq-local corfu-auto nil) ;; Enable/disable auto completion
+      (setq-local corfu-echo-delay nil ;; Disable automatic echo and popup
+                  corfu-popupinfo-delay nil)
+      (corfu-mode 1)))
 
   (use-package consult
     :bind (:map corfu-map

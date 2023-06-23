@@ -398,6 +398,9 @@ With prefix-arg REFRESH-TAGS, refresh the cached completion metadata."
           (setq elfeed-search-filter
                 (read-from-minibuffer "Filter: " elfeed-search-filter elfeed-search-filter-map)))
       (elfeed-search-update :force)))
+  (with-eval-after-load 'corfu
+    (add-to-list 'my-corfu-minibuffer-exclude-modes
+                 elfeed-search-filter-map))
 
   ;; Add tag-completion to the tag/untag commands in elfeed-search
   (defun elfeed-search-tag-all (tag)

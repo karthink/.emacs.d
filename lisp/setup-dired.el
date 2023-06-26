@@ -381,6 +381,9 @@ This relies on the external 'fd' executable."
   :bind
   ;; Bind `dirvish|dirvish-side|dirvish-dwim' as you see fit
   (("M-s M-f" . dirvish-fd)
+   :map dirvish-mode-map
+   ("SPC" . scroll-other-window)
+   ("S-SPC" . scroll-other-window-down)
    :map dired-mode-map ; Dirvish respects all the keybindings in this map
    ;; ("h" . dired-up-directory)
    ;; ("j" . dired-next-line)
@@ -395,7 +398,7 @@ This relies on the external 'fd' executable."
    ("s"   . my/dirvish-sort-toggle-or-edit) ; remapped `dired-sort-toggle-or-edit'
    ("?"   . dirvish-dispatch)  ; remapped `dired-summary'
    ("TAB" . dirvish-subtree-toggle)
-   ("SPC" . dirvish-history-jump)
+   ;; ("SPC" . dirvish-history-jump)
    ("r" . dirvish-history-go-forward)
    ("l" . dirvish-history-go-backward)
    ;; ("M-l" . dirvish-ls-switches-menu)
@@ -405,5 +408,11 @@ This relies on the external 'fd' executable."
    ;; ("M-j" . dirvish-fd-jump)
    ;; ("M-s" . dirvish-setup-menu)
    ))
+
+(use-package dired-delight
+  :straight (:local-repo "~/.local/share/git/dired-delight/")
+  :bind (:map dired-mode-map
+         ("@" . dired-delight)
+         ("*c" . dired-delight-mark-color)))
 
 (provide 'setup-dired)

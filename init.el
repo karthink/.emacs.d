@@ -1864,15 +1864,6 @@ current buffer without truncation."
          ("M-e" . macrursors-mark-all-sentences)
          ("e" . macrursors-mark-all-lines))
   :config
-  (use-package macrursors-select-expand
-    :bind
-    (:map macrursors-mark-map
-     ("," . macrursors-select-expand)
-     :map macrursors-select-map
-     ("-" . macrursors-select-contract)
-     ("." . macrursors-select-contract)
-     ("," . macrursors-select-expand)))
-
   (setq macrursors-match-cursor-style t
         ;; macrursors-apply-keys "C-; C-;"
         )
@@ -1912,6 +1903,16 @@ current buffer without truncation."
                         (1+ (length macrursors--overlays)))
               (concat "[1/1]" vsep))))
          'face 'highlight)))))
+
+(use-package macrursors-select-expand
+    :after (macrursors)
+    :bind
+    (:map macrursors-mark-map
+     ("," . macrursors-select-expand)
+     :map macrursors-select-map
+     ("-" . macrursors-select-contract)
+     ("." . macrursors-select-contract)
+     ("," . macrursors-select-expand)))
 
 ;;;----------------------------------------------------------------
 ;; ** EMBRACE
@@ -2272,7 +2273,7 @@ normally have their errors suppressed."
                      (shell-quote-wildcard-pattern url)))
     
     (defun browse-url-mpv-enqueue (url &optional _)
-      (start-process "umpv_last" nil "setsid" "-f" "umpv_last"
+      (start-process "umpv_last" nil "umpv_last"
                      (shell-quote-wildcard-pattern url)))
 
     (defun browse-url-mpv (url &optional _)

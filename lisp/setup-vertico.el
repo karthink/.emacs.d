@@ -23,6 +23,7 @@
          ("C-o"     . embark-minimal-act)
          ("C-M-o"   . embark-minimal-act-noexit)
          ("C-*"     . embark-act-all)
+         ("M-*"      . embark-act-all)
          ("M-s o"   . embark-export)
          ("C-c C-o" . embark-export)
          ("C-l"     . embark-export))

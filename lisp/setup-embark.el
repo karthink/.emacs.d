@@ -25,6 +25,7 @@
          ("H-SPC"    . embark-act)
          ("C->"      . embark-become)
          ("C-*"      . embark-act-all)
+         ("M-*"      . embark-act-all)
          :map embark-collect-mode-map
          ("H-SPC" . embark-act)
          ("o"        . embark-act)
@@ -77,9 +78,19 @@
 
   ;; Drag and drop
   (defun embark-drag-and-drop (file)
-    (interactive (list (read-file-name "Drag and drop: ")))
-    (start-process "dragon" nil "dragon-drag-and-drop"
-                   file))
+    (interactive "fDrag and drop: ")
+    (start-process "dragon" nil "dragon" (expand-file-name file)))
+
+  (defun embark-attach-file (file)
+    "Attach FILE to an  email message.
+The message to which FILE is attached is chosen as for `gnus-dired-attach`,
+that is: if no message buffers are found a new email is started; if some
+message buffer exist you are asked whether you want to start a new email
+anyway, if you say no and there is only one message buffer the attachements
+are place there, otherwise you are prompted for a message buffer."
+    (interactive "fAttach: ")
+    (gnus-dired-attach (list file)))
+  (define-key embark-file-map (kbd "C-a") #'embark-attach-file)
   
   ;; Utility commands
   (defun embark-act-noexit ()
@@ -160,7 +171,7 @@
                ("!" shell-command)
                ("&" async-shell-command)
                ("x" consult-file-externally)
-               ("C-a" mml-attach-file)
+               ;; ("C-a" mml-attach-file)
                ("c" copy-file)
                ("k" kill-buffer)
                ;; ("l" org-store-link)

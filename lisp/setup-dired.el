@@ -4,6 +4,7 @@
 ;; Many of these settings are overridden by =dirvish= below, but I'm undecided
 ;; for now if I'm going to stick with it.
 
+(declare-function gnus-dired-attach "gnus-dired")
 (use-package dired
   :commands dired
   :hook ((dired-mode . hl-line-mode)
@@ -11,7 +12,8 @@
   :bind
   (:map dired-mode-map
         ("M-s f" . nil)
-        ("M-s g" . nil))
+        ("M-s g" . nil)
+        ("C-c C-a" . gnus-dired-attach))
   :general
   ("C-x D" 'list-directory)
   (:keymaps 'space-menu-map "fd" '(dired :wk "Dired"))

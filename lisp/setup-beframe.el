@@ -4,18 +4,17 @@
   :config
   (setq beframe-functions-in-frames
         '(project-switch-project)
-        beframe-rename-function nil)
-  (setq initial-scratch-message "")
+        beframe-rename-function #'ignore)
   (defvar consult--source-beframe
       (list :name     "Frame Buffers"
             :narrow   ?w
             :category 'buffer
-            :face     'beframe-buffer
+            :face     'consult-buffer
             :history  'beframe-history
             :default  t
             :preview-key "M-RET"
             :state    #'consult--buffer-state
-            :items    #'beframe--buffer-names
+            :items    #'beframe-buffer-names
             :action   #'switch-to-buffer)
 
       "Set workspace buffer list for consult-buffer.")
@@ -37,6 +36,19 @@
                 . ((body-function . select-window))))
              finally return
              (switch-to-buffer buffer norecord)))
+  (use-package embark
+    :defer
+    :config
+    (define-key embark-buffer-map (kbd "fu")
+      (defun my/beframe-unassume-buffer (buf)
+        (interactive "bUnassume: ")
+        (beframe--unassume
+         (list (get-buffer buf)))))
+    (define-key embark-buffer-map (kbd "fa")
+      (defun my/beframe-assume-buffer (buf)
+        (interactive "bAssume: ")
+        (beframe--assume
+         (list (get-buffer buf))))))
 
   (defun my/consult-beframe-settings ()
     "Deactivate isolated buffers when not using beframe."

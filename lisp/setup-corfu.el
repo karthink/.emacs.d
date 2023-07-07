@@ -1,6 +1,6 @@
 (use-package corfu
   :straight (:host github :repo "minad/corfu")
-  :hook (((prog-mode text-mode tex-mode) . corfu-mode)
+  :hook (((prog-mode text-mode tex-mode ielm-mode) . corfu-mode)
          ((shell-mode eshell-mode) . my/corfu-shell-settings)
          (minibuffer-setup . my/corfu-enable-always-in-minibuffer))
   :bind (:map corfu-map

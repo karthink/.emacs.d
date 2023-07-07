@@ -47,6 +47,11 @@
     :bind (:map org-mode-map
            ("C-c C-j" . consult-org-heading)
            ("M-s M-j" . consult-org-heading)))
+  
+  (use-package ielm
+    :defer
+    :bind (:map inferior-emacs-lisp-mode-map
+           ("M-r" . consult-history)))
 
   :bind (("C-x b"   . consult-buffer)
          ("C-x H-r" . consult-recent-file)

@@ -2185,6 +2185,7 @@ current buffer without truncation."
 ;; ** ELDOC
 (use-package eldoc
   :defer
+  :hook (ielm-mode . eldoc-mode)
   :config
   (setq eldoc-documentation-strategy
         'eldoc-documentation-compose-eagerly))
@@ -2739,7 +2740,8 @@ _d_: subtree
   :straight t
   :hook ((emacs-lisp-mode
           lisp-interaction-mode
-          fennel-mode scheme-mode)
+          fennel-mode scheme-mode
+          ielm-mode)
          . smartparens-mode)
   :bind
   (:map smartparens-mode-map

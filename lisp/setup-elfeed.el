@@ -713,26 +713,39 @@ preferring the preferred type."
   (elfeed-tube-setup)
   (use-package setup-reading
     :config
-    (advice-add 'elfeed-show-entry :after
-                (defun my/elfeed-show-settings-a (entry)
-                  (with-selected-window (get-buffer-window (elfeed-show--buffer-name entry))
-                    (dolist (f '(message-header-name
-                                 message-header-subject
-                                 elfeed-tube-chapter-face))
-                      (face-remap-add-relative
-                       f :height 1.1))
-                    (setq-local line-spacing 0.2)
-                    (when (require 'visual-fill-column nil t)
-                      (setq-local visual-fill-column-center-text t
-                                  visual-fill-column-width (+ shr-width 5))
-                      (visual-line-mode 1)
-                      (when (featurep 'iscroll) (iscroll-mode 1))
-                      (visual-fill-column-mode 1))
-                    (setq-local
-                     imenu-prev-index-position-function #'elfeed-tube-prev-heading
-                     imenu-extract-index-name-function #'elfeed-tube--line-at-point)
-                    (let ((inhibit-read-only t))
-                      (my/reader-center-images))))))
+    (advice-add 'elfeed-show-entry :override
+                (defun my/elfeed-show-entry (entry)
+                  "Display ENTRY in the current buffer.
+
+This is an enhanced version of the default `elfeed-show-entry' that
+
+- avoids a bug with `shr-vertical-motion' or `vertical-motion'
+  that causes text filling to be inconsistent, depending on
+  whether the elfeed-entry buffer is already visible,
+- adjusts the presentation through tweaking line spacing and face
+  sizes, centers the text if possible, and
+- enables imenu support."
+                  (let ((buff (get-buffer-create (elfeed-show--buffer-name entry))))
+                    (prog1
+                        (funcall elfeed-show-entry-switch buff)
+                      (with-current-buffer buff
+                        (elfeed-show-mode)
+                        (setq elfeed-show-entry entry)
+                        (elfeed-show-refresh)
+                        (dolist (f '(message-header-name
+                                     message-header-subject
+                                     elfeed-tube-chapter-face))
+                          (face-remap-add-relative f :height 1.1))
+                        (setq-local line-spacing 0.12)
+                        (when (require 'visual-fill-column nil t)
+                          (setq-local visual-fill-column-center-text t
+                                      visual-fill-column-width (+ shr-width 6))
+                          (visual-line-mode 1)
+                          (when (featurep 'iscroll) (iscroll-mode 1))
+                          (visual-fill-column-mode 1))
+                        (setq-local
+                         imenu-prev-index-position-function #'elfeed-tube-prev-heading
+                         imenu-extract-index-name-function #'elfeed-tube--line-at-point)))))))
   
   (advice-add 'elfeed-tube-next-heading :after
               (defun my/elfeed-jump-recenter (&rest _)

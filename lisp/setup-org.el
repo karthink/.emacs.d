@@ -342,6 +342,7 @@ appropriate.  In tables, insert a new row or end the table."
   :config
   ;; Display preferences for latex previews
   ;; Larger equations
+  (setq org-element-use-cache nil)
   (add-hook 'org-latex-preview-auto-blacklist 'iscroll-next-line)
   (add-hook 'org-latex-preview-auto-blacklist 'iscroll-previous-line)
   (setq-default
@@ -1301,7 +1302,7 @@ Return the initialized session, if any."
   :straight t
   :after org
   :commands (org-gcal-sync org-gcal-fetch my/org-gcal-sync-maybe)
-  :hook (org-agenda-mode . my/org-gcal-sync-maybe)
+  ;; :hook (org-agenda-mode . my/org-gcal-sync-maybe)
   :config
   (setq plstore-cache-passphrase-for-symmetric-encryption t)
   (setq org-gcal-dir (dir-concat user-cache-directory "org-gcal/"))

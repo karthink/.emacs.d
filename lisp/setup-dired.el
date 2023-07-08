@@ -26,6 +26,7 @@
   (setq dired-listing-switches "-AGFhlv"
         dired-recursive-copies 'always
         dired-recursive-deletes 'always
+        dired-kill-when-opening-new-dired-buffer t
         dired-dwim-target t)
   (advice-add 'dired-view-file :around
               (defun dired-view-other-buffer-a (orig-fn &rest args)

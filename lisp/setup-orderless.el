@@ -10,7 +10,7 @@
   (setq orderless-component-separator #'split-string-and-unquote)
   (setq completion-styles '(orderless partial-completion))
   (setq orderless-style-dispatchers
-        '(;; my/orderless-flex-dispatcher
+        '(my/orderless-flex-dispatcher
           my/orderless-literal-dispatcher
           my/orderless-initialism-dispatcher
           my/orderless-exclude-dispatcher))
@@ -38,7 +38,8 @@
   
   (orderless-define-completion-style orderless-fast
     (orderless-style-dispatchers '(orderless-fast-dispatch
-                                   my/orderless-initialism-dispatcher))
+                                   my/orderless-initialism-dispatcher
+                                   my/orderless-flex-dispatcher))
     (orderless-matching-styles '(orderless-literal orderless-regexp)))
   
   ;; These were removed from Orderless, I use them.

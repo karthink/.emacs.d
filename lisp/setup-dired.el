@@ -43,7 +43,22 @@
            (next-window))))
     (select-window window)
     (find-file file)))
-  )
+  (defun my/dired-scroll-other-window (&optional arg)
+    "Scroll other window or go to next file."
+    (interactive "p")
+    (let* ((scroll-error-top-bottom nil)
+           (num (if (= arg 1) nil arg)))
+      (condition-case-unless-debug nil
+          (scroll-other-window num)
+        (error (dired-next-line 1)))))
+  (defun my/dired-scroll-other-window-down (&optional arg)
+    "Scroll other window or go to next file."
+    (interactive "p")
+    (let* ((scroll-error-top-bottom nil)
+           (num (if (= arg 1) nil arg)))
+      (condition-case-unless-debug nil
+          (scroll-other-window-down num)
+        (error (dired-previous-line 1))))))
 
 (use-package dired
   :if (>= emacs-major-version 28)
@@ -385,8 +400,8 @@ This relies on the external 'fd' executable."
   ;; Bind `dirvish|dirvish-side|dirvish-dwim' as you see fit
   (("M-s M-f" . dirvish-fd)
    :map dirvish-mode-map
-   ("SPC" . scroll-other-window)
-   ("S-SPC" . scroll-other-window-down)
+   ("SPC" . my/dired-scroll-other-window)
+   ("S-SPC" . my/dired-scroll-other-window-down)
    :map dired-mode-map ; Dirvish respects all the keybindings in this map
    ;; ("h" . dired-up-directory)
    ;; ("j" . dired-next-line)

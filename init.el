@@ -2176,7 +2176,7 @@ current buffer without truncation."
 ;; *** JINX
 (unless IS-GUIX (straight-use-package 'jinx))
 (use-package jinx
-  :hook ((text-mode prog-mode conf-mode) . my/jinx-mode)
+  ;; :hook ((text-mode prog-mode conf-mode) . my/jinx-mode)
   :bind ([remap ispell-word] . jinx-correct)
   :config
   (defun my/jinx-mode ()

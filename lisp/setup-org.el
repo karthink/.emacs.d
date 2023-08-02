@@ -160,7 +160,9 @@
 (use-package org-fold
   :after org
   :config
-  (setq org-fold-core-style 'text-properties))
+  (setq org-fold-core-style 'text-properties)
+  (setf (alist-get 'agenda org-fold-show-context-detail)
+        'ancestors))
 
 ;; From alphapapa's unpackaged: https://github.com/alphapapa/unpackaged.el#org-return-dwim
 (use-package org
@@ -336,7 +338,8 @@ appropriate.  In tables, insert a new row or end the table."
 (use-package org-latex-preview
   :after org
   :hook ((org-mode . org-latex-preview-auto-mode)
-         (org-mode . my/org-latex-preview-precompile-idle))
+         ;; (org-mode . my/org-latex-preview-precompile-idle)
+         )
   :bind (:map org-mode-map
          ("C-c C-x SPC" . org-latex-preview-clear-cache))
   :config
@@ -688,7 +691,8 @@ has no effect."
           (setq should-skip-entry t))))
     (when (and (not should-skip-entry)
                (save-excursion
-                 (outline-up-heading 1 t)
+                 (unless (= (org-outline-level) 1)
+                   (outline-up-heading 1 t))
                  (not (member (org-get-todo-state)
                               '("PROJECT" "TODO")))))
       (setq should-skip-entry t))

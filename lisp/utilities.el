@@ -57,7 +57,7 @@
 (defun ascii-table ()
   "Display basic ASCII table (0 thru 127)"
   (interactive)
-  (switch-to-buffer "*ASCII*")
+  (pop-to-buffer "*ASCII*")
   (erase-buffer)
   (save-excursion (let ((i -1))
                     (insert "ASCII characters 0 thru 127.\n\n")
@@ -69,7 +69,7 @@
                                       (setq i (+ 32 i)) i (single-key-description i)
                                       (setq i (+ 32 i)) i (single-key-description i)))
                       (setq i (- i 96)))))
-  (toggle-read-only 1))
+  (special-mode))
 
 ;;----------------------------------------------------------------------
 ;; INSERT FUNCTION DEFINITION AT POINT

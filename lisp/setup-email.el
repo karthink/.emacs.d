@@ -56,7 +56,7 @@
         notmuch-fcc-dirs nil
         notmuch-column-control 0.6
         notmuch-message-headers-visible nil
-        notmuch-saved-searches my-notmuch-saved-searches
+        ;; notmuch-saved-searches my-notmuch-saved-searches
         message-kill-buffer-on-exit t
         ;; notmuch-search-result-format
         ;; '(("date" . "%12s ")

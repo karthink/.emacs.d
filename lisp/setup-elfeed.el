@@ -23,7 +23,7 @@
   :commands (elfeed elfeed-update elfeed-search-bookmark-handler)
   :config
   ;; (use-package setup-reading)
-  (setq elfeed-feeds my-elfeed-feeds)
+  ;; (setq elfeed-feeds my-elfeed-feeds)
   ;; (setq elfeed-feeds nil)
   
   (setq-default elfeed-db-directory
@@ -284,7 +284,7 @@ ENQUEUE-P) add to mpv's playlist."
                      (cond
                       ((member word '("AND" "OR" "IF" "ON" "IT" "TO"
                                       "A" "OF" "VS" "IN" "FOR" "WAS"
-                                      "IS" "BE" "SO"))
+                                      "IS" "BE" "SO" "BY"))
                        (downcase word))
                       ((member word '("WE" "DAY" "HOW" "WHY" "NOW" "OLD"
                                       "NEW" "MY" "TOO" "GOT" "GET" "THE"

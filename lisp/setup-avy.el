@@ -294,9 +294,9 @@ The current window is chosen if WIN is not specified."
       (((background light))
        :foreground "DarkRed" :background "White"
        :weight bold :underline t)))
-   '(avy-lead-face-0 ((t :inherit avy-lead-face)))
-   '(avy-lead-face-1 ((t :inherit avy-lead-face)))
-   '(avy-lead-face-2 ((t :inherit avy-lead-face))))
+   '(avy-lead-face-0 ((t :background nil :inherit avy-lead-face)))
+   '(avy-lead-face-1 ((t :background nil :inherit avy-lead-face)))
+   '(avy-lead-face-2 ((t :background nil :inherit avy-lead-face))))
 
   ;; Jump to all paren types with [ and ]
   (advice-add 'avy-jump :filter-args

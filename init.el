@@ -3541,6 +3541,29 @@ for details."
            (special-mode)
            (display-buffer (current-buffer))))))))
 
+(use-package project
+    :after (popper visual-fill-column)
+    :bind (:map project-prefix-map
+           ("C" . gptel-project))
+    :config
+    (setf (alist-get ".*Chat.org$" display-buffer-alist nil nil #'equal)
+          `((display-buffer-below-selected)
+            (window-height . 0.5)
+            (body-function . ,#'select-window)))
+    (defun gptel-project ()
+      "Open the ChatGPT file for the current project."
+      (interactive)
+      (let ((default-directory (or (project-root (project-current))
+                                   default-directory)))
+        (find-file "Chat.org")
+        (require 'gptel)
+        (unless gptel-mode
+          (gptel-mode 1))
+        (unless visual-fill-column-mode
+          (visual-fill-column-mode 1))
+        (unless (equal popper-popup-status 'user-popup)
+          (popper-toggle-type)))))
+
 ;;;----------------------------------------------------------------
 ;; *** Codeium (testing)
 ;;;----------------------------------------------------------------

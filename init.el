@@ -2269,8 +2269,7 @@ normally have their errors suppressed."
   :config
   (when IS-LINUX
     (defun browse-url-umpv (url &optional single)
-      (start-process "mpv" nil "setsid" "-f"
-                     (if single "mpv" "umpv")
+      (start-process "mpv" nil (if single "mpv" "umpv")
                      (shell-quote-wildcard-pattern url)))
     
     (defun browse-url-mpv-enqueue (url &optional _)

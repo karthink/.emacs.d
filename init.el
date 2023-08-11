@@ -3284,6 +3284,19 @@ for details."
 ;; ---------------------------
 
 ;; * APPLICATIONS
+;; ** PROFILER
+(use-package profiler
+  :bind ("C-<f9>" . my/run-profiler)
+  :config
+  (defun my/run-profiler ()
+    (interactive)
+    (if (and (fboundp 'profiler-running-p)
+             (profiler-running-p))
+        (prog1 (profiler-stop)
+          (profiler-report))
+      (profiler-reset)
+      (profiler-start 'cpu)
+      (message "CPU Profiler started."))))
 ;; ** DIRED
 ;;;----------------------------------------------------------------
 (load (expand-file-name "lisp/setup-dired" user-emacs-directory))

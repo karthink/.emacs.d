@@ -164,6 +164,7 @@ Also see `my/search-occur-url'."
          ("C-SPC"       . my/isearch-mark-and-exit)
          ("<C-return>"  . my/isearch-other-end)
          ("C-w"         . nil)
+         ("M-e"         . nil)
          ("M-w"         . isearch-yank-word-or-char)))
 
 (provide 'setup-isearch)

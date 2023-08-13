@@ -3508,7 +3508,8 @@ for details."
 (use-package gptel
   :straight (:local-repo "~/.local/share/git/gptel/")
   :commands (gptel gptel-send)
-  :hook (gptel-mode . visual-fill-column-mode)
+  :hook ((gptel-mode . visual-fill-column-mode)
+         (eshell-mode . my/gptel-eshell-keys))
   :bind (("C-c C-<return>" . gptel-menu)
          ("C-c <return>" . my/gptel-send)
          ("C-h C-q" . gptel-quick))
@@ -3553,6 +3554,20 @@ for details."
              (insert response))
            (special-mode)
            (display-buffer (current-buffer))))))))
+
+(defun  my/gptel-eshell-send (&optional arg)
+  (interactive "P")
+  (if (use-region-p)
+      (gptel-send arg)
+    (push-mark)
+    (or (eshell-previous-prompt 0)
+        (eshell-previous-prompt 1))
+    (activate-mark)
+    (gptel-send arg)
+    (exchange-point-and-mark)
+    (deactivate-mark)))
+(defun my/gptel-eshell-keys ()
+  (define-key eshell-mode-map (kbd "C-c <return>") #'my/gptel-eshell-send))
 
 (use-package project
     :after (popper visual-fill-column)

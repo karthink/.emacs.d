@@ -1833,8 +1833,6 @@ current buffer without truncation."
 (use-package macrursors
   :straight (:host github :repo "corytertel/macrursors"
              :fork (:repo "karthink/macrursors"))
-  :hook ((macrursors-pre-finish macrursors-post-finish)
-         . corfu-mode)
   :bind-keymap ("C-;" . macrursors-mark-map)
   :bind (("M-n" . macrursors-mark-next-instance-of)
          ("M-p" . macrursors-mark-previous-instance-of)
@@ -1864,9 +1862,12 @@ current buffer without truncation."
          ("M-e" . macrursors-mark-all-sentences)
          ("e" . macrursors-mark-all-lines))
   :config
-  (setq macrursors-match-cursor-style t
-        ;; macrursors-apply-keys "C-; C-;"
-        )
+  (dolist (mode '(gcmh-mode corfu-mode font-lock-mode
+                  global-eldoc-mode show-paren-mode))
+    (add-hook 'macrursors-pre-finish-hook mode)
+    (add-hook 'macrursors-post-finish-hook mode))
+  (setq ;; macrursors-apply-keys "C-; C-;"
+   macrursors-match-cursor-style t)
 
   (defvar macrursors-repeat-map
     (let ((map (make-sparse-keymap)))

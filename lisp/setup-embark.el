@@ -15,6 +15,7 @@
          ("C-S-SPC"  . embark-act)
          ("C-c SPC"  . embark-act)
          ("C-c RET"  . embark-dwim)
+         ("S-<return>"  . embark-dwim)
          ("C-M-<return>"  . embark-dwim)
          ("C-h b"   . embark-bindings)
          ("C-h C-b" . describe-bindings)

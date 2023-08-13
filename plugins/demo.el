@@ -35,7 +35,7 @@
               (const :tag "wide" 'wide)
               (const :tag "unspecified" nil))
      nil
-     (intern-soft (completing-read "Aspect ratio: " '(tall wide))))
+     (intern-soft (completing-read "Aspect ratio: " '(tall wide nil))))
 
     (demo--define-infix
      "m" "mode-line-p" "mode-line?"
@@ -47,7 +47,7 @@
      'integer 840
      (pcase demo-aspect-ratio
        ('tall 840)
-       ('wide 800)
+       ('wide 360)
        (_ (read-number "Height (pixels): "))))
 
     (demo--define-infix
@@ -55,7 +55,7 @@
      'integer 740
      (pcase demo-aspect-ratio
        ('tall 740)
-       ('wide 1280)
+       ('wide 720)
        (_ (read-number "Width (pixels): "))))
 
     (demo--define-infix
@@ -236,6 +236,15 @@
       (kill-local-variable 'mode-line-format)
       (force-mode-line-update)))
 
+;; Org
+(use-package org
+  :defer
+  :config
+  (setq org-latex-preview-default-process 'dvipng)
+  (plist-put org-latex-preview-options :scale 1.5)
+  (setq org-latex-preview-debounce 0.1)
+  (setq org-latex-preview-throttle 0.1))
+
 ;; Popper mode
 (use-package popper
   :after popper
@@ -275,34 +284,12 @@
 
 ;; Completion
 (use-package emacs
+  :disabled
   :config
   (setq completion-in-region-function
 	(if (featurep 'consult)
 	    #'consult-completion-in-region
 	  #'completion--in-region)))
-
-;; Elmo
-(use-package elmo
-  :disabled
-  :config
-  (setf (alist-get 't embark-collect-initial-view-alist)
-        'grid))
-(use-package elmo
-  :disabled
-  :config
-  (progn "Elmo demo"
-         (setq elmo-height
-               (lambda (win)
-                 (fit-window-to-buffer
-                  win
-                  14)))
-         (elmo-mode -1)
-         (elmo-mode 1)
-         (setq mode-line-keycast-format "%s%k %r")
-         (defun force-keycast-update (&rest _)
-           (while-no-input (redisplay)
-                           (force-mode-line-update t)))
-         (add-hook 'post-command-hook #'force-keycast-update)))
 
 ;; Yas
 (use-package emacs
@@ -530,46 +517,46 @@
                                       calc-prefer-frac t
                                       calc-angle-mode rad)))))))
 
-(defun my/vertico-extensions-demo ()
-  (interactive)
-  (require 'vertico-flat)
-  (require 'vertico-indexed)
-  (require 'vertico-grid)
-  (require 'vertico-mouse)
-  (require 'vertico-unobtrusive)
-  (require 'vertico-reverse)
-  (require 'vertico-buffer)
+;; (defun my/vertico-extensions-demo ()
+;;   (interactive)
+;;   (require 'vertico-flat)
+;;   (require 'vertico-indexed)
+;;   (require 'vertico-grid)
+;;   (require 'vertico-mouse)
+;;   (require 'vertico-unobtrusive)
+;;   (require 'vertico-reverse)
+;;   (require 'vertico-buffer)
 
-  (setq tab-bar-show nil)
-  (project-x-mode 0)
-  (add-hook 'embark-collect-mode-hook #'hl-line-mode)
-  (setq default-directory "~/.emacs.orig/lisp/")
-  (setq vertico-count 14)
-  (setq vertico-flat-max-lines 2)
-  (setq vertico-buffer-display-action
-        '(display-buffer-in-direction
-          (direction . right)
-          (window-width . 0.5)))
-  (advice-add 'push-button :after
-              (defun my/only-window (&rest _) (delete-other-windows)))
+;;   (setq tab-bar-show nil)
+;;   (project-x-mode 0)
+;;   (add-hook 'embark-collect-mode-hook #'hl-line-mode)
+;;   (setq default-directory "~/.emacs.orig/lisp/")
+;;   (setq vertico-count 14)
+;;   (setq vertico-flat-max-lines 2)
+;;   (setq vertico-buffer-display-action
+;;         '(display-buffer-in-direction
+;;           (direction . right)
+;;           (window-width . 0.5)))
+;;   (advice-add 'push-button :after
+;;               (defun my/only-window (&rest _) (delete-other-windows)))
   
-  (defun my/activate-line (&rest _)
-    (if (member 'highlight
-                (mapcar
-                 (lambda (ov) (overlay-get ov 'face))
-                 (overlays-at (point))))
-        (mapc #'delete-overlay (overlays-at (point)))
-      (overlay-put
-       (make-overlay (line-beginning-position) (line-end-position))
-       'face 'highlight)))
+;;   (defun my/activate-line (&rest _)
+;;     (if (member 'highlight
+;;                 (mapcar
+;;                  (lambda (ov) (overlay-get ov 'face))
+;;                  (overlays-at (point))))
+;;         (mapc #'delete-overlay (overlays-at (point)))
+;;       (overlay-put
+;;        (make-overlay (line-beginning-position) (line-end-position))
+;;        'face 'highlight)))
   
-  (advice-add 'push-button :after #'my/activate-line))
+;;   (advice-add 'push-button :after #'my/activate-line))
 
-(defun org-set-dvisvgm ()
-  (setf (alist-get 'dvisvgm org-preview-latex-process-alist)
-        (plist-put (alist-get 'dvisvgm org-preview-latex-process-alist)
-                   :image-size-adjust '(1.35 . 1.5)))
-  (setq org-preview-latex-default-process 'dvisvgm))
+;; (defun org-set-dvisvgm ()
+;;   (setf (alist-get 'dvisvgm org-preview-latex-process-alist)
+;;         (plist-put (alist-get 'dvisvgm org-preview-latex-process-alist)
+;;                    :image-size-adjust '(1.35 . 1.5)))
+;;   (setq org-preview-latex-default-process 'dvisvgm))
 
 (provide 'demo)
 ;;; demo.el ends here

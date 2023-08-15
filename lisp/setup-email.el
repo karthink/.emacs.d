@@ -45,6 +45,7 @@
          ("RET"   . notmuch-tree-from-search-thread)
          ("M-RET" . notmuch-search-show-thread)
          :map notmuch-tree-mode-map
+         ("h" . my/notmuch-tree-show-hide-header)
          ("M-s u" . my/notmuch-tree-browse-url)
          ("<tab>" . my/notmuch-tree-message-push-button)
          ("S-SPC" . notmuch-tree-scroll-message-window-back))
@@ -86,6 +87,13 @@
   (advice-add 'notmuch-show-insert-bodypart :filter-args 'my/notmuch-hide-content)
 
   (defvar my/notmuch-hide-content-types '("text/x-patch" "text/x-diff"))
+
+  (defun my/notmuch-tree-show-hide-header ()
+    "Show or hide mail headers."
+    (interactive)
+    (when (window-live-p notmuch-tree-message-window)
+      (with-selected-window notmuch-tree-message-window
+        (notmuch-show-toggle-visibility-headers))))
 
   (defun my/notmuch-hide-content (args)
     (cl-destructuring-bind (msg part depth . hide) args

@@ -431,11 +431,12 @@
 ;;;################################################################
 ;; * EDITING
 ;;;######################################################################
-(use-package visual-fill-column
+ (use-package visual-fill-column
   :straight t
   :commands visual-fill-column-mode
   :hook ((eww-after-render . visual-fill-column-mode)
-         (eww-after-render . visual-line-mode))
+         (eww-after-render . visual-line-mode)
+         (notmuch-show-mode . visual-fill-column-mode))
   :config
   (setq-default visual-fill-column-center-text t
                 visual-fill-column-width 94))

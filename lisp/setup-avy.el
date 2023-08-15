@@ -273,6 +273,7 @@ The current window is chosen if WIN is not specified."
             ((_ all-buttons) 
              (avy-action
               (lambda (pt)
+                (goto-char pt)
                 (let (b link)
                   (cond
                    ((and (setq b (button-at (1+ pt)))

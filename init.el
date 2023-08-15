@@ -126,6 +126,17 @@
       :straight t
       ;; :hook (after-init . gcmh-mode)
       :config
+      (defun gcmh-register-idle-gc ()
+        "Register a timer to run `gcmh-idle-garbage-collect'.
+Cancel the previous one if present."
+        (unless (eq this-command 'self-insert-command)
+          (let ((idle-t (if (eq gcmh-idle-delay 'auto)
+		            (* gcmh-auto-idle-delay-factor gcmh-last-gc-time)
+		          gcmh-idle-delay)))
+            (when (timerp gcmh-idle-timer)
+              (cancel-timer gcmh-idle-timer))
+            (setf gcmh-idle-timer
+	          (run-with-timer idle-t nil #'gcmh-idle-garbage-collect)))))
       (setq gcmh-idle-delay 'auto  ; default is 15s
             gcmh-high-cons-threshold (* 32 1024 1024)
             gcmh-verbose nil)

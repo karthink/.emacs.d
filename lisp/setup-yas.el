@@ -3,7 +3,8 @@
   :straight t
   ;; :defer 5
   ;; :after warnings
-  :hook ((prog-mode LaTeX-mode org-mode) . yas-minor-mode)
+  :hook (((prog-mode LaTeX-mode org-mode) . yas-minor-mode)
+         (yas-minor-mode . my/yas-auto-setup))
   :config
   ;; (use-package yasnippet-snippets
   ;;   :straight t)
@@ -26,7 +27,8 @@
     (when (and (boundp 'yas-minor-mode) yas-minor-mode)
       (let ((yas-buffer-local-condition ''(require-snippet-condition . auto)))
         (yas-expand))))
-  (add-hook 'post-self-insert-hook #'my/yas-try-expanding-auto-snippets)
+  (defun my/yas-auto-setup ()
+    (add-hook 'post-self-insert-hook #'my/yas-try-expanding-auto-snippets nil t))
 
 (with-eval-after-load 'company
   ;; (defun my/yas-company-next-field ()

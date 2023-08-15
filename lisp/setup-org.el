@@ -1254,6 +1254,39 @@ Return the initialized session, if any."
   :straight t
   :after (ox)
   :config
+  (use-package org-glossary
+    :straight '(:host github :repo "tecosaur/org-glossary")
+    :config
+    (setq org-glossary-toplevel-only nil)
+    (org-glossary-set-export-spec 'hugo t
+      :use "<a class=\"org-gls\" href=\"#gls-%K\">%t</a>"
+      :definition "<a name=\"gls-%K\">%t</a>"
+      :definition-structure "%d\n\\colon{} %v [%n uses]\n")
+    (org-glossary-set-export-spec 'hugo 'glossary
+      :heading "*** Glossary")
+    (defun org-glossary--expand-print-keyword (backend terms keyword)
+      "Call `org-glossary--expand-print' with paramaters and terms based on KEYWORD.
+BACKEND is passed through unmodified, but TERMS may be modified depending on
+the :consume parameter extracted from KEYWORD."
+      (let ((heading (org-element-lineage keyword '(headline org-data)))
+            (parameters (org-combine-plists
+                         org-glossary-default-print-parameters
+                         (org-glossary--parse-print-keyword-value
+                          (org-element-property :value keyword)))))
+        (while (and heading
+                    (not (eq (org-element-type heading) 'org-data))
+                    (> (org-element-property :level heading)
+                       (plist-get parameters :level)))
+          (setq heading (org-element-lineage heading '(headline org-data))))
+        (org-glossary--expand-print
+         backend
+         (org-glossary--extract-uses-in-region
+          terms
+          (if heading (org-element-property :begin heading) (point-min))
+          (if heading (org-element-property :end heading) (point-max))
+          (plist-get parameters :type)
+          (plist-get parameters :consume))
+         parameters))))
   (setq org-hugo-section "blog")
   (add-to-list 'org-hugo-special-block-type-properties
                '("sidenote" . (:trim-pre t :trim-post t)))
@@ -1283,7 +1316,7 @@ Return the initialized session, if any."
       (if-let ((_ title)
                (url (concat
                      "http://localhost:1313/"
-                     (if sec (downcase sec) "blog")
+                     (if sec (downcase sec) "software")
                      "/" title)))
           (progn (save-buffer)
                  (unless org-hugo-auto-export-mode

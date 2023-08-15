@@ -624,6 +624,7 @@ has no effect."
               ("w" . org-agenda-refile)
               ("S-SPC" . org-agenda-show-scroll-down))
   :config
+  (timeout-debounce! 'org-agenda-do-context-action 0.3 t)
   (setq org-agenda-files '("~/Documents/org/inbox.org"
                            "~/Documents/org/do.org"
                            "~/Documents/org/gmail-cal.org"

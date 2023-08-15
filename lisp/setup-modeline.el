@@ -54,7 +54,11 @@
   (setq sml/theme nil)
   (sml/setup)
   :config
-  (add-to-list 'sml/replacer-regexp-list '("^~/[dD]ocuments/[rR]oam.*/" ":ROAM:")))
+  (run-at-time
+   4 nil
+   (lambda () (timeout-throttle! 'sml/generate-minor-modes 4.0)))
+  (add-to-list 'sml/replacer-regexp-list
+               '("^~/[dD]ocuments/[rR]oam.*/" ":ROAM:")))
 
 ;; Some advice to add support for Evil to smart-mode-line, long since
 ;; deprecated.
@@ -98,10 +102,8 @@
 (defvar mode-line-cleaner-alist
   `((company-mode . " ⇝")
     (corfu-mode . " ⇝")
-    (yas-minor-mode .  " Y";; " Υ"
-                    )
-    (smartparens-mode . " ()";; " ﴾﴿"
-                      )
+    (yas-minor-mode .  " Y")
+    (smartparens-mode . " ()")
     (evil-smartparens-mode . "")
     (eldoc-mode . "")
     (abbrev-mode . "")

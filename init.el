@@ -3935,7 +3935,6 @@ buffer's text scale."
          (set-fontset-font t 'unicode "Symbola" nil 'prepend)
          (pcase-let ((`(,vp ,fp)
                       (cond
-                       ((equal system-name "x220") '(120 130))
                        ((string= (getenv "XDG_SESSION_TYPE") "wayland")
                         '(125 135))
                        (t '(105 110)))))

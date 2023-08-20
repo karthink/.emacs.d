@@ -68,6 +68,7 @@ instead."
             "C" '(helpful-command :wk "describe command")))
 
 (use-package helpful
+  :disabled
   :after (helpful embark)
   :bind (:map embark-become-help-map
          ("f" . helpful-callable)

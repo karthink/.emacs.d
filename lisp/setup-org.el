@@ -460,6 +460,32 @@ INFO is a plist containing export properties."
                           "Creating LaTeX Image..." nil processing-type)
         (buffer-string)))))
 
+;; code for centering LaTeX previews -- a terrible idea
+(use-package org-latex-preview
+  :disabled
+  :hook ((org-mode . my/org-latex-preview-auto-recenter))
+  :config
+  (add-hook 'org-latex-preview-open-functions
+            (defun my/org-latex-preview-uncenter (ov)
+              (overlay-put ov 'justify (overlay-get ov 'before-string))
+              (overlay-put ov 'before-string nil)))
+  (add-hook 'org-latex-preview-close-functions
+            (defun my/org-latex-preview-recenter (ov)
+              (overlay-put ov 'before-string (overlay-get ov 'justify))
+              (overlay-put ov 'justify nil)))
+  (defun my/org-latex-preview-center (ov)
+    (save-excursion
+      (goto-char (overlay-start ov))
+      (when-let* ((elem (org-element-context))
+                  ((or (eq (org-element-type elem) 'latex-environment)
+                       (string-match-p "^\\\\\\[" (org-element-property :value elem))))
+                  (img (overlay-get ov 'display))
+                  (prop `(space :align-to (- center (0.5 . ,img)))))
+        (overlay-put ov 'before-string (propertize " " 'display prop 'face 'default)))))
+
+  (add-hook 'org-latex-preview-update-overlay-functions
+            #'my/org-latex-preview-center))
+
 (use-package org-appear
   :straight t
   :hook (org-mode . org-appear-mode)

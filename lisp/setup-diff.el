@@ -23,7 +23,8 @@
   :init
   (setq ediff-diff-options "-w" ; turn off whitespace checking
         ediff-split-window-function #'split-window-horizontally
-        ediff-window-setup-function #'ediff-setup-windows-plain)
+        ediff-window-setup-function #'ediff-setup-windows-plain
+        ediff-keep-variants nil)
   :config
   (defun my/ediff-expand-outlines ()
     "If outline minor mode is active, expand the ediff buffers

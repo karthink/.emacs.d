@@ -293,8 +293,8 @@ The current window is chosen if WIN is not specified."
        :foreground "LightCoral" :background "Black"
        :weight bold :underline t)
       (((background light))
-       :foreground "DarkRed" :background "White"
-       :weight bold :underline t)))
+       :foreground "DarkRed" :background nil :box t :height 0.95
+       :weight bold)))
    '(avy-lead-face-0 ((t :background nil :inherit avy-lead-face)))
    '(avy-lead-face-1 ((t :background nil :inherit avy-lead-face)))
    '(avy-lead-face-2 ((t :background nil :inherit avy-lead-face))))

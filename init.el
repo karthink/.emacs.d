@@ -14,8 +14,10 @@
 ;; ** STRAIGHT!
 (defvar bootstrap-version)
 ;; cache directory
-(defvar user-repos-directory "~/.local/share/git/"
+(defconst user-repos-directory "~/.local/share/git/"
   "Location where cloned repos are stored.")
+(defconst user-build-directory
+  (if (= emacs-major-version 29) "build29" "build"))
 (let ((bootstrap-file
        (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
       (bootstrap-version 5))
@@ -28,7 +30,8 @@
       (eval-print-last-sexp)))
   (unless (file-directory-p user-repos-directory)
     (make-directory user-repos-directory t))
-  (setq straight-base-dir user-repos-directory)
+  (setq straight-base-dir user-repos-directory
+        straight-build-dir user-build-directory)
   (setq straight-check-for-modifications '(find-when-checking
                                            check-on-save)
         straight-vc-git-default-clone-depth 2)
@@ -499,6 +502,176 @@ Cancel the previous one if present."
   (:keymaps 'view-mode-map
             :states '(normal motion visual)
             "M-SPC" 'space-menu))
+
+(use-package expand-region
+  :straight '(:host github :repo "magnars/expand-region.el"
+              :fork "karthink/expand-region.el")
+  :commands expand-region
+  :bind ("C-," . 'er/expand-region)
+  :config
+  (add-to-list 'expand-region-exclude-text-mode-expansions 'org-mode)
+  (add-to-list 'expand-region-exclude-text-mode-expansions 'LaTeX-mode)
+  (set-default 'er--show-expansion-message nil)
+  (setq expand-region-show-usage-message nil
+        expand-region-fast-keys-enabled nil)
+  (defvar expand-region-repeat-map
+    (let ((map (make-sparse-keymap)))
+      (define-key map "," #'er/expand-region)
+      (define-key map "-" #'er/contract-region)
+      (define-key map "." #'er/contract-region)
+      map))
+  ;; Expand 0-9 times by pressing 0-9
+  (dotimes (i 9)
+    (define-key expand-region-repeat-map
+      (kbd (number-to-string i))
+      (lambda () (interactive)
+        (er/expand-region i)
+        (setq this-command 'er/expand-region))))
+  (put 'er/expand-region 'repeat-map 'expand-region-repeat-map)
+  (put 'er/contract-region 'repeat-map 'expand-region-repeat-map)
+  (advice-add 'er--first-invocation
+              :override
+              (defun my/er--first-invocation ()
+                "t if this is the first invocation of er/expand-region or er/contract-region"
+                (not (memq last-command
+                           '(er/expand-region er/contract-region
+                             easy-kill-expand-region easy-kill-contract-region)))))
+  
+  ;; The default er/mark-comment is both expensive and incorrect for block
+  ;; comments.
+  (defun er/mark-comment ()
+    "Mark the entire comment around point."
+    (interactive)
+    (when (er--point-is-in-comment-p)
+      (let ((p (point)))
+        (while (or (> (skip-syntax-forward " ") 0)
+                   (and (er--point-is-in-comment-p) (not (eobp))))
+          (forward-char 1))
+        (while (not (or (er--point-is-in-comment-p) (bobp)))
+          (forward-char -1))
+        (set-mark (point))
+        (goto-char p)
+        (while (or (< (skip-syntax-backward " ") 0)
+                   (er--point-is-in-comment-p))
+          (forward-char -1))
+        (while (not (or (er--point-is-in-comment-p) (eobp)))
+          (forward-char 1)))))
+  
+  (defun my/find-bounds-of-regexps (open close)
+    (let ((start (point))
+          (parity 0)
+          (open-close (concat "\\(?:" open "\\|" close "\\)"))
+          end)
+      (save-excursion
+        (while (and (not (= parity -1))
+                    (re-search-backward open-close nil t))
+          (if (looking-at open)
+              (setq parity (1- parity))
+            (setq parity (1+ parity))))
+        (setq end (point))
+        (goto-char start)
+        (while (and (not (= parity 0))
+                    (re-search-forward open-close nil t))
+          (if (looking-back
+               close
+               (- (point) (length (match-string-no-properties 0))))
+              (setq parity (1+ parity))
+            (setq parity (1- parity))))
+        (when (= parity 0) (cons end (point))))))
+
+  (use-package outline
+    :hook (outline-minor-mode . er/add-outline-mode-expansions)
+    :config
+    (defun er/add-outline-mode-expansions ()
+      (make-variable-buffer-local 'er/try-expand-list)
+      (add-to-list 'er/try-expand-list 'outline-mark-subtree)))
+  
+  (use-package latex
+    :defer
+    :config
+    (add-hook 'LaTeX-mode-hook 'er/set-latex-mode-expansions 90)
+    (defun er/mark-latex-text-sentence ()
+      (unless (texmathp) (er/mark-text-sentence)))
+    (defun er/mark-latex-text-paragraph ()
+      (unless (texmathp) (er/mark-text-paragraph)))
+    (defun er/mark-LaTeX-inside-math ()
+      "Mark text inside LaTeX math delimiters. See `er/mark-LaTeX-math'
+for details."
+      (when (texmathp)
+          (let* ((string (car texmathp-why))
+                 (pos (cdr texmathp-why))
+                 (reason (assoc string texmathp-tex-commands1))
+                 (type (cadr reason)))
+            (cond
+             ((eq type 'sw-toggle) ;; $ and $$
+              (goto-char pos)
+              (set-mark (1+ (point)))
+              (forward-sexp 1)
+              (backward-char 1)
+              (exchange-point-and-mark))
+             ((or (eq type 'sw-on)
+                  (equal string "Org mode embedded math")) ;; \( and \[
+              (re-search-forward texmathp-onoff-regexp)
+              (backward-char 2)
+              (set-mark (+ pos 2))
+              (exchange-point-and-mark))
+             (t (error (format "Unknown reason to be in math mode: %s" type)))))))
+    ;; ;; FIXME
+    ;; (defun er/mark-latex-macro ()
+    ;;   (interactive)
+    ;;   (when (texmathp)
+    ;;     (when (> (point) (mark))
+    ;;       (exchange-point-and-mark))
+    ;;     (when (looking-back "\\\\[a-zA-Z_]+\\*?{?" (line-beginning-position))
+    ;;       (set-mark (save-excursion
+    ;;                   (goto-char (match-beginning 0))
+    ;;                   (point)))
+    ;;       (exchange-point-and-mark))))
+    (defun er/mark-latex-inside-pairs ()
+      (if (texmathp)
+          (cl-destructuring-bind (beg . end)
+              (my/find-bounds-of-regexps " *[{([|<]"
+                                         " *[]})|>]")
+            (when-let ((n (length (match-string-no-properties 0))))
+              (set-mark (save-excursion
+                          (goto-char beg)
+                          (forward-char n)
+                          (skip-chars-forward er--space-str)
+                          (point)))
+              (goto-char end)
+              (backward-char n)
+              (if (looking-back "\\\\right\\\\*\\|\\\\" (- (point) 7))
+                  (backward-char (length (match-string-no-properties 0)))))
+            (skip-chars-backward er--space-str)
+            (exchange-point-and-mark))
+        (er/mark-inside-pairs)))
+    (defun er/mark-latex-outside-pairs ()
+      (if (texmathp)
+          (cl-destructuring-bind (beg . end)
+              (my/find-bounds-of-regexps " *[{([|<]"
+                                         " *[]})|>]")
+            (set-mark (save-excursion
+                        (goto-char beg)
+                        ;; (forward-char 1)
+                        (if (looking-back "\\\\left\\\\*\\|\\\\" (- (point) 6))
+                            (backward-char (length (match-string-no-properties 0))))
+                        (skip-chars-forward er--space-str)
+                        (point)))
+            (goto-char end)
+            (skip-chars-backward er--space-str)
+            ;; (backward-char 1)
+            (exchange-point-and-mark))
+        (er/mark-outside-pairs)))
+    (defun er/set-latex-mode-expansions ()
+      (make-variable-buffer-local 'er/try-expand-list)
+      (setq er/try-expand-list
+            '(er/mark-word er/mark-symbol er/mark-symbol-with-prefix
+              er/mark-next-accessor  er/mark-inside-quotes er/mark-outside-quotes
+              er/mark-LaTeX-inside-math
+              er/mark-latex-inside-pairs er/mark-latex-outside-pairs
+              er/mark-comment er/mark-url er/mark-email ;er/mark-defun
+              er/mark-latex-text-sentence er/mark-latex-text-paragraph))
+      (er/add-latex-mode-expansions))))
 
 (use-package easy-kill
   :straight t
@@ -2840,178 +3013,6 @@ _d_: subtree
     (sp-local-pair "'" nil :actions nil)))
 
 ;;;----------------------------------------------------------------
-;; ** EXPAND-REGION
-;;;----------------------------------------------------------------
-(use-package expand-region
-  :straight '(:host github :repo "karthink/expand-region.el")
-  :commands expand-region
-  :bind ("C-," . 'er/expand-region)
-  :config
-  (add-to-list 'expand-region-exclude-text-mode-expansions 'org-mode)
-  (add-to-list 'expand-region-exclude-text-mode-expansions 'LaTeX-mode)
-  (set-default 'er--show-expansion-message nil)
-  (setq expand-region-show-usage-message nil
-        expand-region-fast-keys-enabled nil)
-  (defvar expand-region-repeat-map
-    (let ((map (make-sparse-keymap)))
-      (define-key map "," #'er/expand-region)
-      (define-key map "-" #'er/contract-region)
-      (define-key map "." #'er/contract-region)
-      map))
-  ;; Expand 0-9 times by pressing 0-9
-  (dotimes (i 9)
-    (define-key expand-region-repeat-map
-      (kbd (number-to-string i))
-      (lambda () (interactive)
-        (er/expand-region i)
-        (setq this-command 'er/expand-region))))
-  (put 'er/expand-region 'repeat-map 'expand-region-repeat-map)
-  (put 'er/contract-region 'repeat-map 'expand-region-repeat-map)
-  (advice-add 'er--first-invocation
-              :override
-              (defun my/er--first-invocation ()
-                "t if this is the first invocation of er/expand-region or er/contract-region"
-                (not (memq last-command
-                           '(er/expand-region er/contract-region
-                             easy-kill-expand-region easy-kill-contract-region)))))
-  
-  ;; The default er/mark-comment is both expensive and incorrect for block
-  ;; comments.
-  (defun er/mark-comment ()
-    "Mark the entire comment around point."
-    (interactive)
-    (when (er--point-is-in-comment-p)
-      (let ((p (point)))
-        (while (or (> (skip-syntax-forward " ") 0)
-                   (and (er--point-is-in-comment-p) (not (eobp))))
-          (forward-char 1))
-        (while (not (or (er--point-is-in-comment-p) (bobp)))
-          (forward-char -1))
-        (set-mark (point))
-        (goto-char p)
-        (while (or (< (skip-syntax-backward " ") 0)
-                   (er--point-is-in-comment-p))
-          (forward-char -1))
-        (while (not (or (er--point-is-in-comment-p) (eobp)))
-          (forward-char 1)))))
-  
-  (defun my/find-bounds-of-regexps (open close)
-    (let ((start (point))
-          (parity 0)
-          (open-close (concat "\\(?:" open "\\|" close "\\)"))
-          end)
-      (save-excursion
-        (while (and (not (= parity -1))
-                    (re-search-backward open-close nil t))
-          (if (looking-at open)
-              (setq parity (1- parity))
-            (setq parity (1+ parity))))
-        (setq end (point))
-        (goto-char start)
-        (while (and (not (= parity 0))
-                    (re-search-forward open-close nil t))
-          (if (looking-back
-               close
-               (- (point) (length (match-string-no-properties 0))))
-              (setq parity (1+ parity))
-            (setq parity (1- parity))))
-        (when (= parity 0) (cons end (point))))))
-
-  (use-package outline
-    :hook (outline-minor-mode . er/add-outline-mode-expansions)
-    :config
-    (defun er/add-outline-mode-expansions ()
-      (make-variable-buffer-local 'er/try-expand-list)
-      (add-to-list 'er/try-expand-list 'outline-mark-subtree)))
-  
-  (use-package latex
-    :defer
-    :config
-    (add-hook 'LaTeX-mode-hook 'er/set-latex-mode-expansions 90)
-    (defun er/mark-latex-text-sentence ()
-      (unless (texmathp) (er/mark-text-sentence)))
-    (defun er/mark-latex-text-paragraph ()
-      (unless (texmathp) (er/mark-text-paragraph)))
-    (defun er/mark-LaTeX-inside-math ()
-      "Mark text inside LaTeX math delimiters. See `er/mark-LaTeX-math'
-for details."
-      (when (texmathp)
-          (let* ((string (car texmathp-why))
-                 (pos (cdr texmathp-why))
-                 (reason (assoc string texmathp-tex-commands1))
-                 (type (cadr reason)))
-            (cond
-             ((eq type 'sw-toggle) ;; $ and $$
-              (goto-char pos)
-              (set-mark (1+ (point)))
-              (forward-sexp 1)
-              (backward-char 1)
-              (exchange-point-and-mark))
-             ((or (eq type 'sw-on)
-                  (equal string "Org mode embedded math")) ;; \( and \[
-              (re-search-forward texmathp-onoff-regexp)
-              (backward-char 2)
-              (set-mark (+ pos 2))
-              (exchange-point-and-mark))
-             (t (error (format "Unknown reason to be in math mode: %s" type)))))))
-    ;; ;; FIXME
-    ;; (defun er/mark-latex-macro ()
-    ;;   (interactive)
-    ;;   (when (texmathp)
-    ;;     (when (> (point) (mark))
-    ;;       (exchange-point-and-mark))
-    ;;     (when (looking-back "\\\\[a-zA-Z_]+\\*?{?" (line-beginning-position))
-    ;;       (set-mark (save-excursion
-    ;;                   (goto-char (match-beginning 0))
-    ;;                   (point)))
-    ;;       (exchange-point-and-mark))))
-    (defun er/mark-latex-inside-pairs ()
-      (if (texmathp)
-          (cl-destructuring-bind (beg . end)
-              (my/find-bounds-of-regexps " *[{([|<]"
-                                         " *[]})|>]")
-            (when-let ((n (length (match-string-no-properties 0))))
-              (set-mark (save-excursion
-                          (goto-char beg)
-                          (forward-char n)
-                          (skip-chars-forward er--space-str)
-                          (point)))
-              (goto-char end)
-              (backward-char n)
-              (if (looking-back "\\\\right\\\\*\\|\\\\" (- (point) 7))
-                  (backward-char (length (match-string-no-properties 0)))))
-            (skip-chars-backward er--space-str)
-            (exchange-point-and-mark))
-        (er/mark-inside-pairs)))
-    (defun er/mark-latex-outside-pairs ()
-      (if (texmathp)
-          (cl-destructuring-bind (beg . end)
-              (my/find-bounds-of-regexps " *[{([|<]"
-                                         " *[]})|>]")
-            (set-mark (save-excursion
-                        (goto-char beg)
-                        ;; (forward-char 1)
-                        (if (looking-back "\\\\left\\\\*\\|\\\\" (- (point) 6))
-                            (backward-char (length (match-string-no-properties 0))))
-                        (skip-chars-forward er--space-str)
-                        (point)))
-            (goto-char end)
-            (skip-chars-backward er--space-str)
-            ;; (backward-char 1)
-            (exchange-point-and-mark))
-        (er/mark-outside-pairs)))
-    (defun er/set-latex-mode-expansions ()
-      (make-variable-buffer-local 'er/try-expand-list)
-      (setq er/try-expand-list
-            '(er/mark-word er/mark-symbol er/mark-symbol-with-prefix
-              er/mark-next-accessor  er/mark-inside-quotes er/mark-outside-quotes
-              er/mark-LaTeX-inside-math
-              er/mark-latex-inside-pairs er/mark-latex-outside-pairs
-              er/mark-comment er/mark-url er/mark-email ;er/mark-defun
-              er/mark-latex-text-sentence er/mark-latex-text-paragraph))
-      (er/add-latex-mode-expansions))))
-
-;;;----------------------------------------------------------------
 ;; ** AVY
 ;;;----------------------------------------------------------------
 (load (expand-file-name "lisp/setup-avy" user-emacs-directory))
@@ -3134,12 +3135,6 @@ for details."
          ("M-." . company-show-location)))
 
 ;;;----------------------------------------------------------------
-;; ** CORFU + CAPE
-;;;----------------------------------------------------------------
-(load (expand-file-name "lisp/setup-corfu" user-emacs-directory))
-(setq tab-always-indent 'complete)
-
-;;;----------------------------------------------------------------
 ;; ** YASNIPPET
 ;;;----------------------------------------------------------------
 (load (expand-file-name "lisp/setup-yas" user-emacs-directory))
@@ -3157,6 +3152,11 @@ for details."
 (load (expand-file-name "lisp/setup-embark" user-emacs-directory))
 (load (expand-file-name "lisp/setup-consult" user-emacs-directory))
 
+;;;----------------------------------------------------------------
+;; ** CORFU + CAPE
+;;;----------------------------------------------------------------
+(load (expand-file-name "lisp/setup-corfu" user-emacs-directory))
+(setq tab-always-indent 'complete)
 
 ;;;----------------------------------------------------------------
 ;; *** MARGINALIA

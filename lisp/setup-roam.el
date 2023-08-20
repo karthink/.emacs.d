@@ -61,9 +61,8 @@
                       (let ((citar-bibliography (concat
                                                  (file-name-as-directory org-roam-directory)
                                                  "biblio.bib")))
-                        (citar-select-ref :multiple nil :rebuild-cache t))))
-        (let ((title (citar--format-entry-no-widths (cdr keys-entries)
-                                                    "${author} :: ${title}")))
+                        (citar-select-refs :multiple nil))))
+        (let ((title (apply #'citar-format--entry "${author} :: ${title}" keys-entries)))
           (org-roam-capture- :templates
                              '(("r" "reference" plain "%?" :if-new
                                 (file+head "reference/${citekey}.org"

@@ -136,7 +136,7 @@ function advice."
         (result))
     (lambda (orig-fn &rest args)
       "Throttle calls to this function."
-      (if (and throttle-timer (timerp throttle-timer))
+      (if (timerp throttle-timer)
           result
         (prog1
             (setq result (apply orig-fn args))
@@ -158,18 +158,18 @@ This is intended for use as function advice."
         (delay (or delay 0.50)))
     (lambda (orig-fn &rest args)
       "Debounce calls to this function."
-      (when (and debounce-timer (timerp debounce-timer))
-        (cancel-timer debounce-timer))
-      (prog1 default
-        (setq debounce-timer
-              (run-with-idle-timer
-               delay nil
-               (lambda (buf)
-                 (cancel-timer debounce-timer)
-                 (setq debounce-timer nil)
-                 (with-current-buffer buf
-                   (setq result (apply orig-fn args))))
-               (current-buffer)))))))
+      (if (timerp debounce-timer)
+          (timer-set-idle-time debounce-timer delay)
+        (prog1 default
+          (setq debounce-timer
+                (run-with-idle-timer
+                 delay nil
+                 (lambda (buf)
+                   (cancel-timer debounce-timer)
+                   (setq debounce-timer nil)
+                   (with-current-buffer buf
+                     (apply orig-fn args)))
+                 (current-buffer))))))))
 
 ;;;###autoload
 (defun timeout-debounce! (func &optional delay default)
@@ -183,7 +183,7 @@ DELAY defaults to 0.5 seconds. Using a delay of 0 resets the
 function.
 
 DEFAULT is the immediate return value of the function when called."
-  (if (= delay 0)
+  (if (and delay (= delay 0))
       (advice-remove func 'debounce)
     (advice-add func :around (timeout--debounce-advice delay default)
                 '((name . debounce)

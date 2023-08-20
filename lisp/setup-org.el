@@ -677,6 +677,24 @@ has no effect."
        (with-current-buffer org-last-indirect-buffer
          (org-ctrl-c-tab) (org-show-entry))))
 
+  (defun my/org-agenda-next-section (arg)
+    (interactive "p")
+    (when (> arg 0)
+      (dotimes (_ arg)
+        (when-let ((m (text-property-search-forward 'face 'org-agenda-structure t t)))
+          (goto-char (prop-match-beginning m))
+          (forward-char 1)))))
+
+  ;; FIXME this is broken
+  (defun my/org-agenda-previous-section (arg)
+    (interactive "p")
+    (when (> arg 0)
+      (dotimes (_ arg)
+        (when-let ((m (text-property-search-backward 'face 'org-agenda-structure nil nil)))
+          (goto-char (prop-match-end m))
+          ;; (forward-char 1)
+          ))))
+
   (defun org-todo-age (&optional pos)
     (if-let* ((entry-age (org-todo-age-time pos))
               (days (time-to-number-of-days entry-age)))
@@ -912,7 +930,11 @@ See `org-capture-templates' for more information."
   :after org
   :commands org-export-dispatch
   :config
-  (setq org-html-htmlize-output-type 'css)
+  (use-package ox-html
+    :defer
+    :config
+    (setq org-html-htmlize-output-type 'css)
+    (plist-put org-html-latex-image-options :inline "svg"))
   ;; (add-to-list 'org-latex-packages-alist '("" "listings"))
   ;; (add-to-list 'org-latex-packages-alist '("" "color"))
 
@@ -944,24 +966,7 @@ parent."
       info nil)
     data)
 
-  (add-hook 'org-export-filter-parse-tree-functions 'my/org-export-ignore-headlines)
-  
-  (defun my/org-agenda-next-section (arg)
-    (interactive "p")
-    (when (> arg 0)
-      (dotimes (_ arg)
-        (when-let ((m (text-property-search-forward 'face 'org-agenda-structure t t)))
-          (goto-char (prop-match-beginning m))
-          (forward-char 1)))))
-
-  (defun my/org-agenda-previous-section (arg)
-    (interactive "p")
-    (when (> arg 0)
-      (dotimes (_ arg)
-        (when-let ((m (text-property-search-backward 'face 'org-agenda-structure nil nil)))
-          (goto-char (prop-match-end m))
-          ;; (forward-char 1)
-          )))))
+  (add-hook 'org-export-filter-parse-tree-functions 'my/org-export-ignore-headlines))
 
 (use-package ox-latex
   :after ox
@@ -1280,6 +1285,13 @@ Return the initialized session, if any."
   :straight t
   :after (ox)
   :config
+  (advice-add 'org-blackfriday--update-ltximg-path
+              :around
+              (lambda (orig-fn html-string)
+                (if (plist-get org-html-latex-image-options :inline)
+                    html-string
+                  (funcall orig-fn html-string)))
+              '((name . inline-image-workaround)))
   (use-package org-glossary
     :straight '(:host github :repo "tecosaur/org-glossary")
     :config

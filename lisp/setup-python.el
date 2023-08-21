@@ -75,7 +75,8 @@
     ;;      :files ("*.el" "*.so"))
     :defer
     :init
-    (add-to-list 'native-comp-deferred-compilation-deny-list "zmq")
+    (and (boundp 'native-comp-jit-compilation-deny-list)
+         (add-to-list 'native-comp-jit-compilation-deny-list "zmq"))
     (use-package jupyter 
       :straight t
       :bind (:map jupyter-repl-interaction-mode-map

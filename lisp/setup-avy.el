@@ -293,11 +293,11 @@ The current window is chosen if WIN is not specified."
        :foreground "LightCoral" :background "Black"
        :weight bold :underline t)
       (((background light))
-       :foreground "DarkRed" :background nil :box t :height 0.95
+       :foreground "DarkRed" :background unspecified :box t :height 0.95
        :weight bold)))
-   '(avy-lead-face-0 ((t :background nil :inherit avy-lead-face)))
-   '(avy-lead-face-1 ((t :background nil :inherit avy-lead-face)))
-   '(avy-lead-face-2 ((t :background nil :inherit avy-lead-face))))
+   '(avy-lead-face-0 ((t :background unspecified :inherit avy-lead-face)))
+   '(avy-lead-face-1 ((t :background unspecified :inherit avy-lead-face)))
+   '(avy-lead-face-2 ((t :background unspecified :inherit avy-lead-face))))
 
   ;; Jump to all paren types with [ and ]
   (advice-add 'avy-jump :filter-args

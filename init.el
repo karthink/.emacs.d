@@ -1659,8 +1659,8 @@ current buffer without truncation."
       (call-interactively #'pp-eval-expression)))
   
   (advice-add 'pp-display-expression :after
-              (defun my/pp-handle-output-buffer (_ out-buffer-name)
-                (when-let* ((win (get-buffer-window out-buffer-name))
+              (defun my/pp-handle-output-buffer (&rest args)
+                (when-let* ((win (get-buffer-window (nth 1 args)))
                             (_ (window-live-p win)))
                   (select-window win)
                   (view-mode 1)))))
@@ -3937,7 +3937,7 @@ buffer's text scale."
                       (cond
                        ((string= (getenv "XDG_SESSION_TYPE") "wayland")
                         '(125 135))
-                       (t '(105 110)))))
+                       (t '(100 110)))))
            (custom-set-faces
             `(variable-pitch ((t (:family "Merriweather" :height ,vp
                                   :width semi-expanded))))

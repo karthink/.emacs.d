@@ -176,7 +176,7 @@ but mark is only pushed if region isn't active."
   :defer
   :custom-face
   (TeX-fold-folded-face ((t (:inherit shadow))))
-  (TeX-fold-unfolded-face ((t (:background nil))))
+  (TeX-fold-unfolded-face ((t (:background unspecified))))
   :config
   (setq ;; TeX-fold-folded-face '((t (:height 1.0 :foreground "SlateBlue1")))
         TeX-fold-auto t

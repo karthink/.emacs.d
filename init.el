@@ -677,6 +677,7 @@ for details."
   :straight t
   :bind (([remap kill-ring-save] . #'easy-kill)
          ([remap mark-sexp]      . #'easy-mark)
+         ("M-S-w" . kill-ring-save)
          :map easy-kill-base-map
          ("," . easy-kill-expand-region)
          ("." . easy-kill-contract-region))

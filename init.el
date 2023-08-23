@@ -136,10 +136,10 @@ Cancel the previous one if present."
           (let ((idle-t (if (eq gcmh-idle-delay 'auto)
 		            (* gcmh-auto-idle-delay-factor gcmh-last-gc-time)
 		          gcmh-idle-delay)))
-            (when (timerp gcmh-idle-timer)
-              (cancel-timer gcmh-idle-timer))
-            (setf gcmh-idle-timer
-	          (run-with-timer idle-t nil #'gcmh-idle-garbage-collect)))))
+            (if (timerp gcmh-idle-timer)
+                (timer-set-time gcmh-idle-timer idle-t)
+              (setf gcmh-idle-timer
+	            (run-with-timer idle-t nil #'gcmh-idle-garbage-collect))))))
       (setq gcmh-idle-delay 'auto  ; default is 15s
             gcmh-high-cons-threshold (* 32 1024 1024)
             gcmh-verbose nil)

@@ -52,6 +52,7 @@
     
   (setq corfu-auto-prefix 3
         corfu-auto-delay 0.05
+        corfu-count 8
         corfu-auto  t
         corfu-cycle t
         corfu-quit-no-match 'separator
@@ -149,7 +150,7 @@
 ;; Add extensions
 (use-package cape
   :straight t
-  :bind (("C-$" . cape-ispell)
+  :bind (("C-$" . cape-dict)
          ;; ("C-; e" . cape-line)
          ("C-S-f" . cape-file)
          ("C-M-/" . cape-dabbrev)

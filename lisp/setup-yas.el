@@ -3,7 +3,9 @@
   :straight t
   ;; :defer 5
   ;; :after warnings
-  :hook (((prog-mode LaTeX-mode org-mode) . yas-minor-mode)
+  :hook (((prog-mode LaTeX-mode org-mode
+           eval-expression-minibuffer-setup)
+          . yas-minor-mode)
          (yas-minor-mode . my/yas-auto-setup))
   :config
   ;; (use-package yasnippet-snippets
@@ -29,6 +31,15 @@
         (yas-expand))))
   (defun my/yas-auto-setup ()
     (add-hook 'post-self-insert-hook #'my/yas-try-expanding-auto-snippets nil t))
+
+  (with-eval-after-load 'corfu
+    (defun my/yas-corfu-cancel ()
+      "company-abort or yas-abort-snippet."
+      (interactive)
+      (if corfu--candidates
+          (corfu-quit)
+        (yas-abort-snippet)))
+    (define-key yas-keymap (kbd "C-g") #'my/yas-corfu-cancel))
 
 (with-eval-after-load 'company
   ;; (defun my/yas-company-next-field ()
@@ -83,6 +94,12 @@
                       (with-temp-buffer
                         (write-file ".yas-skip")))))
   :after yasnippet)
+
+(use-package yasnippet-capf
+  :straight '(:host github :repo "elken/yasnippet-capf")
+  :after yasnippet
+  :config
+  (add-to-list 'completion-at-point-functions #'yasnippet-capf))
 
 (use-package warnings
     :config

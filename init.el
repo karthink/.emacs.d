@@ -1639,8 +1639,8 @@ If region is active, add its contents to the new buffer."
   :config
   (defun my/eval-with-threading ()
     "Pre-insert a threading macro for easy chaining"
-    (insert "(->  )")
-    (backward-char 2))
+    (insert "(thread-first )")
+    (backward-char 1))
   
   (defun eval-sexp-maybe-pp (&optional arg)
     (interactive "P")

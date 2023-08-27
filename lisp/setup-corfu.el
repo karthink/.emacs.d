@@ -172,10 +172,6 @@
   ;;        ("C-c p r" . cape-rfc1345))
   ;; :hook (text-mode . my/cape-text-mode-capfs)
   :init
-  (use-package cape-yasnippet
-    :straight '(:host github :repo "elken/cape-yasnippet")
-    :after cape
-    :bind ("C-x y" . cape-yasnippet))
   
   ;; Add `completion-at-point-functions', used by `completion-at-point'.
   (add-to-list 'completion-at-point-functions #'cape-file)

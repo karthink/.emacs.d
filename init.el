@@ -3938,7 +3938,7 @@ buffer's text scale."
                       (cond
                        ((string= (getenv "XDG_SESSION_TYPE") "wayland")
                         '(125 135))
-                       (t '(100 110)))))
+                       (t '(95 110)))))
            (custom-set-faces
             `(variable-pitch ((t (:family "Merriweather" :height ,vp
                                   :width semi-expanded))))
@@ -4140,7 +4140,7 @@ buffer's text scale."
   :config
   (setq shr-image-animate nil
         shr-use-colors nil
-        shr-width 72)
+        shr-width 78)
   (use-package shr-heading
     :hook (eww-mode . shr-heading-setup-imenu)))
 

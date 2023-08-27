@@ -10,30 +10,30 @@
                        (window-width . 0.64))))
 
 (defvar my/reader-names '("*elfeed-entry*" "*wallabag-entry*"))
-(defvar my/reader-modes '(elfeed-show-mode wallabag-entry-mode eww-mode))
+(defvar my/reader-modes '(elfeed-show-mode wallabag-show-mode eww-mode))
 (defvar my/reader-list-modes '(elfeed-search-mode wallabag-search-mode))
 
 (defvar my/reader-quit-functions
   (cl-pairlis my/reader-modes
               '(kill-buffer-and-window
-                wallabag-entry-quit
+                wallabag-show-quit-window
                 quit-window)))
 
 (defvar my/reader-list-quit-functions
   (cl-pairlis my/reader-list-modes
               '(elfeed-search-quit-window
-                wallabag-search-quit
+                wallabag-search-quit-window
                 quit-window)))
 
 (defvar my/reader-list-next-prev-functions
   (cl-pairlis my/reader-list-modes
               '((next-line . previous-line)
-               (wallabag-next-entry . wallabag-previous-entry))))
+               (next-line . previous-line))))
 
 (defvar my/reader-list-show-functions
   (cl-pairlis my/reader-list-modes
               '(elfeed-search-show-entry
-                wallabag-view)))
+                wallabag-search-show-entry)))
 
 (defun my/reader-show ()
   (interactive)
@@ -138,15 +138,17 @@ hook."
         (goto-char (point-min))
         (while (setq match (text-property-search-forward
                             'display nil
-                            (lambda (_ p) (eq (car-safe p) 'image))))
+                            ;; (lambda (_ p) (eq (car-safe p) 'image))
+                            (lambda (_ p) (image-at-point-p))))
           (when-let ((size (car (image-size
                                  (prop-match-value match) 'pixels)))
                      ((> size 150))
-                     (center-pixel (floor (- pixel-buffer-width size) 2))
-                     (center-pos (floor center-pixel (frame-char-width))))
-            (beginning-of-line)
-            (delete-horizontal-space)
-            (indent-to center-pos)
-            (end-of-line))))))
+                     (ov (make-overlay (1- (prop-match-beginning match))
+                          (prop-match-beginning match))))
+            (overlay-put
+             ov 'after-string
+             (propertize 
+              " " 'face 'default
+              'display `(space :align-to (- center (0.5 . ,(prop-match-value match)))))))))))
 
 (provide 'setup-reading)

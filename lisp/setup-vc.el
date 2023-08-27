@@ -225,6 +225,8 @@ project, as defined by `vc-root-dir'."
               (defun my/diff-hl-recenter
                   (&optional _) (recenter)))
 
+  (unless transient-mark-mode
+    (advice-add 'diff-hl-mark-hunk :after #'my/activate-mark))
   ;; Set fringe style
   (setq-default fringes-outside-margins t)
 

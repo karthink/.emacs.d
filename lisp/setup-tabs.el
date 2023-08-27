@@ -41,7 +41,7 @@
   
   (setq  tab-bar-close-last-tab-choice 'tab-bar-mode-disable
          tab-bar-show                   (when (version< "28.0" emacs-version) 1)
-         tab-bar-tab-name-truncated-max 12
+         tab-bar-tab-name-truncated-max 24
          tab-bar-new-tab-choice        'ibuffer
          tab-bar-tab-name-function
          (lambda nil "Use project as tab name."
@@ -52,8 +52,7 @@
               (or
                (and dir
                     (let ((name (substring dir (1+ (string-match "/[^/]+/$" dir)) -1)))
-                      (truncate-string-to-width name
-                       tab-bar-tab-name-truncated-max nil nil ?  t)))
+                      (truncate-string-to-width name tab-bar-tab-name-truncated-max nil ? )))
                (buffer-name)))))
 
   (setq tab-bar-select-tab-modifiers '(meta hyper))

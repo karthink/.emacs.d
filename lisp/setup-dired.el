@@ -13,7 +13,9 @@
   (:map dired-mode-map
         ("M-s f" . nil)
         ("M-s g" . nil)
-        ("C-c C-a" . gnus-dired-attach))
+        ("C-c C-a" . gnus-dired-attach)
+        ("," . dired-up-directory)
+        ("." . dired-find-file))
   :general
   ("C-x D" 'list-directory)
   (:keymaps 'space-menu-map "fd" '(dired :wk "Dired"))
@@ -28,6 +30,8 @@
         dired-recursive-deletes 'always
         dired-kill-when-opening-new-dired-buffer t
         dired-dwim-target t)
+  (and (version< "29" emacs-version)
+       (setq dired-mouse-drag-files t))
   (advice-add 'dired-view-file :around
               (defun dired-view-other-buffer-a (orig-fn &rest args)
                 (cl-letf (((symbol-function 'view-file) #'view-file-other-window))
@@ -210,16 +214,20 @@ This relies on the external 'fd' executable."
       (error "no more than 2 files should be marked"))))
 
 (use-package dired-subtree
-  :disabled
+  ;; :disabled
   :straight t
   :after dired
   :config
   (setq dired-subtree-use-backgrounds nil)
+  (defun my/dired-subtree-up (&optional arg)
+    "Jump up one directory."
+    (interactive "p")
+    (or (dired-subtree-up arg) (dired-up-directory (eq arg 4))))
   :bind (:map dired-mode-map
               ("<tab>" . dired-subtree-toggle)
               ("<C-tab>" . dired-subtree-cycle)
               ("<S-iso-lefttab>" . dired-subtree-remove)
-              ))
+              ("," . my/dired-subtree-up)))
 
 (use-package peep-dired
   :disabled
@@ -355,7 +363,7 @@ This relies on the external 'fd' executable."
   :hook (dired-mode . diredfl-mode))
 
 (use-package dired-hist
-  :disabled
+  ;; :disabled
   :load-path "plugins/dired-hist/"
   :after dired
   :bind (:map dired-mode-map
@@ -364,6 +372,7 @@ This relies on the external 'fd' executable."
   :config (dired-hist-mode 1))
 
 (use-package dirvish
+  :disabled
   :straight t
   :after dired
   :demand t
@@ -432,5 +441,21 @@ This relies on the external 'fd' executable."
   :bind (:map dired-mode-map
          ("@" . dired-delight)
          ("*c" . dired-delight-mark-color)))
+
+(use-package dired-preview
+  :straight (:type git :repo "git@git.karthinks.com:dired-preview.git")
+  :bind (:map dired-mode-map
+         ("P" . dired-preview-mode)
+         :map dired-preview-mode-map
+         ("SPC" . my/dired-scroll-other-window)
+         ("DEL" . my/dired-scroll-other-window-down)
+         ("S-SPC" . my/dired-scroll-other-window-down))
+  :config
+  (setq dired-preview-delay 0.2)
+  (advice-add 'dired-preview--display-buffer :around
+              (defun my/dired-preview--display-buffer (origfn buffer)
+                (let ((display-buffer-base-action))
+                  (funcall origfn buffer))))
+  )
 
 (provide 'setup-dired)

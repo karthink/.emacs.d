@@ -11,14 +11,16 @@
 
 (use-package project
     :init
+    (defun my/frame-title-format ()
+      (and-let* ((proj (project-current))
+                 (name (project-root proj))
+                 (name (file-name-nondirectory
+                        (directory-file-name name))))
+        (concat name ":")))
+    (timeout-throttle! #'my/frame-title-format 4.0)
     (add-to-list
      'frame-title-format
-     '(:eval (and-let* ((proj (project-current))
-                        (name (project-root proj))
-                        (name (file-name-nondirectory
-                               (directory-file-name name))))
-              (concat name ":"))))
-    
+     '(:eval (my/frame-title-format)))
     (setq project-switch-commands
           '((?f "Find file" project-find-file)
             (?g "Find regexp" project-find-regexp)

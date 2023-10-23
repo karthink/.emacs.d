@@ -187,7 +187,7 @@
   ;;(add-to-list 'completion-at-point-functions #'cape-symbol)
   ;;(add-to-list 'completion-at-point-functions #'cape-line)
   :config
-  (setq cape-dict-file "/usr/share/dict/words")
+  (setq cape-dict-file (getenv "WORDLIST"))
   (defun my/cape-text-mode-capfs ()
     (add-to-list 'completion-at-point-functions #'cape-dict))
   

@@ -23,14 +23,19 @@
       ;;   (buffer (styles basic flex substring)))
 )
 
-  (defun minibuffer-replace-input ()
-    (interactive)
+  (defun minibuffer-replace-input (&optional arg)
+    "Replace original minibuffer input.
+
+When a recursive minibuffer is active, insert the current string
+into the original minibuffer input.  With prefix ARG, replace it
+instead."
+    (interactive "P")
     (when (and (minibufferp) (> (minibuffer-depth) 1))
       (let* ((replacement (minibuffer-contents)))
         (unwind-protect (minibuffer-quit-recursive-edit)
           (run-at-time 0 nil
                        (lambda (rep)
-                         (delete-minibuffer-contents)
+                         (when arg (delete-minibuffer-contents))
                          (insert rep)
                          (pulse-momentary-highlight-one-line))
                        replacement)))))

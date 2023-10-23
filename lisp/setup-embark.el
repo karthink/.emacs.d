@@ -55,6 +55,7 @@
          ("C-S-m"    . browse-url-mpv-enqueue)
          ("m"        . browse-url-mpv))
   :config
+  (setq embark-keymap-prompter-key "'")
   (setq embark-cycle-key "SPC")
   (setq embark-quit-after-action t)
   ;; Use Embark instead of `describe-prefix-bindings'
@@ -349,6 +350,7 @@ highlighting."
               ("C-M-o" . avy-embark-collect-act)
               ("C-M-j" . avy-embark-collect-act)))
 
+;; Embark integration for Straight
 (use-package embark
   :defer
   :config

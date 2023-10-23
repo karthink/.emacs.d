@@ -57,7 +57,8 @@
            (notmuch-result reverse)
            (minor-mode reverse)
            (reftex-label (:not unobtrusive))
-           (citar-reference reverse)
+           (embark-keybinding grid)
+           ;; (citar-reference reverse)
            (xref-location reverse)
            (history reverse)
            (url reverse)
@@ -88,10 +89,9 @@
            (citar-insert-citation reverse)
            (completion-at-point reverse)
            (org-roam-node-find reverse)
-           (embark-completing-read-prompter reverse)
-           (embark-act-with-completing-read reverse)
-           (embark-prefix-help-command reverse)
-           (embark-bindings reverse)
+           ;; (embark-completing-read-prompter reverse)
+           ;; (embark-act-with-completing-read reverse)
+           ;; (embark-bindings reverse)
            (consult-org-heading reverse)
            (consult-dff unobtrusive)
            (embark-find-definition reverse)
@@ -158,6 +158,10 @@
     :config
     (add-to-list 'savehist-additional-variables
                  'vertico-repeat-history)))
+
+(use-package vertico-suspend
+  :after vertico
+  :bind ("M-z" . vertico-suspend))
 
 (use-package vertico-reverse
   ;; :disabled

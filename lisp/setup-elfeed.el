@@ -66,6 +66,7 @@
     (elfeed-with-open-entry
      (my/avy-link-hint win)))
   
+  (timeout-debounce! 'elfeed-search--live-update 0.24)
   (defun elfeed-search-show-entry-pre (&optional lines) 
   "Returns a function to scroll forward or back in the Elfeed
   search results, displaying entries without switching to them."
@@ -711,6 +712,41 @@ preferring the preferred type."
   (setq elfeed-tube-save-indicator t)
   (setq elfeed-log-level 'debug)
   (elfeed-tube-setup)
+  (defun my/elfeed-tube-download (entries)
+    (interactive
+     (list
+      (cond
+       ((eq major-mode 'elfeed-search-mode)
+        (when (y-or-n-p "Download entry at point or selected entries?")
+          (ensure-list (elfeed-search-selected))))
+       ((eq major-mode 'elfeed-show-mode)
+        (when (y-or-n-p "Download entry at point or selected entries?")
+          (ensure-list elfeed-show-entry)))
+       (t (user-error "elfeed-tube-download only works in Elfeed.")))))
+    (when entries
+      (if-let* (((seq-every-p #'elfeed-tube--youtube-p entries))
+                (default-directory "~/Videos/yt/"))
+          (seq-doseq (entry entries)
+            (let* ((title (elfeed-entry-title entry))
+                   (link  (elfeed-entry-link entry))
+                   (proc (start-process
+                          (format "yt-dlp download: %s" title)
+                          (get-buffer-create (format "*elfeed-tube-yt-dlp*: %s" title))
+                          "yt-dlp" "-w" "-c" "-o" "%(title)s.%(ext)s" "-f"
+                          "bestvideo[height<=?720]+bestaudio/best" "--add-metadata" link)))
+              (set-process-sentinel
+               proc
+               (lambda (process s)
+                 (unless (process-live-p process)
+                   (if (eq (process-exit-status process) 0)
+                       (progn
+                         (message "Finished download: %s" title)
+                         (kill-buffer (process-buffer process)))
+                     (message "Download: [%s] failed (%d) with error: %s"
+                              title (process-exit-status process) s)))))
+              (message "Started download: %s" title)))
+        (message "Not youtube url(s), cancelling download."))))
+
   (use-package setup-reading
     :config
     (advice-add 'elfeed-show-entry :override
@@ -731,6 +767,7 @@ This is an enhanced version of the default `elfeed-show-entry' that
                       (with-current-buffer buff
                         (elfeed-show-mode)
                         (setq elfeed-show-entry entry)
+                        (setq-local shr-max-image-proportion 0.7)
                         (elfeed-show-refresh)
                         (dolist (f '(message-header-name
                                      message-header-subject
@@ -773,6 +810,7 @@ This is an enhanced version of the default `elfeed-show-entry' that
          ("C-c C-p" . elfeed-tube-prev-heading)
          :map elfeed-search-mode-map
          ("F" . elfeed-tube-fetch)
+         ("D" . my/elfeed-tube-download)
          ([remap save-buffer] . elfeed-tube-save)))
 
 (use-package elfeed-tube-mpv

@@ -631,7 +631,9 @@ output instead."
              (kill-whole-line)
              (indent-according-to-mode))
             (t (newline-and-indent)))
-      (insert (string-trim (shell-command-to-string command)))
+      (insert (string-trim
+               (ansi-color-apply
+                (shell-command-to-string command))))
       (exchange-point-and-mark))))
 
 ;; ** COMINT EXTRAS
@@ -659,12 +661,13 @@ output instead."
             ("terminfo/65" "terminfo/65/*")
             ("integration" "integration/*")
             (:exclude ".dir-locals.el" "*-tests.el")))
+  :hook (eshell-mode . eat-eshell-mode)
   :config
-  ;; (add-to-list 'eat-semi-char-non-bound-keys [?\e ?o])
-  ;; (add-to-list 'eat-semi-char-non-bound-keys [?\e ?`])
-  ;; (add-to-list 'eat-semi-char-non-bound-keys (kbd "C-`"))
   (dolist (key '([?\e ?o] [?\e ?`] (kbd "C-`") [?\e 67108960]))
-    (push key eat-semi-char-non-bound-keys)))
+    (push key eat-semi-char-non-bound-keys))
+  (eat-update-semi-char-mode-map)
+  ;; (run-at-time 0 nil #'eat-reload)
+  (setq eat-kill-buffer-on-exit t))
 
 
 ;; Disabled: shelldon. Regular `async-shell-command' does enough for me.
@@ -707,27 +710,29 @@ output instead."
                        (concat "cd build; "
                                "cmake -G 'Unix Makefiles' .."))
                       (compile "cd build; make")))
-    :defer
-    :bind (:map vterm-mode-map
-           ("C-c C-p" . my/vterm-previous-prompt)
-           ("C-c C-n" . my/vterm-next-prompt)
-           ("M-v" . vterm-copy-mode))
-    :config
-    (add-to-list
-     'vterm-eval-cmds
-     '("update-pwd" (lambda (path) (setq default-directory path))))
-    
-    (defun my/vterm-next-prompt (&optional arg)
-      "next prompt"
-      (interactive "p")
-      (re-search-forward term-prompt-regexp nil t arg)
-      (when (< arg 0) (goto-char (match-end 0))))
-    (defun my/vterm-previous-prompt (&optional arg)
-      "previous prompt"
-      (interactive "p")
-      (beginning-of-line)
-      ;; (if (looking-at term-prompt-regexp)
-      ;;     (setq arg (1+ arg)))
-      (my/vterm-next-prompt (- (or arg 1))))))
+    :defer))
+
+(use-package vterm
+  :bind (:map vterm-mode-map
+         ("C-c C-p" . my/vterm-previous-prompt)
+         ("C-c C-n" . my/vterm-next-prompt)
+         ("M-v" . vterm-copy-mode))
+  :config
+  (add-to-list
+   'vterm-eval-cmds
+   '("update-pwd" (lambda (path) (setq default-directory path))))
+  
+  (defun my/vterm-next-prompt (&optional arg)
+    "next prompt"
+    (interactive "p")
+    (re-search-forward term-prompt-regexp nil t arg)
+    (when (< arg 0) (goto-char (match-end 0))))
+  (defun my/vterm-previous-prompt (&optional arg)
+    "previous prompt"
+    (interactive "p")
+    (beginning-of-line)
+    ;; (if (looking-at term-prompt-regexp)
+    ;;     (setq arg (1+ arg)))
+    (my/vterm-next-prompt (- (or arg 1)))))
 
 (provide 'setup-shells)

@@ -4,21 +4,22 @@
   ;; :straight (:host github :repo "chenyanming/wallabag.el"
   ;;            :files ("*.el" "*.alist" "*.css"))
   :straight (:local-repo "~/.local/share/git/wallabag/")
-  :hook ((wallabag-post-html-render . my/wallabag-display-settings))
-  ;; :bind (:map wallabag-entry-mode-map
-  ;;        ("SPC" . scroll-up-command)
-  ;;        ("DEL" . scroll-down-command)
-  ;;        ("S-SPC" . scroll-down-command)
-  ;;        ("<" . beginning-of-buffer)
-  ;;        (">" . end-of-buffer)
-  ;;        :map wallabag-search-mode-map
-  ;;        ("E" . my/switch-to-elfeed)
-  ;;        ("u" . wallabag-unmark-at-point)
-  ;;        ("G" . wallabag-request-new-entries)
-  ;;        ("+" . wallabag-add-tags)
-  ;;        ("M-RET" . wallabag-view))
+  :hook ((wallabag-pre-html-render . my/wallabag-display-settings))
+  ;; :bind (
+  ;;        ;; :map wallabag-show-mode-map
+  ;; ;;        ("SPC" . scroll-up-command)
+  ;; ;;        ("DEL" . scroll-down-command)
+  ;; ;;        ("S-SPC" . scroll-down-command)
+  ;; ;;        ("<" . beginning-of-buffer)
+  ;; ;;        (">" . end-of-buffer)
+  ;;        ;; :map wallabag-search-mode-map
+  ;; ;;        ("u" . wallabag-unmark-at-point)
+  ;; ;;        ("G" . wallabag-request-new-entries)
+  ;; ;;        ("+" . wallabag-add-tags)
+  ;;        )
   :config
   (use-package setup-reading
+    :after wallabag-search
     :bind (:map wallabag-search-mode-map
            ("RET" . my/reader-show)
            ("M-n" . my/reader-next)
@@ -32,9 +33,15 @@
            ("M-s i" . my/reader-imenu)
            ("i" . my/reader-imenu)
            ("<tab>" . my/reader-push-button)
+           ("M-RET" . wallabag-search-show-entry)
+           ("E" . my/switch-to-elfeed)
            ("M-s u" . my/reader-browse-url))
     :config
     (add-hook 'wallabag-post-html-render-hook #'my/reader-center-images 'append))
+  
+  (add-hook 'wallabag-show-mode-hook (lambda () (let ((pulse-flag))
+                                             (unless (bobp)
+                                               (pulse-momentary-highlight-one-line)))))
   
   (defsubst wallabag-url (url)
       (wallabag-add-entry url ""))
@@ -84,16 +91,17 @@
     (when (require 'visual-fill-column nil t)
                     (setq-local visual-fill-column-center-text t
                                 visual-fill-column-width (+ shr-width 6))
+                    (setq-local shr-max-image-proportion 0.9)
                     (visual-line-mode 1)
                     (visual-fill-column-mode 1))
-    (setq-local line-spacing 0.08)
-    (shr-heading-setup-imenu))
+    ;; (shr-heading-setup-imenu)
+    (setq-local line-spacing 0.08))
   ;; (setq wallabag-show-entry-switch #'pop-to-buffer-same-window)
   (setq wallabag-host "https://read.karthinks.com")
   (setq wallabag-username (auth-source-pass-get "login" "www/read.karthinks.com"))
   (setq wallabag-password (auth-source-pass-get 'secret "www/read.karthinks.com"))
-  (setq wallabag-clientid (auth-source-pass-get "client_id" "api/wallabag/qutescript"))
-  (setq wallabag-secret (auth-source-pass-get 'secret "api/wallabag/qutescript"))
+  ;; (setq wallabag-clientid (auth-source-pass-get "client_id" "api/wallabag/qutescript"))
+  ;; (setq wallabag-secret (auth-source-pass-get 'secret "api/wallabag/qutescript"))
   (setq wallabag-client-id (auth-source-pass-get "client_id" "api/wallabag/qutescript"))
   (setq wallabag-client-secret (auth-source-pass-get 'secret "api/wallabag/qutescript"))
   ;; optional, auto refresh token, token should refresh every hour

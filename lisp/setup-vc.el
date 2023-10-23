@@ -225,8 +225,8 @@ project, as defined by `vc-root-dir'."
               (defun my/diff-hl-recenter
                   (&optional _) (recenter)))
 
-  (unless transient-mark-mode
-    (advice-add 'diff-hl-mark-hunk :after #'my/activate-mark))
+  ;; (unless transient-mark-mode
+  ;;   (advice-add 'diff-hl-mark-hunk :after #'my/activate-mark))
   ;; Set fringe style
   (setq-default fringes-outside-margins t)
 
@@ -256,10 +256,10 @@ project, as defined by `vc-root-dir'."
     (with-eval-after-load 'magit
       (add-hook 'magit-post-refresh-hook #'diff-hl-magit-post-refresh)))
 
+(unless IS-GUIX (straight-use-package 'magit))
 (use-package magit
   :defer t
   ;; :commands magit-status
-  :straight t
   :bind ("C-x g" . magit-status)
   :hook (magit-diff-visit-file . (lambda ()
                                    (when (and smerge-mode
@@ -280,8 +280,8 @@ project, as defined by `vc-root-dir'."
     )
   )
 
+(unless IS-GUIX (straight-use-package 'forge))
 (use-package forge
-  :straight t
   :defer
   :config
   (auth-source-pass-enable)

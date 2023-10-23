@@ -80,23 +80,42 @@
          ,@body)
         t)))
 
+(defvar my/reader-pixel-scroll nil
+  "Whether reader-mode scrolling should be animated.")
+
 (defun my/reader-scroll-up-command ()
   (interactive)
-  (let ((scroll-error-top-bottom nil))
+  (let ((scroll-error-top-bottom nil)
+        (pulse-flag))
     (unless
         (with-reader-window
-          (condition-case-unless-debug nil
-              (scroll-up-command)
-            (error (run-at-time 0 nil #'my/reader-next 1))))
+          (if my/reader-pixel-scroll
+              (progn
+                (pixel-scroll-precision-interpolate
+                 (- (* (default-line-height) next-screen-context-lines)
+                    (window-text-height nil t))
+                 nil 1)
+                (my/pulse-momentary-line))
+            (condition-case-unless-debug nil
+                (scroll-up-command)
+              (error (run-at-time 0 nil #'my/reader-next 1)))))
       (my/reader-show))))
 
 (defun my/reader-scroll-down-command ()
   (interactive)
-  (let ((scroll-error-top-bottom nil))
+  (let ((scroll-error-top-bottom nil)
+        (pulse-flag))
     (with-reader-window
-      (condition-case-unless-debug nil
-          (scroll-down-command)
-        (error (run-at-time 0 nil #'my/reader-prev 1))))))
+      (if my/reader-pixel-scroll
+          (progn
+            (pixel-scroll-precision-interpolate
+             (- (window-text-height nil t)
+                (* (default-line-height) next-screen-context-lines))
+             nil 1)
+            (my/pulse-momentary-line))
+        (condition-case-unless-debug nil
+            (scroll-down-command)
+          (error (run-at-time 0 nil #'my/reader-prev 1)))))))
 
 (defun my/reader-browse-url (&optional arg)
   "docstring"
@@ -114,17 +133,23 @@
 
 (defun my/reader-top ()
   (interactive)
-  (with-reader-window (beginning-of-buffer)))
+  (or 
+   (with-reader-window (beginning-of-buffer))
+   (beginning-of-buffer)))
 
 (defun my/reader-bottom ()
   (interactive)
-  (with-reader-window (end-of-buffer)))
+  (or 
+   (with-reader-window (end-of-buffer))
+   (end-of-buffer))
+  (when (eq (line-beginning-position) (point))
+    (forward-line -1)))
 
 (defun my/reader-quit-window ()
     (interactive)
     (or (with-reader-window
           (when-let ((quit-fun (alist-get (buffer-mode) my/reader-quit-functions)))
-            (funcall quit-fun)
+            (call-interactively quit-fun)
             t))
         (call-interactively (alist-get (buffer-mode) my/reader-list-quit-functions))))
 
@@ -149,6 +174,6 @@ hook."
              ov 'after-string
              (propertize 
               " " 'face 'default
-              'display `(space :align-to (- center (0.5 . ,(prop-match-value match)))))))))))
+              'display `(space :align-to (- center (0.58 . ,(prop-match-value match)))))))))))
 
 (provide 'setup-reading)

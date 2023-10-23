@@ -10,7 +10,7 @@
   (setq mail-host-address "gmail.com"
         send-mail-function 'sendmail-send-it
         message-send-mail-function 'message-send-mail-with-sendmail
-        sendmail-program "/usr/bin/msmtp"
+        sendmail-program "msmtp"
         mail-specify-envelope-from t
         message-sendmail-envelope-from 'header
         mail-envelope-from 'header)

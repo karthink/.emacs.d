@@ -341,7 +341,8 @@ appropriate.  In tables, insert a new row or end the table."
          ;; (org-mode . my/org-latex-preview-precompile-idle)
          )
   :bind (:map org-mode-map
-         ("C-c C-x SPC" . org-latex-preview-clear-cache))
+         ("C-c C-x SPC" . org-latex-preview-clear-cache)
+         ("C-c i" . my/org-latex-preview-image-at-point))
   :config
   ;; Display preferences for latex previews
   ;; Larger equations
@@ -373,6 +374,19 @@ appropriate.  In tables, insert a new row or end the table."
    org-latex-preview-auto-generate 'live
    org-latex-preview-processing-indicator nil)
 
+  ;; Get the image at point
+  (defun my/org-latex-preview-image-at-point (&optional arg)
+    (interactive "P")
+    (if-let* ((imgpath (thread-first
+                         (point) overlays-at last car
+                         (overlay-get 'preview-image)
+                         cdr (plist-get :file)))
+              (_ (file-exists-p imgpath)))
+        (prog1 (kill-new imgpath)
+            (when arg (start-process "olpsink" nil "dragon" (expand-file-name imgpath)))
+            (message "Image path copied to kill-ring."))
+      (message "No LaTeX preview image at point!")))
+  
   ;; Precompilation freezes emacs, do it in the background when possible.
   (defun my/org-latex-preview-precompile-idle ()
     (when (featurep 'async)
@@ -675,7 +689,7 @@ has no effect."
   (advice-add 'org-agenda-do-tree-to-indirect-buffer :after
      (defun my/org-agenda-collapse-indirect-buffer-tree (arg)
        (with-current-buffer org-last-indirect-buffer
-         (org-ctrl-c-tab) (org-show-entry))))
+         (org-ctrl-c-tab) (org-fold-show-entry 'hide-drawers))))
 
   (defun my/org-agenda-next-section (arg)
     (interactive "p")
@@ -1378,9 +1392,10 @@ the :consume parameter extracted from KEYWORD."
   :straight t
   :after org
   :commands (org-gcal-sync org-gcal-fetch my/org-gcal-sync-maybe)
-  ;; :hook (org-agenda-mode . my/org-gcal-sync-maybe)
+  :hook (org-agenda-mode . my/org-gcal-sync-maybe)
   :config
-  (setq plstore-cache-passphrase-for-symmetric-encryption t)
+  (setq plstore-encrypt-to user-full-name)
+  ;; (setq plstore-cache-passphrase-for-symmetric-encryption t)
   (setq org-gcal-dir (dir-concat user-cache-directory "org-gcal/"))
   ;; (add-hook 'org-capture-after-finalize-hook (lambda () (org-gcal-sync)))
   (setq org-gcal-client-id my-org-gcal-client-id
@@ -1410,7 +1425,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
   (interactive)
   (if-let ((now (float-time (current-time)))
            (sync-p (or (< (- now my/org-gcal--last-sync-time)
-                          104000)
+                          43200)
                        ;; (seq-some (lambda (cal-file-pair)
                        ;;             (< (- now
                        ;;                   (float-time (file-attribute-modification-time
@@ -1542,7 +1557,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
     (if (executable-find "rsync")
         (let* ((basedir (expand-file-name
                          (file-name-as-directory
-                          (plist-get project-plist :base-directory))))
+                          (plist-get project-plist :publishing-directory))))
                (destdir (plist-get project-plist :remote-directory)))
           (start-process "rsync-project-abode" "*project-abode-output*"
                          "rsync" "-a" "-v" "--exclude=*.org" "--delete"
@@ -1559,8 +1574,9 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
     (if (executable-find "rsync")
         (let* ((basedir (expand-file-name
                          (file-name-as-directory
-                          (plist-get project-plist :base-directory))))
+                          (plist-get project-plist :publishing-directory))))
                (destdir (plist-get project-plist :remote-directory)))
+          (message "Running rsync: %s → %s" basedir destdir)
           (start-process "rsync-project-html-and-figures" "*project-rsync-html-output*"
                          "rsync" "-a" "-v" 
                          "--include=*.html"
@@ -1738,8 +1754,8 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
   :straight t
   :defer
   :config
-  (setq org-noter-always-create-frame t
-        org-noter-kill-frame-at-session-end t))
+  (setq org-noter-always-create-frame nil
+        org-noter-kill-frame-at-session-end nil))
 
 ;;;----------------------------------------------------------------
 ;; ** ORG-ALERT

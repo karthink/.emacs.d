@@ -924,9 +924,9 @@ Also kill this window, tab or frame if necessary."
   :after (setup-windows setup-project)
   :hook (emacs-startup . popper-mode)
   :commands popper-mode
-  :bind (("C-`" . popper-toggle-latest)
+  :bind (("C-`" . popper-toggle)
          ("C-M-`" . popper-cycle)
-         ("H-`" . popper-toggle-latest)
+         ("H-`" . popper-toggle)
          ("H-M-`" . popper-cycle)
          ("H-6" . popper-toggle-type)
          ("H-M-k" . popper-kill-latest-popup)
@@ -1093,7 +1093,7 @@ display names.")
       map))
   (put 'popper-cycle-backwards 'repeat-map 'popper-repeat-map)
   (put 'popper-cycle 'repeat-map 'popper-repeat-map)
-  (put 'popper-toggle-latest 'repeat-map 'popper-repeat-map)
+  (put 'popper-toggle 'repeat-map 'popper-repeat-map)
 
   (setq popper-group-function #'selected-frame)
 
@@ -1572,9 +1572,7 @@ If region is active, add its contents to the new buffer."
 ;;;----------------------------------------------------------------
 ;; ** NIX
 (when IS-GUIX
-  (use-package nix-mode
-    :straight t
-    :defer))
+  (use-package nix-mode :defer))
 ;; ** MARKDOWN
 ;;;----------------------------------------------------------------
 (use-package markdown-mode :straight t :defer)

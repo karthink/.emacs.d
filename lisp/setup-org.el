@@ -998,7 +998,7 @@ parent."
                              ("\\paragraph{%s}"     . "\\paragraph*{%s}")
                              ("\\subparagraph{%s}"  . "\\subparagraph*{%s}"))))
     (pcase-dolist (`(,name ,class-string . ,extra)
-                   `(("IEEEtran" "\\documentclass[conference]{IEEEtran}")
+                   `(("IEEEtran" "\\documentclass{IEEEtran}")
                      ("article" "\\documentclass{scrartcl}")
                      ("report" "\\documentclass{scrreprt}")
                      ("blank" "[NO-DEFAULT-PACKAGES]\n[NO-PACKAGES]\n[EXTRA]")

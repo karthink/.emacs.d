@@ -342,7 +342,9 @@ but mark is only pushed if region isn't active."
   :after (reftex consult embark)
   :bind (:map reftex-mode-map
          ("C-c )"   . consult-reftex-insert-reference)
-         ("C-c M-." . consult-reftex-goto-label))
+         ("C-c M-." . consult-reftex-goto-label)
+         :map org-mode-map
+         ("C-c (" . consult-reftex-goto-label))
   :config (setq consult-reftex-preview-function
                 #'consult-reftex-make-window-preview))
 
@@ -356,6 +358,8 @@ but mark is only pushed if region isn't active."
               ("<tab>" . cdlatex-tab))
   :init
   (dolist (cmd '(("vc" "Insert \\vect{}" "\\vect{?}"
+                  cdlatex-position-cursor nil nil t)
+                 ("tfr" "Insert \\tfrac{}{}" "\\tfrac{?}{}"
                   cdlatex-position-cursor nil nil t)
                  ("sfr" "Insert \\sfrac{}{}" "\\sfrac{?}{}"
                   cdlatex-position-cursor nil nil t)
@@ -375,6 +379,15 @@ but mark is only pushed if region isn't active."
                   cdlatex-position-cursor nil t nil)))
     (push cmd cdlatex-command-alist))
 
+  (setq cdlatex-env-alist
+        '(("align" "\\begin{align}
+?
+\\end{align}" "\\\\AUTOLABEL
+?")
+          ("equation" "\\begin{equation}
+?
+\\end{equation}" nil)))
+  
   (setq cdlatex-math-symbol-alist '((?F ("\\Phi"))
                                     (?o ("\\omega" "\\mho" "\\mathcal{O}"))
                                     (?. ("\\cdot" "\\circ"))

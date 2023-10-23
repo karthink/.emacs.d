@@ -293,7 +293,7 @@ The current window is chosen if WIN is not specified."
        :foreground "LightCoral" :background "Black"
        :weight bold :underline t)
       (((background light))
-       :foreground "DarkRed" :background unspecified :box t :height 0.95
+       :foreground "DarkRed" :background unspecified :box (:line-width (1 . -1)) :height 0.95
        :weight bold)))
    '(avy-lead-face-0 ((t :background unspecified :inherit avy-lead-face)))
    '(avy-lead-face-1 ((t :background unspecified :inherit avy-lead-face)))
@@ -331,11 +331,11 @@ This differs from Avy's goto-char-timer in how it processes parens."
   :general
   ("C-M-'"      'avy-resume
    "C-'"        '(my/avy-goto-char-this-window :wk "Avy goto char")
-   "M-j"        '(my/avy-goto-char-timer       :wk "Avy goto char timer")
+   "M-s j"      '(my/avy-goto-char-timer       :wk "Avy goto char timer")
    "M-s y"      '(avy-copy-line                :wk "Avy copy line above")
    "M-s M-y"    '(avy-copy-region              :wk "Avy copy region above")
    "M-s M-k"    '(avy-kill-whole-line          :wk "Avy copy line as kill")
-   "M-s j"      '(avy-goto-char-2              :wk "Avy goto char 2")
+   "M-j"        '(avy-goto-char-2              :wk "Avy goto char 2")
    "M-s M-p"    '(avy-goto-line-above          :wk "Avy goto line above")
    "M-s M-n"    '(avy-goto-line-below          :wk "Avy goto line below")
    "M-s C-w"    '(avy-kill-region              :wk "Avy kill region")

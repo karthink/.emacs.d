@@ -228,14 +228,15 @@ USE-SINGLE-P) with mpv."
         ('elfeed-search-mode (elfeed-search-browse-url))
         ('elfeed-show-mode (elfeed-show-visit)))))
   
-  (defun elfeed-mpv-url (&optional enqueue-p)
+  (defun elfeed-mpv-url (&optional arg)
     "Visit the current entry in mpv or (with prefix arg
 ENQUEUE-P) add to mpv's playlist."
-    (interactive "P")
+    (interactive "p")
     (let ((browse-url-browser-function
-           (if enqueue-p
-               #'browse-url-mpv-enqueue
-             #'browse-url-mpv)))
+           (pcase arg
+            (4 #'browse-url-mpv-hd)
+            (1 #'browse-url-mpv)
+            (_ #'browse-url-mpv-enqueue))))
       (pcase major-mode
         ('elfeed-search-mode (elfeed-search-browse-url))
         ('elfeed-show-mode (elfeed-show-visit)))))

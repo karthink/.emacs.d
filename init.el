@@ -164,23 +164,24 @@ Cancel the previous one if present."
    (defun my/load-packages-eagerly ()
      (run-at-time 1 nil
                   (lambda () 
-                    (let ((after-init-time (current-time)))
-                      (when (featurep 'straight) (straight-check-all))
-                      (dolist (lib '("org" "ob" "ox" "ol" "org-roam"
-                                     "org-capture" "org-agenda" "org-fragtog"
-                                     "org-gcal" "latex" "reftex" "cdlatex"
-                                     "consult" "helpful" "elisp-mode"
-                                     "notmuch" "elfeed" "simple"
-                                     "expand-region" "embrace"
-                                     "ace-window" "avy" "yasnippet"
-                                     "magit" "modus-themes" "diff-hl"
-                                     "dired" "ibuffer" "pdf-tools"
-                                     "emacs-wm"))
-                        (with-demoted-errors "Error: %S" (load-library lib)))
-                      (when (featurep 'pdf-tools) (pdf-tools-install t))
-                      (let ((elapsed (float-time (time-subtract (current-time)
-                                                                after-init-time))))
-                        (message "[Pre-loaded packages in %.3fs]" elapsed))))))))
+                    (when (equal server-name "server")
+                      (let ((after-init-time (current-time)))
+                        (when (featurep 'straight) (straight-check-all))
+                        (dolist (lib '("org" "ob" "ox" "ol" "org-roam"
+                                       "org-capture" "org-agenda" "org-fragtog"
+                                       "org-gcal" "latex" "reftex" "cdlatex"
+                                       "consult" "helpful" "elisp-mode"
+                                       "notmuch" "elfeed" "simple"
+                                       "expand-region" "embrace"
+                                       "ace-window" "avy" "yasnippet"
+                                       "magit" "modus-themes" "diff-hl"
+                                       "dired" "ibuffer" "pdf-tools"
+                                       "emacs-wm"))
+                          (with-demoted-errors "Error: %S" (load-library lib)))
+                        (when (featurep 'pdf-tools) (pdf-tools-install t))
+                        (let ((elapsed (float-time (time-subtract (current-time)
+                                                                  after-init-time))))
+                          (message "[Pre-loaded packages in %.3fs]" elapsed)))))))))
 
 ;;;################################################################
 ;; * PERSONAL INFO
@@ -1880,16 +1881,18 @@ current buffer without truncation."
 (load (expand-file-name "lisp/setup-cite" user-emacs-directory))
 
 ;; *** PDFs
-(unless IS-GUIX
-  (use-package pdf-tools
-    :commands pdf-tools-install
-    :straight t
-    :bind (:map pdf-view-mode-map
-           ("C-c C-r w" . pdf-view-auto-slice-minor-mode))
-    :config
-    (setq pdf-view-resize-factor 1.1)))
+(unless IS-GUIX (straight-use-package 'pdf-tools))
+(use-package pdf-tools
+  :commands pdf-tools-install
+  :bind (:map pdf-view-mode-map
+         ("C-c C-r w" . pdf-view-auto-slice-minor-mode)
+         ([remap scroll-other-window] . pdf-view-scroll-up-or-next-page)
+         ([remap scroll-other-window-down] . pdf-view-scroll-down-or-previous-page))
+  :config
+  (setq pdf-view-resize-factor 1.1))
 
 (use-package sow
+  :disabled
   :after pdf-tools)
 
 ;;;----------------------------------------------------------------
@@ -2006,6 +2009,7 @@ current buffer without truncation."
 ;; ** DETACHED
 ;; Testing detached
 (use-package detached
+  :disabled
   :straight t
   :init
   (detached-init)
@@ -4084,7 +4088,7 @@ buffer's text scale."
     (when (string-match-p "^doom-" (symbol-name theme))
       (let ((class '((class color) (min-colors 256))))
         (dolist (face-spec
-                 '((aw-leading-char-face (:height 2.0 :foreground nil :inherit mode-line-emphasis)
+                 '((aw-leading-char-face (:height 2.0 :foreground unspecified :inherit mode-line-emphasis)
                     ace-window)
                    (aw-background-face (:inherit default :weight normal) ace-window)
                    (outline-1        (:height 1.25) outline)

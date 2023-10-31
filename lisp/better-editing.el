@@ -11,7 +11,7 @@
 (setq vc-follow-symlinks t)
 (setq scroll-error-top-bottom t)
 (setq mark-even-if-inactive t)
-
+(setq kill-whole-line t)
 ;; (and (require 'use-package nil t)
 ;;      (use-package visual-fill-column-mode
 ;;        ;; :straight t
@@ -68,18 +68,18 @@
 (setq-default indent-tabs-mode nil)
 
 ;; Turn off transient-mark-mode
-(transient-mark-mode -1)
+;; (transient-mark-mode -1)
 ;; With tmm turned off, make unit-selections activate mark
-(defun my/activate-mark (&rest _)
-  (activate-mark))
-(dolist (command '(mark-word
-                   mark-sexp
-                   mark-paragraph
-                   mark-defun
-                   mark-page
-                   mark-whole-buffer
-                   rectangle-mark-mode))
-  (advice-add command :after #'my/activate-mark))
+;; (defun my/activate-mark (&rest _)
+;;   (activate-mark))
+;; (dolist (command '(mark-word
+;;                    mark-sexp
+;;                    mark-paragraph
+;;                    mark-defun
+;;                    mark-page
+;;                    mark-whole-buffer
+;;                    rectangle-mark-mode))
+;;   (advice-add command :after #'my/activate-mark))
 
 ;;; Text mode and Auto Fill mode
 ; Set default Emacs mode to text-mode. In addition, turn on

@@ -1796,6 +1796,10 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
   :bind (:map org-mode-map
          ("C-c )" . 'consult-reftex-insert-reference)))
 
+(use-package reftex-xref
+  :after (org latex)
+  :hook (org-mode . reftex-xref-activate))
+
 ;;;----------------------------------------------------------------
 ;; ** ORG-AUCTEX
 ;;;----------------------------------------------------------------

@@ -411,11 +411,11 @@ If buffer-or-name is nil return current buffer's mode."
                                ;; (mode-line-format . (:eval (my/helper-window-mode-line-format)))
                                )))
 
-        ("^\\*eldoc\\*$"
+        ("^\\*eldoc.*\\*$"
          (display-buffer-reuse-window
           display-buffer-in-direction
           display-buffer-in-side-window)
-         (body-function . select-window)
+         ;; (body-function . select-window)
          ;; (direction . bottom)
          ;; (window-height . (lambda (win) (fit-window-to-buffer win 25 14)))
          (window-width . 82 ;; (lambda (win) (fit-window-to-buffer win nil nil 75 65))
@@ -424,9 +424,8 @@ If buffer-or-name is nil return current buffer's mode."
          (side . below)
          (slot . 2)
          (window-parameters . ((split-window . #'ignore)
-                               ;; (no-other-window . t)
-                               ;; (mode-line-format . (:eval (my/helper-window-mode-line-format)))
-                               )))
+                               (no-other-window . t)
+                               (mode-line-format . none))))
 
         ((lambda (buf act) (member (buffer-mode buf) '(ibuffer-mode bookmark-bmenu-mode)))
          (;; display-buffer-reuse-window

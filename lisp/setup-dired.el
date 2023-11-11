@@ -345,13 +345,23 @@ This relies on the external 'fd' executable."
 
 ;; Disabled while testing dirvish
 (use-package dired-rsync
-  :disabled
   :straight t
   :bind (:map dired-mode-map
-         ("r" . dired-rsync))
+         ("V" . dired-rsync))
   :hook (dired-rsync-failed . dired-rsync--pop-to-rsync-failed-buf)
   :config
   (setq dired-rsync-unmark-on-completion nil))
+
+(use-package dired-rsync-transient
+  :straight t
+  :bind (:map dired-mode-map
+         ("V" . my/dired-rsync-transient))
+  :config
+  (defun my/dired-rsync-transient (&optional arg)
+    "Run dired-rsync or dired-rsync-transient."
+    (interactive "P")
+    (if arg (dired-rsync-transient)
+      (call-interactively #'dired-rsync))))
 
 (use-package dired-filter
   :straight t
@@ -443,6 +453,7 @@ This relies on the external 'fd' executable."
          ("*c" . dired-delight-mark-color)))
 
 (use-package dired-preview
+  :after dired
   :straight (:type git :repo "git@git.karthinks.com:dired-preview.git")
   :bind (:map dired-mode-map
          ("P" . dired-preview-mode)
@@ -455,7 +466,6 @@ This relies on the external 'fd' executable."
   (advice-add 'dired-preview--display-buffer :around
               (defun my/dired-preview--display-buffer (origfn buffer)
                 (let ((display-buffer-base-action))
-                  (funcall origfn buffer))))
-  )
+                  (funcall origfn buffer)))))
 
 (provide 'setup-dired)

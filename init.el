@@ -1881,13 +1881,15 @@ current buffer without truncation."
 (load (expand-file-name "lisp/setup-cite" user-emacs-directory))
 
 ;; *** PDFs
-(unless IS-GUIX (straight-use-package 'pdf-tools))
+(if IS-GUIX
+    (load-library "pdf-tools-autoloads")
+  (straight-use-package 'pdf-tools))
 (use-package pdf-tools
   :commands pdf-tools-install
   :bind (:map pdf-view-mode-map
          ("C-c C-r w" . pdf-view-auto-slice-minor-mode)
-         ([remap scroll-other-window] . pdf-view-scroll-up-or-next-page)
-         ([remap scroll-other-window-down] . pdf-view-scroll-down-or-previous-page))
+         ([remap scroll-up-command] . pdf-view-scroll-up-or-next-page)
+         ([remap scroll-down-command] . pdf-view-scroll-down-or-previous-page))
   :config
   (setq pdf-view-resize-factor 1.1))
 

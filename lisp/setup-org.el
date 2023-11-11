@@ -1371,7 +1371,7 @@ the :consume parameter extracted from KEYWORD."
                      (if sec (downcase sec) "software")
                      "/" title)))
           (progn (save-buffer)
-                 (unless org-hugo-auto-export-mode
+                 (unless (bound-and-true-p org-hugo-auto-export-mode)
                    (org-hugo-export-wim-to-md))
                  (if arg
                      (progn (other-window 1) (eww url) (other-window -1))

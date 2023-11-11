@@ -196,7 +196,7 @@
        'default nil
        :family "Monospace"
        :slant 'normal
-       :height 130
+       :height 111
        :width 'normal)
       (set-frame-parameter nil 'name my/frame-name)
 

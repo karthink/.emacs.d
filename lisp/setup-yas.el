@@ -99,7 +99,8 @@
   :straight '(:host github :repo "elken/yasnippet-capf")
   :after yasnippet
   :config
-  (add-to-list 'completion-at-point-functions #'yasnippet-capf))
+  ;; (add-to-list 'completion-at-point-functions #'yasnippet-capf)
+  )
 
 (use-package warnings
     :config

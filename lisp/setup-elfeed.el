@@ -616,15 +616,15 @@ preferring the preferred type."
 (use-package elfeed
   :defer
   :bind (:map elfeed-search-mode-map
-         ("W" . my/switch-to-wallabag))
+         ("W" . my/switch-to-wombag))
   :config
-  (defun my/switch-to-wallabag ()
+  (defun my/switch-to-wombag ()
     (interactive)
     (if-let ((buf (get-buffer "*wallabag-search*")))
         (switch-to-buffer buf)
       (unless (require 'setup-wallabag nil t)
         (user-error "Wallabag not available."))
-      (if (require 'wallabag nil t) (wallabag))))
+      (if (require 'wombag nil t) (wombag))))
   
   (use-package wallabag-post
     :disabled

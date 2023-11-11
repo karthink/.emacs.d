@@ -1,26 +1,26 @@
 ;; -*- lexical-binding: t; -*-
 
-(use-package wallabag
+(use-package wombag
   ;; :straight (:host github :repo "chenyanming/wallabag.el"
   ;;            :files ("*.el" "*.alist" "*.css"))
-  :straight (:local-repo "~/.local/share/git/wallabag/")
-  :hook ((wallabag-pre-html-render . my/wallabag-display-settings))
+  :straight (:local-repo "~/.local/share/git/wombag/")
+  :hook ((wombag-pre-html-render . my/wombag-display-settings))
   ;; :bind (
-  ;;        ;; :map wallabag-show-mode-map
+  ;;        ;; :map wombag-show-mode-map
   ;; ;;        ("SPC" . scroll-up-command)
   ;; ;;        ("DEL" . scroll-down-command)
   ;; ;;        ("S-SPC" . scroll-down-command)
   ;; ;;        ("<" . beginning-of-buffer)
   ;; ;;        (">" . end-of-buffer)
-  ;;        ;; :map wallabag-search-mode-map
-  ;; ;;        ("u" . wallabag-unmark-at-point)
-  ;; ;;        ("G" . wallabag-request-new-entries)
-  ;; ;;        ("+" . wallabag-add-tags)
+  ;;        ;; :map wombag-search-mode-map
+  ;; ;;        ("u" . wombag-unmark-at-point)
+  ;; ;;        ("G" . wombag-request-new-entries)
+  ;; ;;        ("+" . wombag-add-tags)
   ;;        )
   :config
   (use-package setup-reading
-    :after wallabag-search
-    :bind (:map wallabag-search-mode-map
+    :after wombag-search
+    :bind (:map wombag-search-mode-map
            ("RET" . my/reader-show)
            ("M-n" . my/reader-next)
            ("M-p" . my/reader-prev)
@@ -33,36 +33,36 @@
            ("M-s i" . my/reader-imenu)
            ("i" . my/reader-imenu)
            ("<tab>" . my/reader-push-button)
-           ("M-RET" . wallabag-search-show-entry)
+           ("M-RET" . wombag-search-show-entry)
            ("E" . my/switch-to-elfeed)
            ("M-s u" . my/reader-browse-url))
     :config
-    (add-hook 'wallabag-post-html-render-hook #'my/reader-center-images 'append))
+    (add-hook 'wombag-post-html-render-hook #'my/reader-center-images 'append))
   
-  (add-hook 'wallabag-show-mode-hook (lambda () (let ((pulse-flag))
+  (add-hook 'wombag-show-mode-hook (lambda () (let ((pulse-flag))
                                              (unless (bobp)
                                                (pulse-momentary-highlight-one-line)))))
   
-  (defsubst wallabag-url (url)
-      (wallabag-add-entry url ""))
+  (defsubst wombag-url (url)
+      (wombag-add-entry url ""))
   
   (use-package elfeed
     :bind (:map elfeed-search-mode-map
-           ("R" . elfeed-post-to-wallabag)
+           ("R" . elfeed-post-to-wombag)
            :map elfeed-show-mode-map
-           ("R" . elfeed-post-to-wallabag))
+           ("R" . elfeed-post-to-wombag))
     :config
-    (defun elfeed-post-to-wallabag (entries)
+    (defun elfeed-post-to-wombag (entries)
       (interactive (list (pcase major-mode
                            ('elfeed-search-mode
                             (elfeed-search-selected))
                            ('elfeed-show-mode
                             (list elfeed-show-entry)))))
       (dolist (entry (ensure-list entries))
-        (wallabag-url (elfeed-entry-link entry)))))
+        (wombag-url (elfeed-entry-link entry)))))
 
   (use-package embark
-    :bind (:map embark-url-map ("R" . wallabag-url)))
+    :bind (:map embark-url-map ("R" . wombag-url)))
   
   (defun my/switch-to-elfeed ()
     (interactive)
@@ -72,22 +72,22 @@
           (elfeed)
         (message "Elfeed not available."))))
   
-  (defun wallabag-search-alt-view (&optional lines)
+  (defun wombag-search-alt-view (&optional lines)
     "Returns a function to scroll forward or back in the Elfeed
   search results, displaying entries without switching to them"
     (lambda (times)
       (interactive "p")
       (forward-line (* times (or lines 0)))
       (recenter)
-      (let ((wallabag-show-entry-switch #'my/reader-display-buffer))
-        (call-interactively #'wallabag-view))
-      (when-let ((win (get-buffer-window "*wallabag-search*")))
+      (let ((wombag-show-entry-switch #'my/reader-display-buffer))
+        (call-interactively #'wombag-view))
+      (when-let ((win (get-buffer-window "*wombag-search*")))
         (select-window win)
         (setq-local other-window-scroll-buffer
-                    (get-buffer "*wallabag-entry*")))))
+                    (get-buffer "*wombag-entry*")))))
   
   
-  (defun my/wallabag-display-settings ()
+  (defun my/wombag-display-settings ()
     (when (require 'visual-fill-column nil t)
                     (setq-local visual-fill-column-center-text t
                                 visual-fill-column-width (+ shr-width 6))
@@ -96,16 +96,18 @@
                     (visual-fill-column-mode 1))
     ;; (shr-heading-setup-imenu)
     (setq-local line-spacing 0.08))
-  ;; (setq wallabag-show-entry-switch #'pop-to-buffer-same-window)
-  (setq wallabag-host "https://read.karthinks.com")
-  (setq wallabag-username (auth-source-pass-get "login" "www/read.karthinks.com"))
-  (setq wallabag-password (auth-source-pass-get 'secret "www/read.karthinks.com"))
+  ;; (setq wombag-show-entry-switch #'pop-to-buffer-same-window)
+  (setq wombag-host "https://read.karthinks.com")
+  (setq wombag-username (auth-source-pass-get "login" "www/read.karthinks.com"))
+  (setq wombag-password (auth-source-pass-get 'secret "www/read.karthinks.com"))
   ;; (setq wallabag-clientid (auth-source-pass-get "client_id" "api/wallabag/qutescript"))
   ;; (setq wallabag-secret (auth-source-pass-get 'secret "api/wallabag/qutescript"))
-  (setq wallabag-client-id (auth-source-pass-get "client_id" "api/wallabag/qutescript"))
-  (setq wallabag-client-secret (auth-source-pass-get 'secret "api/wallabag/qutescript"))
+  (setq wombag-client-id (auth-source-pass-get "client_id" "api/wallabag/qutescript"))
+  (setq wombag-client-secret (auth-source-pass-get 'secret "api/wallabag/qutescript"))
   ;; optional, auto refresh token, token should refresh every hour
   ;; (run-with-timer 0 3540 'wallabag-request-token) 
-  (setq wallabag-db-file (expand-file-name "wallabag.sqlite" user-cache-directory)))
+  ;; (setq wombag-db-file (expand-file-name "test-wallabag.sqlite" "~/Desktop/"))
+  (setq wombag-db-file (expand-file-name "wallabag.sqlite" user-cache-directory))
+  )
 
 (provide 'setup-wallabag)

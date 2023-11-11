@@ -1,6 +1,6 @@
 ;; Window helpers for "Readers".  -*- lexical-binding: t; -*-
 
-(defvar wallabag-show-entry-switch)
+(defvar wombag-show-entry-switch)
 
 (defun my/reader-display-buffer (buf &optional _)
   (pop-to-buffer buf `((display-buffer-reuse-window display-buffer-in-direction)
@@ -9,20 +9,20 @@
                        (window-height . 0.72)
                        (window-width . 0.64))))
 
-(defvar my/reader-names '("*elfeed-entry*" "*wallabag-entry*"))
-(defvar my/reader-modes '(elfeed-show-mode wallabag-show-mode eww-mode))
-(defvar my/reader-list-modes '(elfeed-search-mode wallabag-search-mode))
+(defvar my/reader-names '("*elfeed-entry*" "*wombag-entry*"))
+(defvar my/reader-modes '(elfeed-show-mode wombag-show-mode eww-mode))
+(defvar my/reader-list-modes '(elfeed-search-mode wombag-search-mode))
 
 (defvar my/reader-quit-functions
   (cl-pairlis my/reader-modes
               '(kill-buffer-and-window
-                wallabag-show-quit-window
+                wombag-show-quit-window
                 quit-window)))
 
 (defvar my/reader-list-quit-functions
   (cl-pairlis my/reader-list-modes
               '(elfeed-search-quit-window
-                wallabag-search-quit-window
+                wombag-search-quit-window
                 quit-window)))
 
 (defvar my/reader-list-next-prev-functions
@@ -33,12 +33,12 @@
 (defvar my/reader-list-show-functions
   (cl-pairlis my/reader-list-modes
               '(elfeed-search-show-entry
-                wallabag-search-show-entry)))
+                wombag-search-show-entry)))
 
 (defun my/reader-show ()
   (interactive)
   (let ((elfeed-show-entry-switch #'my/reader-display-buffer)
-        (wallabag-show-entry-switch #'my/reader-display-buffer)
+        (wombag-show-entry-switch #'my/reader-display-buffer)
         (win (selected-window))
         (show-buf))
     (save-excursion

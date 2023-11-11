@@ -1,14 +1,10 @@
 (use-package anki-editor
+  :disabled
   :straight t
   :after org-capture
   :init 
   (setq org-my-anki-file (concat (file-name-as-directory org-directory)
                                "anki-notes.org"))
-  :bind (:map org-mode-map
-              ("C-c C-+"  . anki-editor-cloze-region-auto-incr)
-              ("C-c C--"  . anki-editor-cloze-region-dont-incr)
-              ("C-c C-="  . anki-editor-reset-cloze-number)
-              ("C-c p"    . anki-editor-push-tree))
   :hook (org-capture-after-finalize . anki-editor-reset-cloze-number) ; Reset cloze-number after each capture.
   :config
   ;; (setq org-my-anki-file (concat (file-name-as-directory org-directory)
@@ -41,33 +37,40 @@
     (anki-editor-push-notes '(4))
     (anki-editor-reset-cloze-number))
   ;; Initialize
-  (anki-editor-reset-cloze-number)
-  )
+  (anki-editor-reset-cloze-number))
+
+(use-package org-anki
+  :straight t
+  :defer
+  :config
+  (setq org-anki-default-deck "Default"
+        org-anki-default-match "@anki&todo<>\"TODO\""
+        org-anki-inherit-tags nil))
 
 
-(with-eval-after-load 'org-capture
-  ;; Org-capture templates
-  (pcase-dolist
-     (`(,key . ,template)
-      '(("ah" "Here"
-           entry
-           (function (lambda ()
-                        (cl-assert (eq major-mode 'org-mode) nil "Cannot insert here, not in org-mode.")
-                        (outline-back-to-heading)))
-           "* %<%H:%M>   %^g\n:PROPERTIES:\n:ANKI_NOTE_TYPE: Basic\n:ANKI_DECK: Default\n:END:\n** Front\n%?\n** Back\n\n")
-        ("ab" "Anki basic"
-           entry
-           (file+headline ,org-my-anki-file "Dispatch Shelf")
-           "* %<%H:%M>   %^g\n:PROPERTIES:\n:ANKI_NOTE_TYPE: Basic\n:ANKI_DECK: Default\n:END:\n** Front\n%?\n** Back\n\n"
-           :kill-buffer t)
-        ("ac" "Anki cloze"
-           entry
-           (file+headline ,org-my-anki-file "Dispatch Shelf")
-           "* %<%H:%M>   %^g\n:PROPERTIES:\n:ANKI_NOTE_TYPE: Cloze\n:ANKI_DECK: Default\n:END:\n** Text\n\n** Extra\n"
-           :kill-buffer t)
-          ("a" "Anki")))
-   (setf (alist-get key org-capture-templates nil nil #'equal)
-         template)))
+;; (with-eval-after-load 'org-capture
+;;   ;; Org-capture templates
+;;   (pcase-dolist
+;;      (`(,key . ,template)
+;;       '(("ah" "Here"
+;;            entry
+;;            (function (lambda ()
+;;                         (cl-assert (eq major-mode 'org-mode) nil "Cannot insert here, not in org-mode.")
+;;                         (outline-back-to-heading)))
+;;            "* %<%H:%M>   %^g\n:PROPERTIES:\n:ANKI_NOTE_TYPE: Basic\n:ANKI_DECK: Default\n:END:\n** Front\n%?\n** Back\n\n")
+;;         ("ab" "Anki basic"
+;;            entry
+;;            (file+headline ,org-my-anki-file "Dispatch Shelf")
+;;            "* %<%H:%M>   %^g\n:PROPERTIES:\n:ANKI_NOTE_TYPE: Basic\n:ANKI_DECK: Default\n:END:\n** Front\n%?\n** Back\n\n"
+;;            :kill-buffer t)
+;;         ("ac" "Anki cloze"
+;;            entry
+;;            (file+headline ,org-my-anki-file "Dispatch Shelf")
+;;            "* %<%H:%M>   %^g\n:PROPERTIES:\n:ANKI_NOTE_TYPE: Cloze\n:ANKI_DECK: Default\n:END:\n** Text\n\n** Extra\n"
+;;            :kill-buffer t)
+;;           ("a" "Anki")))
+;;    (setf (alist-get key org-capture-templates nil nil #'equal)
+;;          template)))
 
 ;; ;; Allow Emacs to access content from clipboard.
 ;; (setq x-select-enable-clipboard t

@@ -3554,7 +3554,9 @@ _d_: subtree
          (eshell-mode . my/gptel-eshell-keys))
   :bind (("C-c C-<return>" . gptel-menu)
          ("C-c <return>" . my/gptel-send)
-         ("C-h C-q" . gptel-quick))
+         ("C-h C-q" . gptel-quick)
+         :map gptel-mode-map
+         ("C-c C-x t" . gptel-set-topic))
   :init
   (setf (alist-get "^\\*ChatGPT\\*.*$"
                    display-buffer-alist
@@ -3567,6 +3569,29 @@ _d_: subtree
           (body-function . select-window)))
   :config
   (auth-source-pass-enable)
+  (defvar gptel--ollama
+    (gptel-make-ollama
+     "Ollama"
+     :host "192.168.0.59:11434"
+     :models '("mistral:latest" "zephyr:latest")
+     :stream t))
+  (defvar gptel--gpt4all
+    (gptel-make-gpt4all
+     "GPT4All"
+     :protocol "http"
+     :host "localhost:4891"
+     :models '("mistral-7b-openorca.Q4_0.gguf")))
+
+  (add-to-list
+   'gptel-directives
+   '(cliwhiz . "You are a command line helper. Generate command line commands that do what is requested, without any additional description or explanation. Generate ONLY the command, I will edit it myself before running.")
+   :append)
+  (add-to-list
+   'gptel-directives
+   '(emacser . "You are an Emacs maven. Reply only with the most appropriate built-in Emacs command for the task I specify. Do NOT generate any additional description or explanation.")
+   :append)
+
+
   (defun my/gptel-send (&optional arg)
     (interactive "P")
     (if (or gptel-mode (< (point) 2000) (use-region-p))

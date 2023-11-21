@@ -686,6 +686,7 @@ for details."
   ;; (add-to-list 'easy-kill-alist '(40 sentence " "))
   (add-to-list 'easy-kill-alist '(62 page "\n"))
   (add-to-list 'easy-kill-alist '(104 paragraph "\n"))
+  (add-to-list 'easy-kill-alist '(41 sentence "\n"))
   (defun easy-kill-expand-region ()
     "Expand kill according to expand-region."
     (interactive)
@@ -2992,11 +2993,12 @@ _d_: subtree
 
   (defun my/sp-duplicate-sexp (&optional arg)
     (interactive "p")
-    (insert (buffer-substring 
-             (save-excursion
-               (backward-sexp)
-               (point))
-             (point))))
+    (insert (string-trim-left
+             (buffer-substring 
+              (save-excursion
+                (backward-sexp)
+                (point))
+              (point)))))
   
   (defvar lisp-navigation-map
     (let ((map (make-sparse-keymap)))

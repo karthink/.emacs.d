@@ -59,7 +59,7 @@
       dabbrev-abbrev-skip-leading-regexp "\\$\\|\\*\\|/\\|=")
 
 ;; Sentence end need not be "  " (double space)
-(setq sentence-end-double-space nil)
+(setq sentence-end-double-space t)
 
 ;; Turn on show-paren-mode. Highlights matching parentheses
 ;; (show-paren-mode 1)

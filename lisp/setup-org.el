@@ -303,7 +303,7 @@ appropriate.  In tables, insert a new row or end the table."
    org-use-sub-superscripts '{}
    org-pretty-entities nil
    ;; org-priority-faces '((?a . error) (?b . warning) (?c . success))
-   org-pretty-entities-include-sub-superscripts nil)
+   org-pretty-entities-include-sub-superscripts t)
   
   ;; Pretty symbols
   ;; (add-hook 'org-mode-hook 'org-toggle-pretty-entities)
@@ -318,6 +318,16 @@ appropriate.  In tables, insert a new row or end the table."
    '(("\\(\\(?:\\\\\\(?:label\\|ref\\|eqref\\)\\)\\){\\(.+?\\)}"
       (1 font-lock-keyword-face)
       (2 font-lock-constant-face))))
+
+  (defun my/org-raise-scripts-no-braces (_)
+    (when (and (eq (char-after (match-beginning 3)) ?{)
+	       (eq (char-before (match-end 3)) ?}))
+      (remove-text-properties (match-beginning 3) (1+ (match-beginning 3))
+		              (list 'invisible nil))
+      (remove-text-properties (1- (match-end 3)) (match-end 3)
+		              (list 'invisible nil))))
+
+  (advice-add 'org-raise-scripts :after #'my/org-raise-scripts-no-braces)
 
   (setq org-todo-keyword-faces
         '(;; ("TODO"    :foreground "#6e90c8" :weight bold)
@@ -786,7 +796,7 @@ has no effect."
            ((org-agenda-overriding-header "Project Next Actions")
             (org-agenda-skip-function #'my/org-agenda-skip-all-siblings-but-first)))
 
-          ("P" "All Projects" tags "TODO=\"PROJECT\"&LEVEL>1|TODO=\"SUSPENDED\"|TODO=\"CLOSED\""
+          ("P" "All Projects" tags "TODO=\"PROJECT\"&LEVEL>1|TODO=\"SUSPENDED\"" ;|TODO=\"CLOSED\"
            ((org-agenda-overriding-header "All Projects")))
 
           ("i" "Inbox" tags "CATEGORY=\"Inbox\"&LEVEL=1"

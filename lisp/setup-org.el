@@ -338,8 +338,7 @@ appropriate.  In tables, insert a new row or end the table."
 (use-package org-latex-preview
   :after org
   :hook ((org-mode . org-latex-preview-auto-mode)
-         ;; (org-mode . my/org-latex-preview-precompile-idle)
-         )
+         (org-mode . my/org-latex-preview-precompile-idle))
   :bind (:map org-mode-map
          ("C-c C-x SPC" . org-latex-preview-clear-cache)
          ("C-c i" . my/org-latex-preview-image-at-point))
@@ -388,11 +387,14 @@ appropriate.  In tables, insert a new row or end the table."
       (message "No LaTeX preview image at point!")))
   
   ;; Precompilation freezes emacs, do it in the background when possible.
-  (defun my/org-latex-preview-precompile-idle ()
+  (defun my/org-latex-preview-precompile-idle (&rest _)
     (when (featurep 'async)
       (run-with-idle-timer
        2 nil #'my/org-latex-preview-precompile-async
        (current-buffer))))
+
+  (advice-add 'org-latex-preview-clear-cache :after
+              #'my/org-latex-preview-precompile-idle)
 
   (defun my/org-latex-preview-precompile-async (&optional org-buf)
     (when (buffer-live-p org-buf)
@@ -415,27 +417,42 @@ appropriate.  In tables, insert a new row or end the table."
                           org-latex-preview--include-preview-string))
                  (relative-file-p
                   (string-match-p "\\(?:\\\\input{\\|\\\\include{\\)[^/]" header))
-                 (remote-file-p (file-remote-p default-directory)))
-            (when (and (equal compiler "pdflatex") (not remote-file-p))
+                 (remote-file-p (file-remote-p default-directory))
+                 (info (list :latex-compiler compiler
+                             :precompile-format-spec
+                             (let ((org-tex-compiler
+                                    (cdr (assoc compiler org-latex-preview-compiler-command-map))))
+                               `((?l . ,org-tex-compiler)
+                                 (?L . ,(car (split-string org-tex-compiler)))))))
+                 (preamble-hash (thread-first
+                                  header
+                                  (concat
+                                   compiler
+                                   (if (not relative-file-p)
+                                       "-temp" default-directory))
+                                  (sha1))))
+            (when (and (equal compiler "pdflatex")
+                       (not remote-file-p)
+                       (not (cadr (org-persist-read "LaTeX format file cache"
+                                                    (list :key preamble-hash)
+                                                    nil nil :read-related t))))
               (async-start
                `(lambda ()
                   (add-to-list 'load-path ,org-location)
                   (require 'ox)
-                  (require 'org-latex-preview)
-                  (org-latex--precompile
-                   (list :latex-compiler ,compiler
-                    :precompile-format-spec
-                    (let ((org-tex-compiler
-                           (cdr (assoc ,compiler org-latex-preview-compiler-command-map))))
-                     `((?l . ,org-tex-compiler)
-                       (?L . ,(car (split-string org-tex-compiler))))))
-                   ,header
-                   (not ,relative-file-p)))
-               (lambda (result)
+                  (org-latex--precompile-preamble
+                   ',info ,header
+                   ,(expand-file-name preamble-hash temporary-file-directory)))
+               `(lambda (dump-file)
                  (let ((inhibit-message t))
                    (org-persist--load-index)
+                   (cadr
+                    (org-persist-register `(,"LaTeX format file cache"
+                                            (file ,dump-file))
+                                          (list :key ,preamble-hash)
+                                          :write-immediately t))
                    (message "Precompiled in background: %S"
-                            (file-name-base result)))))))))))
+                            (file-name-base dump-file)))))))))))
 
   ;; org-html-format-latex from Org 9.6 - this is needed because the new version does not work with ox-hugo
   (defun org-html-format-latex (latex-frag processing-type info)

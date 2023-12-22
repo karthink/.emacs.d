@@ -111,13 +111,14 @@
 ;; (global-set-key (kbd "C-;") 'complete-symbol) 
 
 ;; Cycle spacing: just-one-space to no-space to original-spacing
-(global-set-key
- (kbd "M-SPC") 
- (defun my/cycle-spacing-impatient (&optional n)
-   (interactive "*p")
-   "Call `cycle-spacing', but in fast mode."
-   ;; (cycle-spacing (if (= n 1) -1 n) preserve-nl-back 'fast)
-   (cycle-spacing (if (= n 1) -1 n))))
+(setq cycle-spacing-actions
+      '(just-one-space delete-all-space restore))
+(defun my/cycle-spacing-impatient (&optional n)
+  (interactive "*p")
+  "Call `cycle-spacing', but in fast mode."
+  ;; (cycle-spacing (if (= n 1) -1 n) preserve-nl-back 'fast)
+  (cycle-spacing (if (= n 1) -1 n)))
+(global-set-key (kbd "M-\\") #'my/cycle-spacing-impatient)
 
 ;;; Alternative to M-x
 ;; (global-set-key "\C-x\C-m" 'execute-extended-command)

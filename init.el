@@ -885,6 +885,8 @@ for details."
          ;; ("C-x +" . balance-windows-area)
          ("C-x q" . my/kill-buffer-and-window))
   :config
+  (setq other-window-scroll-default
+      (lambda () (get-mru-window nil nil 'not-this-one-dummy)))
   (defun my/kill-buffer-and-window ()
     "Kill buffer.
 
@@ -1152,16 +1154,18 @@ User buffers are those not starting with *."
       (define-key map (kbd "n") #'my/next-buffer)
       (define-key map (kbd "p") #'my/previous-buffer)
       (define-key map (kbd "b")
-        (defun my/switch-buffer () (interactive)
-               "Switch to consult-buffer"
-               (run-at-time 0 nil
-                            (lambda (&optional arg)
-                              (interactive "P")
-                              (if-let (((equal arg '(4)))
-                                       (win (other-window-for-scrolling)))
-                                  (with-selected-window win (consult-buffer))
-                                (consult-buffer)))
-                            current-prefix-arg)))
+        (defun my/switch-buffer ()
+          "Switch to consult-buffer"
+               (interactive)
+               (run-at-time
+                0 nil
+                (lambda (&optional arg)
+                  (interactive "P")
+                  (if-let (((equal arg '(4)))
+                           (win (other-window-for-scrolling)))
+                      (with-selected-window win (consult-buffer))
+                    (consult-buffer)))
+                current-prefix-arg)))
       map))
   (map-keymap
    (lambda (_ cmd) (put cmd 'repeat-map 'my/buffer-cycle-map))
@@ -1237,25 +1241,46 @@ User buffers are those not starting with *."
   :bind
   (("C-x o" . ace-window)
    ("H-o"   . ace-window)
-   ("M-o" . other-window)
-   ("M-O" . my/other-window-prev))
-  :general
-  (:keymaps 'space-menu-map
-            "`" 'ace-window)
+   ("M-o" . my/other-window)
+   ("M-O" . my/other-window-prev)
+   :map other-window-repeat-map
+   ("o" . my/other-window))
+  ;; :general
+  ;; (:keymaps 'space-menu-map
+  ;;           "`" 'ace-window)
   ;; :custom-face
   ;; (aw-leading-char-face ((t (:height 2.5 :weight normal))))
   :config
+  (defalias 'my/other-window
+    (let ((direction 1))
+      (lambda (&optional arg)
+        "Call `other-window', switching directions each time."
+        (interactive)
+        (if (equal last-command 'my/other-window)
+            (other-window (* direction (or arg 1)))
+          (setq direction (- direction))
+          (other-window (* direction (or arg 1)))))))
+  (put 'my/other-window 'repeat-map 'other-window-repeat-map)
+  (defun my/aw-take-over-window (window)
+    "Move from current window to WINDOW.
+
+Delete current window in the process."
+    (let ((buf (current-buffer)))
+      (delete-window)
+      (aw-switch-to-window window)
+      (switch-to-buffer buf)))
+  (setq aw-swap-invert t)
   (setq aw-dispatch-always t
         aw-scope 'global
         aw-background nil
         aw-keys '(?q ?w ?e ?r ?t ?y ?u ?i ?p))
   (setq aw-dispatch-alist
         '((?k aw-delete-window "Delete Window")
-          (?m aw-swap-window "Swap Windows")
-          (?M aw-move-window "Move Window")
+          (?x aw-swap-window "Swap Windows")
+          (?m my/aw-take-over-window "Move Window")
           (?c aw-copy-window "Copy Window")
           (?j aw-switch-buffer-in-window "Select Buffer")
-          (?\t aw-flip-window)
+          (?o aw-flip-window)
           (?b aw-switch-buffer-other-window "Switch Buffer Other Window")
           (?c aw-split-window-fair "Split Fair Window")
           (?s aw-split-window-vert "Split Vert Window")

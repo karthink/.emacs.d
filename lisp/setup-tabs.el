@@ -60,16 +60,20 @@
   (defun my/tab-bar-show-hide-tabs ()
     "Show or hide tabs."
     (interactive)
-    (setq tab-bar-show (if tab-bar-show nil 1)))
+    (setq tab-bar-show (if tab-bar-show nil 1))))
 
-  ;; (advice-add 'tab-bar-rename-tab
-  ;;             :after
-  ;;             (defun my/tab-bar-name-upcase (_name &optional _arg)
-  ;;               "Upcase current tab name"
-  ;;               (let* ((tab (assq 'current-tab (frame-parameter nil 'tabs)))
-  ;;                      (tab-name (alist-get 'name tab)))
-  ;;                 (setf (alist-get 'name tab) (upcase tab-name)
-  ;;                       (alist-get 'explicit-name tab) t))))
+;; These problems appear to be fixed
+(use-package tab-bar
+  :disabled
+  :config
+  (advice-add 'tab-bar-rename-tab
+              :after
+              (defun my/tab-bar-name-upcase (_name &optional _arg)
+                "Upcase current tab name"
+                (let* ((tab (assq 'current-tab (frame-parameter nil 'tabs)))
+                       (tab-name (alist-get 'name tab)))
+                  (setf (alist-get 'name tab) (upcase tab-name)
+                        (alist-get 'explicit-name tab) t))))
 
   ;; Workaround for wrong tab-bar right alignment with unicode chars
   (advice-add 'tab-bar-format-align-right :override

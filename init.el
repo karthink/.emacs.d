@@ -3605,6 +3605,38 @@ _d_: subtree
           (body-function . select-window)))
   :config
   (auth-source-pass-enable)
+  (defalias 'my/gptel-easy-page
+    (let* ((map (define-keymap
+                 "SPC" 'scroll-up-command
+                 "S-SPC" 'scroll-down-command
+                 "RET" 'gptel-end-of-response)))
+      (lambda ()
+        (let ((scrolling (propertize  "SCRL" 'face '(:inherit highlight :weight bold))))
+          (add-to-list 'mode-line-format scrolling)
+          (set-transient-map
+           map t
+           (lambda () (setq mode-line-format
+                       (delete scrolling mode-line-format))))))))
+  (add-hook 'gptel-pre-response-hook 'my/gptel-easy-page)
+
+  (setf (alist-get 'org-mode gptel-response-prefix-alist)
+        "*Response*: ")
+  (setf (alist-get 'org-mode gptel-prompt-prefix-alist)
+        "*Prompt*: ")
+  (setf (alist-get 'markdown-mode gptel-response-prefix-alist)
+        "**Response4**: ")
+  (setf (alist-get 'markdown-mode gptel-prompt-prefix-alist)
+        "**Prompt**: ")
+  (defun my/gptel-gemini-key ()
+    (string-trim
+     (auth-source-pass-get 'secret "api/ai.google.com")))
+  (defvar gptel--gemini
+    (gptel-make-gemini
+     "Gemini"
+     :key (lambda ()
+            (auth-source-pass-get
+             'secret "api/ai.google.com"))
+     :stream t))
   (defvar gptel--ollama
     (gptel-make-ollama
      "Ollama"
@@ -3617,6 +3649,13 @@ _d_: subtree
      :protocol "http"
      :host "localhost:4891"
      :models '("mistral-7b-openorca.Q4_0.gguf")))
+  ;; (defvar gptel--kagi
+  ;;   (gptel-make-kagi
+  ;;    "Kagi"
+  ;;    :stream nil
+  ;;    :key (lambda ()
+  ;;           (auth-source-pass-get
+  ;;            'secret "api/kagi-ai.com"))))
 
   (add-to-list
    'gptel-directives

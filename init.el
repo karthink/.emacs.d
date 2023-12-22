@@ -164,10 +164,12 @@ Cancel the previous one if present."
    (defun my/load-packages-eagerly ()
      (run-at-time 1 nil
                   (lambda () 
+                    (when (featurep 'straight) (straight-check-all))
+                    (when (featurep 'pdf-tools) (pdf-tools-install t))
+                    (load-library "pulse")
                     (when (equal server-name "server")
                       (let ((after-init-time (current-time)))
-                        (when (featurep 'straight) (straight-check-all))
-                        (dolist (lib '("org" "ob" "ox" "ol" "org-roam"
+                         (dolist (lib '("org" "ob" "ox" "ol" "org-roam"
                                        "org-capture" "org-agenda" "org-fragtog"
                                        "org-gcal" "latex" "reftex" "cdlatex"
                                        "consult" "helpful" "elisp-mode"
@@ -178,7 +180,6 @@ Cancel the previous one if present."
                                        "dired" "ibuffer" "pdf-tools"
                                        "emacs-wm"))
                           (with-demoted-errors "Error: %S" (load-library lib)))
-                        (when (featurep 'pdf-tools) (pdf-tools-install t))
                         (let ((elapsed (float-time (time-subtract (current-time)
                                                                   after-init-time))))
                           (message "[Pre-loaded packages in %.3fs]" elapsed)))))))))

@@ -1042,6 +1042,7 @@ parent."
                              ("\\subparagraph{%s}"  . "\\subparagraph*{%s}"))))
     (pcase-dolist (`(,name ,class-string . ,extra)
                    `(("IEEEtran" "\\documentclass{IEEEtran}")
+                     ("ieeecolor" "\\documentclass{ieeecolor}")
                      ("article" "\\documentclass{scrartcl}")
                      ("report" "\\documentclass{scrreprt}")
                      ("blank" "[NO-DEFAULT-PACKAGES]\n[NO-PACKAGES]\n[EXTRA]")
@@ -1608,6 +1609,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
           (message "Running rsync: %s → %s" basedir destdir)
           (start-process "rsync-project-html-and-figures" "*project-rsync-html-output*"
                          "rsync" "-a" "-v" 
+                         "--include=*.png"
                          "--include=*.html"
                          "--include=/figures/***"
                          "--exclude=*"

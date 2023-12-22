@@ -112,6 +112,18 @@
   (advice-add 'notmuch-tree-next-thread
               :after (lambda (&rest _) (recenter)))
 
+  (defun my/notmuch-tree-show-message-split-sensibly (orig-fn)
+    "Split window sensibly when showing messages in notmuch-tree."
+    (cl-letf (((symbol-function 'split-window-vertically)
+               (lambda (_) (if (> (frame-width) 160)
+                            (split-window-horizontally
+                             (* 2 (floor (window-width) 5)))
+                          (split-window-below
+                           (/ (window-height) 4))))))
+      (funcall orig-fn)))
+  (advice-add 'notmuch-tree-show-message-in
+              :around 'my/notmuch-tree-show-message-split-sensibly)
+
   (defun notmuch-search-make-tagger (&rest tags)
     (lambda () (interactive)
       (let ((taglist (mapcar (lambda (tag)

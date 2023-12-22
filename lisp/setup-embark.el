@@ -8,33 +8,36 @@
              )
   :after minibuffer
   :hook ((embark-collect-mode . hl-line-mode))
-  :bind (("C-H-SPC" . embark-dwim)
+  :bind (("M-SPC" . embark-act)
+         ("M-S-SPC" . embark-select)
          ("M-s RET"  . embark-act)
          ;; ("s-o"      . embark-act)
-         ("H-SPC"    . embark-act)
-         ("C-S-SPC"  . embark-act)
+         ("H-SPC"    . embark-select)
+         ("C-S-SPC"  . embark-select)
          ("C-c SPC"  . embark-act)
+         ("M-*"      . embark-act-all)
          ("C-c RET"  . embark-dwim)
          ("S-<return>"  . embark-dwim)
          ("C-M-<return>"  . embark-dwim)
          ("C-h b"   . embark-bindings)
          ("C-h C-b" . describe-bindings)
+         :map embark-general-map
+         ("M-SPC"     . embark-select)
          :map minibuffer-local-completion-map
          ;; ("s-o"      . embark-act)
          ("C-c C-o"  . embark-export)
          ("M-s o"    . embark-export)
-         ("H-SPC"    . embark-act)
+         ("H-SPC"    . embark-select)
          ("C->"      . embark-become)
          ("C-*"      . embark-act-all)
          ("M-*"      . embark-act-all)
          :map embark-collect-mode-map
-         ("H-SPC" . embark-act)
+         ("H-SPC" . embark-select)
+         ("m"        . embark-select)
          ("o"        . embark-act)
-         ("O"        . embark-act-noexit)
-         ("C-o"      . embark-act)
+         ("M-*"      . embark-act-all)
          ("M-t"      . toggle-truncate-lines)
          :map embark-file-map
-         ("j"        . my/find-file-dir)
          ("S"        . sudo-find-file)
          ("4"        . find-file-other-window)
          ("5"        . find-file-other-frame)
@@ -57,25 +60,27 @@
   :config
   (setq embark-keymap-prompter-key "'")
   (setq embark-cycle-key "SPC")
-  (setq embark-quit-after-action t)
+  ;; (setq embark-quit-after-action t)
   ;; Use Embark instead of `describe-prefix-bindings'
   (setq prefix-help-command #'embark-prefix-help-command)
 
   ;; Embark indicators
-  (mapc (lambda (ind) (add-hook 'embark-indicators ind))
-        '(embark-mixed-indicator
+  ;; (mapc (lambda (ind) (add-hook 'embark-indicators ind)))
+  (setq embark-indicators
+        '(;; embark-mixed-indicator
+          embark-minimal-indicator
           embark-highlight-indicator
           embark-isearch-highlight-indicator))
   
-  (setq embark-mixed-indicator-delay 0.8)
+  ;; (setq embark-mixed-indicator-delay 0.8)
   ;; (setq embark-verbose-indicator-display-action
   ;;       '(display-buffer-at-bottom
   ;;         (window-height . (lambda (win) (fit-window-to-buffer
   ;;                                    win (floor (frame-height) 
   ;;                                               3))))))
-  (setq embark-verbose-indicator-display-action
-        '(display-buffer-below-selected
-          (window-height . fit-window-to-buffer)))
+  ;; (setq embark-verbose-indicator-display-action
+  ;;       '(display-buffer-below-selected
+  ;;         (window-height . fit-window-to-buffer)))
   (setf (alist-get 'kill-buffer embark-pre-action-hooks) nil)
 
   ;; Drag and drop
@@ -93,15 +98,6 @@ are place there, otherwise you are prompted for a message buffer."
     (interactive "fAttach: ")
     (gnus-dired-attach (list file)))
   (define-key embark-file-map (kbd "C-a") #'embark-attach-file)
-  
-  ;; Utility commands
-  (defun embark-act-noexit ()
-    (interactive)
-    (embark-act 4))
-
-  (defun my/find-file-dir (file)
-    (interactive (list (read-file-name "Jump to dir of file: ")))
-    (dired (file-name-directory file)))
   
   ;; Extra embark actions
   (eval-when-compile
@@ -166,14 +162,14 @@ are place there, otherwise you are prompted for a message buffer."
              '(("l" load-file)
                ("b" byte-compile-file)
                ("S" sudo-find-file)
-               ( "r" rename-file-and-buffer)
+               ("r" rename-file-and-buffer)
                ("d" my/diff-buffer-dwim)
                ("=" ediff-buffers)
                ("C-=" ediff-files)
                ("!" shell-command)
                ("&" async-shell-command)
                ("x" consult-file-externally)
-               ;; ("C-a" mml-attach-file)
+               ("C-a" embark-attach-file)
                ("c" copy-file)
                ("k" kill-buffer)
                ;; ("l" org-store-link)
@@ -181,7 +177,10 @@ are place there, otherwise you are prompted for a message buffer."
                ("z" bury-buffer)
                ("|" embark-shell-command-on-buffer)
                ("U" 0x0-dwim)
-               ("g" revert-buffer)))
+               ("g" revert-buffer-quick)
+               ("u" rename-uniquely)
+               ("n" clone-buffer)
+               ("t" toggle-truncate-lines)))
           (define-key map (kbd key) command))
         map))
 

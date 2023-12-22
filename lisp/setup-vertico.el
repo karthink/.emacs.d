@@ -20,12 +20,9 @@
          ("C->"     . embark-become)
          (">"       . embark-become)
          ("C-<tab>"   . embark-act-with-completing-read)
-         ("C-o"     . embark-minimal-act)
-         ("C-M-o"   . embark-minimal-act-noexit)
-         ("C-*"     . embark-act-all)
          ("M-*"      . embark-act-all)
-         ("M-s o"   . embark-export)
-         ("C-c C-o" . embark-export)
+         ("M-s o"   . embark-collect)
+         ("C-c C-o" . embark-collect)
          ("C-l"     . embark-export))
   :config
   (setq vertico-count 10
@@ -42,6 +39,7 @@
   :commands vertico-multiform-mode
   :after vertico-flat
   :bind (:map vertico-map
+              ("C-H-SPC" . embark-select)
               ("M-q" . vertico-multiform-flat)
               ("C-l" . my/vertico-multiform-unobtrusive)
               ("C-M-l" . embark-export))
@@ -58,7 +56,7 @@
            (minor-mode reverse)
            (reftex-label (:not unobtrusive))
            (embark-keybinding grid)
-           ;; (citar-reference reverse)
+           (citar-reference reverse)
            (xref-location reverse)
            (history reverse)
            (url reverse)

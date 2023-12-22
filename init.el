@@ -2442,6 +2442,7 @@ current buffer without truncation."
   :bind (:map edebug-mode-map
          ("A" . my/elisp-add-to-watch))
   :config
+  (setq debugger-stack-frame-as-list t)
   (defun my/elisp-add-to-watch (&optional region-start region-end)
     "Add the current variable to the *EDebug* window"
     (interactive "r")
@@ -3961,6 +3962,18 @@ the mode-line and switches to `variable-pitch-mode'."
   :bind
   ("C-c S" . my/screencast-mode))
 
+;; ** SPACIOUS-PADDING
+(use-package spacious-padding
+  :straight t
+  :defer
+  :config
+  (setq spacious-padding-widths
+      '( :internal-border-width 16
+         :header-line-width 4
+         :mode-line-width 2
+         :tab-width 2
+         :right-divider-width 24
+         :scroll-bar-width 8)))
 ;; * NAVIGATION
 (use-package emacs
   :config
@@ -4147,7 +4160,7 @@ buffer's text scale."
           ;; (bg-main "#181A1B")
           (bg-mode-line-active bg-lavender) ;; bg-graph-magenta-1
           (fg-mode-line-active "#ffffff")))
-  (setq modus-themes-org-blocks 'tinted-background
+  (setq modus-themes-org-blocks 'gray-background
         modus-themes-bold-constructs t
         modus-themes-prompts '(bold background)
         modus-themes-variable-pitch-ui nil

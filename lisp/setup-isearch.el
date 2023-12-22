@@ -70,15 +70,16 @@ confines of word boundaries (e.g. multiple words)."
 
 ;;;###autoload
   (defun my/isearch-forward-other-buffer (prefix)
-    "Function to isearch-forward in other-window."
+    "`isearch-forward' in the next window.
+
+With PREFIX arg, search in the previous window."
     (interactive "P")
     (unless (one-window-p)
-      (save-excursion
-        (let ((next (if prefix -1 1)))
-          (other-window next)
-          (isearch-forward)
-          (other-window (- next))
-          ))))
+      (with-selected-window
+          (or (and other-window-scroll-default
+                   (funcall other-window-scroll-default))
+              (if prefix (previous-window) (next-window)))
+        (isearch-forward))))
   
 ;;;###autoload
   (defun my/isearch-backward-other-buffer (prefix)

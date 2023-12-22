@@ -480,13 +480,22 @@ Cancel the previous one if present."
 (use-package replace
   :defer
   :bind (:map occur-mode-map
-              ("C-x C-q" . occur-edit-mode))
+         ("C-x C-q" . occur-edit-mode)
+         :map query-replace-map
+         ("p" . 'backup))
   :general
   (:keymaps 'occur-mode-map
             :states '(normal motion)
             "gc" 'next-error-follow-minor-mode
             :states 'motion
             "f" 'next-error-follow-minor-mode))
+
+;; Testing parallel replacements
+(use-package query-replace-parallel
+  :straight '(:host github :repo "hokomo/query-replace-parallel"
+              :files ("query-replace-parallel.el"))
+  :bind (("H-%" . query-replace-parallel)
+         ("H-M-%" . query-replace-parallel-regexp)))
 
 (require 'better-editing nil t)
 

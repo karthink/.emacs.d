@@ -179,8 +179,8 @@
 ;; Easy regex replace
 (defalias 'rr 'replace-regexp)
 (defalias 'qrr 'query-replace-regexp)
-(global-set-key (kbd "H-%") 'replace-string)
-(global-set-key (kbd "H-M-%") 'replace-regexp)
+;; (global-set-key (kbd "H-%") 'replace-string)
+;; (global-set-key (kbd "H-M-%") 'replace-regexp)
 (global-set-key (kbd "C-x / s") 'replace-regexp)
 (global-set-key (kbd "C-x / q") 'query-replace-regexp)
 (global-set-key (kbd "C-x / r") 'query-replace)

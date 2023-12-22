@@ -397,8 +397,8 @@ appropriate.  In tables, insert a new row or end the table."
       (message "No LaTeX preview image at point!")))
   
   ;; Precompilation freezes emacs, do it in the background when possible.
-  (defun my/org-latex-preview-precompile-idle (&rest _)
-    (when (featurep 'async)
+  (defun my/org-latex-preview-precompile-idle (&optional beg end _)
+    (when (and (featurep 'async) (not (or beg end)))
       (run-with-idle-timer
        2 nil #'my/org-latex-preview-precompile-async
        (current-buffer))))
@@ -504,16 +504,16 @@ INFO is a plist containing export properties."
 ;; code for centering LaTeX previews -- a terrible idea
 (use-package org-latex-preview
   :disabled
-  :hook ((org-mode . my/org-latex-preview-auto-recenter))
   :config
   (add-hook 'org-latex-preview-open-functions
             (defun my/org-latex-preview-uncenter (ov)
-              (overlay-put ov 'justify (overlay-get ov 'before-string))
+              ;; (overlay-put ov 'justify (overlay-get ov 'before-string))
               (overlay-put ov 'before-string nil)))
   (add-hook 'org-latex-preview-close-functions
             (defun my/org-latex-preview-recenter (ov)
               (overlay-put ov 'before-string (overlay-get ov 'justify))
-              (overlay-put ov 'justify nil)))
+              ;; (overlay-put ov 'justify nil)
+              ))
   (defun my/org-latex-preview-center (ov)
     (save-excursion
       (goto-char (overlay-start ov))
@@ -521,8 +521,10 @@ INFO is a plist containing export properties."
                   ((or (eq (org-element-type elem) 'latex-environment)
                        (string-match-p "^\\\\\\[" (org-element-property :value elem))))
                   (img (overlay-get ov 'display))
-                  (prop `(space :align-to (- center (0.5 . ,img)))))
-        (overlay-put ov 'before-string (propertize " " 'display prop 'face 'default)))))
+                  (prop `(space :align-to (- center (0.55 . ,img))))
+                  (justify (propertize " " 'display prop 'face 'default)))
+        (overlay-put ov 'justify justify)
+        (overlay-put ov 'before-string (overlay-get ov 'justify)))))
 
   (add-hook 'org-latex-preview-update-overlay-functions
             #'my/org-latex-preview-center))

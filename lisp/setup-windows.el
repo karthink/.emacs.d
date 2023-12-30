@@ -3,8 +3,7 @@
 
 (setq display-buffer-base-action
       '((display-buffer-reuse-window
-         display-buffer-in-previous-window
-         display-buffer-reuse-mode-window)))
+         display-buffer-in-previous-window)))
 
 (defun my/display-buffer-reuse-minor-mode-window (buffer alist)
     (let* ((alist-entry (assq 'reusable-frames alist))

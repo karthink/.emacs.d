@@ -1538,6 +1538,8 @@ To be used with `imenu-after-jump-hook' or equivalent."
 If region is active, add its contents to the new buffer."
     (let* ((mode major-mode))
       (rename-buffer (format "*Scratch for %s*" mode) t)))
+  (setf (alist-get "\\*Scratch for" display-buffer-alist nil nil #'equal)
+        '((display-buffer-pop-up-window)))
   :hook (scratch-create-buffer . my/scratch-buffer-setup)
   :bind ("C-c s" . scratch))
 

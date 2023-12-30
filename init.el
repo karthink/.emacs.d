@@ -2423,6 +2423,7 @@ current buffer without truncation."
 (unless IS-GUIX (straight-use-package 'jinx))
 (use-package jinx
   ;; :hook ((text-mode prog-mode conf-mode) . my/jinx-mode)
+  :commands jinx-mode
   :bind ([remap ispell-word] . jinx-correct)
   :config
   (defun my/jinx-mode ()
@@ -2554,7 +2555,7 @@ normally have their errors suppressed."
 (use-package transient
   :defines toggle-modes
   :bind (("<f8>"  . toggle-modes)
-         ("C-c t" . toggle-modes))
+         ("C-c b" . toggle-modes))
   :config
   (defun mode-cycle (mode1 mode2)
     "Cycle between mode1, mode2 and neither enabled."
@@ -2590,20 +2591,30 @@ normally have their errors suppressed."
                                  #'prettify-symbols-mode))))
       ("vl" "visual lines" visual-line-mode)
       ("vt" "trunc lines" toggle-truncate-lines)
+      ("vo" "olivetti"    olivetti-mode)
       ("vf" "visual fill" visual-fill-column-mode)]
+
+     ["Org"
+      :if-derived org-mode
+      ("om" "Modern" org-modern-mode) 
+      ("o\\" "Pretty" org-toggle-pretty-entities)
+      ("o/" "Emphasis" (lambda () (interactive)
+                            (if (bound-and-true-p org-appear-mode)
+                                (progn (org-appear-mode -1)
+                                       (setq-local org-hide-emphasis-markers nil))
+                              (setq-local org-hide-emphasis-markers t)
+                              (org-appear-mode 1))))
+      ("oi" "Indent" org-indent-mode)
+      ("on" "Numbers" org-num-mode)
+      ("ol" "LaTeX" org-latex-preview-auto-mode)]
 
      ["Editing"
       ("r" "read only" read-only-mode)
       ("n" "line numbers" display-line-numbers-mode)
       ("M-q" "auto fill" auto-fill-mode)
-      ("i" "ispell" (lambda ()
-                        (interactive)
-                        (call-interactively
-                         (if (derived-mode-p 'text-mode)
-                             #'text-spell-fu-mode
-                           #'spell-fu-mode))))
+      ("i" "ispell" jinx-mode)
       ;; ("V" "view mode" view-mode)
-      ("o" "outline" outline-minor-mode)]
+      ("<tab>" "outline" outline-minor-mode)]
 
      ["Highlight"
       ("hl" "line" hl-line-mode)

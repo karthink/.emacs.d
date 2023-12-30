@@ -17,7 +17,8 @@
          ("C-'"   . nil)
          ("C-c C-M-l" . org-toggle-link-display)
          ("C-S-<right>" . nil)
-         ("C-S-<left>" . nil))
+         ("C-S-<left>" . nil)
+         ("C-M-e" . my/org-end-of-defun))
 
   :hook ((org-mode . turn-on-org-cdlatex)
          (org-cdlatex-mode . my/org-cdlatex-settings)
@@ -88,12 +89,40 @@
        (put cmd 'repeat-map 'org-link-navigation-map))
      org-link-navigation-map))
   
+  (defun my/org-beginning-of-defun (&optional arg)
+    ";TODO: "
+    (interactive "p")
+    (if (not (texmathp))
+        (org-backward-element)
+      (let ((lx (save-mark-and-excursion
+                  (LaTeX-backward-environment arg)
+                  (point)))
+            (beg (org-element-begin (org-element-context))))
+        (if (> beg lx) (goto-char beg)
+          (run-at-time 0 nil #'goto-char lx)
+          lx))))
+
+  (defun my/org-end-of-defun (&optional arg)
+    ";TODO: "
+    (interactive "p")
+    (if (not (texmathp))
+        (if (not (org-at-heading-p))
+	    (org-forward-element)
+	  (org-forward-element)
+	  (forward-char -1))
+      (goto-char (min (save-mark-and-excursion
+                        (LaTeX-forward-environment (or arg 1))
+                        (point))
+                      (org-element-end (org-element-context))))))
+
   (defun er/add-latex-in-org-mode-expansions ()
     ;; Make Emacs recognize \ as an escape character in org
     (modify-syntax-entry ?\\ "\\" org-mode-syntax-table)
     ;; Paragraph end at end of math environment
     (setq paragraph-start (concat paragraph-start "\\|\\\\end{\\([A-Za-z0-9*]+\\)}"))
     ;; (setq paragraph-separate (concat paragraph-separate "\\|\\\\end{\\([A-Za-z0-9*]+\\)}"))
+    ;; Better forward/backward defun in Org
+    (setq-local beginning-of-defun-function 'my/org-beginning-of-defun)
     ;; Latex mode expansions
     (with-eval-after-load 'expand-region
       (set (make-local-variable 'er/try-expand-list)

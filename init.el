@@ -2582,7 +2582,7 @@ normally have their errors suppressed."
     [:pad-keys t
      ["Appearance"
       ("t" "color theme" my/toggle-theme)
-      ("B" "BIG mode"    presentation-mode)
+      ;; ("B" "BIG mode"    presentation-mode)
       ;; ("M" "smart modeline" ignore)
       ("8" "pretty symbols" (lambda () (interactive)
                               (if (derived-mode-p 'org-mode)
@@ -3868,11 +3868,9 @@ managers such as DWM, BSPWM refer to this state as 'monocle'."
   :straight t
   :hook (mixed-pitch-mode . my/mixed-pitch-spacing)
   :config
-  (add-to-list 'mixed-pitch-fixed-pitch-faces 'line-number)
-  (add-to-list 'mixed-pitch-fixed-pitch-faces 'corfu-default)
-  (add-to-list 'mixed-pitch-fixed-pitch-faces 'corfu-current)
-  (add-to-list 'mixed-pitch-fixed-pitch-faces 'org-cite)
-  (add-to-list 'mixed-pitch-fixed-pitch-faces 'error)
+  (dolist (face '(line-number org-property-value org-drawer
+                  error org-cite corfu-current corfu-default))
+    (add-to-list 'mixed-pitch-fixed-pitch-faces face))
   (setq mixed-pitch-set-height nil)
   (defun my/mixed-pitch-spacing ()
     (if mixed-pitch-mode
@@ -3945,7 +3943,9 @@ the mode-line and switches to `variable-pitch-mode'."
 
 
 ;; ** PRESENTATION (BIG) MODE
+;; Turned off since global-text-scale-adjust exists now
 (use-package presentation
+  :disabled
   :straight t
   :commands presentation-mode
   :config
@@ -4088,6 +4088,12 @@ buffer's text scale."
 
 (use-package cus-face
   :config
+  (setf (alist-get "Merriweather" face-font-rescale-alist
+                   nil nil #'equal)
+        0.88)
+  (setf (alist-get "IM FELL" face-font-rescale-alist
+                 nil nil #'equal)
+      1.2)
   (cond (IS-LINUX
          (set-fontset-font t 'unicode "Symbola" nil 'prepend)
          (pcase-let ((`(,vp ,fp)
@@ -4096,7 +4102,7 @@ buffer's text scale."
                         '(95 110))
                        (t '(95 110)))))
            (custom-set-faces
-            `(variable-pitch ((t (:family "Merriweather" :height ,vp
+            `(variable-pitch ((t (:family "Merriweather" ;;:height ,vp
                                   :width semi-expanded))))
             ;; '(default ((t (:family "Ubuntu Mono" :foundry "PfEd"
             ;;                        :slant normal :weight normal

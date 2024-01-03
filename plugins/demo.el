@@ -129,7 +129,12 @@
         ;; Always needed
         (add-hook 'grep-mode-hook 'toggle-truncate-lines)
         
-	;; Unneeded
+	;; No emacs messages when turning off screen recording
+        (global-set-key (kbd "s-r") #'ignore)
+        (global-set-key (kbd "C-s-t") #'ignore)
+        (require 'keycast)
+        (add-to-list 'keycast-substitute-alist '(ignore nil nil))
+        ;; Unneeded
         (when (featurep 'project-x)
 	  (dolist (mode '(project-x-mode))
             (if (bound-and-true-p mode)

@@ -710,7 +710,10 @@ preferring the preferred type."
   :config
   (setq elfeed-tube-auto-save-p nil
         elfeed-tube-auto-fetch-p nil)
-  (setq elfeed-tube-save-indicator t)
+  (setq elfeed-tube-save-indicator t
+        elfeed-tube-captions-languages
+        '("en" "english" "en-IN" "english (auto generated)")
+        elfeed-tube-thumbnail-size 'medium)
   (setq elfeed-log-level 'debug)
   (elfeed-tube-setup)
   (defun my/elfeed-tube-download (entries)

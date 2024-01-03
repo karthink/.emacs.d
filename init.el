@@ -2426,8 +2426,16 @@ current buffer without truncation."
   :commands jinx-mode
   :bind ([remap ispell-word] . jinx-correct)
   :config
-  (defun my/jinx-mode ()
-    (unless buffer-read-only (jinx-mode 1))))
+  (cl-callf
+      (lambda (pl)
+        (delete-dups
+         (append '(TeX-fold-unfolded-face TeX-fold-folded-face) pl)))
+      (alist-get 'tex-mode jinx-exclude-faces))
+  (cl-callf
+      (lambda (pl)
+        (delete-dups
+         (append (alist-get 'tex-mode jinx-exclude-faces) pl)))
+      (alist-get 'org-mode jinx-exclude-faces)))
 
 ;; ** ELDOC
 (use-package eldoc

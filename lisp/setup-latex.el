@@ -179,7 +179,7 @@ but mark is only pushed if region isn't active."
   (TeX-fold-unfolded-face ((t (:background unspecified))))
   :config
   (setq ;; TeX-fold-folded-face '((t (:height 1.0 :foreground "SlateBlue1")))
-        TeX-fold-auto t
+        TeX-fold-auto nil
         TeX-fold-type-list '(macro comment))
   (set-face-attribute 'TeX-fold-folded-face nil :foreground nil :inherit 'shadow)
   ;; Custom folded display for labels and refs
@@ -188,8 +188,8 @@ but mark is only pushed if region isn't active."
                 (cat (or (match-string 1 text) ""))
                 (ref (or (match-string 2 text) text)))
            (setq ref
-                 (if (> (length ref) 18)
-                     (concat (substring ref 0 6) "..." (substring ref -11))
+                 (if (> (length ref) 13)
+                     (concat (substring ref 0 6) "..." (substring ref -6))
                      ;; (concat "..." (substring ref -14))
                    ref))
            (concat "[" (propertize cat 'face 'shadow) ref "]")))
@@ -344,7 +344,8 @@ but mark is only pushed if region isn't active."
          ("C-c )"   . consult-reftex-insert-reference)
          ("C-c M-." . consult-reftex-goto-label)
          :map org-mode-map
-         ("C-c (" . consult-reftex-goto-label))
+         ("C-c (" . consult-reftex-goto-label)
+         ("C-c )"   . consult-reftex-insert-reference))
   :config (setq consult-reftex-preview-function
                 #'consult-reftex-make-window-preview))
 

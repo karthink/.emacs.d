@@ -331,11 +331,11 @@ This differs from Avy's goto-char-timer in how it processes parens."
   :general
   ("C-M-'"      'avy-resume
    "C-'"        '(my/avy-goto-char-this-window :wk "Avy goto char")
-   "M-s j"      '(my/avy-goto-char-timer       :wk "Avy goto char timer")
+   "M-j"        '(my/avy-goto-char-timer       :wk "Avy goto char timer")
    "M-s y"      '(avy-copy-line                :wk "Avy copy line above")
    "M-s M-y"    '(avy-copy-region              :wk "Avy copy region above")
    "M-s M-k"    '(avy-kill-whole-line          :wk "Avy copy line as kill")
-   "M-j"        '(avy-goto-char-2              :wk "Avy goto char 2")
+   "M-s j"      '(avy-goto-char-2              :wk "Avy goto char 2")
    "M-s M-p"    '(avy-goto-line-above          :wk "Avy goto line above")
    "M-s M-n"    '(avy-goto-line-below          :wk "Avy goto line below")
    "M-s C-w"    '(avy-kill-region              :wk "Avy kill region")

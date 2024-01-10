@@ -7,6 +7,13 @@
     (setq python-shell-interpreter "ipython3"
           python-shell-interpreter-args "--simple-prompt --classic")))
 
+(use-package python-mls
+  :straight t
+  ;; :custom
+  ;; (python-mls-multiline-history-modifier '(meta shift))
+  :hook
+  (inferior-python-mode . python-mls-mode))
+
 (use-package pyvenv
   :disabled t
   :straight t

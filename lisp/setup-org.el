@@ -327,10 +327,12 @@ appropriate.  In tables, insert a new row or end the table."
    org-startup-folded t
    org-startup-indented nil
    org-startup-with-inline-images nil
+   org-startup-with-latex-preview t
    org-highlight-latex-and-related '(native)
    org-indent-mode-turns-on-hiding-stars nil
    org-use-sub-superscripts '{}
    org-pretty-entities nil
+   org-image-align 'center
    ;; org-priority-faces '((?a . error) (?b . warning) (?c . success))
    org-pretty-entities-include-sub-superscripts t)
   
@@ -382,11 +384,9 @@ appropriate.  In tables, insert a new row or end the table."
          ("C-c C-x SPC" . org-latex-preview-clear-cache)
          ("C-c i" . my/org-latex-preview-image-at-point))
   :config
-  ;; Display preferences for latex previews
-  ;; Larger equations
-  (setq org-element-use-cache nil)
-  (add-hook 'org-latex-preview-auto-blacklist 'iscroll-next-line)
-  (add-hook 'org-latex-preview-auto-blacklist 'iscroll-previous-line)
+  ;; (setq org-element-use-cache nil)
+  (add-hook 'org-latex-preview-auto-ignored-commands 'next-line)
+  (add-hook 'org-latex-preview-auto-ignored-commands 'previous-line)
   (setq-default
    ;; org-latex-preview-header
    ;;    "\\documentclass{article}
@@ -402,15 +402,17 @@ appropriate.  In tables, insert a new row or end the table."
           (plist-put org-format-latex-options :zoom
                      (+ 0.01 (/ (face-attribute 'default :height) 100.0))))
 
-   org-latex-preview-options
-   (progn (plist-put org-latex-preview-options :scale 1.0)
-          (plist-put org-latex-preview-options :zoom
+   org-latex-preview-appearance-options
+   (progn (plist-put org-latex-preview-appearance-options :scale 1.0)
+          (plist-put org-latex-preview-appearance-options :zoom
                      (+ 0.01 (/ (face-attribute 'default :height) 100.0))))
 
-   org-latex-preview-debounce 1.0
-   org-latex-preview-throttle 1.0
-   org-latex-preview-auto-generate 'live
-   org-latex-preview-processing-indicator nil)
+   org-latex-preview-numbered t
+   org-latex-preview-live-debounce 0.5
+   org-latex-preview-live-throttle 0.5
+   org-latex-preview-auto-track-inserts t
+   org-latex-preview-live '(block edit-special)
+   org-latex-preview-process-active-indicator nil)
 
   ;; Get the image at point
   (defun my/org-latex-preview-image-at-point (&optional arg)
@@ -438,7 +440,7 @@ appropriate.  In tables, insert a new row or end the table."
   (defun my/org-latex-preview-precompile-async (&optional org-buf)
     (when (buffer-live-p org-buf)
       (with-current-buffer org-buf
-        (when org-latex-preview-precompile
+        (when org-latex-preview-process-precompiled
           (let* ((org-location (org-find-library-dir "org"))
                  (compiler-keywords
                   (org-collect-keywords
@@ -494,51 +496,52 @@ appropriate.  In tables, insert a new row or end the table."
                             (file-name-base dump-file)))))))))))
 
   ;; org-html-format-latex from Org 9.6 - this is needed because the new version does not work with ox-hugo
-  (defun org-html-format-latex (latex-frag processing-type info)
-    "Format a LaTeX fragment LATEX-FRAG into HTML.
-PROCESSING-TYPE designates the tool used for conversion.  It can
-be `mathjax', `verbatim', `html', nil, t or symbols in
-`org-preview-latex-process-alist', e.g., `dvipng', `dvisvgm' or
-`imagemagick'.  See `org-html-with-latex' for more information.
-INFO is a plist containing export properties."
-    (let ((cache-relpath "") (cache-dir ""))
-      (unless (or (eq processing-type 'mathjax)
-                  (eq processing-type 'html))
-        (let ((bfn (or (buffer-file-name)
-                       (make-temp-name
-                        (expand-file-name "latex" temporary-file-directory))))
-              (latex-header
-               (let ((header (plist-get info :latex-header)))
-                 (and header
-                      (concat (mapconcat
-                               (lambda (line) (concat "#+LATEX_HEADER: " line))
-                               (org-split-string header "\n")
-                               "\n")
-                              "\n")))))
-          (setq cache-relpath
-                (concat (file-name-as-directory org-preview-latex-image-directory)
-                        (file-name-sans-extension
-                         (file-name-nondirectory bfn)))
-                cache-dir (file-name-directory bfn))
-          ;; Re-create LaTeX environment from original buffer in
-          ;; temporary buffer so that dvipng/imagemagick can properly
-          ;; turn the fragment into an image.
-          (setq latex-frag (concat latex-header latex-frag))))
-      (with-temp-buffer
-        (insert latex-frag)
-        (org-format-latex cache-relpath nil nil cache-dir nil
-                          "Creating LaTeX Image..." nil processing-type)
-        (buffer-string)))))
+  ;; (defun org-html-format-latex (latex-frag processing-type info)
+;;     "Format a LaTeX fragment LATEX-FRAG into HTML.
+;; PROCESSING-TYPE designates the tool used for conversion.  It can
+;; be `mathjax', `verbatim', `html', nil, t or symbols in
+;; `org-preview-latex-process-alist', e.g., `dvipng', `dvisvgm' or
+;; `imagemagick'.  See `org-html-with-latex' for more information.
+;; INFO is a plist containing export properties."
+;;     (let ((cache-relpath "") (cache-dir ""))
+;;       (unless (or (eq processing-type 'mathjax)
+;;                   (eq processing-type 'html))
+;;         (let ((bfn (or (buffer-file-name)
+;;                        (make-temp-name
+;;                         (expand-file-name "latex" temporary-file-directory))))
+;;               (latex-header
+;;                (let ((header (plist-get info :latex-header)))
+;;                  (and header
+;;                       (concat (mapconcat
+;;                                (lambda (line) (concat "#+LATEX_HEADER: " line))
+;;                                (org-split-string header "\n")
+;;                                "\n")
+;;                               "\n")))))
+;;           (setq cache-relpath
+;;                 (concat (file-name-as-directory org-preview-latex-image-directory)
+;;                         (file-name-sans-extension
+;;                          (file-name-nondirectory bfn)))
+;;                 cache-dir (file-name-directory bfn))
+;;           ;; Re-create LaTeX environment from original buffer in
+;;           ;; temporary buffer so that dvipng/imagemagick can properly
+;;           ;; turn the fragment into an image.
+;;           (setq latex-frag (concat latex-header latex-frag))))
+;;       (with-temp-buffer
+;;         (insert latex-frag)
+;;         (org-format-latex cache-relpath nil nil cache-dir nil
+;;                           "Creating LaTeX Image..." nil processing-type)
+;;         (buffer-string))))
+  )
 
 ;; code for centering LaTeX previews -- a terrible idea
 (use-package org-latex-preview
   :disabled
   :config
-  (add-hook 'org-latex-preview-open-functions
+  (add-hook 'org-latex-preview-overlay-open-functions
             (defun my/org-latex-preview-uncenter (ov)
               ;; (overlay-put ov 'justify (overlay-get ov 'before-string))
               (overlay-put ov 'before-string nil)))
-  (add-hook 'org-latex-preview-close-functions
+  (add-hook 'org-latex-preview-overlay-close-functions
             (defun my/org-latex-preview-recenter (ov)
               (overlay-put ov 'before-string (overlay-get ov 'justify))
               ;; (overlay-put ov 'justify nil)
@@ -555,7 +558,7 @@ INFO is a plist containing export properties."
         (overlay-put ov 'justify justify)
         (overlay-put ov 'before-string (overlay-get ov 'justify)))))
 
-  (add-hook 'org-latex-preview-update-overlay-functions
+  (add-hook 'org-latex-preview-overlay-update-functions
             #'my/org-latex-preview-center))
 
 (use-package org-appear

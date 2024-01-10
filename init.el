@@ -516,7 +516,9 @@ Cancel the previous one if present."
 
 (use-package expand-region
   :straight '(:host github :repo "magnars/expand-region.el"
-              :fork "karthink/expand-region.el")
+              ;; Changes merged in origin, my fork isn't needed
+              ;; :fork "karthink/expand-region.el"
+              )
   :commands expand-region
   :bind ("C-," . 'er/expand-region)
   :config

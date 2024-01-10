@@ -2048,6 +2048,23 @@ current buffer without truncation."
 ;;;################################################################
 
 ;;;----------------------------------------------------------------
+;; ** INDENT-BARS
+;; Testing
+(use-package indent-bars
+  :straight (:type git :host github
+             :repo "jdtsmith/indent-bars")
+  :hook ((python-mode julia-mode) . indent-bars-mode)
+  :config
+  (setq
+   indent-bars-color '(highlight :face-bg t :blend 0.3)
+   indent-bars-pattern "."
+   indent-bars-width-frac 0.2
+   indent-bars-pad-frac 0.2
+   indent-bars-zigzag nil
+   indent-bars-color-by-depth nil
+   indent-bars-highlight-current-depth nil
+   indent-bars-display-on-blank-lines nil))
+
 ;; ** DETACHED
 ;; Testing detached
 (use-package detached
@@ -2512,7 +2529,11 @@ normally have their errors suppressed."
   :straight t
   :after flymake
   :config
-  (add-hook 'flymake-diagnostic-functions #'package-lint-flymake))
+  (add-hook 'emacs-lisp-mode-hook
+            (lambda () 
+              (add-hook 'flymake-diagnostic-functions
+                        #'package-lint-flymake
+                        nil :local))))
 
 (use-package flymake-proselint
   :straight t
@@ -2599,6 +2620,15 @@ normally have their errors suppressed."
                                   (org-toggle-pretty-entities)
                                 (call-interactively
                                  #'prettify-symbols-mode))))
+      ("ls"
+       (lambda () (concat "line spc"
+                     (when line-spacing
+                       (propertize
+                        (format " %.2f" line-spacing)
+                        'face 'font-lock-comment-face))))
+       (lambda () (interactive)
+         (setq line-spacing
+               (read-number "Spacing: "))))
       ("vl" "visual lines" visual-line-mode)
       ("vt" "trunc lines" toggle-truncate-lines)
       ("vo" "olivetti"    olivetti-mode)
@@ -2624,7 +2654,8 @@ normally have their errors suppressed."
       ("M-q" "auto fill" auto-fill-mode)
       ("i" "ispell" jinx-mode)
       ;; ("V" "view mode" view-mode)
-      ("<tab>" "outline" outline-minor-mode)]
+      ("<tab>" "outline" outline-minor-mode
+       :if (lambda () (not (derived-mode-p 'outline-mode))))]
 
      ["Highlight"
       ("hl" "line" hl-line-mode)
@@ -2657,7 +2688,17 @@ normally have their errors suppressed."
       ;;                  (not corfu-auto))))
       ("d" "debug?" toggle-debug-on-error)
       ("g" "vc gutter" diff-hl-mode)
-      ("f" "flymake" flymake-mode)
+      ("f" "flymake" (lambda (arg) (interactive "P")
+                       (if (not arg)
+                           (call-interactively #'flymake-mode)
+                         (let* ((linters (remq t flymake-diagnostic-functions))
+                                (active (completing-read-multiple
+                                         "Exclude linters: "
+                                         linters nil t)))
+                           (dolist (linter active)
+                             (remove-hook 'flymake-diagnostic-functions
+                                          (intern-soft linter) :local))
+                           (call-interactively #'flymake-mode)))))
       ("p" "smartparens" smartparens-mode)]]))
 
 ;;;----------------------------------------------------------------
@@ -3872,6 +3913,7 @@ This function is meant to be mapped to a key in `rg-mode-map'."
 ;; ** ISCROLL
 ;; Smooth scrolling through images.  What a pain Emacs' default behavior is here.
 (use-package iscroll
+  :disabled
   :straight t
   :hook ((text-mode eww-mode) . iscroll-mode))
 

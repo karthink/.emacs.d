@@ -3576,43 +3576,54 @@ _d_: subtree
 ;; #+INCLUDE: "./lisp/setup-lookup.org" :minlevel 2
 ;; ---------------------------
 
-;;;----------------------------------------------------------------
-;; *** ChatGPT
-;;;----------------------------------------------------------------
-;; Disabled: I wrote gptel instead
-(use-package chatgpt
-  :disabled
-  :straight (:host github :repo "joshcho/ChatGPT.el" :files ("dist" "*.el"))
+(use-package emacs
+  :bind (("C-c SPC" . my/easy-page))
   :config
-  (setq chatgpt-repo-path
-        (straight--repos-dir "ChatGPT.el")
-        chatgpt-display-on-query nil)
-  (require 'python)
-  (defvaralias 'python-interpreter 'python-shell-interpreter)
-  (defun my/chatgpt-change-mode ()
-    "Switch to markdown-mode if it's available"
-    (interactive)
-    (with-current-buffer (get-buffer "*ChatGPT*")
-      (and (eq major-mode 'fundamental-mode)
-           (featurep 'markdown-mode)
-           (markdown-mode))
-      (unless outline-minor-mode
-        (setq-local outline-regexp "^cg\\?\\[.+")
-        (outline-minor-mode 1))
-      (goto-char (point-max))
-      (when (re-search-backward outline-regexp nil t)
-        (set-window-start nil (line-beginning-position -1)))))
-  (advice-add 'chatgpt-display :after #'my/chatgpt-change-mode)
-  :bind ("C-h C-q" . chatgpt-query))
+  (defvar-keymap my-pager-map
+    :doc "Keymap with paging commands"
+    "SPC" 'scroll-up-command
+    "C-l" 'recenter-top-bottom
+    "C-M-v" 'scroll-other-window
+    "C-M-S-v" 'scroll-other-window-down
+    "d" (lambda ()
+          (interactive)
+          (pixel-scroll-precision-interpolate
+           (- (floor (window-text-height nil t) 2))
+           nil 1))
 
-;; GPTel: A simple ChatGPT client
+    "u" (lambda ()
+          (interactive)
+          (pixel-scroll-precision-interpolate
+           (floor (window-text-height nil t) 2)
+           nil 1))
+    "M-o" 'my/other-window
+    "S-SPC" 'scroll-down-command)
+  (let ((scrolling (propertize  "SCRL" 'face '(:inherit highlight)))
+        ml-buffer)
+    (defalias 'my/easy-page
+      (lambda ()
+        (interactive)
+        (when (eq (window-buffer (selected-window))
+                  (current-buffer))
+          (setq ml-buffer (current-buffer))
+          (add-to-list 'mode-line-format scrolling)
+          (set-transient-map
+           my-pager-map t
+           (lambda () (with-current-buffer ml-buffer
+                   (setq mode-line-format
+                         (delete scrolling mode-line-format))))))))))
+
+;;;----------------------------------------------------------------
+;; *** gptel
+;;;----------------------------------------------------------------
+;; gptel: A simple LLM client
 (use-package gptel
   :straight (:local-repo "~/.local/share/git/gptel/")
   :commands (gptel gptel-send)
   :hook ((gptel-mode . visual-fill-column-mode)
          (eshell-mode . my/gptel-eshell-keys))
   :bind (("C-c C-<return>" . gptel-menu)
-         ("C-c <return>" . my/gptel-send)
+         ("C-c <return>" . gptel-send)
          ("C-h C-q" . gptel-quick)
          :map gptel-mode-map
          ("C-c C-x t" . gptel-set-topic))
@@ -3628,73 +3639,88 @@ _d_: subtree
           (body-function . select-window)))
   :config
   (auth-source-pass-enable)
+ 
   (defalias 'my/gptel-easy-page
-    (let* ((map (define-keymap
-                 "SPC" 'scroll-up-command
-                 "S-SPC" 'scroll-down-command
-                 "RET" 'gptel-end-of-response)))
+    (let ((map (make-composed-keymap
+                (define-keymap "RET" 'gptel-end-of-response)
+                my-pager-map))
+          (scrolling
+           (propertize  "SCRL" 'face '(:inherit highlight))))
       (lambda ()
-        (let ((scrolling (propertize  "SCRL" 'face '(:inherit highlight :weight bold))))
+        (interactive)
+        (when (eq (window-buffer (selected-window))
+                  (current-buffer))
           (add-to-list 'mode-line-format scrolling)
           (set-transient-map
            map t
            (lambda () (setq mode-line-format
                        (delete scrolling mode-line-format))))))))
   (add-hook 'gptel-pre-response-hook 'my/gptel-easy-page)
+  (define-key global-map (kbd "C-c SPC") 'my/gptel-easy-page)
 
-  (setf (alist-get 'org-mode gptel-response-prefix-alist)
-        "*Response*: ")
-  (setf (alist-get 'org-mode gptel-prompt-prefix-alist)
-        "*Prompt*: ")
-  (setf (alist-get 'markdown-mode gptel-response-prefix-alist)
-        "**Response4**: ")
+  (setf (alist-get 'org-mode gptel-prompt-prefix-alist) "**** ")
   (setf (alist-get 'markdown-mode gptel-prompt-prefix-alist)
-        "**Prompt**: ")
+        "#### ")
   (defun my/gptel-gemini-key ()
     (string-trim
      (auth-source-pass-get 'secret "api/ai.google.com")))
-  (defvar gptel--gemini
-    (gptel-make-gemini
-     "Gemini"
-     :key (lambda ()
-            (auth-source-pass-get
-             'secret "api/ai.google.com"))
-     :stream t))
-  (defvar gptel--ollama
-    (gptel-make-ollama
-     "Ollama"
-     :host "192.168.0.59:11434"
-     :models '("mistral:latest" "zephyr:latest")
-     :stream t))
+  (with-eval-after-load 'gptel-gemini
+    (defvar gptel--gemini
+      (gptel-make-gemini
+       "Gemini"
+       :key gptel-api-key
+       :stream t)))
+  (with-eval-after-load 'gptel-ollama
+    (defvar gptel--ollama
+      (gptel-make-ollama
+       "Ollama"
+       :host "192.168.0.59:11434"
+       :models '("mistral:latest" "zephyr:latest" "openhermes:latest")
+       :stream t)))
   (defvar gptel--gpt4all
     (gptel-make-gpt4all
      "GPT4All"
      :protocol "http"
      :host "localhost:4891"
      :models '("mistral-7b-openorca.Q4_0.gguf")))
-  ;; (defvar gptel--kagi
-  ;;   (gptel-make-kagi
-  ;;    "Kagi"
-  ;;    :stream nil
-  ;;    :key (lambda ()
-  ;;           (auth-source-pass-get
-  ;;            'secret "api/kagi-ai.com"))))
+  (when (fboundp 'gptel-make-kagi)
+    (defvar gptel--kagi
+      (gptel-make-kagi
+       "Kagi"
+       :stream nil
+       :key (lambda ()
+              (auth-source-pass-get
+               'secret "api/kagi-ai.com")))))
 
-  (add-to-list
-   'gptel-directives
-   '(cliwhiz . "You are a command line helper. Generate command line commands that do what is requested, without any additional description or explanation. Generate ONLY the command, I will edit it myself before running.")
-   :append)
-  (add-to-list
-   'gptel-directives
-   '(emacser . "You are an Emacs maven. Reply only with the most appropriate built-in Emacs command for the task I specify. Do NOT generate any additional description or explanation.")
-   :append)
-
-
+  (setq gptel-directives
+        `((default . "You are a large language model living in Emacs and a helpful assistant.  Respond concisely.")
+          (programmer . "You are a careful programmer.  Provide code and only code as output without any additional text, prompt or note.")
+          (cliwhiz . "You are a command line helper.  Generate command line commands that do what is requested, without any additional description or explanation.  Generate ONLY the command, I will edit it myself before running.")
+          (emacser . "You are an Emacs maven.  Reply only with the most appropriate built-in Emacs command for the task I specify.  Do NOT generate any additional description or explanation.")
+          (explain . "Explain what this code does to a novice programmer.")
+          ,@(let ((res))
+             (pcase-dolist (`(,sym ,filename)
+                            '((Autoexpert "detailed-prompt.md")
+                              (writer "writer-prompt.md")
+                              (compress "spr-compress-prompt.md"))
+                            res)
+              (when-let* ((big-prompt (locate-user-emacs-file filename))
+                          (_ (file-exists-p big-prompt)))
+               (push
+                `(,sym . ,(with-temp-buffer
+                            (insert-file-contents big-prompt)
+                            (goto-char (point-min))
+                            (when (search-forward-regexp "^#" nil t)
+                             (goto-char (match-beginning 0)))
+                            (buffer-substring-no-properties (point) (point-max))))
+                res)))
+             res)))
+  
   (defun my/gptel-send (&optional arg)
     (interactive "P")
-    (if (or gptel-mode (< (point) 2000) (use-region-p))
+    (if (or gptel-mode (< (point) 20000) (use-region-p))
         (gptel-send arg)
-      (if (y-or-n-p "Prompt has more than 2000 chars, send to ChatGPT?")
+      (if (y-or-n-p "Prompt has more than 20000 chars, send to ChatGPT?")
           (gptel-send arg)
         (message "ChatGPT: Request cancelled."))))
   (setq gptel-default-mode 'org-mode)
@@ -3718,21 +3744,23 @@ _d_: subtree
              (erase-buffer)
              (insert response))
            (special-mode)
-           (display-buffer (current-buffer))))))))
-
-(defun  my/gptel-eshell-send (&optional arg)
-  (interactive "P")
-  (if (use-region-p)
+           (display-buffer (current-buffer)))))))
+  (defun  my/gptel-eshell-send (&optional arg)
+    (interactive "P")
+    (if (use-region-p)
+        (gptel-send arg)
+      (push-mark)
+      (or (eshell-previous-prompt 0)
+          (eshell-previous-prompt 1))
+      (activate-mark)
       (gptel-send arg)
-    (push-mark)
-    (or (eshell-previous-prompt 0)
-        (eshell-previous-prompt 1))
-    (activate-mark)
-    (gptel-send arg)
-    (exchange-point-and-mark)
-    (deactivate-mark)))
-(defun my/gptel-eshell-keys ()
-  (define-key eshell-mode-map (kbd "C-c <return>") #'my/gptel-eshell-send))
+      (exchange-point-and-mark)
+      (deactivate-mark)))
+  (defun my/gptel-eshell-keys ()
+    (define-key eshell-mode-map (kbd "C-c <return>")
+                #'my/gptel-eshell-send)))
+
+
 
 (use-package project
     :after (popper visual-fill-column)

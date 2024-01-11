@@ -144,6 +144,7 @@
     (hs-minor-mode . "")
     (matlab-functions-have-end-minor-mode . "")
     (org-roam-ui-mode . " UI")
+    (abridge-diff-mode . "")
     ;; Evil modes
     (evil-traces-mode . "")
     (latex-extra-mode . "")

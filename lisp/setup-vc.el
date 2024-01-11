@@ -271,14 +271,12 @@ project, as defined by `vc-root-dir'."
   ;; (dolist (keymap (list magit-diff-mode-map magit-log-mode-map))
   ;;   (define-key keymap (kbd "C-TAB") nil)
   ;;   (define-key keymap (kbd "C-<tab>") nil))
+  (setq magit-diff-refine-hunk t)
   (use-package magit-section
     :config
     (setq magit-section-initial-visibility-alist
           '((stashes . hide)
-            ([file unstaged status] . hide))
-          )
-    )
-  )
+            ([file unstaged status] . hide)))))
 
 (unless IS-GUIX (straight-use-package 'forge))
 (use-package forge
@@ -334,5 +332,10 @@ project, as defined by `vc-root-dir'."
                                            (dired project-dir))
                                        (user-error (format "%s\n%s" command output))))))
       (set-process-filter proc #'comint-output-filter))))
+
+(use-package abridge-diff
+  :straight t
+  :after magit ;; optional, if you'd like to use with magit
+  :init (abridge-diff-mode 1))
 
 (provide 'setup-vc)

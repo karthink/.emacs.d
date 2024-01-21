@@ -1552,7 +1552,16 @@ If region is active, add its contents to the new buffer."
 
 (use-package hl-todo
   :straight t
-  :hook (prog-mode . hl-todo-mode))
+  :hook (prog-mode . hl-todo-mode)
+  :bind (:map prog-mode-map
+         ("M-g t" . hl-todo-next)
+         ("M-g T" . hl-todo-previous))
+  :config
+  (defvar-keymap hl-todo-repeat-map
+    :repeat t
+    "n" #'hl-todo-next
+    "p" #'hl-todo-previous)
+  (setq hl-todo-wrap-movement t))
 
 ;; (defun multi-replace-regexp-in-string (replacements-list string &optional rest)
 ;;   "Replace multiple regexps in a string, in the order of listing.
@@ -2462,7 +2471,8 @@ current buffer without truncation."
   :hook (ielm-mode . eldoc-mode)
   :config
   (setq eldoc-documentation-strategy
-        'eldoc-documentation-compose-eagerly))
+        'eldoc-documentation-compose-eagerly
+        eldoc-echo-area-prefer-doc-buffer t))
 
 ;; ** EDEBUG
 ;;;----------------------------------------------------------------

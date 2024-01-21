@@ -669,6 +669,10 @@ output instead."
   ;; (run-at-time 0 nil #'eat-reload)
   (setq eat-kill-buffer-on-exit t))
 
+(use-package eat
+  :after project
+  :bind (:map project-prefix-map
+         ([remap project-shell] . eat-project)))
 
 ;; Disabled: shelldon. Regular `async-shell-command' does enough for me.
 (use-package shelldon

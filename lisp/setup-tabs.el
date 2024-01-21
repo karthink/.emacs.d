@@ -38,22 +38,25 @@
                            tab-bar-format-align-right
                            tab-bar-format-global)
           tab-bar-close-button-show nil))
+
+  (defun my/tab-bar-name ()
+    "Use project as tab name."
+    (let ((dir (expand-file-name
+                (or (if (fboundp 'project-root)
+                        (project-root (project-current)))
+                    default-directory))))
+      (or
+       (and dir
+            (let ((name (substring dir (1+ (string-match "/[^/]+/$" dir)) -1)))
+              (truncate-string-to-width name tab-bar-tab-name-truncated-max nil ? )))
+       (buffer-name))))
+  (timeout-throttle! #'my/tab-bar-name 2.0)
   
   (setq  tab-bar-close-last-tab-choice 'tab-bar-mode-disable
          tab-bar-show                   (when (version< "28.0" emacs-version) 1)
          tab-bar-tab-name-truncated-max 24
          tab-bar-new-tab-choice        'ibuffer
-         tab-bar-tab-name-function
-         (lambda nil "Use project as tab name."
-            (let ((dir (expand-file-name
-                        (or (if (fboundp 'project-root)
-                                (project-root (project-current)))
-                         default-directory))))
-              (or
-               (and dir
-                    (let ((name (substring dir (1+ (string-match "/[^/]+/$" dir)) -1)))
-                      (truncate-string-to-width name tab-bar-tab-name-truncated-max nil ? )))
-               (buffer-name)))))
+         tab-bar-tab-name-function #'my/tab-bar-name)
 
   (setq tab-bar-select-tab-modifiers '(meta hyper))
 

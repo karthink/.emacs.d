@@ -408,8 +408,8 @@ appropriate.  In tables, insert a new row or end the table."
                      (+ 0.01 (/ (face-attribute 'default :height) 100.0))))
 
    org-latex-preview-numbered t
-   org-latex-preview-live-debounce 0.5
-   org-latex-preview-live-throttle 0.5
+   org-latex-preview-live-debounce 0.3
+   ;; org-latex-preview-live-throttle 0.5
    org-latex-preview-auto-track-inserts t
    org-latex-preview-live '(block edit-special)
    org-latex-preview-process-active-indicator nil)
@@ -645,6 +645,12 @@ appropriate.  In tables, insert a new row or end the table."
 ;;;----------------------------------------------------------------------
 ;; ** ORG FEATURES
 ;;;----------------------------------------------------------------------
+
+(use-package org-footnote
+  :defer
+  :config
+  (setq org-footnote-section nil
+        org-footnote-define-inline nil))
 
 ;; *** ORG-ATTACH
 (use-package org-attach
@@ -1173,7 +1179,6 @@ parent."
   :defer
   :config
   (use-package oc
-    :after org
     :when (version<= "9.5" org-version)
     :commands org-cite-insert
     :config
@@ -1880,9 +1885,48 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
 ;; information across the buffer, causing packages like macrostep,
 ;; iedit and hl-todo to misbehave.
 (use-package orglink
+  :disabled
   :straight t
   :after org
   ;; :hook (prog-mode . orglink-mode)
   :defer)
+
+;;;----------------------------------------------------------------
+;; ** ORG-QL
+;;;----------------------------------------------------------------
+(use-package org-ql
+  :straight t
+  :bind (:map mode-specific-map
+         ("o s" . org-ql-search)
+         ("o v" . org-ql-view)
+         ("o f" . org-ql-find)
+         :map org-agenda-mode-map
+         ("C-M-n" . my/org-agenda-next-header)
+         ("C-M-p" . my/org-agenda-previous-header))
+  :config
+  (defun my/org-agenda-next-header (&optional arg)
+    (interactive "p")
+    (dotimes (_ (or arg 1))
+      (when (text-property-search-forward
+             'face nil
+             (lambda (_ val)
+               (memq val '(org-super-agenda-header
+                           org-agenda-structure
+                           org-agenda-structure-secondary)))
+             t)
+        (forward-line 1))))
+  (defun my/org-agenda-previous-header (&optional arg)
+    (interactive "p")
+    (dotimes (_ (or arg 1))
+      (forward-line -1)
+      (text-property-search-backward
+       'face nil
+       (lambda (_ val)
+         (memq val '(org-super-agenda-header
+                     org-agenda-structure
+                     org-agenda-structure-secondary)))
+       t)
+      (forward-line 1))))
+
 (provide 'setup-org)
 

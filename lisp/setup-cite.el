@@ -8,7 +8,7 @@
          ("C-c C-x ]" . citar-insert-citation))
   :config
   (setq citar-bibliography ;; '("~/Documents/research/control_systems.bib")
-        '("~/Documents/roam/biblio.bib")
+        `(,(expand-file-name "~/Documents/roam/biblio.bib"))
         citar-at-point-function 'embark-act
         citar-file-open-function #'consult-file-externally)
   

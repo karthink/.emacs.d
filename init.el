@@ -195,11 +195,13 @@ Cancel the previous one if present."
 (use-package org
   :defer
   :straight `(org
+             :inherit nil
              :fork (:host nil
                     :repo "https://git.tecosaur.net/tec/org-mode.git"
                     :branch "dev"
                     :remote "tecosaur")
              :files (:defaults "etc")
+             :local-repo "org"
              :build t
              :pre-build
              (with-temp-file "org-version.el"

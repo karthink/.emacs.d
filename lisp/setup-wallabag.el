@@ -96,6 +96,7 @@
                     (visual-fill-column-mode 1))
     ;; (shr-heading-setup-imenu)
     (setq-local line-spacing 0.08))
+  (setq wombag-search-filter "#30 !&")
   ;; (setq wombag-show-entry-switch #'pop-to-buffer-same-window)
   (setq wombag-host "https://read.karthinks.com")
   (setq wombag-username (auth-source-pass-get "login" "www/read.karthinks.com"))

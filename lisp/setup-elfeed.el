@@ -234,9 +234,10 @@ ENQUEUE-P) add to mpv's playlist."
     (interactive "p")
     (let ((browse-url-browser-function
            (pcase arg
-            (4 #'browse-url-mpv-hd)
-            (1 #'browse-url-mpv)
-            (_ #'browse-url-mpv-enqueue))))
+             (0 #'browse-url-mpv-audio)
+             (4 #'browse-url-mpv-hd)
+             (1 #'browse-url-mpv)
+             (_ #'browse-url-mpv-enqueue))))
       (pcase major-mode
         ('elfeed-search-mode (elfeed-search-browse-url))
         ('elfeed-show-mode (elfeed-show-visit)))))

@@ -2573,6 +2573,11 @@ normally have their errors suppressed."
       (start-process "mpv" nil "mpv"
                      "--profile=protocol-hd-video"
                      (shell-quote-wildcard-pattern url)))
+
+    (defun browse-url-mpv-audio (url &optional _)
+      (start-process "mpv" nil "mpv"
+                     "--video=no" "--force-window=yes"
+                     (shell-quote-wildcard-pattern url)))
     
     (defun browse-url-mpv (url &optional _)
       (browse-url-umpv url t))

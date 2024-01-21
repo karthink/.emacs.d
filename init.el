@@ -2057,6 +2057,8 @@ current buffer without truncation."
 ;;;################################################################
 
 ;;;----------------------------------------------------------------
+;; ** QRENCODE
+(use-package qrencode :straight t :defer)
 ;; ** INDENT-BARS
 ;; Testing
 (use-package indent-bars

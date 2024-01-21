@@ -53,6 +53,7 @@
          ("4"        . bookmark-jump-other-window)
          ("5"        . bookmark-jump-other-frame)
          :map embark-url-map
+         ("z"        . qrencode-string)
          ("B"        . eww)
          ("M"        . browse-url-umpv)
          ("C-S-m"    . browse-url-mpv-enqueue)
@@ -134,7 +135,7 @@ are place there, otherwise you are prompted for a message buffer."
     (define-key embark-file-map (kbd "U") '0x0-upload-file)
     
     (define-key embark-library-map (kbd "2") (my/embark-split-action find-library my/split-window-below))
-    (define-key embark-library-map (kbd "2") (my/embark-split-action find-library my/split-window-below))
+    (define-key embark-library-map (kbd "3") (my/embark-split-action find-library my/split-window-right))
     (define-key embark-library-map (kbd "t") (my/embark-split-action find-library tab-new))
     (define-key embark-library-map (kbd "o") (my/embark-ace-action find-library))
     
@@ -172,7 +173,7 @@ are place there, otherwise you are prompted for a message buffer."
                ("C-=" ediff-files)
                ("!" shell-command)
                ("&" async-shell-command)
-               ("x" consult-file-externally)
+               ("x" embark-open-externally)
                ("C-a" embark-attach-file)
                ("c" copy-file)
                ("k" kill-buffer)

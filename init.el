@@ -402,7 +402,51 @@ Cancel the previous one if present."
 (use-package 0x0
   :straight t
   :commands (0x0-upload 0x0-dwim)
-  :bind ("C-x U" . 0x0-dwim))
+  :bind ("C-x M-U" . 0x0-dwim))
+
+;; Upload to my webserver
+(use-package emacs
+  :defer
+  :bind ("C-x U" . pastebin-buffer)
+  :commands (pastebin-buffer pastebin-file)
+  :config
+  (defun pastebin-buffer (&optional buf)
+    (interactive (list (current-buffer)))
+    (with-current-buffer buf
+      (let ((upload-file-name (buffer-name))
+            (htmlized-buffer
+             (if (use-region-p)
+                 (progn
+                   (deactivate-mark)
+                   (htmlize-region (region-beginning) (region-end)))
+               (htmlize-buffer))))
+        (with-current-buffer htmlized-buffer
+          (let* ((bufhash (sha1 (current-buffer)))
+                 (ssh-url (format (car (alist-get 'pastebin my-server-url-alist))
+                                  (substring bufhash 0 8)
+                                  upload-file-name))
+                 (web-url (format (cadr (alist-get 'pastebin my-server-url-alist))
+                                  (substring bufhash 0 8)
+                                  upload-file-name)))
+            (write-file ssh-url)
+            (message "Wrote file to: %s" web-url)
+            (kill-new web-url))))))
+  (defun pastebin-file (&optional file)
+    (interactive
+     (list (cond
+            ((derived-mode-p 'dired-mode)
+             (dired-file-name-at-point))
+            (t (read-file-name "Pastebin file: " nil nil t)))))
+    (let* ((filehash (shell-command-to-string (format "sha1sum %s" file)))
+           (ssh-url (format (car (alist-get 'pastebin my-server-url-alist))
+                            (substring filehash 0 8)
+                            (file-name-nondirectory file)))
+           (web-url (format (cadr (alist-get 'pastebin my-server-url-alist))
+                            (substring filehash 0 8)
+                            (file-name-nondirectory file))))
+      (htmlize-file file ssh-url)
+      (message "Wrote file to: %s" web-url)
+      (kill-new web-url))))
 
 ;; Emacs is slow sometimes, I try to find out why.
 (use-package explain-pause-mode

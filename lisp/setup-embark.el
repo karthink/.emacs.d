@@ -101,6 +101,16 @@ are place there, otherwise you are prompted for a message buffer."
   (define-key embark-file-map (kbd "C-a") #'embark-attach-file)
   
   ;; Extra embark actions
+  (defun my/embark-share-file (file)
+    "Share file via personal fileserver."
+    (let* ((share-urls (alist-get 'share my-server-url-alist))
+           (ssh-url (format (car share-urls) (file-name-nondirectory file)))
+           (web-url (format (cadr share-urls) (file-name-nondirectory file))))
+      (copy-file file ssh-url)
+      (message "Copied %s to %s." file web-url)
+      (kill-new web-url)))
+  (define-key embark-file-map (kbd "M-S") #'my/embark-share-file)
+
   (eval-when-compile
     (defmacro my/embark-ace-action (fn)
       `(defun ,(intern (concat "my/embark-ace-" (symbol-name fn))) ()
@@ -132,15 +142,18 @@ are place there, otherwise you are prompted for a message buffer."
     (define-key embark-bookmark-map (kbd "o") (my/embark-ace-action bookmark-jump))
     (define-key embark-bookmark-map (kbd "2") (my/embark-split-action bookmark-jump my/split-window-below))
     (define-key embark-bookmark-map (kbd "3") (my/embark-split-action bookmark-jump my/split-window-right))
-    (define-key embark-file-map (kbd "U") '0x0-upload-file)
+    (define-key embark-file-map (kbd "U") 'pastebin-file)
+    (define-key embark-file-map (kbd "M-U") '0x0-upload-file)
     
     (define-key embark-library-map (kbd "2") (my/embark-split-action find-library my/split-window-below))
     (define-key embark-library-map (kbd "3") (my/embark-split-action find-library my/split-window-right))
     (define-key embark-library-map (kbd "t") (my/embark-split-action find-library tab-new))
     (define-key embark-library-map (kbd "o") (my/embark-ace-action find-library))
     
-    (define-key embark-region-map (kbd "U") '0x0-upload-text)
-    (define-key embark-buffer-map (kbd "U") '0x0-dwim)
+    (define-key embark-region-map (kbd "U") 'pastebin-buffer)
+    (define-key embark-buffer-map (kbd "U") 'pastebin-buffer)
+    (define-key embark-region-map (kbd "M-U") '0x0-upload-text)
+    (define-key embark-buffer-map (kbd "M-U") '0x0-dwim)
 
     ;; Embark actions for this buffer/file
     (defun embark-target-this-buffer-file ()
@@ -181,7 +194,8 @@ are place there, otherwise you are prompted for a message buffer."
                ("#" recover-this-file)
                ("z" bury-buffer)
                ("|" embark-shell-command-on-buffer)
-               ("U" 0x0-dwim)
+               ("M-U" 0x0-dwim)
+               ("U" pastebin-buffer)
                ("g" revert-buffer-quick)
                ("u" rename-uniquely)
                ("n" clone-buffer)

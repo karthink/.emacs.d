@@ -177,10 +177,62 @@ but mark is only pushed if region isn't active."
   :custom-face
   (TeX-fold-folded-face ((t (:inherit shadow))))
   (TeX-fold-unfolded-face ((t (:background unspecified))))
+  :bind (:map text-mode-map
+         ("M-g r" . my/next-reference-or-label)
+         ("M-g R" . my/previous-reference-or-label)
+         :map LaTeX-mode-map
+         ("M-g r" . my/next-reference-or-label))
   :config
+  (defun my/next-reference-or-label (_arg)
+    (interactive "p")
+    (let* ((prop))
+      (pcase-let
+          ((`(,_ . ,ov)
+           (get-char-property-and-overlay (point) 'TeX-fold-type)))
+        (when ov (TeX-fold-hide-item ov)))
+      (save-excursion
+        (and (setq prop (text-property-search-forward
+                         'face nil
+                         (lambda (_ val)
+                           (memq val '(font-lock-constant-face org-cite)))
+                         t))))
+      (if prop
+          (progn (goto-char (prop-match-beginning prop))
+                 (pcase-let
+                     ((`(,_ . ,ov)
+                      (get-char-property-and-overlay (point) 'TeX-fold-type)))
+                   (when ov (TeX-fold-show-item ov))))
+        (message "No more references/labels."))))
+  (defun my/previous-reference-or-label (_arg)
+    (interactive "p")
+    (let ((p))
+      (save-excursion
+        (and (text-property-search-backward
+              'face nil
+              (lambda (_ val)
+                (memq val '(font-lock-constant-face org-cite
+                            TeX-fold-folded-face)))
+              t)
+             (setq p (point))))
+      (pcase-let
+          ((`(,_ . ,ov)
+            (get-char-property-and-overlay (point) 'TeX-fold-type)))
+        (when ov (TeX-fold-hide-item ov)))
+      (when p (goto-char p))
+      (pcase-let
+                     ((`(,_ . ,ov)
+                      (get-char-property-and-overlay (point) 'TeX-fold-type)))
+                   (when ov (TeX-fold-show-item ov)))))
+  (defvar-keymap my/TeX-ref-map
+    :repeat t
+    "r" 'my/next-reference-or-label
+    "R" 'my/previous-reference-or-label
+    "n" 'my/next-reference-or-label
+    "p" 'my/previous-reference-or-label)
+
   (setq ;; TeX-fold-folded-face '((t (:height 1.0 :foreground "SlateBlue1")))
         TeX-fold-auto nil
-        TeX-fold-type-list '(macro comment))
+        TeX-fold-type-list '(macro))    ;do not include "comment", fails in Org mode
   (set-face-attribute 'TeX-fold-folded-face nil :foreground nil :inherit 'shadow)
   ;; Custom folded display for labels and refs
   (defun my/TeX-fold-ref (text)

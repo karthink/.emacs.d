@@ -12,9 +12,9 @@
          ("M-S-SPC" . embark-select)
          ("M-s RET"  . embark-act)
          ;; ("s-o"      . embark-act)
-         ("H-SPC"    . embark-select)
-         ("C-S-SPC"  . embark-select)
-         ("C-c SPC"  . embark-act)
+         ("H-SPC"    . my/embark-select)
+         ("C-S-SPC"  . my/embark-select)
+         ;; ("C-c SPC"  . embark-act)
          ("M-*"      . embark-act-all)
          ("C-c RET"  . embark-dwim)
          ("S-<return>"  . embark-dwim)
@@ -83,6 +83,15 @@
   ;;       '(display-buffer-below-selected
   ;;         (window-height . fit-window-to-buffer)))
   (setf (alist-get 'kill-buffer embark-pre-action-hooks) nil)
+
+  ;; Selection
+  (defun my/embark-select ()
+    (interactive)
+    (prog1 (embark-select)
+      (if (minibufferp)
+          (when (bound-and-true-p vertico-mode)
+            (vertico-next))
+        (call-interactively #'next-line))))
 
   ;; Drag and drop
   (defun embark-drag-and-drop (file)

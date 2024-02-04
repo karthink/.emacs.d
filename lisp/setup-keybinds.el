@@ -273,7 +273,10 @@
   :bind ("H-z" . repeat)
   :hook (after-init . my/repeat-mode)
   :config
-  (setq repeat-keep-prefix t)
+  (setq repeat-keep-prefix t
+        repeat-echo-function #'repeat-echo-mode-line
+        repeat-echo-mode-line-string
+        (propertize "[R]" 'face 'mode-line-emphasis))
   (defun my/repeat-mode ()
     (let ((inhibit-message t)
           (message-log-max nil))

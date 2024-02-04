@@ -8,7 +8,7 @@
   :demand
   :config
   (setq orderless-component-separator #'split-string-and-unquote)
-  (setq completion-styles '(orderless partial-completion))
+  (setq completion-styles '(orderless partial-completion basic))
   (setq orderless-style-dispatchers
         '(my/orderless-flex-dispatcher
           my/orderless-literal-dispatcher

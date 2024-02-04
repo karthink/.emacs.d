@@ -19,9 +19,13 @@
   :config
   (defvar my-corfu-minibuffer-exclude-modes (list read-passwd-map)
     "Minibuffer-local keymaps for which Corfu should be disabled.")
+  (defvar my-corfu-minibuffer-exclude-commands
+    '(org-ql-find)
+    "Minibuffer commands for which Corfu should be disabled.")
   (defun my/corfu-enable-always-in-minibuffer ()
     "Enable Corfu in the minibuffer if Vertico is not active."
     (unless (or (bound-and-true-p vertico--input)
+                (memq this-command my-corfu-minibuffer-exclude-commands)
                 (memq (current-local-map)
                       my-corfu-minibuffer-exclude-modes))
       ;; (setq-local corfu-auto nil) ;; Enable/disable auto completion
@@ -41,7 +45,9 @@
         (setq this-command #'consult-completion-in-region)
         (apply #'consult-completion-in-region completion-in-region--data))))
 
+  ;; Disabled -- interferes with dynamic completion tables
   (use-package orderless
+    :disabled
     :hook (corfu-mode . my/corfu-comp-style)
     :config
     (defun my/corfu-comp-style ()

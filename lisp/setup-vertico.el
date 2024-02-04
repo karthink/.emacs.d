@@ -66,7 +66,8 @@
            (buffer flat (vertico-cycle . t))
            (t flat)))
    (setq vertico-multiform-commands
-         '((jinx-correct reverse)
+         '((org-ql-find reverse)
+           (jinx-correct reverse)
            (tab-bookmark-open reverse)
            (dired-goto-file unobtrusive)
            (load-theme my/vertico-grid-mode reverse)

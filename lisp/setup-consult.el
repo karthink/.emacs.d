@@ -25,7 +25,7 @@
    consult--source-bookmark consult--source-project-buffer
    consult-info
    :preview-key "C-M-m"
-   consult-theme :preview-key (list :debounce 1.0 "C-M-m"))
+   consult-theme :preview-key (list :debounce 0.3 "C-M-m"))
 
   (when (executable-find "plocate")
     (setq consult-locate-args "plocate --ignore-case --existing --regexp"))

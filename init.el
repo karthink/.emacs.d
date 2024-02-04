@@ -4332,6 +4332,7 @@ buffer's text scale."
           (date-scheduled magenta-cooler)
           (date-weekday cyan-cooler)
           (date-weekend blue-faint)
+          (mail-recipient fg-main)
           ;; (fg-heading-1 blue-warmer)
           ;; (fg-heading-2 yellow-cooler)
           ;; (fg-heading-3 cyan-cooler)
@@ -4382,7 +4383,16 @@ buffer's text scale."
   :init
   (defun my/doom-theme-settings (theme &rest args)
     "Additional face settings for doom themes"
+    (if (eq theme 'doom-rouge)
+          (progn
+            (setq window-divider-default-right-width 2
+                  window-divider-default-bottom-width 2)
+            (message "Turned on window dividers")
+            (window-divider-mode 1))
+        (window-divider-mode -1)
+        (message "Turned off window dividers"))
     (when (string-match-p "^doom-" (symbol-name theme))
+      ;; Window dividers
       (let ((class '((class color) (min-colors 256))))
         (dolist (face-spec
                  '((aw-leading-char-face (:height 2.0 :foreground unspecified :inherit mode-line-emphasis)

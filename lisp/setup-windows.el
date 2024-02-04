@@ -422,7 +422,8 @@ If buffer-or-name is nil return current buffer's mode."
          (direction . below)
          (side . below)
          (slot . 2)
-         (window-parameters . ((split-window . #'ignore)
+         (window-parameters . ((dedicated . t)
+                               (split-window . #'ignore)
                                (no-other-window . t)
                                (mode-line-format . none))))
 

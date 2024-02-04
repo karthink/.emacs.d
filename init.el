@@ -1633,19 +1633,13 @@ If region is active, add its contents to the new buffer."
 ;; compile!
 (use-package compile
   :defer t
+  :hook (compilation-filter . ansi-color-compilation-filter)
   :config
   (setq compilation-always-kill t
         compilation-ask-about-save nil
         compilation-scroll-output 'first-error)
   (global-set-key [(f9)] 'compile)
   
-  (defun my/apply-ansi-color-to-compilation-buffer-h ()
-    "Applies ansi codes to the compilation buffers. Meant for
-  `compilation-filter-hook'."
-    (with-silent-modifications
-      (ansi-color-apply-on-region compilation-filter-start (point))))
-
-  (add-hook 'compilation-filter-hook #'my/apply-ansi-color-to-compilation-buffer-h)
   ;; (add-hook 'compilation-finish-functions
   ;;           (lambda (buf str)
 
@@ -2188,8 +2182,9 @@ current buffer without truncation."
          ("M-e" . macrursors-mark-all-sentences)
          ("e" . macrursors-mark-all-lines))
   :config
-  (dolist (mode '(gcmh-mode corfu-mode font-lock-mode
-                  global-eldoc-mode show-paren-mode))
+  (dolist (mode '(font-lock-mode global-eldoc-mode
+                  ;; gcmh-mode corfu-mode
+                  show-paren-mode))
     (add-hook 'macrursors-pre-finish-hook mode)
     (add-hook 'macrursors-post-finish-hook mode))
   (setq ;; macrursors-apply-keys "C-; C-;"
@@ -3192,7 +3187,6 @@ _d_: subtree
                        ("R" . sp-raise-sexp)
                        ("\\" . indent-region)
                        ("t" . transpose-sexps)
-                       ("x" . eval-defun)
                        ("e" . eval-last-sexp)))
         (define-key map (kbd k) f))
       map))

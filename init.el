@@ -1242,6 +1242,7 @@ User buffers are those not starting with *."
 
 ;; Add window numbers and use them to switch windows
 (use-package winum
+  :disabled
   :straight t
   :init
   (defun my/winum-select (num)
@@ -1307,6 +1308,9 @@ User buffers are those not starting with *."
   ;;           "`" 'ace-window)
   ;; :custom-face
   ;; (aw-leading-char-face ((t (:height 2.5 :weight normal))))
+  :defer 2
+  :init (ace-window-display-mode 1)
+  :custom-face (aw-mode-line-face ((t (:inherit (bold mode-line-emphasis)))))
   :config
   (defalias 'my/other-window
     (let ((direction 1))
@@ -1330,6 +1334,7 @@ Delete current window in the process."
   (setq aw-dispatch-always t
         aw-scope 'global
         aw-background nil
+        aw-display-mode-overlay nil
         aw-keys '(?q ?w ?e ?r ?t ?y ?u ?i ?p))
   (setq aw-dispatch-alist
         '((?k aw-delete-window "Delete Window")

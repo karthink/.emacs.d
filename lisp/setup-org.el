@@ -327,7 +327,7 @@ appropriate.  In tables, insert a new row or end the table."
    org-startup-folded t
    org-startup-indented nil
    org-startup-with-inline-images nil
-   org-startup-with-latex-preview t
+   org-startup-with-latex-preview nil
    org-highlight-latex-and-related '(native)
    org-indent-mode-turns-on-hiding-stars nil
    org-use-sub-superscripts '{}
@@ -535,17 +535,16 @@ appropriate.  In tables, insert a new row or end the table."
 
 ;; code for centering LaTeX previews -- a terrible idea
 (use-package org-latex-preview
-  :disabled
+  ;; :disabled
+  :after org-latex-preview
   :config
-  (add-hook 'org-latex-preview-overlay-open-functions
-            (defun my/org-latex-preview-uncenter (ov)
-              ;; (overlay-put ov 'justify (overlay-get ov 'before-string))
-              (overlay-put ov 'before-string nil)))
-  (add-hook 'org-latex-preview-overlay-close-functions
-            (defun my/org-latex-preview-recenter (ov)
-              (overlay-put ov 'before-string (overlay-get ov 'justify))
-              ;; (overlay-put ov 'justify nil)
-              ))
+  (defun my/org-latex-preview-uncenter (ov)
+    ;; (overlay-put ov 'justify (overlay-get ov 'before-string))
+    (overlay-put ov 'before-string nil))
+  (defun my/org-latex-preview-recenter (ov)
+    (overlay-put ov 'before-string (overlay-get ov 'justify))
+    ;; (overlay-put ov 'justify nil))
+    )
   (defun my/org-latex-preview-center (ov)
     (save-excursion
       (goto-char (overlay-start ov))
@@ -557,9 +556,23 @@ appropriate.  In tables, insert a new row or end the table."
                   (justify (propertize " " 'display prop 'face 'default)))
         (overlay-put ov 'justify justify)
         (overlay-put ov 'before-string (overlay-get ov 'justify)))))
-
-  (add-hook 'org-latex-preview-overlay-update-functions
-            #'my/org-latex-preview-center))
+  (define-minor-mode org-latex-preview-center-mode
+    "Center equations previewed with `org-latex-preview'."
+    :global nil
+    (if org-latex-preview-center-mode
+        (progn
+          (add-hook 'org-latex-preview-overlay-open-functions
+                    #'my/org-latex-preview-uncenter nil :local)
+          (add-hook 'org-latex-preview-overlay-close-functions
+                    #'my/org-latex-preview-recenter nil :local)
+          (add-hook 'org-latex-preview-overlay-update-functions
+                    #'my/org-latex-preview-center nil :local))
+      (remove-hook 'org-latex-preview-overlay-close-functions
+                    #'my/org-latex-preview-recenter)
+      (remove-hook 'org-latex-preview-overlay-update-functions
+                    #'my/org-latex-preview-center)
+      (remove-hook 'org-latex-preview-overlay-open-functions
+                    #'my/org-latex-preview-uncenter))))
 
 (use-package org-appear
   :straight t
@@ -651,6 +664,12 @@ appropriate.  In tables, insert a new row or end the table."
   :config
   (setq org-footnote-section nil
         org-footnote-define-inline nil))
+
+;; *** ORG-GOTO
+(use-package org-goto
+  :defer
+  :config
+  (setq org-goto-interface 'outline-path-completion))
 
 ;; *** ORG-ATTACH
 (use-package org-attach
@@ -1678,16 +1697,16 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
         org-tree-slide-deactivate-message
         (propertize "ORG PRESENTATIONS STOPPED" 'face 'error))
   
-  (defun my/org-tree-slide-enlarge-latex-preview ()
-    (dolist (ov (overlays-in (point-min) (point-max)))
-      (if (eq (overlay-get ov 'org-overlay-type)
-              'org-latex-overlay)
-          (overlay-put
-           ov 'display
-           (cons 'image 
-                 (plist-put
-                  (cdr (overlay-get ov 'display))
-                  :scale (+ 1.0 (* 0.2 text-scale-mode-amount))))))))
+  ;; (defun my/org-tree-slide-enlarge-latex-preview ()
+  ;;   (dolist (ov (overlays-in (point-min) (point-max)))
+  ;;     (if (eq (overlay-get ov 'org-overlay-type)
+  ;;             'org-latex-overlay)
+  ;;         (overlay-put
+  ;;          ov 'display
+  ;;          (cons 'image 
+  ;;                (plist-put
+  ;;                 (cdr (overlay-get ov 'display))
+  ;;                 :scale (+ 1.0 (* 0.2 text-scale-mode-amount))))))))
 
   (defvar olivetti-style)
   (define-minor-mode my/org-presentation-mode

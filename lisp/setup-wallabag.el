@@ -4,6 +4,7 @@
   ;; :straight (:host github :repo "chenyanming/wallabag.el"
   ;;            :files ("*.el" "*.alist" "*.css"))
   :straight (:local-repo "~/.local/share/git/wombag/")
+  :commands (wombag wombag-add-entry)
   :hook ((wombag-pre-html-render . my/wombag-display-settings))
   ;; :bind (
   ;;        ;; :map wombag-show-mode-map
@@ -17,6 +18,21 @@
   ;; ;;        ("G" . wombag-request-new-entries)
   ;; ;;        ("+" . wombag-add-tags)
   ;;        )
+  :init
+  (use-package elfeed
+    :bind (:map elfeed-search-mode-map
+           ("R" . elfeed-post-to-wombag)
+           :map elfeed-show-mode-map
+           ("R" . elfeed-post-to-wombag))
+    :config
+    (defun elfeed-post-to-wombag (entries)
+      (interactive (list (pcase major-mode
+                           ('elfeed-search-mode
+                            (elfeed-search-selected))
+                           ('elfeed-show-mode
+                            (list elfeed-show-entry)))))
+      (dolist (entry (ensure-list entries))
+        (wombag-url (elfeed-entry-link entry)))))
   :config
   (use-package setup-reading
     :after wombag-search
@@ -36,33 +52,15 @@
            ("M-RET" . wombag-search-show-entry)
            ("E" . my/switch-to-elfeed)
            ("M-s u" . my/reader-browse-url))
+    :init
+    (defsubst wombag-url (url)
+      (wombag-add-entry url ""))
     :config
     (add-hook 'wombag-post-html-render-hook #'my/reader-center-images 'append))
   
   (add-hook 'wombag-show-mode-hook (lambda () (let ((pulse-flag))
                                              (unless (bobp)
                                                (pulse-momentary-highlight-one-line)))))
-  
-  (defsubst wombag-url (url)
-      (wombag-add-entry url ""))
-  
-  (use-package elfeed
-    :bind (:map elfeed-search-mode-map
-           ("R" . elfeed-post-to-wombag)
-           :map elfeed-show-mode-map
-           ("R" . elfeed-post-to-wombag))
-    :config
-    (defun elfeed-post-to-wombag (entries)
-      (interactive (list (pcase major-mode
-                           ('elfeed-search-mode
-                            (elfeed-search-selected))
-                           ('elfeed-show-mode
-                            (list elfeed-show-entry)))))
-      (dolist (entry (ensure-list entries))
-        (wombag-url (elfeed-entry-link entry)))))
-
-  (use-package embark
-    :bind (:map embark-url-map ("R" . wombag-url)))
   
   (defun my/switch-to-elfeed ()
     (interactive)

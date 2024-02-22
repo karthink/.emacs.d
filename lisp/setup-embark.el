@@ -412,5 +412,15 @@ highlighting."
 
     (add-to-list 'marginalia-prompt-categories '("recipe\\|package" . straight))))
 
+;; Embark integration for Wallabag
+(use-package embark
+    :bind (:map embark-url-map ("R" . embark-wombag-url))
+    :config
+    (defun embark-wombag-url (url)
+      "Add URL to my Wallabag reading list."
+      (if (require 'setup-wallabag nil t)
+          (wombag-add-entry url "")
+        (message "Could not initialize Wallabag"))))
+
 (provide 'setup-embark)
 ;; setup-embark.el ends here

@@ -772,7 +772,8 @@ This is an enhanced version of the default `elfeed-show-entry' that
                       (with-current-buffer buff
                         (elfeed-show-mode)
                         (setq elfeed-show-entry entry)
-                        (setq-local shr-max-image-proportion 0.7)
+                        (setq-local shr-max-image-proportion
+                                    (/ (+ shr-width 0.0) (window-width)))
                         (elfeed-show-refresh)
                         (dolist (f '(message-header-name
                                      message-header-subject

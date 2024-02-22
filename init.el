@@ -2171,7 +2171,6 @@ current buffer without truncation."
          ("." . macrursors-mark-all-instances-of)
          ("o" . macrursors-mark-all-instances-of)
          ("SPC" . macrursors-select)
-         ("C-g" . macrursors-select-clear)
          ("l" . macrursors-mark-all-lists)
          ("s" . macrursors-mark-all-symbols)
          ("w" . macrursors-mark-all-words)
@@ -2181,9 +2180,13 @@ current buffer without truncation."
          (")" . macrursors-mark-all-sentences)
          ("M-e" . macrursors-mark-all-sentences)
          ("e" . macrursors-mark-all-lines))
+  :init
+  (use-package macrursors-select
+    :bind (:map macrursors-mark-map
+           ("C-g" . macrursors-select-clear)))
   :config
-  (dolist (mode '(font-lock-mode global-eldoc-mode
-                  ;; gcmh-mode corfu-mode
+  (dolist (mode '(global-eldoc-mode
+                  ;; gcmh-mode corfu-mode font-lock-mode
                   show-paren-mode))
     (add-hook 'macrursors-pre-finish-hook mode)
     (add-hook 'macrursors-post-finish-hook mode))
@@ -2205,7 +2208,6 @@ current buffer without truncation."
     (put cmd 'repeat-map 'macrursors-repeat-map))
 
   (define-prefix-command 'macrursors-mark-map)
-  (global-set-key (kbd "C-;") 'macrursors-mark-map)
   (setf macrursors-mode-line nil)
   (defsubst my/mode-line-macro-recording ()
     "Display macro being recorded."
@@ -2225,9 +2227,8 @@ current buffer without truncation."
                         (1+ (length macrursors--overlays)))
               (concat "[1/1]" vsep))))
          'face 'highlight)))))
-
-(use-package macrursors-select-expand
-    :after (macrursors)
+  
+  (use-package macrursors-select-expand
     :bind
     (:map macrursors-mark-map
      ("," . macrursors-select-expand)

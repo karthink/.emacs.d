@@ -3788,15 +3788,20 @@ _d_: subtree
   (setf (alist-get 'org-mode gptel-prompt-prefix-alist) "**** ")
   (setf (alist-get 'markdown-mode gptel-prompt-prefix-alist)
         "#### ")
-  (defun my/gptel-gemini-key ()
-    (string-trim
-     (auth-source-pass-get 'secret "api/ai.google.com")))
+  (defvar gptel--togetherai
+    (gptel-make-openai "TogetherAI"
+      :host "api.together.xyz"
+      :key gptel-api-key
+      :stream t
+      :models '(;; has many more, check together.ai
+                "mistralai/Mixtral-8x7B-Instruct-v0.1"
+                "codellama/CodeLlama-13b-Instruct-hf"
+                "codellama/CodeLlama-34b-Instruct-hf")))
   (with-eval-after-load 'gptel-gemini
     (defvar gptel--gemini
-      (gptel-make-gemini
-       "Gemini"
-       :key gptel-api-key
-       :stream t)))
+      (gptel-make-gemini "Gemini"
+        :key gptel-api-key
+        :stream t)))
   (with-eval-after-load 'gptel-ollama
     (defvar gptel--ollama
       (gptel-make-ollama
@@ -3814,13 +3819,48 @@ _d_: subtree
     (defvar gptel--kagi
       (gptel-make-kagi
        "Kagi"
-       :stream nil
        :key (lambda ()
               (auth-source-pass-get
-               'secret "api/kagi-ai.com")))))
+               'secret "api/kagi-ai.com"))))
+    (with-eval-after-load 'embark
+      (defun my/kagi-summarize (url)
+        (let ((gptel-backend gptel--kagi)
+              (gptel-model "summarize:agnes"))
+          (gptel-request
+           url
+           :callback
+           (lambda (response info)
+             (if response
+                 (with-current-buffer (get-buffer-create "*Pp Eval Output*")
+                   (let ((inhibit-read-only t))
+                     (erase-buffer)
+                     (visual-line-mode 1)
+                     (insert response)
+                     (display-buffer
+                      (current-buffer)
+                      '((display-buffer-in-side-window
+                         display-buffer-at-bottom)
+                        (side . bottom)))))
+               (message "gptel-request failed with message: %s"
+                        (plist-get info :status)))))))
+      (keymap-set embark-url-map "=" #'my/kagi-summarize)))
+
+  (with-eval-after-load 'gptel-transient
+    (transient-suffix-put 'gptel-menu (kbd "-m") :key "M")
+    (transient-suffix-put 'gptel-menu (kbd "-c") :key "C")
+    (transient-suffix-put 'gptel-menu (kbd "-n") :key "N")
+    (transient-suffix-put 'gptel-menu (kbd "-t") :key "T"))
 
   (setq gptel-directives
-        `((default . "You are a large language model living in Emacs and a helpful assistant.  Respond concisely.")
+        `((default . "To assist:  Be terse.  Do not offer unprompted advice or clarifications. Speak in specific,
+ topic relevant terminology. Do NOT hedge or qualify. Do not waffle. Speak
+ directly and be willing to make creative guesses. Explain your reasoning. if you
+ don’t know, say you don’t know.
+
+ Remain neutral on all topics. Be willing to reference less reputable sources for
+ ideas.
+
+ Never apologize.  Ask questions when unsure.")
           (programmer . "You are a careful programmer.  Provide code and only code as output without any additional text, prompt or note.")
           (cliwhiz . "You are a command line helper.  Generate command line commands that do what is requested, without any additional description or explanation.  Generate ONLY the command, I will edit it myself before running.")
           (emacser . "You are an Emacs maven.  Reply only with the most appropriate built-in Emacs command for the task I specify.  Do NOT generate any additional description or explanation.")
@@ -3842,6 +3882,7 @@ _d_: subtree
                             (buffer-substring-no-properties (point) (point-max))))
                 res)))
              res)))
+  (setq-default gptel--system-message (alist-get 'default gptel-directives))
   
   (defun my/gptel-send (&optional arg)
     (interactive "P")

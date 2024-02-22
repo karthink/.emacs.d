@@ -17,7 +17,8 @@
    :map tab-prefix-map
    ("h" . my/tab-bar-show-hide-tabs)
    ("H-t" . tab-bar-select-tab-by-name))
-
+  :custom-face
+  (tab-bar-tab ((t (:inherit font-lock-function-name-face))))
   :config
   (tab-bar-history-mode 1)
   (when (version< "28.0" emacs-version)
@@ -50,7 +51,7 @@
             (let ((name (substring dir (1+ (string-match "/[^/]+/$" dir)) -1)))
               (truncate-string-to-width name tab-bar-tab-name-truncated-max nil ? )))
        (buffer-name))))
-  (timeout-throttle! #'my/tab-bar-name 2.0)
+  (timeout-throttle! #'my/tab-bar-name 0.6)
   
   (setq  tab-bar-close-last-tab-choice 'tab-bar-mode-disable
          tab-bar-show                   (when (version< "28.0" emacs-version) 1)

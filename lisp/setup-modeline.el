@@ -48,6 +48,7 @@
 ;; higher, we show this info in the less crowded tab-bar instead.
 
 (use-package smart-mode-line
+  :disabled
   :straight t
   :commands sml/setup
   :init
@@ -56,7 +57,8 @@
   :config
   (run-at-time
    4 nil
-   (lambda () (timeout-throttle! 'sml/generate-minor-modes 4.0)))
+   (lambda () (timeout-throttle! 'sml/generate-modified-status 4.0)
+         (timeout-throttle! 'sml/generate-minor-modes 4.0)))
   (add-to-list 'sml/replacer-regexp-list
                '("^~/[dD]ocuments/[rR]oam.*/" ":ROAM:")))
 

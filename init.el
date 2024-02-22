@@ -167,7 +167,7 @@ Cancel the previous one if present."
                     (when (featurep 'straight) (straight-check-all))
                     (when (featurep 'pdf-tools) (pdf-tools-install t))
                     (load-library "pulse")
-                    (when (equal server-name "server")
+                    (when (string-suffix-p "server" server-name)
                       (let ((after-init-time (current-time)))
                          (dolist (lib '("org" "ob" "ox" "ol" "org-roam"
                                        "org-capture" "org-agenda" "org-fragtog"
@@ -562,9 +562,7 @@ Cancel the previous one if present."
 
 (use-package expand-region
   :straight '(:host github :repo "magnars/expand-region.el"
-              ;; Changes merged in origin, my fork isn't needed
-              ;; :fork "karthink/expand-region.el"
-              )
+              :fork "karthink/expand-region.el")
   :commands expand-region
   :bind ("C-," . 'er/expand-region)
   :config
@@ -4374,7 +4372,7 @@ buffer's text scale."
           (border-mode-line-active unspecified)
           (border-mode-line-inactive unspecified)))
   (setq modus-operandi-palette-overrides
-        '((bg-mode-line-active bg-blue-intense)
+        '((bg-mode-line-active bg-blue-intense) ;
           (fg-mode-line-active fg-main)
           (fg-heading-1 "#a01f64")
           (fg-heading-2 "#2f5f9f") ;;"#193668"
@@ -4412,7 +4410,8 @@ buffer's text scale."
     (if (eq theme 'doom-rouge)
           (progn
             (setq window-divider-default-right-width 2
-                  window-divider-default-bottom-width 2)
+                  window-divider-default-bottom-width 2
+                  window-divider-default-places t)
             (message "Turned on window dividers")
             (window-divider-mode 1))
         (window-divider-mode -1)

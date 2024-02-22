@@ -243,7 +243,7 @@
 
 ;; Org
 (use-package org
-  :defer
+  :disabled
   :config
   (setq org-latex-preview-default-process 'dvipng)
   (plist-put org-latex-preview-options :scale 1.5)

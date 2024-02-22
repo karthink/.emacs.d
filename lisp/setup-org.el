@@ -46,6 +46,8 @@
                 org-catch-invisible-edits 'smart
                 org-use-speed-commands t
                 org-speed-commands-user '(("z" . org-add-note)
+                                          ("F" . org-babel-next-src-block)
+                                          ("B" . org-babel-previous-src-block)
                                           ("4" . org-tree-to-indirect-buffer)
                                           ("S" . org-tree-to-indirect-buffer))
                 org-imenu-depth 7
@@ -56,6 +58,7 @@
                 org-M-RET-may-split-line '((headline) (default . nil))
                 org-fast-tag-selection-single-key 'expert
                 org-link-elisp-confirm-function nil
+                org-export-backends '(ascii html latex)
                 ;; org-indent-indentation-per-level 2 
                 org-return-follows-link t)
   
@@ -322,7 +325,7 @@ appropriate.  In tables, insert a new row or end the table."
    org-fontify-quote-and-verse-blocks t
    org-fontify-whole-heading-line t
    org-hidden-keywords nil
-   org-hide-emphasis-markers t
+   org-hide-emphasis-markers nil
    org-hide-leading-stars t
    org-startup-folded t
    org-startup-indented nil
@@ -365,15 +368,7 @@ appropriate.  In tables, insert a new row or end the table."
           ("WAITING" :foreground "red" :weight bold)
           ("MAYBE"   :foreground "#6e8996" :weight bold)
           ("PROJECT" :foreground "#088e8e" :weight bold)
-          ("SUSPENDED" :foreground "#6e8996" :weight bold)))
-  
-  (advice-add 'org-src-font-lock-fontify-block
-              :after
-              (defun my/no-latex-background-face (lang start end)
-                (when (equal lang "latex")
-                  (alter-text-property
-                   start end 'face
-                   (lambda (l) (remove 'org-block l)))))))
+          ("SUSPENDED" :foreground "#6e8996" :weight bold))))
 
 ;; Settings to do with org-latex-preview
 (use-package org-latex-preview
@@ -575,6 +570,7 @@ appropriate.  In tables, insert a new row or end the table."
                     #'my/org-latex-preview-uncenter))))
 
 (use-package org-appear
+  :disabled
   :straight t
   :hook (org-mode . org-appear-mode)
   :config
@@ -683,9 +679,18 @@ appropriate.  In tables, insert a new row or end the table."
   :config
   (setq-default
    org-src-tab-acts-natively t
-   org-src-preserve-indentation t))
+   org-src-preserve-indentation t
+   org-src-window-setup 'plain)
+  (advice-add 'org-src-font-lock-fontify-block
+              :after
+              (defun my/no-latex-background-face (lang start end)
+                (when (equal lang "latex")
+                  (alter-text-property
+                   start end 'face
+                   (lambda (l) (remove 'org-block l)))))))
 
 (use-package org-src-context
+  :defer
   :straight (:host github
              :repo "karthink/org-src-context")
   :after org-src)
@@ -1034,7 +1039,11 @@ See `org-capture-templates' for more information."
     :defer
     :config
     (setq org-html-htmlize-output-type 'css)
-    (plist-put org-html-latex-image-options :inline "svg"))
+    (plist-put org-html-latex-image-options :inline "svg")
+    (add-to-list 'org-structure-template-alist
+                 '("details" . "details"))
+    (add-to-list 'org-structure-template-alist
+                 '("summary" . "summary")))
   ;; (add-to-list 'org-latex-packages-alist '("" "listings"))
   ;; (add-to-list 'org-latex-packages-alist '("" "color"))
 
@@ -1228,7 +1237,11 @@ parent."
   :straight (:host github :repo "karthink/org-image-preview")
   :after org
   :bind (:map org-mode-map
-         ([remap org-toggle-inline-images] . org-image-preview)))
+         ([remap org-toggle-inline-images] . org-image-preview)
+         :map org-link-navigation-map
+         ("v" . org-image-preview))
+  :config
+  (put 'org-image-preview 'repeat-map 'org-link-navigation-map))
 
 ;;;----------------------------------------------------------------------
 ;; ** ORG-DOWNLOAD
@@ -1250,8 +1263,13 @@ parent."
 ;;;----------------------------------------------------------------
 ;; ** ORG-BABEL
 ;;;----------------------------------------------------------------
-(use-package ob-octave-fix
-  :after ob-octave)
+(defmacro with-ob-autoload (library &rest forms)
+  (declare (indent defun))
+  `(use-package ,(intern (concat "ob-" library))
+    :autoload (,(intern (concat "org-babel-execute:" library))
+               ,(intern (concat "org-babel-expand-body:" library))
+               ,(intern (concat "org-babel-" library "-initiate-session")))
+    ,@forms))
 
 (use-package ob-julia
   :straight (ob-julia :host github :repo "nico202/ob-julia"
@@ -1260,11 +1278,14 @@ parent."
                              :repo "karthink/ob-julia"
                              :branch "main"))
   :after ob
+  :autoload (org-babel-execute:julia org-babel-expand-body:julia
+                                     org-babel-prep-session:julia)
   :hook (org-babel-julia-after-async-execute . my/org-redisplay-babel-result)
-  :init (setq ob-julia-insert-latex-environment-advice nil)
+  :init
+  ;; (setq ob-julia-insert-latex-environment-advice nil)
+  (add-to-list 'org-structure-template-alist '("j" . "src julia"))
   :config
-  (add-to-list 'org-structure-template-alist
-               '("j" . "src julia"))
+  (when (featurep 'julia-snail) (require 'ob-julia-snail))
   (setq org-babel-default-header-args:julia
         '((:session . nil)
           (:async   . "yes")))
@@ -1282,19 +1303,26 @@ Return the initialized session, if any."
             (save-window-excursion
               (org-babel-prep-session:julia session params))))))))
 
-(use-package ob-clojure
+(with-ob-autoload "octave"
+  :config
+  (use-package ob-octave-fix :after ob-octave))
+(with-ob-autoload "clojure"
   :after (ob cider)
   :config
   (setq org-babel-clojure-backend 'cider))
-
-(use-package ob-svgbob
+(with-ob-autoload "svgbob"
+  :disabled
   :when (executable-find "svgbob")
   :straight t
-  :after ob
   :config
   (unless (fboundp 'svgbob-mode)
     (add-to-list 'org-src-lang-modes (cons "svgbob" 'artist))))
-
+(with-ob-autoload "python")
+(with-ob-autoload "shell")
+(with-ob-autoload "scheme")
+(with-ob-autoload "ditaa"
+  )
+(with-ob-autoload "emacs-lisp")
 (use-package ess
   :disabled
   :straight t
@@ -1302,11 +1330,9 @@ Return the initialized session, if any."
   :config
   (use-package ess-julia))
 
-(use-package org-tempo
-  :after org)
+(use-package org-tempo :after org :disabled)
 
 (use-package ob
-  :after org
   :commands org-babel-execute-src-block
   :hook (org-babel-after-execute . my/org-redisplay-babel-result)
   :bind (:map org-mode-map
@@ -1328,30 +1354,26 @@ Return the initialized session, if any."
              nil 'refresh beg end))
         (error (message "Could not display images: %S" err)))))
   
-  (setq org-src-window-setup 'split-window-below
-        org-confirm-babel-evaluate nil
+  (setq org-confirm-babel-evaluate nil
         org-export-use-babel t)
-  (org-babel-do-load-languages
-   'org-babel-load-languages '((clojure . t)
-                               (emacs-lisp . t)
-                               (matlab . t)
-                               (octave . t)
-                               (python . t)
-                               (R . nil)
-                               (shell . t)
-                               (scheme . t)
-                               (ditaa . nil)
-                               (julia . t)
-                               (jupyter . nil)))
-  (setq org-ditaa-jar-path "/usr/bin/ditaa")
+  ;; (org-babel-do-load-languages
+  ;;  'org-babel-load-languages '((clojure . t)
+  ;;                              (emacs-lisp . t)
+  ;;                              (matlab . t)
+  ;;                              (octave . t)
+  ;;                              (python . t)
+  ;;                              (R . nil)
+  ;;                              (shell . t)
+  ;;                              (scheme . t)
+  ;;                              (ditaa . nil)
+  ;;                              (julia . t)
+  ;;                              (jupyter . nil)))
   (defun my/org-babel-goto-tangle-file ()
     (if-let* ((args (nth 2 (org-babel-get-src-block-info t)))
               (tangle (alist-get :tangle args)))
         (unless (equal "no" tangle)
           (find-file tangle)
           t)))
-  ;; (add-hook 'org-babel-after-execute-hook (lambda () (when org-inline-image-overlays
-  ;;                                                 (org-redisplay-inline-images))))
   (add-hook 'org-open-at-point-functions 'my/org-babel-goto-tangle-file))
 
 (use-package org-babel-eval-in-repl
@@ -1383,7 +1405,7 @@ Return the initialized session, if any."
 ;;;----------------------------------------------------------------
 (use-package ox-hugo
   :straight t
-  :after (ox)
+  :defer
   :config
   (advice-add 'org-blackfriday--update-ltximg-path
               :around

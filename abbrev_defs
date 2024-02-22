@@ -34,6 +34,11 @@
     ("yta" "youtube-dl -w -c -r 1M -o '%(playlist_index)s-%(title)s.%(ext)s' --add-metadata  -f 'bestaudio[ext=m4a]'" nil :count 2)
    ))
 
+(define-abbrev-table 'global-abbrev-table
+  '(
+    ("resposne" "response" nil :count 3)
+   ))
+
 (define-abbrev-table 'notmuch-message-mode-abbrev-table
   '(
     ("K" "Karthik" nil :count 9)
@@ -44,9 +49,10 @@
   '(
     ("hte" "the" nil :count 3)
     ("lapl" "Laplacian" nil :count 2)
+    ("rfx" "RefTeX" nil :count 13)
     ("rl" "Rayleigh" nil :count 2)
     ("taht" "that" nil :count 2)
-    ("teh" "the" nil :count 2)
+    ("teh" "the" nil :count 3)
     ("yt" "Youtube" nil :count 7)
    ))
 
@@ -79,7 +85,7 @@
 
 (define-abbrev-table 'text-mode-abbrev-table
   '(
-    ("lx" "LaTeX" nil :count 8)
+    ("lx" "LaTeX" nil :count 16)
     ("olp" "org-latex-preview" nil :count 1)
    ))
 

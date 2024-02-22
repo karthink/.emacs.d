@@ -1012,6 +1012,7 @@ Also kill this window, tab or frame if necessary."
          ("H-`" . popper-toggle)
          ("H-M-`" . popper-cycle)
          ("H-6" . popper-toggle-type)
+         ("C-x 6" . popper-toggle-type)
          ("H-M-k" . popper-kill-latest-popup)
          ("M-`" . my/switch-to-other-buffer)
          ("s-n" . my/next-buffer)
@@ -1194,6 +1195,9 @@ display names.")
   (defun my/switch-to-other-buffer (&optional _arg)
     (interactive)
     (switch-to-buffer (other-buffer)))
+  (put 'my/switch-to-other-buffer 'repeat-map
+       'my/buffer-cycle-map)
+
   (defun my/next-buffer (&optional arg)
     "Switch to the next non-popup buffer."
     (interactive "P")

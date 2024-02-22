@@ -61,7 +61,14 @@
   :config
   (setq embark-keymap-prompter-key "'")
   (setq embark-cycle-key "SPC")
-  ;; (setq embark-quit-after-action t)
+  (setq embark-quit-after-action
+        '((kill-buffer . nil)
+          (delete-file . nil)
+          (delete-directory . nil)
+          (copy-file . nil)
+          (rename-file . nil)
+          (make-directory . nil)
+          (t . t)))
   ;; Use Embark instead of `describe-prefix-bindings'
   (setq prefix-help-command #'embark-prefix-help-command)
 

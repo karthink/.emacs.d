@@ -160,7 +160,7 @@ When the number of characters in a buffer exceeds this threshold,
           (_ (consult-line)))
       (when (file-writable-p buffer-file-name)
         (save-buffer))
-      (let ((consult-ripgrep-args
+    (let ((consult-ripgrep-command
              (concat "rg "
                      "--null "
                      "--line-buffered "
@@ -175,32 +175,9 @@ When the number of characters in a buffer exceeds this threshold,
                      ;; add back filename to get parsing to work
                      "--with-filename "
                      ;; defaults
-                     "-e "
+                   "-e ARG OPTS "
                      (shell-quote-argument buffer-file-name))))
-        (let ((current-prefix-arg (or arg nil)))
-          (call-interactively #'consult-ripgrep)))))
-
-  (defvar consult--fd-command (or (executable-find "fdfind")
-                                  (executable-find "fd")))
-  (defun consult--fd-builder (input)
-    (unless consult--fd-command
-      (setq consult--fd-command "fd"))
-    (pcase-let* ((`(,arg . ,opts) (consult--command-split input))
-                 (`(,re . ,hl) (funcall consult--regexp-compiler
-                                        arg 'extended nil)))
-      (when re
-        (cons (append
-               (list consult--fd-command
-                     "--color=never" "--full-path" "--hidden"
-                     (consult--join-regexps re 'extended))
-               opts)
-              hl))))
-
-  (defun consult-fd (&optional dir initial)
-    (interactive "P")
-    (pcase-let* ((`(,prompt ,paths ,dir) (consult--directory-prompt "Fd" dir))
-                 (default-directory dir))
-      (find-file (consult--find prompt #'consult--fd-builder initial))))
+      (consult-ripgrep))))
 
   (dolist (func '(consult-fd consult-git-grep
                   consult-ripgrep consult-grep))

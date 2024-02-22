@@ -875,6 +875,27 @@ for details."
         desktop-restore-frames t
         desktop-save 'ask-if-new))
 
+;; Testing: Activities
+(use-package activities
+  :when (daemonp)
+  :straight t
+  :init
+  (activities-mode)
+  (activities-tabs-mode))
+
+(use-package activities
+    :custom-face
+    (activities-tabs-face ((t nil)))
+    :bind
+    (("C-x C-a C-n" . activities-new)
+     ;; As resuming is expected to be one of the most commonly used
+     ;; commands, this binding is one of the easiest to press.
+     ("C-x C-a C-j" . activities-resume)
+     ("C-x C-a C-z" . activities-suspend)
+     ("C-x C-a C-k" . activities-discard)
+     ("C-x C-a g" . activities-revert)
+     ("C-x C-a l" . activities-list)))
+
 ;;;################################################################
 ;; ** UNDO HISTORY
 

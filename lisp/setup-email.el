@@ -242,6 +242,10 @@
   :bind (("M-s M-m" . consult-notmuch-latest-tree)
          ("M-s m" . consult-notmuch-latest))
   :config
+  (consult-customize
+   consult-notmuch-latest consult-notmuch-latest-tree
+   consult-notmuch consult-notmuch-tree
+   (list :debounce 0.4 'any))
   (defun consult-notmuch-latest (&optional arg)
     (interactive "P")
     (let ((consult-async-input-debounce 0.6)

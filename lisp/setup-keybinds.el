@@ -224,6 +224,7 @@
          ("H-M--" . shrink-window-if-larger-than-buffer)
          ("H-h" . mark-whole-buffer)
          ("H-M-x" . eval-defun)
+         ("C-H-x" . eval-defun)
          ("H-s" . isearch-forward)
          ("H-r" . isearch-backward)
          ("H-q" . kill-buffer-and-window)

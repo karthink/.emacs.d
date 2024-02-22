@@ -124,6 +124,18 @@
 ;; (global-set-key "\C-x\C-m" 'execute-extended-command)
 ;;(global-set-key "\C-c\C-m" 'execute-extended-command)
 
+;; Better join-lines
+(defvar-keymap delete-indentation-map
+  :repeat t
+  "^" #'my/delete-indentation)
+(defun my/delete-indentation (arg)
+  "Run `delete-indentation', but backwards."
+  (interactive "p")
+  (unless (use-region-p)
+    (when arg (setq current-prefix-arg (- arg))))
+  (call-interactively #'delete-indentation))
+(global-set-key (kbd "M-^") #'my/delete-indentation)
+
 ;;; Unbind `C-x f'
 (global-unset-key "\C-xf")
 

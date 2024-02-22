@@ -117,6 +117,7 @@ Filenames are always matched by eshell."
 ;; Fully Emacs-native shell completions, including docstrings parsed on-the-fly
 ;; from man-pages or --help output.
 (use-package pcmpl-args
+  :disabled
   :straight t
   :hook ((eshell-mode . my/pcmpl-args-eshell-settings)
          ((eshell-mode shell-mode) . my/pcmpl-args-capf-ensure))
@@ -138,7 +139,7 @@ Filenames are always matched by eshell."
                 '(eshell-complete-host-reference
                   eshell-complete-history-reference
                   eshell-complete-user-reference
-                  ;;eshell-complete-variable-assignment
+                  eshell-complete-variable-assignment
                   eshell-complete-variable-reference
                   eshell-complete-lisp-symbols
                   t))))
@@ -167,7 +168,7 @@ Filenames are always matched by eshell."
                                            "lastdir")
           eshell-history-size 4096
           eshell-glob-case-insensitive t
-          eshell-error-if-no-glob t)
+          eshell-error-if-no-glob nil)
     (setq eshell-aliases-file
           (concat (file-name-as-directory
                    eshell-directory-name)
@@ -671,8 +672,7 @@ output instead."
 
 (use-package eat
   :after project
-  :bind (:map project-prefix-map
-         ([remap project-shell] . eat-project)))
+  :bind ([remap project-shell] . eat-project))
 
 ;; Disabled: shelldon. Regular `async-shell-command' does enough for me.
 (use-package shelldon

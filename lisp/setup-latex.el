@@ -198,6 +198,9 @@ but mark is only pushed if region isn't active."
                          t))))
       (if prop
           (progn (goto-char (prop-match-beginning prop))
+                 (when (and (derived-mode-p 'org-mode) (org-invisible-p))
+                   (org-fold-show-context 'link-search))
+                 (when eldoc-mode (eldoc--invoke-strategy t))
                  (pcase-let
                      ((`(,_ . ,ov)
                       (get-char-property-and-overlay (point) 'TeX-fold-type)))
@@ -218,11 +221,15 @@ but mark is only pushed if region isn't active."
           ((`(,_ . ,ov)
             (get-char-property-and-overlay (point) 'TeX-fold-type)))
         (when ov (TeX-fold-hide-item ov)))
-      (when p (goto-char p))
+      (when p
+        (goto-char p)
+        (when (and (derived-mode-p 'org-mode) (org-invisible-p))
+          (org-fold-show-context 'link-search))
+        (when eldoc-mode (eldoc--invoke-strategy t)))
       (pcase-let
-                     ((`(,_ . ,ov)
-                      (get-char-property-and-overlay (point) 'TeX-fold-type)))
-                   (when ov (TeX-fold-show-item ov)))))
+          ((`(,_ . ,ov)
+            (get-char-property-and-overlay (point) 'TeX-fold-type)))
+        (when ov (TeX-fold-show-item ov)))))
   (defvar-keymap my/TeX-ref-map
     :repeat t
     "r" 'my/next-reference-or-label
@@ -387,6 +394,7 @@ but mark is only pushed if region isn't active."
   (setq reftex-default-bibliography '("~/Documents/roam/biblio.bib"))
   (setq reftex-insert-label-flags '("sf" "sfte"))
   (setq reftex-plug-into-AUCTeX t)
+  (setq reftex-ref-style-default-list '("Default" "AMSMath" "Cleveref"))
   (setq reftex-use-multiple-selection-buffers t))
 
 (use-package consult-reftex
@@ -398,8 +406,13 @@ but mark is only pushed if region isn't active."
          :map org-mode-map
          ("C-c (" . consult-reftex-goto-label)
          ("C-c )"   . consult-reftex-insert-reference))
-  :config (setq consult-reftex-preview-function
-                #'consult-reftex-make-window-preview))
+  :config
+  (setq consult-reftex-preview-function
+                #'consult-reftex-make-window-preview
+                consult-reftex-preferred-style-order
+                '("\\eqref" "\\ref"))
+  (consult-customize consult-reftex-insert-reference
+                     :preview-key (list :debounce 0.3 'any)))
 
 ;; (setq-default TeX-master nil)
 (use-package cdlatex

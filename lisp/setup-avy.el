@@ -22,7 +22,7 @@
                              (11 . avy-action-kill-line)
                              (25 . avy-action-yank-line)
                              
-                             (?w . avy-action-easy-copy)
+                             (?w . avy-action-easy-kill)
                              ;; (134217847  . avy-action-easy-copy)
                              (?k . avy-action-kill-stay)
                              (?y . avy-action-yank)
@@ -37,37 +37,49 @@
   ;;             (defun my/avy-with-single-candidate-jump (orig-fn &optional arg)
   ;;               (let ((avy-single-candidate-jump t))
   ;;                 (funcall orig-fn arg))))
-  (defun avy-action-easy-copy (pt)
+
+  ;; Improved to include transposition by hylophile
+  (defun avy-action-easy-kill (pt)
     (unless (require 'easy-kill nil t)
       (user-error "Easy Kill not found, please install."))
-        (goto-char pt)
-        (cl-letf (((symbol-function 'easy-kill-activate-keymap)
-                   (lambda ()
-                     (let ((map (easy-kill-map)))
-                       (set-transient-map
-                        map
-                        (lambda ()
-                          ;; Prevent any error from activating the keymap forever.
-                          (condition-case err
-                              (or (and (not (easy-kill-exit-p this-command))
-                                       (or (eq this-command
-                                               (lookup-key map (this-single-command-keys)))
-                                           (let ((cmd (key-binding
-                                                       (this-single-command-keys) nil t)))
-                                             (command-remapping cmd nil (list map)))))
-                                  (ignore
-                                   (easy-kill-destroy-candidate)
-                                   (unless (or (easy-kill-get mark) (easy-kill-exit-p this-command))
-                                     (easy-kill-save-candidate))))
-                            (error (message "%s:%s" this-command (error-message-string err))
-                                   nil)))
-                        (lambda ()
-                          (let ((dat (ring-ref avy-ring 0)))
-                            (select-frame-set-input-focus
-                             (window-frame (cdr dat)))
-                            (select-window (cdr dat))
-                            (goto-char (car dat)))))))))
-          (easy-kill)))
+    (cl-letf* ((bounds (if (use-region-p)
+                           (prog1 (cons (region-beginning) (region-end))
+                             (deactivate-mark))
+                         (bounds-of-thing-at-point 'sexp)))
+               (transpose-map
+                (define-keymap
+                  "M-t" (lambda () (interactive "*")
+                          (pcase-let ((`(,beg . ,end) (easy-kill--bounds)))
+                            (transpose-regions (car bounds) (cdr bounds) beg end
+                                               'leave-markers)))))
+               ((symbol-function 'easy-kill-activate-keymap)
+                (lambda ()
+                  (let ((map (easy-kill-map)))
+                    (set-transient-map
+                     (make-composed-keymap transpose-map map)
+                     (lambda ()
+                       ;; Prevent any error from activating the keymap forever.
+                       (condition-case err
+                           (or (and (not (easy-kill-exit-p this-command))
+                                    (or (eq this-command
+                                            (lookup-key map (this-single-command-keys)))
+                                        (let ((cmd (key-binding
+                                                    (this-single-command-keys) nil t)))
+                                          (command-remapping cmd nil (list map)))))
+                               (ignore
+                                (easy-kill-destroy-candidate)
+                                (unless (or (easy-kill-get mark) (easy-kill-exit-p this-command))
+                                  (easy-kill-save-candidate))))
+                         (error (message "%s:%s" this-command (error-message-string err))
+                                nil)))
+                     (lambda ()
+                       (let ((dat (ring-ref avy-ring 0)))
+                         (select-frame-set-input-focus
+                          (window-frame (cdr dat)))
+                         (select-window (cdr dat))
+                         (goto-char (car dat)))))))))
+      (goto-char pt)
+      (easy-kill)))
   
   (defun avy-action-exchange (pt)
   "Exchange sexp at PT with the one at point."

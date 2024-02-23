@@ -212,10 +212,6 @@ project, as defined by `vc-root-dir'."
    ("DEL"   . diff-hl-revert-hunk)
    ("<delete>" . diff-hl-revert-hunk)
    ("SPC" . diff-hl-mark-hunk))
-  :general
-  (:states '(normal visual)
-           "]d"   'diff-hl-next-hunk
-           "[d"   'diff-hl-previous-hunk)
   :config
   ;; Highlight on-the-fly
   (diff-hl-flydiff-mode 1)

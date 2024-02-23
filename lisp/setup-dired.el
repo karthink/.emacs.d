@@ -10,19 +10,15 @@
   :hook ((dired-mode . hl-line-mode)
          (dired-mode . toggle-truncate-lines))
   :bind
-  (:map dired-mode-map
-        ("M-s f" . nil)
-        ("M-s g" . nil)
-        ("C-c C-a" . gnus-dired-attach)
-        ("," . dired-up-directory)
-        ("." . dired-find-file))
-  :general
-  ("C-x D" 'list-directory)
-  (:keymaps 'space-menu-map "fd" '(dired :wk "Dired"))
-  (:keymaps 'dired-mode-map "e" '(ora-ediff-files :wk "Diff marked files")
-                            "M-s f" nil)
-  (:keymaps 'dired-mode-map :states '(normal visual) "SPC" 'space-menu)
-  (:keymaps 'evil-window-map :states '(normal visual) "d" 'dired-sidebar-toggle-sidebar)
+  (("C-x D" . list-directory)
+   :map dired-mode-map
+   ("M-s f" . nil)
+   ("M-s g" . nil)
+   ("C-c C-a" . gnus-dired-attach)
+   ("," . dired-up-directory)
+   ("." . dired-find-file)
+   ("e" . ora-ediff-files)
+   ("M-s f" . nil))
   :config
   (put 'dired-find-alternate-file 'disabled nil)
   (setq dired-listing-switches "-AGFhlv"
@@ -164,12 +160,9 @@ This relies on the external 'fd' executable."
   :disabled
   :defer
   :after dired
-  :general
-  ("M-s f" 'find-name-dired
-   "M-s g" 'find-grep-dired)
-  (:keymaps 'space-menu-search-map
-   :wk-full-keys nil
-   "F" '(find-name-dired :wk "file by name"))
+  :bind
+  (("M-s f" . find-name-dired)
+   ("M-s g" . find-grep-dired))
   :config
   (setq find-ls-option '("-print0 | xargs -0 ls -ld" . "-ld"))
         ;; '("-ls" . "-AGFhlv --group-directories-first"))
@@ -232,12 +225,9 @@ This relies on the external 'fd' executable."
 (use-package peep-dired
   :disabled
   :load-path "plugins/peep-dired/"
-  :general
-  (:states '(normal visual)
-           :keymaps 'dired-mode-map
-           "z p" 'peep-dired)
-  (:keymaps 'dired-mode-map
-            "P" 'peep-dired)
+  :bind
+  (:map  dired-mode-map
+   ("P" . peep-dired))
   :hook ((peep-dired-display-file . auto-revert-mode)
          (peep-dired-display-file . peep-dired-fit-image))
   :config
@@ -291,11 +281,9 @@ This relies on the external 'fd' executable."
   :after dired
   :disabled
   :commands (dired-sidebar-toggle-sidebar)
-  :general
-  ("C-x D"  'list-directory
-   "C-x C-d" 'dired-sidebar-toggle-sidebar
-   :states '(normal visual)
-   "C-w C-d" 'dired-sidebar-toggle-sidebar)
+  :bind
+  (("C-x D" . list-directory)
+   ("C-x C-d" . dired-sidebar-toggle-sidebar))
   
   (:keymaps 'space-menu-map
    :wk-full-keys nil
@@ -326,13 +314,8 @@ This relies on the external 'fd' executable."
 (use-package ibuffer-sidebar
   :disabled
   :commands +ibuffer-sidebar-toggle
-  :general
-  ("C-x C-d" '+ibuffer-sidebar-toggle)
-  (:states '(normal visual)
-   "C-x C-d" '+ibuffer-sidebar-toggle)
-  (:keymaps 'space-menu-buffer-map
-            :wk-full-keys nil
-            "t" '(ibuffer-sidebar-toggle-sidebar :wk "Buffer sidebar"))
+  :bind
+  ("C-x C-d" . +ibuffer-sidebar-toggle)
   :config
   ;; (setq ibuffer-sidebar-use-custom-font t)
   ;; (setq ibuffer-sidebar-face `(:family "Helvetica" :height 140))

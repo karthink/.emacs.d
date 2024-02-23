@@ -57,15 +57,14 @@ instead."
   (global-set-key (kbd "C-h C") #'helpful-command)
   (global-set-key (kbd "C-h .") #'helpful-at-point)
   (global-set-key (kbd "C-h C-.") #'helpful-at-point)
-  :general
-  (:keymaps 'help-map
-            :wk-full-keys nil
-            "C-f" 'describe-face
-            "." '(helpful-at-point :wk "help at point")
-            "v" '(helpful-variable :wk "describe variable")
-            "f" '(helpful-callable :wk "describe function")
-            "k" '(helpful-key :wk "describe keybind")
-            "C" '(helpful-command :wk "describe command")))
+  :bind
+  (:map help-map
+   ("C-f" . describe-face)
+   ("." . helpful-at-point)
+   ("v" . helpful-variable)
+   ("f" . helpful-callable)
+   ("k" . helpful-key)
+   ("C" . helpful-command)))
 
 (use-package helpful
   :disabled

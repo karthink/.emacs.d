@@ -82,17 +82,14 @@
                     (get-buffer "*elfeed-entry*")))
       (unless elfeed-search-remain-on-entry (forward-line -1))))
 
-  (general-def :keymaps 'elfeed-search-mode-map
-               :states  '(normal visual)
-               "gj" (elfeed-search-show-entry-pre 1)
-               "gk" (elfeed-search-show-entry-pre -1)
-               "]]" (elfeed-search-show-entry-pre 1)
-               "[[" (elfeed-search-show-entry-pre -1))
-  (general-def :keymaps 'elfeed-search-mode-map
-               "M-RET" 'elfeed-search-show-entry
-               "RET" (elfeed-search-show-entry-pre)
-               "M-n" (elfeed-search-show-entry-pre 1)
-               "M-p" (elfeed-search-show-entry-pre -1))
+  (keymap-set elfeed-search-mode-map
+              "M-RET" 'elfeed-search-show-entry)
+  (keymap-set elfeed-search-mode-map
+              "RET" (elfeed-search-show-entry-pre))
+  (keymap-set elfeed-search-mode-map
+              "M-n" (elfeed-search-show-entry-pre 1))
+  (keymap-set elfeed-search-mode-map
+              "M-p" (elfeed-search-show-entry-pre -1))
   
   (defun my/elfeed-search-imenu ()
     (interactive)
@@ -181,11 +178,9 @@ MYTAG"
       (interactive)
       (elfeed-search-toggle-all mytag)))
 
-  (general-def :keymaps 'elfeed-search-mode-map
-    :states  '(normal visual emacs)
-    "l"      (elfeed-search-tag-as 'later)
-    "d"      (elfeed-search-tag-as 'junk)
-    "a"      (elfeed-search-tag-as 'listen))
+  (keymap-set elfeed-search-mode-map "l"  (elfeed-search-tag-as 'later))
+  (keymap-set elfeed-search-mode-map "d"  (elfeed-search-tag-as 'junk))
+  (keymap-set elfeed-search-mode-map "a"  (elfeed-search-tag-as 'listen))
   (bind-key "l" (elfeed-search-tag-as 'later) elfeed-search-mode-map)
   (bind-key "u" (elfeed-search-tag-as 'unread) elfeed-search-mode-map)
   (bind-key "a" (elfeed-search-tag-as 'listen) elfeed-search-mode-map)
@@ -200,10 +195,8 @@ MYTAG"
       (elfeed-search-update-entry elfeed-show-entry)
       (unless elfeed-search-remain-on-entry (elfeed-show-next))))
 
-  (general-def :keymaps 'elfeed-show-mode-map
-    :states '(normal visual emacs)
-    "l"     (elfeed-show-tag-as 'later)
-    "d"     (elfeed-show-tag-as 'junk))
+  (keymap-set elfeed-show-mode-map "l" (elfeed-show-tag-as 'later))
+  (keymap-set elfeed-show-mode-map "d" (elfeed-show-tag-as 'junk))
 
   (bind-key "l" (elfeed-show-tag-as 'later)  elfeed-show-mode-map)
   (bind-key "U" (elfeed-show-tag-as 'unread) elfeed-show-mode-map)
@@ -502,40 +495,24 @@ With prefix-arg REFRESH-TAGS, refresh the cached completion metadata."
            ("M-s i" . my/reader-imenu)
            ("i" . my/reader-imenu)
            ("<tab>" . my/reader-push-button)
-           ("M-s u" . my/reader-browse-url)))
-  :general
-  (:states '(normal visual)
-           :keymaps 'elfeed-search-mode-map
-           "SPC" 'space-menu
-           "gO"  'elfeed-search-eww-open
-           "c"   'elfeed-search-clear-filter
-           "gy"  'elfeed-search-yank
-           )
-
-  (:states '(normal visual)
-           :keymaps 'elfeed-show-mode-map
-           "SPC"   'elfeed-scroll-up-command
-           "S-SPC" 'elfeed-scroll-down-command
-           "gO"    'elfeed-show-eww-open
-           "gy"    'elfeed-show-yank
-           "<tab>" 'elfeed-show-next-link)
-  (:keymaps 'elfeed-show-mode-map
-            "SPC" 'elfeed-scroll-up-command
-            "S-SPC" 'elfeed-scroll-down-command
-            "w" 'elfeed-show-yank
-            "B" 'elfeed-show-eww-open
-            "x" 'elfeed-search-browse-url
-            "D" 'elfeed-show-save-enclosure
-            "d" 'my/scroll-up-half
-            "u" 'my/scroll-down-half
-            [remap elfeed-kill-buffer] 'my/elfeed-show-quit-window)
-  (:keymaps 'elfeed-search-mode-map
-            [remap elfeed-search-quit-window] 'my/reader-quit-window
-            "M-RET" 'elfeed-search-show-entry
-            "w" 'elfeed-search-yank
-            "C-<tab>" 'my/elfeed-quick-switch-filter
-            "B" 'elfeed-search-eww-open
-            "x" 'elfeed-search-browse-url))
+           ("M-s u" . my/reader-browse-url)
+           :map elfeed-show-mode-map
+           ("SPC" . elfeed-scroll-up-command)
+           ("S-SPC" . elfeed-scroll-down-command)
+           ("w" . elfeed-show-yank)
+           ("B" . elfeed-show-eww-open)
+           ("x" . elfeed-search-browse-url)
+           ("D" . elfeed-show-save-enclosure)
+           ("d" . my/scroll-up-half)
+           ("u" . my/scroll-down-half)
+           ([remap elfeed-kill-buffer] . my/elfeed-show-quit-window)
+           :map elfeed-search-mode-map
+           ([remap elfeed-search-quit-window] . my/reader-quit-window)
+           ("M-RET" . elfeed-search-show-entry)
+           ("w" . elfeed-search-yank)
+           ("C-<tab>" . my/elfeed-quick-switch-filter)
+           ("B" . elfeed-search-eww-open)
+           ("x" . elfeed-search-browse-url))))
 
 ;; ** UTILITIES
 ;; 
@@ -824,7 +801,7 @@ This is an enhanced version of the default `elfeed-show-entry' that
 (use-package elfeed-tube-mpv
   :ensure (:host github :protocol ssh
            :repo "karthink/elfeed-tube")
-  :after elfeed-tube)
+  :after (elfeed-tube org))
 
 ;; ** +AUTOTAGGING SETUP+
 

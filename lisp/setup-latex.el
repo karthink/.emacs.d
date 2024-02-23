@@ -299,11 +299,7 @@ but mark is only pushed if region isn't active."
   :disabled
   :after latex
   :defines (latex-extra-mode)
-  :hook (LaTeX-mode . latex-extra-mode)
-  :general
-  (localleader-define-key
-    :keymaps 'latex-extra-mode-map
-    "C-q" '(latex/clean-fill-indent-environment :wk "clean up doc")))
+  :hook (LaTeX-mode . latex-extra-mode))
 ;; :config
 ;; (defface latex/unimportant-latex-face
 ;;  '((t :height 0.7
@@ -319,68 +315,6 @@ but mark is only pushed if region isn't active."
 ;;              (any "_^")))
 ;;     0 'latex/unimportant-latex-face prepend))
 ;;  'end)
-
-;; leader key bindings, not relevant any more
-(use-package latex
-  :disabled
-  :defer
-  :general
-  (leader-define-key :keymaps 'LaTeX-mode-map
-   "cn" '(TeX-next-error :wk "Next Error")
-   "cp" '(TeX-previous-error :wk "Prev Error"))
-  (localleader-define-key :keymaps 'LaTeX-mode-map
-    "c" '(:ignore t                   :wk "Compile")
-    "cc" '(TeX-command-master         :wk "Compile doc")
-    "C" '(TeX-command-run-all         :wk "Compile and view")
-    "ca" '(TeX-command-run-all        :wk "Compile and view")
-    "cr" '(TeX-command-run-all-region :wk "Compile region")
-    "cn" '(TeX-next-error             :wk "Next Error")
-    "cp" '(TeX-previous-error         :wk "Prev Error")
-
-    "p"  '(:ignore t :wk "Preview")
-    "pp" '(preview-at-point           :wk "Preview at point")
-    "pb" '(preview-buffer             :wk "Preview buffer")
-    "pr" '(preview-region             :wk "Preview region")
-    "pe" '(preview-environment        :wk "Preview environment")
-    "pd" '(preview-document           :wk "Preview document")
-    "ps" '(preview-section            :wk "Preview section")
-    "pw" '(preview-copy-region-as-mml :wk "Copy MathML")
-    "pc" '(preview-clearout           :wk "Clearout")
-    "pS" '(preview-clearout-section   :wk "Clearout section")
-    "pB" '(preview-clearout-buffer    :wk "Clearout buffer")
-    "pP" '(preview-clearout-at-point  :wk "Clearout at point")
-    "pD" '(preview-clearout-document  :wk "Clearout document")
-    ;; "pC" '(preview-clearout-buffer :wk "!Clearout in buffer")
-
-    ;; "t" '(:ignore t                   :wk "Toggle")
-    ;; "t8" '(prettify-symbols-mode      :wk "!Pretty Symbols mode")
-    ;; "tp" '(preview-clearout-at-point  :wk "!Preview at point")
-    ;; "ts" '(preview-clearout-section   :wk "!Preview in section")
-    ;; "tb" '(preview-clearout-buffer    :wk "!Preview in buffer")
-
-    "=" '(reftex-toc                  :wk "TOC")
-    "(" '(reftex-label                :wk "Insert Label")
-    ")" '(reftex-reference            :wk "Insert Ref")
-    "[" '(reftex-citation             :wk "Insert Cite"))
-
-    (evil-leader/set-key-for-mode 'latex-mode
-    "cc" 'TeX-command-master
-    "ca" 'TeX-command-run-all
-    "=" 'reftex-toc
-    "("  'reftex-label
-    ")" 'reftex-reference
-    "[" 'reftex-citation
-    "{" 'cdlatex-environment)
-    
-    ;; :init (add-hook 'LaTeX-mode-hook
-    ;;                 (lambda ()  (interactive)
-    ;;                   (outline-minor-mode)
-    ;;                   (setq-local page-delimiter "\\\\section\\**{")
-    ;;                   (setq-local outline-regexp "\\\\\\(sub\\)*section\\**{")
-    ;;                   (setq-local prettify-symbols-alist tex--prettify-symbols-alist)
-    ;;                   (outline-hide-sublevels 3)
-    ;;                   ))
-)
 
 (use-package preview
   :after latex

@@ -1,7 +1,7 @@
 ;;; setup-roam
 
 (use-package org-roam
-      :straight t
+      :ensure t
       :init (setq org-roam-v2-ack t)
       :bind (("C-c n l" . org-roam-buffer-toggle)
              ("C-c n f" . org-roam-node-find)
@@ -126,7 +126,7 @@
           (put cmd 'repeat-map 'org-roam-dailies-repeat-map))))))
 
 (use-package org-roam-ui
-  :straight t
+  :ensure t
   :defer
   :config
   (setq org-roam-ui-sync-theme t))

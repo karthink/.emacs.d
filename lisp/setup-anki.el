@@ -1,6 +1,6 @@
 (use-package anki-editor
   :disabled
-  :straight t
+  :ensure t
   :after org-capture
   :init 
   (setq org-my-anki-file (concat (file-name-as-directory org-directory)
@@ -40,7 +40,7 @@
   (anki-editor-reset-cloze-number))
 
 (use-package org-anki
-  :straight t
+  :ensure t
   :defer
   :config
   (setq org-anki-default-deck "Default"

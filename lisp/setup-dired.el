@@ -215,7 +215,7 @@ This relies on the external 'fd' executable."
 
 (use-package dired-subtree
   ;; :disabled
-  :straight t
+  :ensure t
   :after dired
   :config
   (setq dired-subtree-use-backgrounds nil)
@@ -284,7 +284,7 @@ This relies on the external 'fd' executable."
         (dir-concat user-cache-directory "image-dired/")))
 
 (use-package gnus-dired
-  :defer 5
+  :commands gnus-dired-attach
   :after dired)
 
 (use-package dired-sidebar
@@ -345,7 +345,7 @@ This relies on the external 'fd' executable."
 
 ;; Disabled while testing dirvish
 (use-package dired-rsync
-  :straight t
+  :ensure t
   :bind (:map dired-mode-map
          ("V" . dired-rsync))
   :hook (dired-rsync-failed . dired-rsync--pop-to-rsync-failed-buf)
@@ -353,7 +353,7 @@ This relies on the external 'fd' executable."
   (setq dired-rsync-unmark-on-completion nil))
 
 (use-package dired-rsync-transient
-  :straight t
+  :ensure t
   :bind (:map dired-mode-map
          ("V" . my/dired-rsync-transient))
   :config
@@ -364,7 +364,7 @@ This relies on the external 'fd' executable."
       (call-interactively #'dired-rsync))))
 
 (use-package dired-filter
-  :straight t
+  :ensure t
   :after dired)
 
 (use-package diredfl
@@ -374,7 +374,9 @@ This relies on the external 'fd' executable."
 
 (use-package dired-hist
   ;; :disabled
-  :load-path "plugins/dired-hist/"
+  :ensure (:host github :protocol ssh
+           :repo "karthink/dired-hist")
+  ;; :load-path "plugins/dired-hist/"
   :after dired
   :bind (:map dired-mode-map
          ("l" . dired-hist-go-back)
@@ -447,14 +449,19 @@ This relies on the external 'fd' executable."
    ))
 
 (use-package dired-delight
-  :straight (:local-repo "~/.local/share/git/dired-delight/")
+  :ensure (:host github :protocol ssh
+           :repo "karthink/dired-delight")
+  ;; :straight (:local-repo "~/.local/share/git/dired-delight/")
   :bind (:map dired-mode-map
          ("@" . dired-delight)
          ("*c" . dired-delight-mark-color)))
 
 (use-package dired-preview
+  :disabled
   :after dired
-  :straight (:type git :repo "git@git.karthinks.com:dired-preview.git")
+  :ensure (:host github :protocol ssh
+           :repo "karthink/dired-preview"
+           :branch "main")
   :bind (:map dired-mode-map
          ("P" . dired-preview-mode)
          :map dired-preview-mode-map

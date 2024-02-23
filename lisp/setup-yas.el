@@ -87,7 +87,7 @@
 (use-package yasnippet-snippets
   :ensure (:post-build
            (let ((default-directory
-                  (file-name-directory
+                  (file-name-as-directory
                    (file-name-concat
                     elpaca-builds-directory
                     "yasnippet-snippets"

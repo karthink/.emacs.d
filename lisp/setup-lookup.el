@@ -49,7 +49,7 @@ instead."
 
 (use-package helpful
   :disabled
-  :straight t
+  :ensure t
   :commands (helpful-callable helpful-variable)
   ;; :hook (helpful-mode . (lambda () (line-number-mode 0)))
   :init
@@ -139,7 +139,8 @@ active region use it instead."
               ("M-p" . sdcv-previous-dictionary)))
 
 (use-package dictionary
-  :straight (:type built-in)
+  ;; :straight (:type built-in)
+  :ensure nil
   :commands (dictionary-lookup-definition dictionary-search)
   :config
   (define-key help-map (kbd "C-d") 'apropos-documentation)

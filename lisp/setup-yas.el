@@ -1,6 +1,6 @@
 
 (use-package yasnippet
-  :straight t
+  :ensure t
   ;; :defer 5
   ;; :after warnings
   :hook (((prog-mode LaTeX-mode org-mode
@@ -85,18 +85,20 @@
   )
 
 (use-package yasnippet-snippets
-  :straight (:post-build
-             (progn (let ((default-directory
-                            (straight--build-dir
-                             "yasnippet-snippets"
-                             "snippets"
-                             "latex-mode")))
-                      (with-temp-buffer
-                        (write-file ".yas-skip")))))
+  :ensure (:post-build
+           (let ((default-directory
+                  (file-name-directory
+                   (file-name-concat
+                    elpaca-builds-directory
+                    "yasnippet-snippets"
+                    "snippets"
+                    "latex-mode"))))
+             (with-temp-buffer
+               (write-file ".yas-skip"))))
   :after yasnippet)
 
 (use-package yasnippet-capf
-  :straight '(:host github :repo "elken/yasnippet-capf")
+  :ensure (:host github :repo "elken/yasnippet-capf")
   :after yasnippet
   :config
   ;; (add-to-list 'completion-at-point-functions #'yasnippet-capf)

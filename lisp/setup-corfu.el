@@ -1,5 +1,5 @@
 (use-package corfu
-  :straight (:host github :repo "minad/corfu")
+  :ensure (:host github :repo "minad/corfu")
   :hook (((prog-mode text-mode tex-mode ielm-mode) . corfu-mode)
          ((shell-mode eshell-mode) . my/corfu-shell-settings)
          (minibuffer-setup . my/corfu-enable-always-in-minibuffer))
@@ -84,18 +84,18 @@
 
 (use-package corfu-info
   :after corfu
-  :straight (:host github :repo "minad/corfu"
+  :ensure (:host github :repo "minad/corfu"
              :files ("extensions/corfu-info.el")))
 
 (use-package corfu-indexed
   :disabled
   :after corfu
-  :straight (:host github :repo "minad/corfu"
+  :ensure (:host github :repo "minad/corfu"
              :files ("extensions/corfu-indexed.el")))
 
 (use-package corfu-quick
   :after corfu
-  :straight (:host github :repo "minad/corfu"
+  :ensure (:host github :repo "minad/corfu"
              :files ("extensions/corfu-quick.el"))
   :bind (:map corfu-map
          ("'" . corfu-quick-complete))
@@ -105,19 +105,19 @@
 (use-package corfu-history
   :disabled
   :after corfu
-  :straight (:host github :repo "minad/corfu"
+  :ensure (:host github :repo "minad/corfu"
              :files ("extensions/corfu-history.el")))
                                                      
 (use-package corfu-popupinfo
   :after corfu
   :config (corfu-popupinfo-mode 1)
-  :straight (:host github :repo "minad/corfu"
+  :ensure (:host github :repo "minad/corfu"
              :files ("extensions/corfu-popupinfo.el"))
   :bind (:map corfu-map
          ([remap corfu-info-documentation] . corfu-popupinfo-toggle)))
 
 (use-package kind-icon
-  :straight t
+  :ensure t
   :after corfu
   :custom
   (kind-icon-default-face 'corfu-default) ; to compute blended backgrounds correctly
@@ -128,7 +128,7 @@
 ;; (Package is deprecated, using corfu-popupinfo instead)
 (use-package corfu-doc
     :disabled
-    :straight (corfu-doc :host github :repo "galeo/corfu-doc")
+    :ensure (corfu-doc :host github :repo "galeo/corfu-doc")
     :after corfu
     :bind (:map corfu-map
            ([remap corfu-show-documentation] . corfu-doc-toggle)
@@ -155,7 +155,7 @@
 
 ;; Add extensions
 (use-package cape
-  :straight t
+  :ensure t
   :bind (("C-$" . cape-dict)
          ;; ("C-; e" . cape-line)
          ("C-S-f" . cape-file)

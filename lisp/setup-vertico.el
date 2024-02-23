@@ -3,7 +3,7 @@
 ;; Vertico
 (use-package vertico
   ;; :commands vertico-mode
-  :straight (vertico :files (:defaults "extensions/*.el"))
+  :ensure (:files (:defaults "extensions/*.el"))
   :after minibuffer
   :commands vertico-mode
   :init (vertico-mode 1)

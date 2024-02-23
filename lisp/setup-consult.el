@@ -2,7 +2,7 @@
 
 ;; Consult built-in options
 (use-package consult
-  :straight t
+  :ensure t
   ;; :hook (minibuffer-setup . consult-completion-enable-in-minibuffer)
   ;; :hook ((shell-mode eshell-mode) . (lambda () (setq completion-in-region-function
   ;;                                               #'consult-completion-in-region)))
@@ -264,7 +264,9 @@ When the number of characters in a buffer exceeds this threshold,
   (consult-customize consult--source-library :preview-key "C-M-m"))
 
 (use-package consult-dir
-  :load-path "plugins/consult-dir/"
+  :ensure (:host github :protocol ssh
+           :repo "karthink/consult-dir")
+  ;; :load-path "plugins/consult-dir/"
   ;; :commands (consult-dir consult-dir-maybe)
   :bind (("C-x C-d" . consult-dir)
          :map minibuffer-local-filename-completion-map
@@ -332,7 +334,7 @@ When the number of characters in a buffer exceeds this threshold,
   (consult-customize consult-dff :preview-key "C-M-m"))
 
 (use-package consult-recoll
-  :straight t
+  :ensure t
   :bind ("M-s /" . consult-recoll)
   :config
   (setq consult-recoll-inline-snippets nil)

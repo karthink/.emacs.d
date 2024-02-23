@@ -1,9 +1,9 @@
 ;; -*- lexical-binding: t; -*-
 
-(use-package lua-mode :straight t :defer)
+(use-package lua-mode :ensure t :defer)
 (use-package eglot-lua
-  :straight (:host github
-             :repo "juergenhoetzel/eglot-lua")
+  :ensure (:host github
+           :repo "juergenhoetzel/eglot-lua")
   :defer
   :config
   (setq eglot-lua-server-install-dir
@@ -13,7 +13,8 @@
 
 ;; *** FENNEL
 (use-package fennel-mode
-  :straight t :defer
+  :ensure t
+  :defer
   :config
   (setq
    fennel-program

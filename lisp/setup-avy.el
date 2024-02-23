@@ -1,6 +1,6 @@
 ;; -*- lexical-binding: t; -*-
 (use-package avy
-  :straight t
+  :ensure t
   :commands (avy-goto-word-1 avy-goto-char-2 avy-goto-char-timer)
   :config
   (setq avy-timeout-seconds 0.20)

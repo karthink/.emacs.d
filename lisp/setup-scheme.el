@@ -1,7 +1,7 @@
 (use-package geiser
   :defer
   :if (> emacs-major-version 27)
-  :straight t
+  :ensure t
   :init
   ;; (add-hook 'geiser-repl-mode-hook (lambda ()
   ;;                                    (setq-local company-idle-delay nil)
@@ -14,9 +14,9 @@
   ;; (setq geiser-mit-binary "mechanics")
   (setq geiser-mit-binary "mit-scheme"))
 
-(use-package geiser-guile :straight t :defer)
+(use-package geiser-guile :ensure t :defer)
 (use-package geiser-mit
-  :straight t
+  :ensure t
   :commands mechanics
   :config
   (advice-add 'run-geiser :before

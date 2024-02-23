@@ -3,7 +3,7 @@
 ;; Embark for actions
 (use-package embark
   :demand
-  :straight (:host github :repo "oantolin/embark"
+  :ensure (:host github :repo "oantolin/embark"
              ;; :files ("embark.el" "embark.texi" "embark-org.el")
              )
   :after minibuffer
@@ -314,7 +314,7 @@ targets."
              nil nil t))))))
 
 (use-package embark-consult
-  :straight (:host github :repo "oantolin/embark"
+  :ensure (:host github :repo "oantolin/embark"
              :files ("embark-consult.el"))
   :after (embark consult)
   :demand
@@ -386,6 +386,7 @@ highlighting."
 
 ;; Embark integration for Straight
 (use-package embark
+  :disabled
   :defer
   :config
   (use-package straight

@@ -1045,7 +1045,9 @@ Also kill this window, tab or frame if necessary."
 
 ;; Designate buffers to popup status and toggle or cycle through them
 (use-package popper
-  :load-path "plugins/popper/"
+  :ensure (:host github :protocol ssh
+           :repo "karthink/popper")
+  ;; :load-path "plugins/popper/"
   :after (setup-windows setup-project)
   :hook (emacs-startup . popper-mode)
   :commands popper-mode
@@ -1293,15 +1295,7 @@ User buffers are those not starting with *."
       map))
   (map-keymap
    (lambda (_ cmd) (put cmd 'repeat-map 'my/buffer-cycle-map))
-   my/buffer-cycle-map)
-  
-  :general
-  (:states 'motion
-   "C-w ^" '(popper-raise-popup :wk "raise popup")
-   "C-w _" '(popper-lower-to-popup :wk "lower to popup"))
-  (:keymaps 'space-menu-window-map
-   "^" '(my/popup-raise-popup :wk "raise popup")
-   "_" '(my/popup-lower-to-popup :wk "lower to popup")))
+   my/buffer-cycle-map))
 
 ;;----------------------------------------------------------------
 ;; ** WINUM
@@ -1310,7 +1304,7 @@ User buffers are those not starting with *."
 ;; Add window numbers and use them to switch windows
 (use-package winum
   :disabled
-  :straight t
+  :ensure t
   :init
   (defun my/winum-select (num)
     (lambda (&optional arg) (interactive "P")
@@ -1362,7 +1356,7 @@ User buffers are those not starting with *."
 ;;----------------------------------------------------------------
 
 (use-package ace-window
-  :straight t
+  :ensure t
   :bind
   (("C-x o" . ace-window)
    ("H-o"   . ace-window)
@@ -1466,7 +1460,7 @@ Delete current window in the process."
 ;;----------------------------------------------------------------
 
 (use-package transpose-frame
-  :straight t
+  :ensure t
   :bind (("H-\\" . rotate-frame-anticlockwise)
          :map ctl-x-4-map
          ("|" . flop-frame)
@@ -1791,7 +1785,7 @@ If region is active, add its contents to the new buffer."
 ;; ** EGLOT - LSP
 ;;;----------------------------------------------------------------
 (use-package eglot
-  :ensure t
+  ;; :ensure t
   :commands eglot
   :bind (:map eglot-mode-map
               ("C-h ." . eldoc))
@@ -2090,7 +2084,7 @@ current buffer without truncation."
 ;;;----------------------------------------------------------------
 (use-package eval-in-repl
   :disabled
-  :straight t
+  :ensure t
   :init
   ;; (require 'eval-in-repl-geiser)
   (add-hook 'geiser-mode-hook
@@ -2134,7 +2128,7 @@ current buffer without truncation."
 ;; ** JSON
 (use-package jsonian
   :disabled
-  :straight (:host github :repo "iwahbe/jsonian")
+  :ensure (:host github :repo "iwahbe/jsonian")
   :init (add-to-list 'magic-fallback-mode-alist
                      '("^[{[]$" . jsonian-mode))
   :after so-long
@@ -2146,7 +2140,7 @@ current buffer without truncation."
 
 ;; ** PLANTUML
 (use-package plantuml-mode
-  :straight t
+  :ensure t
   :defer
   :init
   (add-hook 'plantuml-mode-hook
@@ -2170,12 +2164,12 @@ current buffer without truncation."
 
 ;;;----------------------------------------------------------------
 ;; ** QRENCODE
-(use-package qrencode :straight t :defer)
+(use-package qrencode :ensure t :defer)
 ;; ** INDENT-BARS
 ;; Testing
 (use-package indent-bars
-  :straight (:type git :host github
-             :repo "jdtsmith/indent-bars")
+  :ensure (:type git :host github
+           :repo "jdtsmith/indent-bars")
   :hook ((python-mode julia-mode) . indent-bars-mode)
   :config
   (setq
@@ -2192,7 +2186,7 @@ current buffer without truncation."
 ;; Testing detached
 (use-package detached
   :disabled
-  :straight t
+  :ensure t
   :init
   (detached-init)
   :bind (;; Replace `async-shell-command' with `detached-shell-command'
@@ -2210,7 +2204,7 @@ current buffer without truncation."
 ;;;----------------------------------------------------------------
 ;; ** VISIBLE MARK
 (use-package visible-mark
-  :straight t
+  :ensure t
   :hook ((text-mode prog-mode conf-mode) . visible-mark-mode)
   :config
   (setq visible-mark-max 1))
@@ -2218,8 +2212,9 @@ current buffer without truncation."
 ;;;----------------------------------------------------------------
 ;; Testing fast multiple cursors
 (use-package macrursors
-  :straight (:host github :repo "corytertel/macrursors"
-             :fork (:repo "karthink/macrursors"))
+  :ensure (:host github :repo "corytertel/macrursors"
+           :remotes ("fork" :host github :protocol ssh
+                     :repo "karthink/macrursors"))
   :bind-keymap ("C-;" . macrursors-mark-map)
   :bind (("M-n" . macrursors-mark-next-instance-of)
          ("M-p" . macrursors-mark-previous-instance-of)
@@ -2308,16 +2303,12 @@ current buffer without truncation."
 ;; ** EMBRACE
 ;;;----------------------------------------------------------------
 (use-package embrace
-  :straight t
+  :ensure t
   :hook ((org-mode . embrace-org-mode-hook)
          (org-mode . my/embrace-latex-mode-hook-extra)
          (LaTeX-mode . embrace-LaTeX-mode-hook)
          (LaTeX-mode . my/embrace-latex-mode-hook-extra))
   :bind (:map prog-mode-map
-              ("M-s a" . embrace-add)
-              ("M-s c" . embrace-change)
-              ("M-s d" . embrace-delete)
-         :map org-mode-map
               ("M-s a" . embrace-add)
               ("M-s c" . embrace-change)
               ("M-s d" . embrace-delete)
@@ -2394,6 +2385,14 @@ current buffer without truncation."
               (text "\\%s")) ;; (if (sp-point-in-string) "\\\\%s" "\\%s")
           (cons (format text (car pair))
                 (format text (cdr pair))))))))
+
+(use-package embrace
+  :after org
+  :bind (:map org-mode-map
+         ("M-s a" . embrace-add)
+         ("M-s c" . embrace-change)
+         ("M-s d" . embrace-delete)))
+
 ;;;----------------------------------------------------------------
 ;; ** STROKES
 ;;;----------------------------------------------------------------
@@ -2476,7 +2475,7 @@ current buffer without truncation."
   )
 
 (use-package dumb-jump
-  :straight t
+  :ensure t
   ;; :after xref
   :init (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
   :config
@@ -2497,7 +2496,7 @@ current buffer without truncation."
 
 (use-package vundo
   :disabled
-  :straight (:host github :repo "casouri/vundo")
+  :ensure (:host github :repo "casouri/vundo")
   :bind ("C-x u" . vundo)
   :config
   (set-face-attribute 'vundo-default nil :family "Symbola")
@@ -2522,7 +2521,7 @@ current buffer without truncation."
 ;; Disabled while I test Jinx
 (use-package spell-fu
   :disabled
-  :straight t
+  :ensure t
   :commands text-spell-fu-mode
   :config
   (add-hook 'spell-fu-mode-hook
@@ -2564,7 +2563,7 @@ current buffer without truncation."
 
 ;;;----------------------------------------------------------------
 ;; *** JINX
-(unless IS-GUIX (straight-use-package 'jinx))
+(unless IS-GUIX (elpaca jinx))
 (use-package jinx
   ;; :hook ((text-mode prog-mode conf-mode) . my/jinx-mode)
   :commands jinx-mode
@@ -2643,16 +2642,16 @@ normally have their errors suppressed."
             (my-next-error-register 'flymake-goto-next-error)))
 
 (use-package flymake-diagnostic-at-point
-  :straight t
+  :ensure t
   :after flymake
   :hook (flymake-mode . flymake-diagnostic-at-point-mode)
   :config (setq flymake-diagnostic-at-point-display-diagnostic-function
                 'flymake-diagnostic-at-point-display-popup))
 
-(use-package package-lint :straight t :defer)
+(use-package package-lint :ensure t :defer)
 
 (use-package package-lint-flymake
-  :straight t
+  :ensure t
   :after flymake
   :config
   (add-hook 'emacs-lisp-mode-hook
@@ -2662,7 +2661,7 @@ normally have their errors suppressed."
                         nil :local))))
 
 (use-package flymake-proselint
-  :straight t
+  :ensure t
   :after flymake
   :hook ((markdown-mode org-mode text-mode) . flymake-proselint-setup))
 
@@ -2838,7 +2837,7 @@ normally have their errors suppressed."
 (use-package hydra
   :disabled
   :defer
-  :straight t
+  :ensure t
   :config
   (with-eval-after-load 'ediff
     (defhydra hydra-ediff (:color blue :hint nil)
@@ -2959,7 +2958,7 @@ _d_: subtree
 ;; Testing: Beacon
 (use-package beacon
   :disabled
-  :straight t
+  :ensure t
   :bind ("C-x l" . beacon-blink)
   :defer 4
   :config
@@ -3059,7 +3058,7 @@ _d_: subtree
 (use-package wallabag
   :disabled
   :defer t
-  :load-path "plugins/wallabag/"
+  ;; :load-path "plugins/wallabag/"
   :commands wallabag-post-entry
   :config
   (setq wallabag-host my-wallabag-host)
@@ -3110,7 +3109,7 @@ _d_: subtree
 ;; ** WHICH-KEY
 ;;;----------------------------------------------------------------
 (use-package which-key
-  :straight t
+  :ensure t
   :defer 10
   :general
   (:keymaps 'help-map
@@ -3181,7 +3180,7 @@ _d_: subtree
        ;; (electric-pair-mode +1)
        )
 (use-package smartparens
-  :straight t
+  :ensure t
   :hook ((emacs-lisp-mode
           lisp-interaction-mode
           fennel-mode scheme-mode
@@ -3288,7 +3287,7 @@ _d_: subtree
 ;; ** WRAP-REGION MODE
 ;;;----------------------------------------------------------------
 (use-package wrap-region
-  :straight t
+  :ensure t
   :init (wrap-region-mode 1))
 ;; (add-hook 'text-mode-hook 'wrap-region-mode)
 ;;;----------------------------------------------------------------
@@ -3331,7 +3330,7 @@ _d_: subtree
 ;;;----------------------------------------------------------------
 ;; ** DOT MODE
 (use-package dot-mode
-  :straight t
+  :ensure t
   :commands dot-mode
   :bind (:map dot-mode-map
          ("C-c ." . nil)
@@ -3388,7 +3387,7 @@ _d_: subtree
 ;;;----------------------------------------------------------------
 ;; (load-library "setup-company")
 (use-package company
-  :straight t
+  :ensure t
   :bind (:map company-active-map
          ("C-w" . nil)
          ("M-." . company-show-location)))

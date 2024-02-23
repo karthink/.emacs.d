@@ -1,5 +1,5 @@
 (use-package citar
-  :straight t
+  :ensure t
   :after latex
   :defer
   :bind (:map LaTeX-mode-map
@@ -25,7 +25,7 @@
             "cite{" my/cdlatex-bibtex-action nil t nil))))
 
 (use-package citar-embark
-  :straight t
+  :ensure t
   :after (citar embark)
   :config
   (citar-embark--enable))

@@ -4,7 +4,7 @@
 
 (use-package orderless
   :after setup-minibuffer
-  :straight t
+  :ensure t
   :demand
   :config
   (setq orderless-component-separator #'split-string-and-unquote)

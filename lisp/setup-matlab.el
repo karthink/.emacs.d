@@ -1,5 +1,5 @@
 (use-package matlab
-  :straight (matlab-mode :repo "https://git.code.sf.net/p/matlab-emacs/src")
+  :ensure (matlab-mode :repo "https://git.code.sf.net/p/matlab-emacs/src")
   :commands (matlab-shell matlab-mode)
   :functions my/matlab-shell-help-at-point
   ;; :straight matlab-mode

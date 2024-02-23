@@ -1,9 +1,9 @@
 ;; -*- lexical-binding: t; -*-
 
 (use-package wombag
-  ;; :straight (:host github :repo "chenyanming/wallabag.el"
-  ;;            :files ("*.el" "*.alist" "*.css"))
-  :straight (:local-repo "~/.local/share/git/wombag/")
+  ;; :straight (:local-repo "~/.local/share/git/wombag/")
+  :ensure (:host github :protocol ssh
+           :repo "karthink/wombag")
   :commands (wombag wombag-add-entry)
   :hook ((wombag-pre-html-render . my/wombag-display-settings))
   ;; :bind (

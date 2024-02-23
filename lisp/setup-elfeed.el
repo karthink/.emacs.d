@@ -19,7 +19,7 @@
 ;; - Better feed filtering (handle spaces)
 
 (use-package elfeed
-  :straight t
+  :ensure t
   :commands (elfeed elfeed-update elfeed-search-bookmark-handler)
   :config
   ;; (use-package setup-reading)
@@ -700,12 +700,14 @@ preferring the preferred type."
 
 ;; I install the dependencies myself since Elfeed Tube lives in my config
 ;; folder and is not installed by a package manager:
-(use-package aio :straight t :defer)
-(use-package mpv :straight t :defer)
+;; (use-package aio :straight t :defer)
+(use-package mpv :ensure t :defer)
 
 (use-package elfeed-tube
-  :load-path "plugins/elfeed-tube"
-  :init (load-library "elfeed-tube-autoloads")
+  ;; :load-path "plugins/elfeed-tube"
+  ;; :init (load-library "elfeed-tube-autoloads")
+  :ensure (:host github :protocol ssh
+           :repo "karthink/elfeed-tube")
   :after elfeed
   :demand
   :config
@@ -820,8 +822,9 @@ This is an enhanced version of the default `elfeed-show-entry' that
          ([remap save-buffer] . elfeed-tube-save)))
 
 (use-package elfeed-tube-mpv
-    :load-path "plugins/elfeed-tube"
-    :after elfeed-tube)
+  :ensure (:host github :protocol ssh
+           :repo "karthink/elfeed-tube")
+  :after elfeed-tube)
 
 ;; ** +AUTOTAGGING SETUP+
 

@@ -37,7 +37,8 @@
 ;;* NOTMUCH
 
 (use-package notmuch
-  :straight (:type built-in)
+  ;; :straight (:type built-in)
+  :ensure nil
   :commands notmuch
   :bind (("C-x m" . notmuch-mua-new-mail)
          ("C-x M-m" . notmuch-jump-search)
@@ -237,7 +238,7 @@
 ;; default, bound to my "search map" (=M-s=) prefix:
 
 (use-package consult-notmuch
-  :straight t
+  :ensure t
   :after consult
   :bind (("M-s M-m" . consult-notmuch-latest-tree)
          ("M-s m" . consult-notmuch-latest))

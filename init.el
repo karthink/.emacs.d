@@ -49,10 +49,19 @@
 (add-hook 'after-init-hook #'elpaca-process-queues)
 (elpaca `(,@elpaca-order))
 
+(push 'transient elpaca-ignored-dependencies)
+(push 'notmuch elpaca-ignored-dependencies)
+(push 'elnode elpaca-ignored-dependencies)
+
 ;; Install use-package support
 (elpaca elpaca-use-package
   ;; Enable use-package :ensure support for Elpaca.
   (elpaca-use-package-mode))
+
+(use-package elpaca-ui
+  :bind (:map elpaca-ui-mode-map
+         ("p" . previous-line)
+         ("F" . elpaca-ui-mark-pull)))
 
 (elpaca-wait)
 
@@ -2714,6 +2723,7 @@ normally have their errors suppressed."
 ;;;----------------------------------------------------------------
 
 (use-package transient
+  :ensure nil
   :defines toggle-modes
   :bind (("<f8>"  . toggle-modes)
          ("C-c b" . toggle-modes))
@@ -3612,7 +3622,7 @@ _d_: subtree
 (use-package erc-image
   :disabled
   :after erc
-  :straight t
+  :ensure t
   :init
   (setq erc-image-inline-rescale 350)
   (add-to-list 'erc-modules 'image)
@@ -3660,10 +3670,9 @@ _d_: subtree
         image))))
 
 (use-package erc-hl-nicks
-  :straight t
+  :ensure t
   :after erc
   :hook (erc-mode . erc-hl-nicks-mode))
-
 
 ;;;----------------------------------------------------------------
 ;; ** EMAIL
@@ -3708,7 +3717,7 @@ _d_: subtree
 ;; ** NOV.EL
 ;;;----------------------------------------------------------------
 (use-package nov
-  :straight t
+  :ensure t
   :init
   (add-to-list 'auto-mode-alist '("\\.epub\\'" . nov-mode))
   :hook ((nov-mode . my/nov-display-setup)
@@ -3788,7 +3797,9 @@ _d_: subtree
 ;;;----------------------------------------------------------------
 ;; gptel: A simple LLM client
 (use-package gptel
-  :straight (:local-repo "~/.local/share/git/gptel/")
+  ;; :straight (:local-repo "~/.local/share/git/gptel/")
+  :ensure (:host github :protocol ssh
+           :repo "karthink/gptel")
   :commands (gptel gptel-send)
   :hook ((gptel-mode . visual-fill-column-mode)
          (eshell-mode . my/gptel-eshell-keys))
@@ -3999,7 +4010,7 @@ _d_: subtree
 ;;;----------------------------------------------------------------
 ;; *** Codeium (testing)
 ;;;----------------------------------------------------------------
-(load (expand-file-name "lisp/setup-codeium" user-emacs-directory))
+;; (load (expand-file-name "lisp/setup-codeium" user-emacs-directory))
 
 ;;;----------------------------------------------------------------
 ;; * PROJECTS
@@ -4066,7 +4077,7 @@ This function is meant to be mapped to a key in `rg-mode-map'."
          ("M-p" . rg-prev-file)))
 
 (use-package wgrep
-  :straight t
+  :ensure t
   :commands wgrep
   :config
   (setq wgrep-auto-save-buffer t)
@@ -4084,7 +4095,7 @@ This function is meant to be mapped to a key in `rg-mode-map'."
 ;; Smooth scrolling through images.  What a pain Emacs' default behavior is here.
 (use-package iscroll
   :disabled
-  :straight t
+  :ensure t
   :hook ((text-mode eww-mode) . iscroll-mode))
 
 ;; ** MONOCLE-MODE
@@ -4115,7 +4126,7 @@ managers such as DWM, BSPWM refer to this state as 'monocle'."
 ;; ** MIXED-PITCH-MODE
 ;;;----------------------------------------------------------------
 (use-package mixed-pitch
-  :straight t
+  :ensure t
   :hook (mixed-pitch-mode . my/mixed-pitch-spacing)
   :config
   (dolist (face '(line-number org-property-value org-drawer
@@ -4131,7 +4142,7 @@ managers such as DWM, BSPWM refer to this state as 'monocle'."
 ;; ** OLIVETTI
 (use-package olivetti
   :commands (my/olivetti-mode)
-  :straight t
+  :ensure t
   :config
   (setq-default
    olivetti-body-width 90
@@ -4196,7 +4207,7 @@ the mode-line and switches to `variable-pitch-mode'."
 ;; Turned off since global-text-scale-adjust exists now
 (use-package presentation
   :disabled
-  :straight t
+  :ensure t
   :commands presentation-mode
   :config
   (setq presentation-default-text-scale 1.25
@@ -4207,7 +4218,7 @@ the mode-line and switches to `variable-pitch-mode'."
 ;; pressed. Gif-screencast will screenshot each user action and compile them
 ;; into a gif.
 (use-package keycast
-  :straight t
+  :ensure t
   :commands keycast-mode
   :config
   (setq keycast-separator-width 1)
@@ -4266,7 +4277,7 @@ the mode-line and switches to `variable-pitch-mode'."
 
 ;; ** SPACIOUS-PADDING
 (use-package spacious-padding
-  :straight t
+  :ensure t
   :defer
   :config
   (setq spacious-padding-widths
@@ -4406,7 +4417,7 @@ buffer's text scale."
                             '(org-level-2 ((t (:inherit outline-2)))))))
 ;; ** MODUS THEMES
 (use-package ef-themes
-  :straight t
+  :ensure t
   :defer
   :config
   (setq ef-themes-headings
@@ -4428,7 +4439,7 @@ buffer's text scale."
 ;; Protesilaos Stavrou's excellent high contrast themes, perfect for working in
 ;; bright sunlight (especially on my laptop's dim screen).
 (use-package modus-themes
-  :straight t
+  :ensure t
   :defer
   :init
   (setq modus-themes-common-palette-overrides
@@ -4486,7 +4497,7 @@ buffer's text scale."
 ;;
 ;; [[file:/img/dotemacs/doom-rouge-demo.png]]
 (use-package doom-themes
-  :straight t
+  :ensure t
   :defer
   :init
   (defun my/doom-theme-settings (theme &rest args)
@@ -4559,7 +4570,7 @@ buffer's text scale."
 ;;;################################################################
 (use-package term-keys
   :disabled
-  :straight (:host github :repo "CyberShadow/term-keys"))
+  :ensure (:host github :repo "CyberShadow/term-keys"))
 
 ;;;################################################################
 ;; * MISC SETTINGS

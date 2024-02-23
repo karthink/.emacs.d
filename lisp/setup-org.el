@@ -571,7 +571,7 @@ appropriate.  In tables, insert a new row or end the table."
 
 (use-package org-appear
   :disabled
-  :straight t
+  :ensure t
   :hook (org-mode . org-appear-mode)
   :config
   (setq-default org-hide-emphasis-markers t)
@@ -581,7 +581,7 @@ appropriate.  In tables, insert a new row or end the table."
 ;; TDOO Disabled while I test org-modern
 (use-package org-bullets
   :disabled
-  :straight t
+  :ensure t
   :after org
   :hook (org-mode . org-bullets-mode))
 
@@ -627,7 +627,7 @@ appropriate.  In tables, insert a new row or end the table."
     (prettify-symbols-mode 1)))
 
 (use-package org-modern
-  :straight (:host github
+  :ensure (:host github
              :repo "minad/org-modern")
   :after org
   :hook ((org-modern-mode . my/org-modern-spacing)
@@ -691,7 +691,7 @@ appropriate.  In tables, insert a new row or end the table."
 
 (use-package org-src-context
   :defer
-  :straight (:host github
+  :ensure (:host github
              :repo "karthink/org-src-context")
   :after org-src)
 
@@ -1173,7 +1173,7 @@ parent."
     :after ox
     :config
     (use-package engrave-faces
-      :straight t
+      :ensure t
       :config
       ;; (setq org-latex-listings 'engraved)
       (setq org-latex-src-block-backend 'engraved)))
@@ -1194,9 +1194,8 @@ parent."
 
 ;; **** OX-CHAMELEON
 (use-package ox-chameleon
-  :straight (:host github :repo "tecosaur/ox-chameleon")
+  :ensure (:host github :repo "tecosaur/ox-chameleon")
   :after ox
-  :ensure t
   :config
   (add-to-list 'org-latex-packages-alist '("" "scrextend" nil))
   ;; xcolor is added anyway, this is a failsafe
@@ -1234,7 +1233,8 @@ parent."
 ;; ** ORG-IMAGE-PREVIEW
 ;;;----------------------------------------------------------------------
 (use-package org-image-preview
-  :straight (:host github :repo "karthink/org-image-preview")
+  :ensure (:host github :protocol ssh
+           :repo "karthink/org-image-preview")
   :after org
   :bind (:map org-mode-map
          ([remap org-toggle-inline-images] . org-image-preview)
@@ -1247,7 +1247,7 @@ parent."
 ;; ** ORG-DOWNLOAD
 ;;;----------------------------------------------------------------------
 (use-package org-download
-  :straight t
+  :ensure t
   :after org
   :hook ((dired-mode . org-download-enable)
          (org-mode . org-download-enable))
@@ -1272,11 +1272,10 @@ parent."
     ,@forms))
 
 (use-package ob-julia
-  :straight (ob-julia :host github :repo "nico202/ob-julia"
-                      :files ("*.el" "julia")
-                      :fork (:host github
-                             :repo "karthink/ob-julia"
-                             :branch "main"))
+  :ensure (:host github :repo "nico202/ob-julia"
+           :files ("*.el" "julia")
+           :remotes ("fork" :host github :repo "karthink/ob-julia"
+                     :branch "main" :protocol ssh))
   :after ob
   :autoload (org-babel-execute:julia org-babel-expand-body:julia
                                      org-babel-prep-session:julia)
@@ -1313,7 +1312,7 @@ Return the initialized session, if any."
 (with-ob-autoload "svgbob"
   :disabled
   :when (executable-find "svgbob")
-  :straight t
+  :ensure t
   :config
   (unless (fboundp 'svgbob-mode)
     (add-to-list 'org-src-lang-modes (cons "svgbob" 'artist))))
@@ -1325,7 +1324,7 @@ Return the initialized session, if any."
 (with-ob-autoload "emacs-lisp")
 (use-package ess
   :disabled
-  :straight t
+  :ensure t
   :after ob-julia
   :config
   (use-package ess-julia))
@@ -1378,7 +1377,7 @@ Return the initialized session, if any."
 
 (use-package org-babel-eval-in-repl
   :disabled
-  :straight t
+  :ensure t
   :after ob
   :init
   ;; (define-key org-mode-map (kbd "C-<return>") 'ober-eval-in-repl)
@@ -1404,7 +1403,7 @@ Return the initialized session, if any."
 ;; ** OX-HUGO
 ;;;----------------------------------------------------------------
 (use-package ox-hugo
-  :straight t
+  :ensure t
   :defer
   :config
   (advice-add 'org-blackfriday--update-ltximg-path
@@ -1415,7 +1414,7 @@ Return the initialized session, if any."
                   (funcall orig-fn html-string)))
               '((name . inline-image-workaround)))
   (use-package org-glossary
-    :straight '(:host github :repo "tecosaur/org-glossary")
+    :ensure (:host github :repo "tecosaur/org-glossary")
     :config
     (setq org-glossary-toplevel-only nil)
     (org-glossary-set-export-spec 'hugo t
@@ -1497,7 +1496,7 @@ the :consume parameter extracted from KEYWORD."
 ;;;----------------------------------------------------------------
 ;; Disabled since org-gcal is broken for me right now.
 (use-package org-gcal
-  :straight t
+  :ensure t
   :after org
   :commands (org-gcal-sync org-gcal-fetch my/org-gcal-sync-maybe)
   :hook (org-agenda-mode . my/org-gcal-sync-maybe)
@@ -1551,7 +1550,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
 ;;;----------------------------------------------------------------
 (use-package org-re-reveal
   ;; :disabled
-  :straight t
+  :ensure t
   :after ox
   :commands (org-re-reveal-export-to-html
              org-re-reveal-export-to-html-and-browse)
@@ -1566,7 +1565,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
 
 (use-package ox-reveal
   :disabled 
-  :straight t
+  :ensure t
   :init
   (setq org-reveal-root "file:///home/karthik/.local/share/git/reveal.js")
   (setq org-reveal-hlevel 2))
@@ -1704,7 +1703,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
 ;;;----------------------------------------------------------------
 ;; Presentations from within org-mode.
 (use-package org-tree-slide
-  :straight t
+  :ensure t
   :after org
   :commands my/org-presentation-mode
   ;; :hook (org-tree-slide-after-narrow . my/org-tree-slide-enlarge-latex-preview)
@@ -1766,7 +1765,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
 ;;;----------------------------------------------------------------
 ;; Compose HTML emails in org-mode.
 (use-package org-mime
-  :straight t
+  :ensure t
   :after (notmuch org)
   :defer
   :config
@@ -1860,7 +1859,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
 ;; ** ORG-NOTER
 ;;;----------------------------------------------------------------
 (use-package org-noter
-  :straight t
+  :ensure t
   :defer
   :config
   (setq org-noter-always-create-frame nil
@@ -1871,7 +1870,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
 ;;;----------------------------------------------------------------
 (use-package org-alert
   :disabled
-  :straight t
+  :ensure t
   :after org-agenda
   :config
   (setq org-alert-style 'notifications))
@@ -1880,9 +1879,10 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
 ;; ** ORG-XOURNALPP
 ;;;----------------------------------------------------------------
 (use-package org-xournalpp
-  :straight (:host gitlab
-             :repo "vherrmann/org-xournalpp"
-             :files ("*.el" "resources"))
+  :disabled
+  :ensure (:host gitlab
+           :repo "vherrmann/org-xournalpp"
+           :files ("*.el" "resources"))
   :after org
   :commands org-xournalpp-insert-new-image
   :config
@@ -1894,7 +1894,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
 ;;;----------------------------------------------------------------
 ;; ** TOC-ORG
 ;;;----------------------------------------------------------------
-(use-package toc-org :straight t :defer)
+(use-package toc-org :ensure t :defer)
 
 ;;;----------------------------------------------------------------
 ;; ** Integration for RefTeX
@@ -1927,7 +1927,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
 ;; iedit and hl-todo to misbehave.
 (use-package orglink
   :disabled
-  :straight t
+  :ensure t
   :after org
   ;; :hook (prog-mode . orglink-mode)
   :defer)
@@ -1936,7 +1936,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
 ;; ** ORG-QL
 ;;;----------------------------------------------------------------
 (use-package org-ql
-  :straight t
+  :ensure t
   :bind (:map mode-specific-map
          ("o s" . org-ql-search)
          ("o v" . org-ql-view)

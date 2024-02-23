@@ -102,7 +102,9 @@ The directory name must be absolute."
 ;; restore project windows.
 
 (use-package project-x
-  :load-path "plugins/project-x/"
+  ;; :load-path "plugins/project-x/"
+  :ensure (:host github :protocol ssh
+           :repo "karthink/project-x")
   :after project
   :config
   (setq project-x-local-identifier '(".project" "Project.toml"))

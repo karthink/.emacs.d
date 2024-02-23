@@ -2,7 +2,8 @@
 
 (use-package general
   ;; :preface (setq use-package-ignore-unknown-keywords t)
-  :straight t
+  :disabled
+  :ensure t
   :demand t
   :commands (general-def general-define-key)
   :init
@@ -212,8 +213,8 @@
 
 ;; Hyper bindings for emacs. Why use a pinky when you can use a thumb?
 (use-package emacs
-  :bind-keymap (("H-f" . space-menu-file-map)
-                ("H-b" . space-menu-buffer-map)
+  :bind-keymap (;; ("H-f" . space-menu-file-map)
+                ;; ("H-b" . space-menu-buffer-map)
                 ("H-r" . ctl-x-r-map))
   :bind (("M-ESC ESC" . nil)
          ("H-x" . H-x)

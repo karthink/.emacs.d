@@ -93,6 +93,8 @@
                     "yasnippet-snippets"
                     "snippets"
                     "latex-mode"))))
+             (unless (file-directory-p default-directory)
+               (make-directory default-directory 'parents))
              (with-temp-buffer
                (write-file ".yas-skip"))))
   :after yasnippet)

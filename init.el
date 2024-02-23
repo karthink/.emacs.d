@@ -49,6 +49,9 @@
 (add-hook 'after-init-hook #'elpaca-process-queues)
 (elpaca `(,@elpaca-order))
 
+;; (push 'transient elpaca-ignored-dependencies)
+;; (setq elpaca-ignored-dependencies
+;;       (delete 'seq elpaca-ignored-dependencies))
 (push 'transient elpaca-ignored-dependencies)
 (push 'notmuch elpaca-ignored-dependencies)
 (push 'elnode elpaca-ignored-dependencies)
@@ -65,34 +68,34 @@
 
 (elpaca-wait)
 
-;; ** STRAIGHT!
-(defvar bootstrap-version)
-;; cache directory
-(defconst user-repos-directory "~/.local/share/git/"
-  "Location where cloned repos are stored.")
-(defconst user-build-directory
-  (if (= emacs-major-version 29) "build29" "build"))
-(let ((bootstrap-file
-       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-      (bootstrap-version 5))
-  (unless (file-exists-p bootstrap-file)
-    (with-current-buffer
-        (url-retrieve-synchronously
-         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
-         'silent 'inhibit-cookies)
-      (goto-char (point-max))
-      (eval-print-last-sexp)))
-  (unless (file-directory-p user-repos-directory)
-    (make-directory user-repos-directory t))
-  (setq straight-base-dir user-repos-directory
-        straight-build-dir user-build-directory)
-  (setq straight-check-for-modifications '(find-when-checking
-                                           check-on-save)
-        straight-vc-git-default-clone-depth 2)
-  (load bootstrap-file nil 'nomessage))
+;; ;; ** STRAIGHT!
+;; (defvar bootstrap-version)
+;; ;; cache directory
+;; (defconst user-repos-directory "~/.local/share/git/"
+;;   "Location where cloned repos are stored.")
+;; (defconst user-build-directory
+;;   (if (= emacs-major-version 29) "build29" "build"))
+;; (let ((bootstrap-file
+;;        (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+;;       (bootstrap-version 5))
+;;   (unless (file-exists-p bootstrap-file)
+;;     (with-current-buffer
+;;         (url-retrieve-synchronously
+;;          "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+;;          'silent 'inhibit-cookies)
+;;       (goto-char (point-max))
+;;       (eval-print-last-sexp)))
+;;   (unless (file-directory-p user-repos-directory)
+;;     (make-directory user-repos-directory t))
+;;   (setq straight-base-dir user-repos-directory
+;;         straight-build-dir user-build-directory)
+;;   (setq straight-check-for-modifications '(find-when-checking
+;;                                            check-on-save)
+;;         straight-vc-git-default-clone-depth 2)
+;;   (load bootstrap-file nil 'nomessage))
 
-(setf (alist-get 'stable straight-profiles)
-      (expand-file-name "stable.el" user-emacs-directory))
+;; (setf (alist-get 'stable straight-profiles)
+;;       (expand-file-name "stable.el" user-emacs-directory))
 
 ;;; ** PACKAGE.EL
 ;;; "Activate" packages, /i.e./ autoload commands, set paths, info-nodes and so
@@ -125,8 +128,7 @@
 ;;; (unless (package-installed-p 'use-package)
 ;;;   (package-refresh-contents)
 ;;;   (package-install 'use-package))
-(straight-use-package 'use-package)
-(elpaca-wait)
+;; (straight-use-package 'use-package)
 
 (eval-when-compile
   (eval-after-load 'advice
@@ -582,13 +584,7 @@ Cancel the previous one if present."
   :bind (:map occur-mode-map
          ("C-x C-q" . occur-edit-mode)
          :map query-replace-map
-         ("p" . 'backup))
-  :general
-  (:keymaps 'occur-mode-map
-            :states '(normal motion)
-            "gc" 'next-error-follow-minor-mode
-            :states 'motion
-            "f" 'next-error-follow-minor-mode))
+         ("p" . 'backup)))
 
 ;; Testing parallel replacements
 (use-package query-replace-parallel
@@ -607,12 +603,6 @@ Cancel the previous one if present."
   :bind
   (("M-z" . zap-to-char-save)
    ("<C-M-backspace>" . backward-kill-sexp)))
-
-(use-package view
-  :general
-  (:keymaps 'view-mode-map
-            :states '(normal motion visual)
-            "M-SPC" 'space-menu))
 
 (use-package expand-region
   :ensure (:remotes ("fork" :host github :repo "karthink/expand-region.el"))
@@ -1002,12 +992,7 @@ for details."
   ;;        ("<f8>" . +make-frame-floating-with-current-buffer)
   ;;        ("C-M-`" . window-toggle-side-windows))
   :bind
-  ("<f9>" . +make-frame-floating-with-current-buffer)
-  ;; "C-M-`" 'window-toggle-side-windows
-  :general
-  (:keymaps 'space-menu-window-map
-            :wk-full-keys nil
-            "w" '(window-toggle-side-windows :wk "toggle side windows")))
+  ("<f9>" . +make-frame-floating-with-current-buffer))
 
 (use-package window
   :bind (("H-+" . balance-windows-area)
@@ -1352,11 +1337,6 @@ User buffers are those not starting with *."
          ("C-x C-/" . winner-undo)
          ("H-/" . winner-undo)
          ("s-u" . winner-undo))
-  :general
-  (:keymaps 'space-menu-window-map
-            :wk-full-keys nil
-            "u" 'winner-undo
-            "r" 'winner-redo)
   :config
   (winner-mode +1))
 
@@ -1373,9 +1353,6 @@ User buffers are those not starting with *."
    ("M-O" . my/other-window-prev)
    :map other-window-repeat-map
    ("o" . my/other-window))
-  ;; :general
-  ;; (:keymaps 'space-menu-map
-  ;;           "`" 'ace-window)
   ;; :custom-face
   ;; (aw-leading-char-face ((t (:height 2.5 :weight normal))))
   :defer 2
@@ -2047,7 +2024,7 @@ current buffer without truncation."
 ;; *** PDFs
 (if IS-GUIX
     (load-library "pdf-tools-autoloads")
-  (straight-use-package 'pdf-tools))
+  (elpaca pdf-tools))
 (use-package pdf-tools
   :commands pdf-tools-install
   :bind (:map pdf-view-mode-map
@@ -2723,7 +2700,7 @@ normally have their errors suppressed."
 ;;;----------------------------------------------------------------
 
 (use-package transient
-  :ensure nil
+  ;; :ensure nil
   :defines toggle-modes
   :bind (("<f8>"  . toggle-modes)
          ("C-c b" . toggle-modes))
@@ -2750,7 +2727,7 @@ normally have their errors suppressed."
   (transient-define-prefix toggle-modes ()
     "Turn on and off various frequently used modes."
     
-    [:pad-keys t
+    [;:pad-keys t
      ["Appearance"
       ("t" "color theme" my/toggle-theme)
       ;; ("B" "BIG mode"    presentation-mode)
@@ -2937,21 +2914,10 @@ _d_: subtree
       ("b" outline-backward-same-level)       ; Backward - same level
       ("z" nil "leave")))
 
-  :general
-  (:keymaps 'smerge-mode-map
-            "C-c s" 'hydra-smerge/body)
-  (:keymaps 'space-menu-window-map
-            "u" '(hydra-winner/body
-                  :wk "winner-mode"))
-  (:states '(motion)
-           "C-w u" 'hydra-winner/body)
-  ("C-c <tab>" 'hydra-outline/body)
-  (:keymaps 'space-menu-map
-            "t" 'hydra-toggle-menu/body)
-  (:keymaps 'space-menu-map
-            :prefix "f"
-            "=" 'hydra-ediff/body)
-  )
+  :bind
+  (:map 'smerge-mode-map
+   ("C-c s" . hydra-smerge/body)
+   ("C-c <tab>" . hydra-outline/body)))
 
 ;;;----------------------------------------------------------------
 ;; ** TABS!TABS!TABS!
@@ -3121,9 +3087,9 @@ _d_: subtree
 (use-package which-key
   :ensure t
   :defer 10
-  :general
-  (:keymaps 'help-map
-   "h" 'which-key-show-major-mode)
+  :bind
+  (:map help-map
+   ("h" . which-key-show-major-mode))
   :init
   (setq which-key-sort-order #'which-key-description-order 
         ;; which-key-sort-order #'which-key-prefix-then-key-order
@@ -3515,9 +3481,6 @@ _d_: subtree
 (use-package ivy-youtube
   :disabled
   :after ivy
-  :general
-  (:keymaps 'space-menu-map
-    "Y" '(ivy-youtube :wk "Youtube search"))
   :config
   (setq ivy-youtube-history-file
         (dir-concat user-cache-directory "ivy-youtube-history"))
@@ -3529,9 +3492,6 @@ _d_: subtree
   :disabled
   :commands counsel-spotify-start-search
   :after counsel
-  :general
-  (:keymaps 'space-menu-map
-    "U" '(counsel-spotify-start-search :wk "spotify"))
   :config
   (defun counsel-spotify-start-search ()
     (interactive)
@@ -4084,11 +4044,7 @@ This function is meant to be mapped to a key in `rg-mode-map'."
   (setq wgrep-change-readonly-file t)
   :bind (:map grep-mode-map
               ("e" . wgrep-change-to-wgrep-mode)
-              ("C-x C-q" . wgrep-change-to-wgrep-mode))
-  :general
-  (:states '(normal visual motion)
-   :keymaps '(grep-mode-map rg-mode-map)
-           "i" 'wgrep-change-to-wgrep-mode))
+              ("C-x C-q" . wgrep-change-to-wgrep-mode)))
 
 ;; * VISUALS AND PRESENTATION
 ;; ** ISCROLL
@@ -4296,7 +4252,6 @@ the mode-line and switches to `variable-pitch-mode'."
 ;; * FONTS AND COLORS
 ;;;################################################################
 (use-package custom
-  ;; :general
   :commands my/toggle-theme
   :config
   (setq custom-theme-directory (expand-file-name "lisp" user-emacs-directory))
@@ -4577,8 +4532,8 @@ buffer's text scale."
 ;;;################################################################
 ;; Settings that I'm not sure where to put:
 (use-package kbd-mode
-  :straight (:host github
-             :repo "kmonad/kbd-mode")
+  :ensure (:host github
+           :repo "kmonad/kbd-mode")
   :mode ("\\.kbd\\'" . kbd-mode))
 
 (use-package shr

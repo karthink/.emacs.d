@@ -596,10 +596,9 @@ send a notification when the process has exited."
   :commands (comint-mode shell-command-at-line)
   :bind
   ("C-!" . shell-command-at-line)
-  :general
-  (:keymaps 'shell-mode-map
-            :states  '(insert emacs)
-            "SPC"    'comint-magic-space)
+  :bind
+  (:map comint-mode-map
+   ("SPC" . comint-magic-space))
   :config
   ;; Arrange for Emacs to notice password prompts and turn off echoing for them, as follows:
   (setq read-process-output-max (* 1024 64))

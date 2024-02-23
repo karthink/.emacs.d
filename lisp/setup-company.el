@@ -2,21 +2,21 @@
   :disabled
   :straight t
   :defer 3
-  :general
-  ("M-s <tab>"      'company-yasnippet)
-  
-  (:keymaps   'company-active-map
-  "C-p"       nil
-  "C-n"       nil
-  "C-;"       'company-other-backend
-  "C-w"       nil
-  "C-]"       'company-show-location
-  "M-."       'company-show-location)
+  :bind
+  (("M-s <tab>" . company-yasnippet)
+   
+   :map   company-active-map
+   ("C-p"   .    nil)
+   ("C-n"   .    nil)
+   ("C-;"   .    company-other-backend)
+   ("C-w"   .    nil)
+   ("C-]"   .    company-show-location)
+   ("M-."   .    company-show-location)
 
-  (:keymaps   'company-search-map
-   [return]   'company-complete-selection
-   "RET"      'company-complete-selection
-   "S-SPC"    'company-search-toggle-filtering)
+   :map   company-search-map
+   ([return]   . company-complete-selection)
+   ("RET"      . company-complete-selection)
+   ("S-SPC"    . company-search-toggle-filtering))
 
   ;; (:keymaps   'company-active-map
   ;; "<tab>"     'company-complete-common-or-cycle

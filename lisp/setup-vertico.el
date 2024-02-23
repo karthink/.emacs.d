@@ -23,7 +23,7 @@
          ("M-*"      . embark-act-all)
          ("M-s o"   . embark-collect)
          ("C-c C-o" . embark-collect)
-         ("C-l"     . embark-export))
+         ("C-M-l"     . embark-export))
   :config
   (setq vertico-count 10
         vertico-cycle t

@@ -84,8 +84,8 @@
          ("b" . consult-buffer-other-window)
          :map ctl-x-5-map
          ("b" . consult-buffer-other-frame)
-         :map space-menu-file-map
-         ("l" . consult-locate)
+         ;; :map space-menu-file-map
+         ;; ("l" . consult-locate)
          :map minibuffer-local-map
          ("M-r" . consult-history)
          :map project-prefix-map

@@ -1,11 +1,5 @@
 (use-package diff-mode
   :defer
-  :general
-  (:keymaps 'diff-mode-map
-            :states 'motion
-            "i" 'ignore
-            "f" 'next-error-follow-minor-mode
-            "q" 'quit-window)
   :config
   (use-package outline
     :hook (diff-mode . my/outline-mode-diff)

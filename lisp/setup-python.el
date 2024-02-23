@@ -8,7 +8,7 @@
           python-shell-interpreter-args "--simple-prompt --classic")))
 
 (use-package python-mls
-  :straight t
+  :ensure t
   ;; :custom
   ;; (python-mls-multiline-history-modifier '(meta shift))
   :hook
@@ -16,13 +16,12 @@
 
 (use-package pyvenv
   :disabled t
-  :straight t
+  :ensure t
   :config
   (add-hook 'pyvenv-post-activate-hooks 'pyvenv-restart-python))
 
 (use-package elpy
   :disabled
-  ;; :straight t
   :commands elpy
   ;; :init
   ;; (setq python-shell-interpreter "jupyter"
@@ -66,12 +65,12 @@
 (unless IS-GUIX
   (use-package zmq
     :disabled
-    :straight (zmq :host github
-                   ;;   :repo "nnicandro/emacs-zmq"
-                   :repo "dakra/emacs-zmq"
-                   :branch "hidden-visibility"
-                   :files ("*.el" "*.so")
-                   :pre-build (compile "make"))
+    ;; :straight (zmq :host github
+    ;;                ;;   :repo "nnicandro/emacs-zmq"
+    ;;                :repo "dakra/emacs-zmq"
+    ;;                :branch "hidden-visibility"
+    ;;                :files ("*.el" "*.so")
+    ;;                :pre-build (compile "make"))
     
     ;; (zmq :host github
     ;;      :repo "nnicandro/emacs-zmq"
@@ -156,7 +155,7 @@ Use the `company-doc-buffer' to insert the results."
   (use-package conda
     :commands conda-env-activate
     :hook (eshell-first-time-mode . conda-env-initialize-eshell)
-    :straight t
+    :ensure t
     :config
     (setq conda-anaconda-home "/opt/miniconda3/")
     (setq conda-env-home-directory (expand-file-name "~/.conda/"))

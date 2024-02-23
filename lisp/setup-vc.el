@@ -184,7 +184,7 @@ project, as defined by `vc-root-dir'."
 
 ;; Highlight uncommitted changes using VC
 (use-package diff-hl
-  :straight t
+  :ensure t
   :defer
   ;; :custom-face
   ;; (diff-hl-change ((t (:foreground ,(face-background 'highlight) :background nil))))
@@ -256,7 +256,10 @@ project, as defined by `vc-root-dir'."
     (with-eval-after-load 'magit
       (add-hook 'magit-post-refresh-hook #'diff-hl-magit-post-refresh)))
 
-(unless IS-GUIX (straight-use-package 'magit))
+(if IS-GUIX
+    (load-library "magit-autoloads")
+  (elpaca magit))
+
 (use-package magit
   :defer t
   ;; :commands magit-status
@@ -278,7 +281,9 @@ project, as defined by `vc-root-dir'."
           '((stashes . hide)
             ([file unstaged status] . hide)))))
 
-(unless IS-GUIX (straight-use-package 'forge))
+(if IS-GUIX
+    (load-library "forge-autoloads")
+  (elpaca forge))
 (use-package forge
   :defer
   :config
@@ -334,7 +339,8 @@ project, as defined by `vc-root-dir'."
       (set-process-filter proc #'comint-output-filter))))
 
 (use-package abridge-diff
-  :straight t
+  :disabled
+  :ensure t
   :after magit ;; optional, if you'd like to use with magit
   :init (abridge-diff-mode 1))
 

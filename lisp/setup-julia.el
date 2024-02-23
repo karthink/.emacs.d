@@ -1,5 +1,5 @@
 (use-package julia-mode
-  :straight t
+  :ensure t
   :mode ("\\.jl\\'" . julia-mode)
   :bind (:map julia-mode-map
               ("`" . my/julia-latexsub-or-indent))
@@ -18,7 +18,8 @@
       (julia-latexsub-or-indent 0))))
 
 (use-package julia-snail
-  :straight t
+  :ensure (:remotes ("copy" :host github :protocol ssh
+                     "karthink/julia-snail"))
   :hook (julia-mode . julia-snail-mode)
   :bind (:map julia-snail-mode-map
          ("C-h ." . my/julia-snail-doc-at-point))
@@ -42,7 +43,7 @@
 
 (use-package julia-repl
   :disabled
-  :straight t
+  :ensure t
   :commands julia-repl-mode
   :bind (:map julia-repl-mode-map
          ("C-c C-p" . nil)
@@ -58,7 +59,7 @@
   (setq julia-repl-switches "-t12 -q"))
 
 (use-package eglot-jl
-  :straight t
+  :ensure t
   :commands eglot-jl-init
   :config
   (cl-defmethod project-root ((project (head julia)))
@@ -73,7 +74,7 @@
 ;; Need this for ob-julia -- disabled while I try julia-snail
 (use-package ess-julia
   :disabled
-  :straight ess
+  :ensure ess
   :after ob-julia
   ;; :bind (:map ess-julia-mode-map
   ;;        ("`" . my/ess-julia-cdlatex-symbol)

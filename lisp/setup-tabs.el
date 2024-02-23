@@ -98,7 +98,7 @@
 ;; I've taken to showing the tab-bar instead
 (use-package tab-bar-echo-area
   :if (version< emacs-version "28.0")
-  :straight t
+  :ensure t
   :after tab-bar
   :init
   (if (version< emacs-version "28.0")
@@ -109,13 +109,14 @@
 (when (version< "28.0" emacs-version)
   (use-package project-tab-groups
     :disabled
-    :straight t
+    :ensure t
     :defer))
 
 ;; Save and open tabs as bookmarks
 (use-package tab-bookmark
+  :disabled
   :after tab-bar
-  :straight (:host github :repo "minad/tab-bookmark")
+  :ensure (:host github :repo "minad/tab-bookmark")
   :bind (:map tab-prefix-map
          ("w" . tab-bookmark-save)
          ("j" . tab-bookmark-open)
@@ -168,7 +169,7 @@
 ;; Experimental: tabspaces
 (use-package tabspaces
   :disabled
-  :straight (:type git :host github :repo "mclear-tools/tabspaces")
+  :ensure (:host github :repo "mclear-tools/tabspaces")
   :hook ((tabspaces-mode . my/consult-tabspaces))
   :bind-keymap ("H-t" . tabspaces-command-map)
   :bind (:map tabspaces-command-map

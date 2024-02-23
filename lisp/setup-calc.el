@@ -26,9 +26,10 @@
                                       calc-angle-mode rad)))))))))
 
 (use-package calctex
-  :straight (calctex :host github :repo "johnbcoughlin/calctex"
-                     :files ("*.el" "vendor" "org-calctex/*.el"
-                             "calctex/*.el" "calctex-contrib/*.el"))
+  :disabled
+  :ensure (:host github :repo "johnbcoughlin/calctex"
+           :files ("*.el" "vendor" "org-calctex/*.el"
+                   "calctex/*.el" "calctex-contrib/*.el"))
   :after calc
   :config
   (setq calctex-additional-latex-packages "

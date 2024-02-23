@@ -6,7 +6,7 @@
 ;; command `marginalia-cycle-annotators` to switch between the annotators.
 
 (use-package marginalia
-  :straight t
+  :ensure t
   :after setup-minibuffer
   :init (marginalia-mode 1)
   :bind (:map vertico-map

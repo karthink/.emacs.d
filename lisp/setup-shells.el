@@ -118,7 +118,7 @@ Filenames are always matched by eshell."
 ;; from man-pages or --help output.
 (use-package pcmpl-args
   :disabled
-  :straight t
+  :ensure t
   :hook ((eshell-mode . my/pcmpl-args-eshell-settings)
          ((eshell-mode shell-mode) . my/pcmpl-args-capf-ensure))
   :config
@@ -642,26 +642,26 @@ output instead."
 ;; comint-mime and coterm: disabled while I test eat
 (use-package comint-mime
   :disabled
-  :straight t
+  :ensure t
   :hook ((shell-mode . comint-mime-setup)
          (inferior-python-mode . comint-mime-setup)))
 
 ;; Disabled while I test eat
 (use-package coterm
-  :straight t
+  :ensure t
   :defer)
 
+;; ;TODO: Check recipe vs elpaca
 (use-package eat
   :defer
-  :straight
-  '(:type git
-    :host codeberg
-    :repo "akib/emacs-eat"
-    :files ("*.el" ("term" "term/*.el") "*.texi"
-            "*.ti" ("terminfo/e" "terminfo/e/*")
-            ("terminfo/65" "terminfo/65/*")
-            ("integration" "integration/*")
-            (:exclude ".dir-locals.el" "*-tests.el")))
+  :ensure
+  (:host codeberg
+   :repo "akib/emacs-eat"
+   :files ("*.el" ("term" "term/*.el") "*.texi"
+           "*.ti" ("terminfo/e" "terminfo/e/*")
+           ("terminfo/65" "terminfo/65/*")
+           ("integration" "integration/*")
+           (:exclude ".dir-locals.el" "*-tests.el")))
   :hook (eshell-mode . eat-eshell-mode)
   :config
   (dolist (key '([?\e ?o] [?\e ?`] (kbd "C-`") [?\e 67108960]))
@@ -677,7 +677,7 @@ output instead."
 ;; Disabled: shelldon. Regular `async-shell-command' does enough for me.
 (use-package shelldon
   :disabled
-  :straight t
+  :ensure t
   :bind (([remap async-shell-command] . my/shelldon-dwim))
   :config
   (defun my/shelldon-dwim (&optional arg)
@@ -704,16 +704,16 @@ output instead."
 ;; Vterm is a module, so the build declaration takes a little work.
 (unless IS-GUIX
   (use-package vterm
-    :straight (:files
-               ("*.so" "*.el")
-               :pre-build
-               (progn (unless (file-directory-p "build")
-                        (make-directory "build"))
-                      (call-process
-                       "sh" nil "*vterm-prepare*" t "-c" 
-                       (concat "cd build; "
-                               "cmake -G 'Unix Makefiles' .."))
-                      (compile "cd build; make")))
+    :ensure (:files
+             ("*.so" "*.el")
+             :pre-build
+             (progn (unless (file-directory-p "build")
+                      (make-directory "build"))
+                    (call-process
+                     "sh" nil "*vterm-prepare*" t "-c" 
+                     (concat "cd build; "
+                             "cmake -G 'Unix Makefiles' .."))
+                    (compile "cd build; make")))
     :defer))
 
 (use-package vterm

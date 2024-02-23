@@ -284,7 +284,9 @@
       (repeat-mode))))
 
 (use-package repeat-help
-  :load-path "plugins/repeat-help/"
+  :ensure (:host github :protocol ssh
+           :repo "karthink/repeat-help")
+  ;; :load-path "plugins/repeat-help/"
   :hook (repeat-mode . repeat-help-mode)
   :config
   (setq repeat-help-key "<f1>"

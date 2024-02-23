@@ -11,6 +11,51 @@
 
 ;; * PACKAGE MANAGEMENT
 
+;; ** ELPACA
+(defvar elpaca-installer-version 0.6)
+(defvar elpaca-directory (expand-file-name "elpaca/" "~/.local/share/git/"))
+(defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
+(defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
+(defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
+                              :ref nil
+                              :files (:defaults "elpaca-test.el" (:exclude "extensions"))
+                              :build (:not elpaca--activate-package)))
+(let* ((repo  (expand-file-name "elpaca/" elpaca-repos-directory))
+       (build (expand-file-name "elpaca/" elpaca-builds-directory))
+       (order (cdr elpaca-order))
+       (default-directory repo))
+  (add-to-list 'load-path (if (file-exists-p build) build repo))
+  (unless (file-exists-p repo)
+    (make-directory repo t)
+    (when (< emacs-major-version 28) (require 'subr-x))
+    (condition-case-unless-debug err
+        (if-let ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
+                 ((zerop (call-process "git" nil buffer t "clone"
+                                       (plist-get order :repo) repo)))
+                 ((zerop (call-process "git" nil buffer t "checkout"
+                                       (or (plist-get order :ref) "--"))))
+                 (emacs (concat invocation-directory invocation-name))
+                 ((zerop (call-process emacs nil buffer nil "-Q" "-L" "." "--batch"
+                                       "--eval" "(byte-recompile-directory \".\" 0 'force)")))
+                 ((require 'elpaca))
+                 ((elpaca-generate-autoloads "elpaca" repo)))
+            (progn (message "%s" (buffer-string)) (kill-buffer buffer))
+          (error "%s" (with-current-buffer buffer (buffer-string))))
+      ((error) (warn "%s" err) (delete-directory repo 'recursive))))
+  (unless (require 'elpaca-autoloads nil t)
+    (require 'elpaca)
+    (elpaca-generate-autoloads "elpaca" repo)
+    (load "./elpaca-autoloads")))
+(add-hook 'after-init-hook #'elpaca-process-queues)
+(elpaca `(,@elpaca-order))
+
+;; Install use-package support
+(elpaca elpaca-use-package
+  ;; Enable use-package :ensure support for Elpaca.
+  (elpaca-use-package-mode))
+
+(elpaca-wait)
+
 ;; ** STRAIGHT!
 (defvar bootstrap-version)
 ;; cache directory
@@ -72,6 +117,7 @@
 ;;;   (package-refresh-contents)
 ;;;   (package-install 'use-package))
 (straight-use-package 'use-package)
+(elpaca-wait)
 
 (eval-when-compile
   (eval-after-load 'advice
@@ -126,7 +172,7 @@
 (condition-case-unless-debug nil 
     (use-package gcmh
       :defer 2
-      :straight t
+      :ensure t
       ;; :hook (after-init . gcmh-mode)
       :config
       (defun gcmh-register-idle-gc ()
@@ -194,32 +240,30 @@ Cancel the previous one if present."
 
 (use-package org
   :defer
-  :straight `(org
-             :inherit nil
-             :fork (:host nil
-                    :repo "https://git.tecosaur.net/tec/org-mode.git"
-                    :branch "dev"
-                    :remote "tecosaur")
-             :files (:defaults "etc")
-             :local-repo "org"
-             :build t
-             :pre-build
-             (with-temp-file "org-version.el"
-               (require 'lisp-mnt)
-               (let ((version
+  :ensure `(org
+            :remotes ("tecosaur"
+                      :repo "https://git.tecosaur.net/tec/org-mode.git"
+                      :branch "dev")
+            :files (:defaults "etc")
+            :build t
+            :pre-build
+            (with-temp-file "org-version.el"
+             (require 'lisp-mnt)
+             (let ((version
+                    (with-temp-buffer
+                      (insert-file-contents "lisp/org.el")
+                      (lm-header "version")))
+                   (git-version
+                    (string-trim
                      (with-temp-buffer
-                       (insert-file-contents "lisp/org.el")
-                       (lm-header "version")))
-                     (git-version
-                     (string-trim
-                      (with-temp-buffer
-                        (call-process "git" nil t nil "rev-parse" "--short" "HEAD")
-                        (buffer-string)))))
-                 (insert
-                  (format "(defun org-release () \"The release version of Org.\" %S)\n" version)
-                  (format "(defun org-git-version () \"The truncate git commit hash of Org mode.\" %S)\n" git-version)
-                  "(provide 'org-version)\n")))
-             :pin nil))
+                       (call-process "git" nil t nil "rev-parse" "--short" "HEAD")
+                       (buffer-string)))))
+              (insert
+               (format "(defun org-release () \"The release version of Org.\" %S)\n" version)
+               (format "(defun org-git-version () \"The truncate git commit hash of Org mode.\" %S)\n" git-version)
+               "(provide 'org-version)\n")))
+            :pin nil))
+
 ;;;################################################################
 ;; * MODELINE
 ;;;################################################################
@@ -288,6 +332,8 @@ Cancel the previous one if present."
 ;; These are mostly leader based keybindings that make sense to use with
 ;; evil-mode... which I don't use.
 (load (expand-file-name "lisp/setup-keybinds" user-emacs-directory))
+
+(elpaca-wait)
 
 ;; ----------------------------------------------------------------
 ;; #+INCLUDE: "./lisp/setup-keybinds.org" :minlevel 2
@@ -400,7 +446,7 @@ Cancel the previous one if present."
 
 ;; For easy sharing of files/text.
 (use-package 0x0
-  :straight t
+  :ensure t
   :commands (0x0-upload 0x0-dwim)
   :bind ("C-x M-U" . 0x0-dwim))
 
@@ -450,9 +496,8 @@ Cancel the previous one if present."
 
 ;; Emacs is slow sometimes, I try to find out why.
 (use-package explain-pause-mode
-  :straight (explain-pause-mode
-             :host github
-             :repo "lastquestion/explain-pause-mode")
+  :ensure (:host github
+           :repo "lastquestion/explain-pause-mode")
   :commands explain-pause-mode
   :config
   (setq explain-pause-alert-style 'silent))
@@ -494,7 +539,7 @@ Cancel the previous one if present."
 ;; * EDITING
 ;;;######################################################################
  (use-package visual-fill-column
-  :straight t
+  :ensure t
   :commands visual-fill-column-mode
   :hook ((eww-after-render . visual-fill-column-mode)
          (eww-after-render . visual-line-mode)
@@ -507,7 +552,7 @@ Cancel the previous one if present."
   :hook (after-init . global-so-long-mode))
 
 (use-package iedit
-  :straight t
+  :ensure t
   :bind (("C-M-;" . iedit-mode)
          ("M-s n" . my/iedit-1-down)
          ("M-s p" . my/iedit-1-up))
@@ -538,8 +583,8 @@ Cancel the previous one if present."
 
 ;; Testing parallel replacements
 (use-package query-replace-parallel
-  :straight '(:host github :repo "hokomo/query-replace-parallel"
-              :files ("query-replace-parallel.el"))
+  :ensure (:host github :repo "hokomo/query-replace-parallel"
+           :files ("query-replace-parallel.el"))
   :bind (("H-%" . query-replace-parallel)
          ("H-M-%" . query-replace-parallel-regexp)))
 
@@ -561,8 +606,7 @@ Cancel the previous one if present."
             "M-SPC" 'space-menu))
 
 (use-package expand-region
-  :straight '(:host github :repo "magnars/expand-region.el"
-              :fork "karthink/expand-region.el")
+  :ensure (:remotes ("fork" :host github :repo "karthink/expand-region.el"))
   :commands expand-region
   :bind ("C-," . 'er/expand-region)
   :config
@@ -731,7 +775,7 @@ for details."
       (er/add-latex-mode-expansions))))
 
 (use-package easy-kill
-  :straight t
+  :ensure t
   :bind (([remap kill-ring-save] . #'easy-kill)
          ([remap mark-sexp]      . #'easy-mark)
          ("M-S-w" . kill-ring-save)
@@ -767,7 +811,7 @@ for details."
         (easy-kill-adjust-candidate thing (point) (mark))))))
 
 (use-package goto-chg
-  :straight t
+  :ensure t
   :bind (("M-g ;" . goto-last-change)
          ("M-i" . goto-last-change)
          ("M-g M-;" . goto-last-change)))
@@ -876,7 +920,7 @@ for details."
 ;; Testing: Activities
 (use-package activities
   :when (daemonp)
-  :straight t
+  :ensure t
   :init
   (activities-mode)
   (activities-tabs-mode))
@@ -900,7 +944,7 @@ for details."
 ;; The =undo-fu-session= package saves and restores the undo states of buffers
 ;; across Emacs sessions.
 (use-package undo-fu-session
-  :straight t
+  :ensure t
   :hook ((prog-mode conf-mode text-mode tex-mode) . undo-fu-session-mode)
   :config
   (setq undo-fu-session-directory
@@ -1515,7 +1559,7 @@ surrounded by word boundaries."
 
 (use-package dashboard
   :disabled
-  :straight t
+  :ensure t
   :init (setq initial-buffer-choice (lambda () (get-buffer "*dashboard*")))
   :config
   (dashboard-setup-startup-hook)
@@ -1530,19 +1574,19 @@ surrounded by word boundaries."
                           )))
 
 (use-package screenshot
-  :straight (screenshot :host github
-                        :repo "tecosaur/screenshot"
-                        :build (:not compile))
+  :ensure (:host github
+           :repo "tecosaur/screenshot"
+           :build (:not elpaca--byte-compile))
   :commands screenshot)
 
 ;; Colorize color names and parens in buffers
 (use-package rainbow-mode
   :commands rainbow-mode
-  :straight t)
+  :ensure t)
 
 (use-package rainbow-delimiters
   :commands rainbow-delimiters-mode
-  :straight t)
+  :ensure t)
 
 ;;;###autoload
 (defun describe-word (word &optional prefix)
@@ -1607,7 +1651,7 @@ To be used with `imenu-after-jump-hook' or equivalent."
   :bind ("M-s M-i" . imenu-list))
 
 (use-package scratch
-  :straight t
+  :ensure t
   :config
   (defun my/scratch-buffer-setup ()
     "Add contents to `scratch' buffer and name it accordingly.
@@ -1625,7 +1669,7 @@ If region is active, add its contents to the new buffer."
     (delete-window)))
 
 (use-package hl-todo
-  :straight t
+  :ensure t
   :hook (prog-mode . hl-todo-mode)
   :bind (:map prog-mode-map
          ("M-g t" . hl-todo-next)
@@ -1693,8 +1737,8 @@ If region is active, add its contents to the new buffer."
   (use-package nix-mode :defer))
 ;; ** MARKDOWN
 ;;;----------------------------------------------------------------
-(use-package markdown-mode :straight t :defer)
-(use-package edit-indirect :straight t :defer)
+(use-package markdown-mode :ensure t :defer)
+(use-package edit-indirect :ensure t :defer)
 
 ;;;----------------------------------------------------------------
 ;; ** LSP SUPPORT
@@ -1747,7 +1791,7 @@ If region is active, add its contents to the new buffer."
 ;; ** EGLOT - LSP
 ;;;----------------------------------------------------------------
 (use-package eglot
-  :straight t
+  :ensure t
   :commands eglot
   :bind (:map eglot-mode-map
               ("C-h ." . eldoc))
@@ -1800,7 +1844,7 @@ current buffer without truncation."
                   (view-mode 1)))))
 
 (use-package macrostep
-  :straight t
+  :ensure t
   :bind (:map emacs-lisp-mode-map
          ("C-c C-e" . macrostep-expand)))
 

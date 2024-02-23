@@ -73,26 +73,14 @@ When no VC root is available, use standard `switch-to-buffer'."
          ;; (ibuffer-mode . my/ibuffer-project-generate-filter-groups)
          ;; (ibuffer-mode . ibuffer-vc-set-filter-groups-by-vc-root)
          )
-  :bind (:map ibuffer-mode-map
-              ("M-o" . nil))
-  :general
-  (:keymaps 'space-menu-buffer-map
-   :wk-full-keys nil
-   "i" '(ibuffer :wk "ibuffer"))
-  ("C-x C-b" 'ibuffer)
-  ("M-s b" 'my/buffers-major-mode)
-  ("M-s v" 'my/buffers-vc-root)
-  ;; :bind (("C-x C-b" . ibuffer))
-         ;; :map ibuffer-mode-map
-         ;; ("* f" . ibuffer-mark-by-file-name-regexp)
-         ;; ("* g" . ibuffer-mark-by-content-regexp) ; "g" is for "grep"
-         ;; ("* n" . ibuffer-mark-by-name-regexp)
-         ;; ("s n" . ibuffer-do-sort-by-alphabetic)  ; "sort name" mnemonic
-         ;; ("/ g" . ibuffer-filter-by-content)
-         )
+  :bind (("C-x C-b" . ibuffer)
+         ("M-s b" . my/buffers-major-mode)
+         ("M-s v" . my/buffers-vc-root)
+         :map ibuffer-mode-map
+         ("M-o" . nil)))
 
 (use-package ibuffer-project
-  :straight t
+  :ensure t
   :after (ibuffer project)
   :hook ((ibuffer ibuffer-mode) . my/ibuffer-project-generate-filter-groups)
   :config
@@ -109,14 +97,10 @@ When no VC root is available, use standard `switch-to-buffer'."
 (use-package ibuffer-vc
   :disabled
   :after (ibuffer vc)
-  :general
-  (:keymaps 'ibuffer-mode-map
-   :states 'normal
-   "s V" 'ibuffer-vc-set-filter-groups-by-vc-root
-   "s <backspace>" 'ibuffer-clear-filter-groups)
-  (:keymaps 'ibuffer-mode-map
-   "/ V" 'ibuffer-vc-set-filter-groups-by-vc-root
-   "/ <backspace>" 'ibuffer-clear-filter-groups))
+  :bind
+  (:map ibuffer-mode-map
+   ("/ V" . ibuffer-vc-set-filter-groups-by-vc-root)
+   ("/ <backspace>" . ibuffer-clear-filter-groups)))
 
 (provide 'setup-ibuffer)
 ;;; setup-ibuffer.el ends here

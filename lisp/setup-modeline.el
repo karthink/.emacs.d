@@ -49,7 +49,7 @@
 
 (use-package smart-mode-line
   :disabled
-  :straight t
+  :ensure t
   :commands sml/setup
   :init
   (setq sml/theme nil)
@@ -178,11 +178,12 @@
 
 (use-package moody
   :disabled
-  :straight t
-  :after smart-mode-line
+  :ensure t
+  :defer
+  ;; :after smart-mode-line
   :config
   (setq x-underline-at-descent-line t)
-  (moody-replace-sml/mode-line-buffer-identification)
+  ;; (moody-replace-sml/mode-line-buffer-identification)
   (moody-replace-vc-mode)
   (moody-replace-eldoc-minibuffer-message-function)
   (advice-remove 'split-window #'moody-redisplay))

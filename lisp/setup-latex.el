@@ -1,6 +1,14 @@
 (use-package latex
   :after tex
-  :straight auctex
+  :ensure (auctex :pre-build (("./autogen.sh")
+                              ("./configure"
+                               "--without-texmf-dir"
+                               "--with-packagelispdir=./"
+                               "--with-packagedatadir=./")
+                              ("make"))
+                  :build (:not elpaca--compile-info) ;; Make will take care of this step
+                  :files ("*.el" "doc/*.info*" "etc" "images" "latex" "style")
+                  :version (lambda (_) (require 'tex-site) AUCTeX-version))
   :hook ((LaTeX-mode . electric-pair-mode)
          (LaTeX-mode . my/latex-with-outline))
   :mode ("\\.tex\\'" . latex-mode)
@@ -290,7 +298,6 @@ but mark is only pushed if region isn't active."
 (use-package latex-extra
   :disabled
   :after latex
-  ;; :straight t
   :defines (latex-extra-mode)
   :hook (LaTeX-mode . latex-extra-mode)
   :general
@@ -398,7 +405,9 @@ but mark is only pushed if region isn't active."
   (setq reftex-use-multiple-selection-buffers t))
 
 (use-package consult-reftex
-  :load-path "plugins/consult-reftex/"
+  :ensure (:host github :protocol ssh
+           :repo "karthink/consult-reftex")
+  ;; :load-path "plugins/consult-reftex/"
   :after (reftex consult embark)
   :bind (:map reftex-mode-map
          ("C-c )"   . consult-reftex-insert-reference)
@@ -417,7 +426,7 @@ but mark is only pushed if region isn't active."
 ;; (setq-default TeX-master nil)
 (use-package cdlatex
   :after latex
-  :straight t
+  :ensure t
   ;; :commands turn-on-cdlatex
   :hook (LaTeX-mode . turn-on-cdlatex)
   :bind (:map cdlatex-mode-map ("[" . nil) ("(" . nil) ("{" . nil)

@@ -433,7 +433,8 @@ appropriate.  In tables, insert a new row or end the table."
               #'my/org-latex-preview-precompile-idle)
 
   (defun my/org-latex-preview-precompile-async (&optional org-buf)
-    (when (buffer-live-p org-buf)
+    (when (and (buffer-live-p org-buf)
+               (window-live-p (get-buffer-window org-buf 'all-frames)))
       (with-current-buffer org-buf
         (when org-latex-preview-process-precompiled
           (let* ((org-location (org-find-library-dir "org"))
@@ -1329,7 +1330,7 @@ Return the initialized session, if any."
   :config
   (use-package ess-julia))
 
-(use-package org-tempo :after org :disabled)
+(use-package org-tempo :after org :defer 3)
 
 (use-package ob
   :commands org-babel-execute-src-block

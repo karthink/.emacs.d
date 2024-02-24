@@ -663,7 +663,8 @@ output instead."
            (:exclude ".dir-locals.el" "*-tests.el")))
   :hook (eshell-mode . eat-eshell-mode)
   :config
-  (dolist (key '([?\e ?o] [?\e ?`] (kbd "C-`") [?\e 67108960]))
+  (dolist (key `([?\e ?o] [?\e ?`] ,(kbd "C-`")
+                 [?\e 67108960] [C-M-v]))
     (push key eat-semi-char-non-bound-keys))
   (eat-update-semi-char-mode-map)
   ;; (run-at-time 0 nil #'eat-reload)

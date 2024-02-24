@@ -235,10 +235,20 @@
 (define-key global-map (kbd "M-m") 'store-register-dwim)
 (define-key global-map (kbd "M-'") 'use-register-dwim)
 
+;; Better mark behavior in tmm
+(define-key global-map [remap exchange-point-and-mark]
+            'my/exchange-point-and-mark)
+
 ;;----------------------------------------------------------------------
 
 ;; FUNCTIONS
 ;;----------------------------------------------------------------------
+
+;;;###autoload
+(defun my/exchange-point-and-mark (&optional arg)
+  "Identical to \\[exchange-point-and-mark] but will not activate the region."
+  (interactive "P")
+  (exchange-point-and-mark (not arg)))
 
 ;;;###autoload
 (defun forward-sexp (&optional arg interactive)

@@ -2208,7 +2208,11 @@ current buffer without truncation."
 (use-package visible-mark
   :ensure t
   :hook ((text-mode prog-mode conf-mode) . visible-mark-mode)
+  :custom-face
+  (visible-mark-face1
+   ((t (:inherit region :background unspecified))))
   :config
+  (setq visible-mark-faces '(visible-mark-face1))
   (setq visible-mark-max 1))
 ;; ** MACRURSORS
 ;;;----------------------------------------------------------------

@@ -8,7 +8,7 @@
             (defun my/julia-mode-settings ()
               (setq-local outline-regexp "^##+")
               (outline-minor-mode 1)))
-  (add-to-list 'julia-arguments "-t12")
+  ;; (add-to-list 'julia-arguments "-t12")
   (defun my/julia-latexsub-or-indent ()
     (interactive)
     (require 'cdlatex nil t)
@@ -19,9 +19,12 @@
 
 (use-package julia-snail
   :ensure (:remotes ("copy" :host github :protocol ssh
-                     "karthink/julia-snail"))
+                     :repo "karthink/julia-snail"))
   :hook (julia-mode . julia-snail-mode)
   :bind (:map julia-snail-mode-map
+         ("C-h ." . my/julia-snail-doc-at-point)
+         :map julia-snail-repl-mode-map
+         ("C-c C-d" . julia-snail-doc-lookup)
          ("C-h ." . my/julia-snail-doc-at-point))
   :config
   ;; (with-eval-after-load 'julia-snail/ob-julia
@@ -35,6 +38,7 @@
        (julia-snail--identifier-at-point))
       (and (window-live-p win)
           (select-window win))))
+  (setq julia-snail-terminal-type :eat)
   (setq-default
    julia-snail-extra-args '("-t12" "-q")
    julia-snail-multimedia-enable t

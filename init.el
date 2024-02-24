@@ -61,12 +61,28 @@
   ;; Enable use-package :ensure support for Elpaca.
   (elpaca-use-package-mode))
 
+(elpaca-wait)
+
 (use-package elpaca-ui
   :bind (:map elpaca-ui-mode-map
          ("p" . previous-line)
-         ("F" . elpaca-ui-mark-pull)))
-
-(elpaca-wait)
+         ("F" . elpaca-ui-mark-pull))
+  :after popper
+  :init
+  (add-to-list 'popper-reference-buffers
+               'elpaca-log-mode)
+  (setf (alist-get (lambda (buf &rest _)
+                     (eq
+                      (buffer-local-value 'major-mode
+                                          (get-buffer buf))
+                      'elpaca-log-mode))
+                   display-buffer-alist)
+        '((display-buffer-at-bottom
+          display-buffer-in-side-window)
+          (side . bottom)
+          (slot . 49)
+          (window-height . 0.4)
+          (body-function . select-window))))
 
 ;; ;; ** STRAIGHT!
 ;; (defvar bootstrap-version)

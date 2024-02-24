@@ -1276,7 +1276,7 @@ parent."
            :files ("*.el" "julia")
            :remotes ("fork" :host github :repo "karthink/ob-julia"
                      :branch "main" :protocol ssh))
-  :after ob
+  :after (ob org)
   :autoload (org-babel-execute:julia org-babel-expand-body:julia
                                      org-babel-prep-session:julia)
   :hook (org-babel-julia-after-async-execute . my/org-redisplay-babel-result)

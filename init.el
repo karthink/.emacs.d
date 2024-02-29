@@ -2046,7 +2046,7 @@ current buffer without truncation."
          ([remap scroll-up-command] . pdf-view-scroll-up-or-next-page)
          ([remap scroll-down-command] . pdf-view-scroll-down-or-previous-page))
   :config
-  (setq pdf-view-resize-factor 1.1))
+  (setq pdf-view-resize-factor 1.05))
 
 (use-package sow
   :disabled

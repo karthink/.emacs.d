@@ -329,14 +329,13 @@ This relies on the external 'fd' executable."
 ;; Disabled while testing dirvish
 (use-package dired-rsync
   :ensure t
-  :bind (:map dired-mode-map
-         ("V" . dired-rsync))
   :hook (dired-rsync-failed . dired-rsync--pop-to-rsync-failed-buf)
   :config
   (setq dired-rsync-unmark-on-completion nil))
 
 (use-package dired-rsync-transient
   :ensure t
+  :after dired-x
   :bind (:map dired-mode-map
          ("V" . my/dired-rsync-transient))
   :config

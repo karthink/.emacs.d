@@ -2783,6 +2783,12 @@ normally have their errors suppressed."
       ("on" "Numbers" org-num-mode)
       ("ol" "LaTeX" org-latex-preview-auto-mode)]
 
+     ["Markdown"
+      :if-derived markdown-mode
+      ("o/" "Emphasis" markdown-toggle-markup-hiding)
+      ("ou" "url" markdown-toggle-url-hiding)
+      ("os" "src" markdown-toggle-fontify-code-blocks-natively)]
+
      ["Editing"
       ("r" "read only" read-only-mode)
       ("n" "line numbers" display-line-numbers-mode)

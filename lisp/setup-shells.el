@@ -652,7 +652,6 @@ output instead."
 
 ;; ;TODO: Check recipe vs elpaca
 (use-package eat
-  :defer
   :ensure
   (:host codeberg
    :repo "akib/emacs-eat"
@@ -661,13 +660,16 @@ output instead."
            ("terminfo/65" "terminfo/65/*")
            ("integration" "integration/*")
            (:exclude ".dir-locals.el" "*-tests.el")))
-  :hook (eshell-mode . eat-eshell-mode)
+  :hook ((eshell-mode . eat-eshell-mode)
+         (eat-mode . my/eat-keys))
   :config
-  (dolist (key `([?\e ?o] [?\e ?`] ,(kbd "C-`")
-                 [?\e 67108960] [C-M-v]))
-    (push key eat-semi-char-non-bound-keys))
-  (eat-update-semi-char-mode-map)
-  ;; (run-at-time 0 nil #'eat-reload)
+  (defun my/eat-keys ()
+    (remove-hook 'eat-mode-hook 'my/eat-keys)
+    (dolist (key `([?\e ?o] [?\e ?`] ,(kbd "C-`")
+                   [?\e 67108960] [C-M-v]))
+      (push key eat-semi-char-non-bound-keys))
+    (eat-update-semi-char-mode-map)
+    (eat-reload))
   (setq eat-kill-buffer-on-exit t))
 
 (use-package eat

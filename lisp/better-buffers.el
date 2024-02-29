@@ -115,12 +115,21 @@ nil."
 
 ;;;###autoload
 (defun my/kill-this-buffer (&optional arg)
+  "Kill this buffer with side effects.
+
+- If in a server buffer with active clients, save it and mark as
+  done.
+- Otherwise, if prefix-arg ARG is true, call `kill-buffer'.
+- Otherwise, kill this buffer."
   (interactive "P")
-  (pcase arg
-    ('4 (call-interactively #'kill-buffer))
-    (_ (kill-buffer (current-buffer)))))
-
-
+  (if (and (daemonp) server-buffer-clients)
+      (cl-letf ((inhibit-message t)
+                ((symbol-function 'y-or-n-p)
+                 #'always))
+        (server-edit arg))
+    (if arg
+        (call-interactively #'kill-buffer)
+       (kill-buffer (current-buffer)))))
 
 ;;;###autoload
 (defun toggle-window-split ()

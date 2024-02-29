@@ -366,6 +366,7 @@ but mark is only pushed if region isn't active."
   :bind (:map cdlatex-mode-map ("[" . nil) ("(" . nil) ("{" . nil)
               ("<tab>" . cdlatex-tab))
   :init
+  (defvar cdlatex-command-alist)
   (dolist (cmd '(("vc" "Insert \\vect{}" "\\vect{?}"
                   cdlatex-position-cursor nil nil t)
                  ("tfr" "Insert \\tfrac{}{}" "\\tfrac{?}{}"

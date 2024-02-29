@@ -382,6 +382,10 @@ appropriate.  In tables, insert a new row or end the table."
   ;; (setq org-element-use-cache nil)
   (add-hook 'org-latex-preview-auto-ignored-commands 'next-line)
   (add-hook 'org-latex-preview-auto-ignored-commands 'previous-line)
+  (add-hook 'org-latex-preview-auto-ignored-commands 'scroll-up-command)
+  (add-hook 'org-latex-preview-auto-ignored-commands 'scroll-down-command)
+  (add-hook 'org-latex-preview-auto-ignored-commands 'scroll-other-window)
+  (add-hook 'org-latex-preview-auto-ignored-commands 'scroll-other-window-down)
   (setq-default
    ;; org-latex-preview-header
    ;;    "\\documentclass{article}
@@ -577,7 +581,7 @@ appropriate.  In tables, insert a new row or end the table."
   :config
   (setq-default org-hide-emphasis-markers t)
   (setq org-appear-autoemphasis t
-        org-appear-autosubmarkers t))
+        org-appear-autosubmarkers nil))
 
 ;; TDOO Disabled while I test org-modern
 (use-package org-bullets
@@ -1330,7 +1334,21 @@ Return the initialized session, if any."
   :config
   (use-package ess-julia))
 
-(use-package org-tempo :after org :defer 3)
+(use-package org-tempo
+  :after org
+  :defer 3
+  :config
+  (pcase-dolist (`(,key ,expansion)
+                 '(("n" "name")
+                   ("lh" "latex_header")
+                   ("lc" "latex_class")
+                   ("lco" "latex_class_options")
+                   ("ao" "attr_org")
+                   ("al" "attr_latex")
+                   ("ah" "attr_html")))
+    (setf (alist-get key org-tempo-keywords-alist
+                     nil nil #'equal)
+          expansion)))
 
 (use-package ob
   :commands org-babel-execute-src-block

@@ -3073,6 +3073,8 @@ _d_: subtree
 ;; can switch seamlessly from Elfeed ↔ Wallabag ↔ EWW ↔ Org, making some
 ;; progress towards Emacs' promise of integration.
 
+(load (expand-file-name "lisp/setup-wallabag" user-emacs-directory))
+
 ;; ----------------------------------------------------------------
 ;; #+INCLUDE: "./lisp/setup-wallabag.org" :minlevel 2
 ;; ----------------------------------------------------------------

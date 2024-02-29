@@ -185,6 +185,31 @@ When the number of characters in a buffer exceeds this threshold,
                                (xref-push-marker-stack)
                                (push-mark)))))
 
+;; Consult with orderless
+(use-package consult
+  :after orderless
+  :defer
+  :config
+  (defun consult--orderless-regexp-compiler (input type &rest _config)
+    (setq input (orderless-pattern-compiler input))
+    (cons
+     (mapcar (lambda (r) (consult--convert-regexp r type)) input)
+     (lambda (str) (orderless--highlight input t str))))
+
+  ;; OPTION 2: Activate only for some commands, e.g., consult-ripgrep!
+  ;; (defun consult--with-orderless (&rest args)
+  ;;   (minibuffer-with-setup-hook
+  ;;       (lambda ()
+  ;;         (setq-local consult--regexp-compiler #'consult--orderless-regexp-compiler))
+  ;;     (apply args)))
+  ;; (advice-add #'consult-ripgrep :around #'consult--with-orderless)
+  ;; (advice-add #'consult-grep :around #'consult--with-orderless)
+  ;; (advice-add #'consult-fd :around #'consult--with-orderless)
+  ;; (advice-add #'consult-find :around #'consult--with-orderless)
+
+  ;; OPTION 1: Activate globally for all consult-grep/ripgrep/find/...
+  (setq consult--regexp-compiler #'consult--orderless-regexp-compiler))
+
 ;; Attempt to use consult-ripgrep-all
 (use-package consult
   :defer

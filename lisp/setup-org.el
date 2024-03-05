@@ -165,7 +165,7 @@
           (org-end-of-line)
           (insert "+")))))
 
-  (advice-add 'org-show-set-visibility
+  (advice-add 'org-fold-show-set-visibility
               :after (defun my/org-set-visibility-local-tree (detail)
                        "Expand local tree after setting visibility."
                        (when (eq detail 'local)
@@ -194,7 +194,7 @@
   :config
   (setq org-fold-core-style 'text-properties)
   (setf (alist-get 'agenda org-fold-show-context-detail)
-        'ancestors))
+        'local))
 
 ;; From alphapapa's unpackaged: https://github.com/alphapapa/unpackaged.el#org-return-dwim
 (use-package org
@@ -779,7 +779,7 @@ has no effect."
    org-agenda-show-all-dates nil
    org-agenda-inhibit-startup t
    org-agenda-include-diary nil
-   org-agenda-follow-indirect t
+   org-agenda-follow-indirect nil
    org-agenda-default-appointment-duration 60)
 
   (advice-add 'org-agenda-do-tree-to-indirect-buffer :after

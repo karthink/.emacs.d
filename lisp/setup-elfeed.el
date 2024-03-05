@@ -765,7 +765,7 @@ This is an enhanced version of the default `elfeed-show-entry' that
                           (visual-line-mode 1)
                           (when (featurep 'iscroll) (iscroll-mode 1))
                           (visual-fill-column-mode 1))
-                        (my/reader-center-images)
+                        ;; (my/reader-center-images) ;I've advised shr-put-image instead
                         (setq-local
                          imenu-prev-index-position-function #'elfeed-tube-prev-heading
                          imenu-extract-index-name-function #'elfeed-tube--line-at-point)))))))

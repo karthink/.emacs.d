@@ -52,11 +52,11 @@
            ("M-RET" . wombag-search-show-entry)
            ("E" . my/switch-to-elfeed)
            ("M-s u" . my/reader-browse-url))
+    ;; :config
+    ;; (add-hook 'wombag-post-html-render-hook #'my/reader-center-images 'append)
     :init
     (defsubst wombag-url (url)
-      (wombag-add-entry url ""))
-    :config
-    (add-hook 'wombag-post-html-render-hook #'my/reader-center-images 'append))
+      (wombag-add-entry url "")))
   
   (add-hook 'wombag-show-mode-hook (lambda () (let ((pulse-flag))
                                              (unless (bobp)

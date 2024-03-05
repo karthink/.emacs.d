@@ -3713,6 +3713,7 @@ _d_: subtree
          ("d" . my/scroll-up-half))
   :config
   (use-package setup-reading
+    :disabled
     :hook (nov-post-html-render . my/reader-center-images))
   
   (setq nov-text-width 72
@@ -4568,6 +4569,29 @@ buffer's text scale."
   (setq shr-image-animate nil
         shr-use-colors nil
         shr-width 78)
+  (defun my/shr-image-extra (spec alt &rest _)
+    "Center large images and add the alt text below."
+    (when (and (display-graphic-p) (eolp))
+      ;; Center image
+      (when-let* ((image (image--get-image (1- (point))))
+                  (size (image-size image t))
+                  ((>= (max (car size) (cdr size)) 200))
+                  (lbp (line-beginning-position)))
+        (save-excursion (beginning-of-line) (insert " "))
+        (add-text-properties
+         lbp (1+ lbp)
+         `(display (space :align-to (- center (0.50 . ,image)))
+           face default)))
+      ;; Alt text
+      (when (and (> (length alt) 2)
+                 (looking-back
+                  (rx bol (* space) (or (literal alt) (seq "*" (* space))))
+                  (line-beginning-position)))
+        (when (eobp) (insert " "))
+        (put-text-property
+         (1- (point)) (point) 'display
+         (propertize (concat "\n[" alt "]") 'face 'shadow)))))
+  (advice-add 'shr-put-image :after #'my/shr-image-extra)
   (use-package shr-heading
     :hook (eww-mode . shr-heading-setup-imenu)))
 

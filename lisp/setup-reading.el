@@ -170,6 +170,7 @@ hook."
                      ((> size 150))
                      (ov (make-overlay (1- (prop-match-beginning match))
                           (prop-match-beginning match))))
+            (overlay-put ov 'evaporate t)
             (overlay-put
              ov 'after-string
              (propertize 

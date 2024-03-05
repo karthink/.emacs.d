@@ -18,6 +18,7 @@
   :config
   (setq eww-browse-url-new-window-is-tab nil)
   (use-package setup-reading
+    :disabled
     :config
     (add-hook 'eww-after-render-hook 'my/reader-center-images 99)))
 

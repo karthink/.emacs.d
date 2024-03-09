@@ -1355,23 +1355,25 @@ User buffers are those not starting with *."
   (winner-mode +1))
 
 ;;----------------------------------------------------------------
-;; ** Ace-window
+;; ** switchy-window
 ;;----------------------------------------------------------------
-
-(use-package ace-window
+(use-package switchy-window
   :ensure t
-  :bind
-  (("C-x o" . ace-window)
-   ("H-o"   . ace-window)
-   ("M-o" . my/other-window)
-   ("M-O" . my/other-window-prev)
-   :map other-window-repeat-map
-   ("o" . my/other-window))
-  ;; :custom-face
-  ;; (aw-leading-char-face ((t (:height 2.5 :weight normal))))
   :defer 2
-  :init (ace-window-display-mode 1)
-  :custom-face (aw-mode-line-face ((t (:inherit (bold mode-line-emphasis)))))
+  :init (switchy-window-minor-mode)
+  :bind (("M-o" . switchy-window)
+         :map other-window-repeat-map
+         ("o" . switchy-window))
+  :config
+  (put 'switchy-window 'repeat-map 'other-window-repeat-map))
+
+(use-package window
+  :unless (fboundp 'switchy-window-minor-mode)
+  :bind (("M-o" . my/other-window)
+         ("M-O" . my/other-window-prev)
+         :map other-window-repeat-map
+         ("o" . my/other-window)
+         ("O" . my/other-window-prev))
   :config
   (defalias 'my/other-window
     (let ((direction 1))
@@ -1382,13 +1384,35 @@ User buffers are those not starting with *."
             (other-window (* direction (or arg 1)))
           (setq direction (- direction))
           (other-window (* direction (or arg 1)))))))
+  (defun my/other-window-prev (&optional arg all-frames)
+    (interactive "p")
+    (other-window (if arg (- arg) -1) all-frames))
   (put 'my/other-window 'repeat-map 'other-window-repeat-map)
+  (put 'my/other-window-prev 'repeat-map 'other-window-repeat-map))
+
+;;----------------------------------------------------------------
+;; ** Ace-window
+;;----------------------------------------------------------------
+
+(use-package ace-window
+  :ensure t
+  :bind
+  (("C-x o" . ace-window)
+   ("H-o"   . ace-window))
+  ;; :custom-face
+  ;; (aw-leading-char-face ((t (:height 2.5 :weight normal))))
+  :defer 2
+  :init (ace-window-display-mode 1)
+  :custom-face (aw-mode-line-face ((t (:inherit (bold mode-line-emphasis)))))
+  :config
   (defun my/aw-take-over-window (window)
     "Move from current window to WINDOW.
 
 Delete current window in the process."
     (let ((buf (current-buffer)))
-      (delete-window)
+      (if (one-window-p)
+          (delete-frame)
+        (delete-window))
       (aw-switch-to-window window)
       (switch-to-buffer buf)))
   (setq aw-swap-invert t)
@@ -1409,10 +1433,7 @@ Delete current window in the process."
           (?s aw-split-window-vert "Split Vert Window")
           (?v aw-split-window-horz "Split Horz Window")
           (?o delete-other-windows "Delete Other Windows")
-          (?? aw-show-dispatch-help)))
-  (defun my/other-window-prev (&optional arg all-frames)
-    (interactive "p")
-    (other-window (if arg (- arg) -1) all-frames)))
+          (?? aw-show-dispatch-help))))
 
 (use-package emacs
   :config
@@ -3762,7 +3783,8 @@ _d_: subtree
           (pixel-scroll-precision-interpolate
            (floor (window-text-height nil t) 2)
            nil 1))
-    "M-o" 'my/other-window
+    "M-o" (if (fboundp 'switchy-window-minor-mode)
+              'switchy-window 'my/other-window)
     "S-SPC" 'scroll-down-command)
   (let ((scrolling (propertize  "SCRL" 'face '(:inherit highlight)))
         ml-buffer)

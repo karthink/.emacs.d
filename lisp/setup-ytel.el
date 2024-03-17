@@ -47,12 +47,14 @@
            (id (ytel-video-id video)))
       (concat "https://youtube.com/watch?v=" id)))
     
-  (defun ytel-watch-mpv (&optional enqueue-p)
-    (interactive "P")
+  (defun ytel-watch-mpv (&optional arg)
+    (interactive "p")
     (let ((browse-url-browser-function
-           (if enqueue-p
-               #'browse-url-mpv-enqueue
-             #'browse-url-mpv)))
+           (pcase arg
+             (0 #'browse-url-mpv-audio)
+             (4 #'browse-url-mpv-hd)
+             (1 #'browse-url-mpv)
+             (_ #'browse-url-mpv-enqueue))))
       (ytel-watch-browse-url)))
   
   (defun ytel-watch-umpv (&optional arg)

@@ -947,6 +947,7 @@ for details."
     (("C-x C-a C-j" . activities-resume)
      ("C-x C-a C-z" . activities-suspend)
      ("C-x C-a C-k" . activities-discard)
+     ("C-x C-a b" . activities-switch-buffer)
      ("C-x C-a n" . activities-new)
      ("C-x C-a g" . activities-revert)
      ("C-x C-a l" . activities-list)))

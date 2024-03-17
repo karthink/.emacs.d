@@ -254,7 +254,8 @@ project, as defined by `vc-root-dir'."
 
 (if IS-GUIX
     (load-library "magit-autoloads")
-  (elpaca magit))
+  (elpaca magit)
+  (elpaca orgit))
 
 (use-package magit
   :defer t
@@ -279,7 +280,8 @@ project, as defined by `vc-root-dir'."
 
 (if IS-GUIX
     (load-library "forge-autoloads")
-  (elpaca forge))
+  (elpaca forge)
+  (elpaca orgit-forge))
 (use-package forge
   :defer
   :config
@@ -333,6 +335,11 @@ project, as defined by `vc-root-dir'."
                                            (dired project-dir))
                                        (user-error (format "%s\n%s" command output))))))
       (set-process-filter proc #'comint-output-filter))))
+
+(use-package diff
+  :defer
+  :config
+  (setq diff-default-read-only t))
 
 (use-package abridge-diff
   :disabled

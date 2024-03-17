@@ -244,7 +244,10 @@ Filenames are always matched by eshell."
   (add-hook 'eshell-parse-argument-hook #'my/eshell-syntax-buffer-redirect))
 
 ;; ** Eshell history management
+(defvar ISATUIN (executable-find "atuin")
+  "Whether atuin is available for shell/eshell history.")
 (use-package eshell
+  :if (not ISATUIN)
   :hook ((eshell-mode . my/eshell-hist-use-global-history)
          (eshell-pre-command . eshell-save-some-history)
          (eshell-pre-command . my/eshell-history-remove-duplicates))
@@ -313,6 +316,21 @@ Surrounding spaces are ignored when comparing."
             (lambda ()
               (define-key eshell-hist-mode-map (kbd "M-r")
                 'my/eshell-previous-matching-input))))
+
+(use-package eshell-atuin
+  :when ISATUIN
+  :ensure (:host github :repo "SqrtMinusOne/eshell-atuin")
+  :after eshell
+  :hook (eshell-first-time-mode . my/bind-eshell-atuin)
+  :preface
+  (defun my/bind-eshell-atuin ()
+    (keymap-set eshell-hist-mode-map
+                "M-r" 'eshell-atuin-history))
+  :init (eshell-atuin-mode)
+  :config
+  (setopt eshell-atuin-save-duration nil ;Requires atuin 18.0+
+          eshell-atuin-search-fields '(time duration command directory host)
+          eshell-atuin-history-format "%-80c %-40i %>10t %h"))
 
 ;; ** Eshell extras
 

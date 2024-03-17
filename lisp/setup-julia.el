@@ -12,10 +12,11 @@
   (defun my/julia-latexsub-or-indent ()
     (interactive)
     (require 'cdlatex nil t)
-    (cl-letf (((symbol-function 'texmathp)
-               (lambda () t)))
+    (cl-letf (((symbol-function 'texmathp) #'always)
+              (inhibit-redisplay t))
       (cdlatex-math-symbol)
-      (julia-latexsub-or-indent 0))))
+      ;; (julia-latexsub-or-indent 0)
+      (completion-at-point))))
 
 (use-package julia-snail
   :ensure (:remotes ("copy" :host github :protocol ssh
@@ -31,6 +32,7 @@
   ;;   (setq-default
   ;;    julia-snail/ob-julia-capture-io nil
   ;;    julia-snail/ob-julia-use-error-pane t))
+  (setenv "JULIA_PKG_PRESERVE_TIERED_INSTALLED" "true")
   (defun my/julia-snail-doc-at-point ()
     (interactive)
     (let ((win (selected-window)))

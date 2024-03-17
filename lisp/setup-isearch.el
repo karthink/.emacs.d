@@ -132,16 +132,39 @@ Which web browser to use depends on the value of the variable
 Also see `my/search-occur-url'."
     (interactive "P")
     (let ((match nil)
-          (matches nil))
+          (match-data nil)
+          (context
+           (lambda (beg &optional shrp)
+             (let* ((before (string-replace
+                             "\n" ""
+                             (buffer-substring-no-properties
+                              beg (max (line-beginning-position) (- beg 30)))))
+                    (link (string-replace
+                           "\n" "" (buffer-substring-no-properties beg (point))))
+                    (after (buffer-substring-no-properties
+                            (point) (min (line-end-position) (+ (point) 30)))))
+               (concat (propertize " " 'display '(space :align-to 65))
+                       (propertize (concat "…" before) 'face 'shadow)
+                       (if shrp
+                           (propertize link 'face '(:inherit shadow :weight bold
+                                                    :underline t))
+                         link)
+                       (propertize (concat after "…") 'face 'shadow))))))
       (save-excursion
         (goto-char (point-min))
         (while (search-forward-regexp my/search-url-regexp nil t)
-          (push (match-string-no-properties 0) matches)))
-      (save-excursion
+          (push (cons (match-string-no-properties 0)
+                      (funcall context (match-beginning 0)))
+                match-data))
         (goto-char (point-min))
         (while (setq match (text-property-search-forward 'shr-url nil nil))
-          (push (prop-match-value match) matches)))
-      (let ((url (completing-read "Browse URL: " matches nil t)))
+          (push (cons (prop-match-value match)
+                      (funcall context (prop-match-beginning match) 'shrp))
+                match-data)))
+      (let* ((completion-extra-properties
+              `(:annotation-function
+                ,(lambda (cand) (concat " " (cdr (assoc cand match-data))))))
+             (url (completing-read "Browse URL: " match-data nil t)))
         (if use-generic-p
             (browse-url-generic url)
           (browse-url url)))))

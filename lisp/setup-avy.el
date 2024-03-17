@@ -3,7 +3,7 @@
   :ensure t
   :commands (avy-goto-word-1 avy-goto-char-2 avy-goto-char-timer)
   :config
-  (setq avy-timeout-seconds 0.20)
+  (setq avy-timeout-seconds 0.27)
   (setq avy-keys '(?a ?s ?d ?f ?g ?j ?l ?o
                    ?v ?b ?n ?, ?/ ?u ?p ?e ?.
                    ?c ?q ?2 ?3 ?' ?\;))

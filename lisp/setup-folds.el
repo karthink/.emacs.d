@@ -12,9 +12,12 @@
               ("C-c C-n" . 'outline-next-visible-heading)
               ("C-c C-p" . 'outline-previous-visible-heading))
   :config
-  (define-key outline-minor-mode-map (kbd "<backtab>") (lambda () (interactive)
-                                                         (outline-back-to-heading)
-                                                         (outline-cycle)))
+  (define-key outline-minor-mode-map (kbd "<backtab>")
+              ;; (lambda () (interactive)
+              ;;   (outline-back-to-heading)
+              ;;   (outline-cycle))
+              #'outline-cycle-all
+              )
 ;;;###autoload
   (defun outline-next-line ()
     "Forward line, but mover over invisible line ends.
@@ -28,6 +31,16 @@ Essentially a much simplified version of `next-line'."
   (defvar outline-cycle-emulate-tab nil
     "Use tab to indent (when not on a heading) in outline-minor-mode")
 
+  (defun outline-cycle-all (&optional arg)
+    (interactive "p")
+    (let ((level (outline-level)))
+      (if (eq last-command 'outline-cycle-all)
+          (progn (outline-show-all)
+                 (setq this-command 'outline-show-all))
+        (save-excursion
+          (outline-back-to-heading)
+          (call-interactively #'outline-hide-sublevels)))))
+  
   (defun outline-cycle () (interactive)
          (cond
           ((save-excursion (beginning-of-line 1) (looking-at outline-regexp))

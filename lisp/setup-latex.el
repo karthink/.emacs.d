@@ -351,7 +351,7 @@ but mark is only pushed if region isn't active."
          ("C-c )"   . consult-reftex-insert-reference))
   :config
   (setq consult-reftex-preview-function
-                #'consult-reftex-make-window-preview
+                #'consult-reftex-preview-make-window
                 consult-reftex-preferred-style-order
                 '("\\eqref" "\\ref"))
   (consult-customize consult-reftex-insert-reference

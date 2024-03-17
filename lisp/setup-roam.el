@@ -15,9 +15,18 @@
             '((display-buffer-reuse-window
                display-buffer-reuse-mode-window
                display-buffer-below-selected)
-              (window-height . (lambda (win)
-                                 (fit-window-to-buffer
-                                  win 30)))))
+              (window-height . 0.4 
+               ;; (lambda (win)
+               ;;   (fit-window-to-buffer
+               ;;    win 30))
+               )))
+      (defun my/org-roam-node-latex-preview (&rest _)
+        (let ((major-mode 'org-mode))
+          (org-latex-preview 'buffer)))
+
+      (advice-add 'org-roam-node-insert-section :after
+                  #'my/org-roam-node-latex-preview)
+      
       (setq org-roam-directory (file-truename "~/Documents/roam/"))
       (defun org-roam-node-insert-immediate (arg &rest args)
         (interactive "P")

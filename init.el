@@ -2243,7 +2243,8 @@ current buffer without truncation."
 (use-package macrursors
   :ensure (:host github :repo "corytertel/macrursors"
            :remotes ("fork" :host github :protocol ssh
-                     :repo "karthink/macrursors"))
+                     :repo "karthink/macrursors"
+                     :branch "expand-region"))
   :bind-keymap ("C-;" . macrursors-mark-map)
   :bind (("M-n" . macrursors-mark-next-instance-of)
          ("M-p" . macrursors-mark-previous-instance-of)

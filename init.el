@@ -3815,8 +3815,7 @@ _d_: subtree
   :ensure (:host github :protocol ssh
            :repo "karthink/gptel")
   :commands (gptel gptel-send)
-  :hook ((gptel-mode . visual-fill-column-mode)
-         (eshell-mode . my/gptel-eshell-keys))
+  :hook ((eshell-mode . my/gptel-eshell-keys))
   :bind (("C-c C-<return>" . gptel-menu)
          ("C-c <return>" . gptel-send)
          ("C-h C-q" . gptel-quick)
@@ -3833,29 +3832,20 @@ _d_: subtree
           (window-height . 0.4)
           (body-function . select-window)))
   :config
-  (auth-source-pass-enable)
- 
-  (defalias 'my/gptel-easy-page
-    (let ((map (make-composed-keymap
-                (define-keymap "RET" 'gptel-end-of-response)
-                my-pager-map))
-          (scrolling
-           (propertize  "SCRL" 'face '(:inherit highlight))))
-      (lambda ()
-        (interactive)
-        (when (eq (window-buffer (selected-window))
-                  (current-buffer))
-          (add-to-list 'mode-line-format scrolling)
-          (set-transient-map
-           map t
-           (lambda () (setq mode-line-format
-                       (delete scrolling mode-line-format))))))))
-  (add-hook 'gptel-pre-response-hook 'my/gptel-easy-page)
-  (define-key global-map (kbd "C-c SPC") 'my/gptel-easy-page)
-
-  (setf (alist-get 'org-mode gptel-prompt-prefix-alist) "**** ")
-  (setf (alist-get 'markdown-mode gptel-prompt-prefix-alist)
-        "#### ")
+  (gptel-make-openai "Groq"
+    :host "api.groq.com"
+    :endpoint "/openai/v1/chat/completions"
+    :stream t
+    :key gptel-api-key
+    :models '("mixtral-8x7b-32768"
+              "gemma-7b-it"
+              "llama2-70b-4096"))
+  
+  (defvar gptel--anthropic
+    (gptel-make-anthropic "Claude" :key gptel-api-key :stream t))
+  (setq-default gptel-model "claude-3-haiku-20240307"
+                gptel-backend gptel--anthropic)
+  
   (defvar gptel--togetherai
     (gptel-make-openai "TogetherAI"
       :host "api.together.xyz"
@@ -3867,9 +3857,7 @@ _d_: subtree
                 "codellama/CodeLlama-34b-Instruct-hf")))
   (with-eval-after-load 'gptel-gemini
     (defvar gptel--gemini
-      (gptel-make-gemini "Gemini"
-        :key gptel-api-key
-        :stream t)))
+      (gptel-make-gemini "Gemini" :key gptel-api-key :stream t)))
   (with-eval-after-load 'gptel-ollama
     (defvar gptel--ollama
       (gptel-make-ollama
@@ -3913,6 +3901,34 @@ _d_: subtree
                         (plist-get info :status)))))))
       (keymap-set embark-url-map "=" #'my/kagi-summarize)))
 
+  (defalias 'my/gptel-easy-page
+    (let ((map (make-composed-keymap
+                (define-keymap "RET" 'gptel-end-of-response)
+                my-pager-map))
+          (scrolling
+           (propertize  "SCRL" 'face '(:inherit highlight))))
+      (require 'pixel-scroll)
+      (lambda ()
+        (interactive)
+        (when (eq (window-buffer (selected-window))
+                  (current-buffer))
+          (add-to-list 'mode-line-format scrolling)
+          (set-transient-map
+           map t
+           (lambda () (setq mode-line-format
+                       (delete scrolling mode-line-format))))))))
+  (add-hook 'gptel-pre-response-hook 'my/gptel-easy-page)
+  (define-key global-map (kbd "C-c SPC") 'my/gptel-easy-page)
+
+  (setf (alist-get 'org-mode gptel-prompt-prefix-alist) "*Prompt*: "
+        (alist-get 'org-mode gptel-response-prefix-alist) "*Response*:\n"
+        (alist-get 'markdown-mode gptel-prompt-prefix-alist) "#### ")
+
+  (auth-source-pass-enable)
+  
+  (add-hook 'gptel-post-response-functions
+            #'font-lock-ensure)
+  
   (with-eval-after-load 'gptel-transient
     (transient-suffix-put 'gptel-menu (kbd "-m") :key "M")
     (transient-suffix-put 'gptel-menu (kbd "-c") :key "C")
@@ -3936,8 +3952,7 @@ _d_: subtree
           ,@(let ((res))
              (pcase-dolist (`(,sym ,filename)
                             '((Autoexpert "detailed-prompt.md")
-                              (writer "writer-prompt.md")
-                              (compress "spr-compress-prompt.md"))
+                              (writer "writer-prompt.md"))
                             res)
               (when-let* ((big-prompt (locate-user-emacs-file filename))
                           (_ (file-exists-p big-prompt)))

@@ -48,7 +48,8 @@
                     default-directory))))
       (or
        (and dir
-            (let ((name (substring dir (1+ (string-match "/[^/]+/$" dir)) -1)))
+            (let ((name (file-name-nondirectory (substring dir 0 -1))))
+              ;; (substring dir (1+ (string-match "/[^/]+/$" dir)) -1)
               (truncate-string-to-width name tab-bar-tab-name-truncated-max nil ? )))
        (buffer-name))))
   (timeout-throttle! #'my/tab-bar-name 0.6)

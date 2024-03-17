@@ -2043,6 +2043,10 @@ current buffer without truncation."
                 (t
                  normal-indent)))))))
 
+(use-package isayt
+  :ensure (:host gitlab :repo "andreyorst/isayt.el" :protocol https)
+  :hook ((lisp-mode elisp-mode lisp-interaction-mode) . isayt-mode))
+
 ;;;----------------------------------------------------------------
 ;; ** AUCTEX-MODE & ADDITIONS
 ;;;----------------------------------------------------------------
@@ -3277,7 +3281,7 @@ _d_: subtree
                        ("R" . sp-raise-sexp)
                        ("\\" . indent-region)
                        ("t" . transpose-sexps)
-                       ("e" . eval-last-sexp)))
+                       ("e" . eval-sexp-maybe-pp)))
         (define-key map (kbd k) f))
       map))
 

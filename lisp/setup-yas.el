@@ -18,6 +18,13 @@
   ;; Don't throw a warning if lisp code in a snippet modifies the
   ;; buffer. We need this for auto expanded snippets in latex/org.
 
+  (defun my/yas-try-2-suffix (pt)
+    (skip-syntax-backward "w" (- (point) 2)))
+  (defun my/yas-try-3-suffix (pt)
+    (skip-syntax-backward "w" (- (point) 3)))
+  (add-to-list 'yas-key-syntaxes #'my/yas-try-2-suffix)
+  (add-to-list 'yas-key-syntaxes #'my/yas-try-3-suffix)
+  
   (let ((ydus yas--default-user-snippets-dir))
     (and (member ydus yas-snippet-dirs)
          (yas-load-directory ydus)))

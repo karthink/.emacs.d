@@ -4622,7 +4622,8 @@ buffer's text scale."
     "Center large images and add the alt text below."
     (when (and (display-graphic-p) (eolp))
       ;; Center image
-      (when-let* ((image (image--get-image (1- (point))))
+      (when-let* ((image
+                   (ignore-errors (image--get-image (1- (point)))))
                   (size (image-size image t))
                   ((>= (max (car size) (cdr size)) 200))
                   (lbp (line-beginning-position)))

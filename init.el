@@ -1750,7 +1750,8 @@ If region is active, add its contents to the new buffer."
 ;;;----------------------------------------------------------------
 ;; ** NIX
 (when IS-GUIX
-  (use-package nix-mode :defer))
+  (load-library "nix-mode-autoloads")
+  (load-library "nix-modeline-autoloads"))
 ;; ** MARKDOWN
 ;;;----------------------------------------------------------------
 (use-package markdown-mode :ensure t :defer)

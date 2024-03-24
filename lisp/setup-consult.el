@@ -65,7 +65,6 @@
          ("M-s g"   . consult-ripgrep)
          ("M-s G"   . consult-git-grep)
          ("C-x C-r" . consult-recent-file)
-         ("<help> a" . consult-apropos)
          ("s-b" . consult-buffer)
          ("M-g j" . consult-compile-error)
          ("M-g g" . consult-goto-line)

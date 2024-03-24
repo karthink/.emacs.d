@@ -74,6 +74,10 @@ instead."
          ("v" . helpful-variable)
          ("C" . helpful-command)))
 
+(use-package man
+  :defer t
+  :custom (Man-notify-method 'aggressive))
+
 ;;;----------------------------------------------------------------
 ;; *** GOOGLE ANSWERS
 ;;;----------------------------------------------------------------

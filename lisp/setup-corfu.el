@@ -159,7 +159,7 @@
   :bind (("C-$" . cape-dict)
          ;; ("C-; e" . cape-line)
          ("C-S-f" . cape-file)
-         ("C-M-/" . cape-dabbrev)
+         ;; ("C-M-/" . cape-dabbrev)
          :map corfu-map
          ("M-/" . cape-dabbrev)
          ("C-x C-f" . cape-file))

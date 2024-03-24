@@ -232,6 +232,7 @@ Cancel the previous one if present."
 ;; deferring, but this is good enough. A regular (non-daemon) Emacs session
 ;; still launches in ~0.3 seconds.
 (when (daemonp)
+  (defvar pulse-flag t)
   (add-hook
    'after-init-hook
    (defun my/load-packages-eagerly ()
@@ -2821,6 +2822,7 @@ normally have their errors suppressed."
       ("r" "read only" read-only-mode)
       ("n" "line numbers" display-line-numbers-mode)
       ("M-q" "auto fill" auto-fill-mode)
+      ("fc" "fill column" set-fill-column)
       ("i" "ispell" jinx-mode)
       ;; ("V" "view mode" view-mode)
       ("<tab>" "outline" outline-minor-mode
@@ -2857,7 +2859,7 @@ normally have their errors suppressed."
       ;;                  (not corfu-auto))))
       ("d" "debug?" toggle-debug-on-error)
       ("g" "vc gutter" diff-hl-mode)
-      ("f" "flymake" (lambda (arg) (interactive "P")
+      ("fm" "flymake" (lambda (arg) (interactive "P")
                        (if (not arg)
                            (call-interactively #'flymake-mode)
                          (let* ((linters (remq t flymake-diagnostic-functions))

@@ -4044,6 +4044,17 @@ _d_: subtree
 ;; (load (expand-file-name "lisp/setup-codeium" user-emacs-directory))
 
 ;;;----------------------------------------------------------------
+;; *** browser-hist
+(use-package browser-hist
+  :ensure (:host github :repo "agzam/browser-hist"
+           :remotes ("copy" :repo "karthink/browser-hist"))
+  :bind ("M-s U" . browser-hist-search)
+  :config
+  (setf (alist-get 'firefox browser-hist-db-paths)
+        "$HOME/.mozilla/firefox/$USER/places.sqlite"
+        browser-hist-default-browser 'firefox
+        browser-hist-ignore-query-params t))
+
 ;; * PROJECTS
 ;;;----------------------------------------------------------------
 (load (expand-file-name "lisp/setup-project" user-emacs-directory))

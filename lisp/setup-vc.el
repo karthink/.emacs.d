@@ -209,6 +209,7 @@ project, as defined by `vc-root-dir'."
    :map vc-prefix-map
    ("n" . diff-hl-next-hunk)
    ("p" . diff-hl-previous-hunk)
+   ("s" . diff-hl-stage-dwim)
    ("DEL"   . diff-hl-revert-hunk)
    ("<delete>" . diff-hl-revert-hunk)
    ("SPC" . diff-hl-mark-hunk))

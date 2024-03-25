@@ -1073,23 +1073,6 @@ Also kill this window, tab or frame if necessary."
          ("s-p" . my/previous-buffer))
   :init
   ;; (setq popper-group-function
-  ;;       (defun my/popper-group-by-heuristic ()
-  ;;         "Group popups according to heuristic rules suitable for
-  ;;         my usage."
-  ;;         (let ((dd (abbreviate-file-name default-directory)))
-  ;;           (cond
-  ;;            ((string-match-p "\\(?:~/\\.config/\\|~/dotfiles/\\)" dd)
-  ;;             'config)
-  ;;            ((or (string-match-p "local/share/git" dd)
-  ;;                 (string-match-p "plugins/" dd))
-  ;;             'projects)
-  ;;            ((string-match-p "\\(?:KarthikBa\\|research/\\)" dd)
-  ;;             'research)
-  ;;            ((string-match-p "karthinks" dd) 'website)
-  ;;            ((locate-dominating-file dd "research") 'documents)
-  ;;            ((locate-dominating-file dd "init.el") 'emacs)
-  ;;            (t (popper-group-by-project))))))
-  ;; (setq popper-group-function
   ;;       (lambda ()
   ;;         (let ((tabs (funcall tab-bar-tabs-function)))
   ;;           (alist-get 'name (nth (tab-bar--current-tab-index tabs)
@@ -1151,12 +1134,18 @@ display names.")
                      (concat (propertize "LOG " 'face 'default)
                              (propertize name 'face 'popper-echo-area-buried)))
                     ((string-match "^\\*[hH]elpful.*?: \\(.*\\)\\*$" name)
-                     (concat (propertize "HLP " 'face '(:inherit link :underline nil))
+                     (concat (propertize "HLP " 'face '(:inherit link :underline nil :weight bold))
                              (propertize (match-string 1 name) 'face 'popper-echo-area-buried)))
                     ((string-match "^\\*Help:?\\(.*\\)\\*$" name)
-                     (concat (propertize "HLP" 'face
-                                         '(:inherit link :underline nil))
+                     (concat (propertize "HLP" 'face '(:inherit link :underline nil :weight bold))
                              (propertize (match-string 1 name)
+                                         'face 'popper-echo-area-buried)))
+                    ((string-match "^\\*Customize *\\(.*?\\):\\(.*\\)\\*$" name)
+                     (concat (propertize
+                              (pcase (match-string 1 name)
+                                ('"Option" "OPT") ('"Group" "GRP") (s s))
+                              'face '(:inherit link :underline nil :weight bold))
+                             (propertize (match-string 2 name)
                                          'face 'popper-echo-area-buried)))
                     ((string-match "^\\*\\(e?\\)shell:? ?\\(.*\\)\\*$" name)
                      (concat (if (string-empty-p (match-string 1 name))
@@ -1194,19 +1183,22 @@ display names.")
                          (cl-member full-name my/repl-names-list :test #'string-match))
                      (concat (propertize "RPL " 'face 'success) name))
                     (t (propertize name 'face 'popper-echo-area-buried)))))
-              (cdar (push (cons name short-name) popper-echo--propertized-names))))))
+              (cdar (push (cons name (truncate-string-to-width short-name 15 nil nil t))
+                          popper-echo--propertized-names))))))
 
     (setq popper-echo-transform-function #'popper-message-shorten)
-    (setq popper-echo-dispatch-keys '(?0 ?1 ?2 ?3 ?4 ?5 ?6 ?7 ?8 ?9)
+    (setq popper-echo-dispatch-keys '(?1 ?2 ?3 ?4 ?5 ?6 ?7 ?8 ?9 ?0)
           popper-echo-dispatch-actions t)
     ;; (advice-add 'popper-echo :around
     ;;             (defun my/popper-echo-no-which-key (orig-fn)
     ;;               (let ((which-key-show-transient-maps nil))
     ;;                 (funcall orig-fn))))
-    (popper-echo-mode +1))
+    ;; (popper-echo-mode +1)
+    (popper-tab-line-mode 1))
 
   :config
-  (setq popper-display-control 'user)
+  (setq popper-display-control 'user
+        popper-mode-line nil)
 
   (defun my/popper-switch-to-popup (buf)
     ";TODO: "

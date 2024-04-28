@@ -238,8 +238,7 @@ Cancel the previous one if present."
    (defun my/load-packages-eagerly ()
      (run-at-time 1 nil
                   (lambda () 
-                    (when (featurep 'straight) (straight-check-all))
-                    (when (featurep 'pdf-tools) (pdf-tools-install t))
+                    (when (fboundp 'pdf-tools-install) (pdf-tools-install t))
                     (load-library "pulse")
                     (when (string-suffix-p "server" server-name)
                       (let ((after-init-time (current-time)))
@@ -2092,6 +2091,9 @@ current buffer without truncation."
          ([remap scroll-up-command] . pdf-view-scroll-up-or-next-page)
          ([remap scroll-down-command] . pdf-view-scroll-down-or-previous-page))
   :config
+  (setf pdf-tools-enabled-modes
+        (delq 'pdf-misc-size-indication-minor-mode
+              pdf-tools-enabled-modes))
   (setq pdf-view-resize-factor 1.05))
 
 (use-package sow
@@ -2637,7 +2639,9 @@ current buffer without truncation."
   (cl-callf
       (lambda (pl)
         (delete-dups
-         (append '(TeX-fold-unfolded-face TeX-fold-folded-face) pl)))
+         (append '(font-lock-constant-face
+                   TeX-fold-unfolded-face TeX-fold-folded-face)
+                 pl)))
       (alist-get 'tex-mode jinx-exclude-faces))
   (cl-callf
       (lambda (pl)

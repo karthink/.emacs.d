@@ -4676,30 +4676,55 @@ buffer's text scale."
   (setq shr-image-animate nil
         shr-use-colors nil
         shr-width 78)
-  (defun my/shr-image-extra (spec alt &rest _)
-    "Center large images and add the alt text below."
-    (when (and (display-graphic-p) (eolp))
-      ;; Center image
-      (when-let* ((image
-                   (ignore-errors (image--get-image (1- (point)))))
-                  (size (image-size image t))
-                  ((>= (max (car size) (cdr size)) 200))
-                  (lbp (line-beginning-position)))
-        (save-excursion (beginning-of-line) (insert " "))
-        (add-text-properties
-         lbp (1+ lbp)
-         `(display (space :align-to (- center (0.50 . ,image)))
-           face default)))
-      ;; Alt text
-      (when (and (> (length alt) 2)
-                 (looking-back
-                  (rx bol (* space) (or (literal alt) (seq "*" (* space))))
-                  (line-beginning-position)))
-        (when (eobp) (insert " "))
-        (put-text-property
-         (1- (point)) (point) 'display
-         (propertize (concat "\n[" alt "]") 'face 'shadow)))))
+  (defun my/shr-image-extra (_spec alt &rest _)
+    "Center large images and add the ALT text below."
+    (when (and (display-graphic-p) (or (eolp) (bolp) (looking-at " *$")))
+      ;; Center image(s)
+      (let ((size 0) (lbp (line-beginning-position)))
+        (save-restriction
+          (narrow-to-region (line-beginning-position) (line-end-position))
+          (save-excursion
+            (goto-char lbp)
+            (unless (and (looking-at " ") (get-text-property (point) 'display))
+              (insert " "))
+            ;; find combined size of all images on line
+            (let ((prop) (img nil))
+              (while-let ((prop (text-property-search-forward 
+                                 'display nil (lambda (prop val)
+                                                (eq (car-safe val) 'image))))
+                          (img (image--get-image (1- (point)))))
+                (setq size (+ size (car (image-size img t))))))))
+        ;; Center all images on line
+        (when (> size 0)
+          (add-text-properties
+           lbp (1+ lbp)
+           `(display (space :align-to (- center (0.50 . (,size))))
+             font-lock-face default)))
+        ;; Alt text
+        (when (and (stringp alt) (> (length alt) 2))
+          ;; (looking-back
+          ;;  (rx bol (* space) (or (literal alt) (seq "*" (* space))))
+          ;;  (line-beginning-position))
+          (when (eobp)
+            (insert " "))
+          (put-text-property
+           (1- (point)) (point) 'display
+           (concat
+            "\n"
+            (propertize " " 'display `(space :align-to (- center (0.50 . ,(length alt)))))
+            (propertize (concat "[" alt "]") 'font-lock-face 'shadow)))))))
   (advice-add 'shr-put-image :after #'my/shr-image-extra)
+
+  (defun my/shr-zoom-image-extra ()
+  "Clear any link property and adjust line spacing after zooming in on an image."
+  (when (> line-spacing 0)
+    (message "Adjusting line spacing for zoomed image.")
+    (setq line-spacing 0))
+  (let ((prev (previous-single-property-change (point) 'face))
+        (buffer-read-only nil))
+    (remove-text-properties prev (1+ (point))
+                            '(face shr-link))))
+  (advice-add 'shr-zoom-image :after #'my/shr-zoom-image-extra)
   (use-package shr-heading
     :hook (eww-mode . shr-heading-setup-imenu)))
 

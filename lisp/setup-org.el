@@ -1554,7 +1554,7 @@ the :consume parameter extracted from KEYWORD."
   :ensure t
   :after org
   :commands (org-gcal-sync org-gcal-fetch my/org-gcal-sync-maybe)
-  :hook (org-agenda-mode . my/org-gcal-sync-maybe)
+  ;; :hook (org-agenda-mode . my/org-gcal-sync-maybe)
   :config
   (setq plstore-encrypt-to user-full-name)
   ;; (setq plstore-cache-passphrase-for-symmetric-encryption t)
@@ -1562,7 +1562,7 @@ the :consume parameter extracted from KEYWORD."
   ;; (add-hook 'org-capture-after-finalize-hook (lambda () (org-gcal-sync)))
   (setq org-gcal-client-id my-org-gcal-client-id
         org-gcal-client-secret my-org-gcal-client-secret
-        org-gcal-up-days 180
+        org-gcal-up-days 60
         org-gcal-remove-api-cancelled-events t
         org-gcal-notify-p nil
         org-gcal-file-alist
@@ -1904,13 +1904,6 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
       (error "Cannot create link to this customize page"))))
 
 ;;;----------------------------------------------------------------
-;; ** ORG-FRAGTOG (seamless latex fragment preview)
-;;;----------------------------------------------------------------
-(use-package org-fragtog
-  :disabled
-  :after org)
-
-;;;----------------------------------------------------------------
 ;; ** ORG-NOTER
 ;;;----------------------------------------------------------------
 (use-package org-noter
@@ -1996,6 +1989,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
          ("o s" . org-ql-search)
          ("o v" . org-ql-view)
          ("o f" . org-ql-find)
+         ("o l" . org-ql-open-link)
          :map org-agenda-mode-map
          ("C-M-n" . my/org-agenda-next-header)
          ("C-M-p" . my/org-agenda-previous-header))

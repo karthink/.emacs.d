@@ -970,7 +970,7 @@ for details."
      ("C-x C-a C-z" . activities-suspend)
      ("C-x C-a C-k" . activities-discard)
      ("C-x C-a b" . activities-switch-buffer)
-     ("C-x C-a n" . activities-new)
+     ("C-x C-a n" . activities-define)
      ("C-x C-a g" . activities-revert)
      ("C-x C-a l" . activities-list)))
 
@@ -3894,6 +3894,9 @@ _d_: subtree
           (window-height . 0.4)
           (body-function . select-window)))
   :config
+  (with-eval-after-load 'gptel-org
+    (setq gptel-org-branching-context t))
+  
   (gptel-make-openai "Groq"
     :host "api.groq.com"
     :endpoint "/openai/v1/chat/completions"
@@ -4105,7 +4108,7 @@ _d_: subtree
   (setf (alist-get 'firefox browser-hist-db-paths)
         "$HOME/.mozilla/firefox/$USER/places.sqlite"
         browser-hist-default-browser 'firefox
-        browser-hist-ignore-query-params t))
+        browser-hist-cache-timeout (* 24 60 60)))
 
 ;; * PROJECTS
 ;;;----------------------------------------------------------------
@@ -4449,7 +4452,7 @@ buffer's text scale."
          (pcase-let ((`(,vp ,fp)
                       (cond
                        ((string= (getenv "XDG_SESSION_TYPE") "wayland")
-                        '(95 110))
+                        '(120 120))
                        (t '(95 110)))))
            (custom-set-faces
             `(variable-pitch ((t (:family "Merriweather" ;;:height ,vp

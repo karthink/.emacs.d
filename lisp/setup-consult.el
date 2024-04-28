@@ -18,6 +18,7 @@
   (setq consult-narrow-key "<")
   (setq consult-line-numbers-widen t)
   (setq consult-preview-key 'any)
+  (setq consult-async-split-style 'semicolon)
   (consult-customize
    ;; consult-ripgrep consult-git-grep consult-grep consult-xref
    consult-bookmark consult--source-buffer consult-recent-file

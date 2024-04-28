@@ -56,7 +56,7 @@
          ("z"        . qrencode-string)
          ("B"        . eww)
          ("M"        . browse-url-umpv)
-         ("C-S-m"    . browse-url-mpv-enqueue)
+         ("M-m"      . browse-url-mpv-enqueue)
          ("m"        . browse-url-mpv))
   :config
   (setq embark-keymap-prompter-key "'")
@@ -86,9 +86,11 @@
   ;;         (window-height . (lambda (win) (fit-window-to-buffer
   ;;                                    win (floor (frame-height) 
   ;;                                               3))))))
-  ;; (setq embark-verbose-indicator-display-action
-  ;;       '(display-buffer-below-selected
-  ;;         (window-height . fit-window-to-buffer)))
+
+  (setq embark-verbose-indicator-display-action
+        '(display-buffer-in-side-window
+          (side . bottom)
+          (window-height . fit-window-to-buffer)))
   (setf (alist-get 'kill-buffer embark-pre-action-hooks) nil)
 
   ;; Selection

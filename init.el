@@ -1218,12 +1218,11 @@ display names.")
     ;;             (defun my/popper-echo-no-which-key (orig-fn)
     ;;               (let ((which-key-show-transient-maps nil))
     ;;                 (funcall orig-fn))))
-    ;; (popper-echo-mode +1)
-    (popper-tab-line-mode 1))
+    ;; (popper-tab-line-mode 1)
+    (popper-echo-mode +1))
 
   :config
-  (setq popper-display-control 'user
-        popper-mode-line nil)
+  (setq popper-display-control 'user)
 
   (defun my/popper-switch-to-popup (buf)
     ";TODO: "
@@ -3118,8 +3117,8 @@ _d_: subtree
     (advice-add 'scroll-up-command   :after #'my/pulse-momentary-upper-bound)
     (advice-add 'scroll-down-command :after #'my/pulse-momentary-lower-bound)
 
-    (dolist (cmd '(recenter-top-bottom
-                   other-window windmove-do-window-select
+    (dolist (cmd '(recenter-top-bottom switchy-window
+                   windmove-do-window-select
                    ace-window aw--select-window
                    pager-page-down pager-page-up
                    winum-select-window-by-number

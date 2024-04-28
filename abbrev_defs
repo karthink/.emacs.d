@@ -1,8 +1,8 @@
 ;;-*-coding: utf-8;-*-
 (define-abbrev-table 'emacs-lisp-mode-abbrev-table
   '(
-    ("lx" "LaTeX" nil :count 14)
-    ("olp" "org-latex-preview" nil :count 7)
+    ("lx" "LaTeX" nil :count 17)
+    ("olp" "org-latex-preview" nil :count 10)
     ("olpa" "org-latex-preview-auto" nil :count 1)
     ("olpl" "org-latex-preview-live" nil :count 4)
    ))
@@ -36,6 +36,7 @@
 
 (define-abbrev-table 'global-abbrev-table
   '(
+    ("iamges" "images" nil :count 2)
     ("resposne" "response" nil :count 3)
    ))
 
@@ -48,11 +49,11 @@
 (define-abbrev-table 'org-mode-abbrev-table
   '(
     ("hte" "the" nil :count 3)
-    ("lapl" "Laplacian" nil :count 2)
+    ("lapl" "Laplacian" nil :count 3)
     ("rfx" "RefTeX" nil :count 13)
     ("rl" "Rayleigh" nil :count 2)
     ("taht" "that" nil :count 2)
-    ("teh" "the" nil :count 3)
+    ("teh" "the" nil :count 6)
     ("yt" "Youtube" nil :count 7)
    ))
 
@@ -85,7 +86,7 @@
 
 (define-abbrev-table 'text-mode-abbrev-table
   '(
-    ("lx" "LaTeX" nil :count 16)
+    ("lx" "LaTeX" nil :count 17)
     ("olp" "org-latex-preview" nil :count 1)
    ))
 

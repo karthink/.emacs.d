@@ -31,7 +31,8 @@
                              (?W . avy-action-copy-whole-line)
                              (?K . avy-action-kill-whole-line)
                              (?Y . avy-action-yank-whole-line)
-                             (?T . avy-action-teleport-whole-line)))
+                             (?T . avy-action-teleport-whole-line)
+                             (67108923 . avy-action-add-cursor)))
   
   ;; (advice-add 'avy-goto-char-timer :around
   ;;             (defun my/avy-with-single-candidate-jump (orig-fn &optional arg)
@@ -169,6 +170,12 @@
   (defun avy-action-mark-to-char (pt)
     (activate-mark)
     (goto-char pt))
+
+  (defun avy-action-add-cursor (pt)
+    (require 'macrursors)
+    (macrursors--add-overlay-at-point pt)
+    (kmacro-keyboard-quit)
+    (macrursors-start))
   
   (defun my/avy-goto-char-this-window (&optional arg)
     "Goto char in this window with hints."

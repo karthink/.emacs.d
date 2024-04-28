@@ -2270,6 +2270,7 @@ current buffer without truncation."
   :bind (("M-n" . macrursors-mark-next-instance-of)
          ("M-p" . macrursors-mark-previous-instance-of)
          :map macrursors-mode-map
+         ("C-'" . macrursors-hideshow)
          ("C-;" . nil)
          ("C-; C-;" . macrursors-end)
          ("C-; C-j" . macrursors-end)
@@ -2294,11 +2295,34 @@ current buffer without truncation."
          ("M-e" . macrursors-mark-all-sentences)
          ("e" . macrursors-mark-all-lines))
   :init
+  (define-prefix-command 'macrursors-mark-map)
   (use-package macrursors-select
     :bind (:map macrursors-mark-map
            ("C-g" . macrursors-select-clear)))
+  (use-package macrursors-select-expand
+    :bind
+    (:map macrursors-mark-map
+     ("," . macrursors-select-expand)
+     :map macrursors-select-map
+     ("-" . macrursors-select-contract)
+     ("." . macrursors-select-contract)
+     ("," . macrursors-select-expand)))
+  
+  (use-package avy
+    :bind 
+    (:map macrursors-mark-map
+     ("j" . my/macrursors-at-avy))
+    :config
+    (defun my/macrursors-at-avy ()
+      (interactive)
+      (let* ((avy-all-windows nil)
+             (positions (mapcar #'caar (avy--read-candidates))))
+        (when positions
+          (mapc #'macrursors--add-overlay-at-point positions)
+          (macrursors-start)))))
+  
   :config
-  (dolist (mode '(global-eldoc-mode
+  (dolist (mode '( ;;global-eldoc-mode
                   ;; gcmh-mode corfu-mode font-lock-mode
                   show-paren-mode))
     (add-hook 'macrursors-pre-finish-hook mode)
@@ -2320,7 +2344,6 @@ current buffer without truncation."
                  macrursors-mark-previous-line))
     (put cmd 'repeat-map 'macrursors-repeat-map))
 
-  (define-prefix-command 'macrursors-mark-map)
   (setf macrursors-mode-line nil)
   (defsubst my/mode-line-macro-recording ()
     "Display macro being recorded."
@@ -2341,15 +2364,6 @@ current buffer without truncation."
               (concat "[1/1]" vsep))))
          'face 'highlight)))))
   
-  (use-package macrursors-select-expand
-    :bind
-    (:map macrursors-mark-map
-     ("," . macrursors-select-expand)
-     :map macrursors-select-map
-     ("-" . macrursors-select-contract)
-     ("." . macrursors-select-contract)
-     ("," . macrursors-select-expand)))
-
 ;;;----------------------------------------------------------------
 ;; ** EMBRACE
 ;;;----------------------------------------------------------------

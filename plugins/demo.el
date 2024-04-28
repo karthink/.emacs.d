@@ -47,7 +47,7 @@
      'integer 840
      (pcase demo-aspect-ratio
        ('tall 840)
-       ('wide 360)
+       ('wide 480)
        (_ (read-number "Height (pixels): "))))
 
     (demo--define-infix
@@ -98,23 +98,28 @@
      'boolean nil
      (not demo-truncate-lines-p))
 
-    )
+    (demo--define-infix
+     "T" "tab-bar-p"  "Tab Bar?"
+     'boolean nil
+     (not demo-tab-bar-p)))
 
   (transient-define-prefix demo-transient ()
      "Turn on demo mode"
-     ["Size"
-      (demo--set-aspect-ratio)
-      (demo--set-height)
-      (demo--set-width)]
-     ["Appearance"
-      (demo--set-theme)
-      (demo--set-fontsize)]
-     ["Modes"
+     [["Size"
+       (demo--set-aspect-ratio)
+       (demo--set-height)
+       (demo--set-width)
+       ""
+       "Appearance"
+       (demo--set-theme)
+       (demo--set-fontsize)]
+      ["Modes"
       (demo--set-mode-line-p)
+      (demo--set-tab-bar-p)
       (demo--set-keycast-p)
       (demo--set-autocomplete-p)
       (demo--set-popper-style)
-      (demo--set-truncate-lines-p)]
+      (demo--set-truncate-lines-p)]]
      ["Action"
       ("RET" "Toggle demo-mode" demo-mode)]))
 
@@ -152,6 +157,10 @@
         ;; Mode line
         (unless demo-mode-line-p
           (my/mode-line-hidden-mode 1))
+        ;; Tab bar
+        (when demo-tab-bar-p
+          (setq tab-bar-show t)
+          (tab-bar-mode 1))
         ;; Keycast
         (when (and demo-keycast-p)
           (tab-bar-mode 1)
@@ -210,6 +219,8 @@
         (my/mode-line-hidden-mode -1))
       (when demo-keycast-p
         (keycast-tab-bar-mode -1))
+      (when demo-tab-bar-p
+        (setq tab-bar-show 1))
 
       ;; Restore frame
       (set-frame-size (selected-frame) 80 26)))

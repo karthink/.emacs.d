@@ -1,4 +1,4 @@
-(use-package latex
+(use-package auctex
   :after tex
   :ensure (auctex :pre-build (("./autogen.sh")
                               ("./configure"
@@ -208,7 +208,7 @@ but mark is only pushed if region isn't active."
           (progn (goto-char (prop-match-beginning prop))
                  (when (and (derived-mode-p 'org-mode) (org-invisible-p))
                    (org-fold-show-context 'link-search))
-                 (when eldoc-mode (eldoc--invoke-strategy t))
+                 ;; (when eldoc-mode (eldoc--invoke-strategy t))
                  (pcase-let
                      ((`(,_ . ,ov)
                       (get-char-property-and-overlay (point) 'TeX-fold-type)))
@@ -233,7 +233,8 @@ but mark is only pushed if region isn't active."
         (goto-char p)
         (when (and (derived-mode-p 'org-mode) (org-invisible-p))
           (org-fold-show-context 'link-search))
-        (when eldoc-mode (eldoc--invoke-strategy t)))
+        ;; (when eldoc-mode (eldoc--invoke-strategy t))
+        )
       (pcase-let
           ((`(,_ . ,ov)
             (get-char-property-and-overlay (point) 'TeX-fold-type)))
@@ -335,7 +336,7 @@ but mark is only pushed if region isn't active."
   (setq reftex-default-bibliography '("~/Documents/roam/biblio.bib"))
   (setq reftex-insert-label-flags '("sf" "sfte"))
   (setq reftex-plug-into-AUCTeX t)
-  (setq reftex-ref-style-default-list '("Default" "AMSMath" "Cleveref"))
+  (setq reftex-ref-style-default-list '("Default" "AMSmath" "Cleveref"))
   (setq reftex-use-multiple-selection-buffers t))
 
 (use-package consult-reftex
@@ -350,6 +351,27 @@ but mark is only pushed if region isn't active."
          ("C-c (" . consult-reftex-goto-label)
          ("C-c )"   . consult-reftex-insert-reference))
   :config
+  (with-eval-after-load 'embark
+    (defun consult-reftex--key-finder ()
+      (when (and
+             (or (derived-mode-p 'LaTeX-mode)
+                 (derived-mode-p 'org-mode))
+             (cl-intersection
+              '(font-lock-constant-face TeX-fold-unfolded-face)
+              (ensure-list (get-char-property (point) 'face))))
+        (save-excursion
+          (text-property-search-backward
+           'face 'font-lock-constant-face
+           (lambda (val prop) (memq val (ensure-list prop))))
+          (when (looking-back "\\(?:la\\)?\\(?:ref\\|bel\\){" (- (point) 5))
+            (backward-char 1)
+            (let* ((start (1+ (point)))
+                   (end (progn (forward-list)
+                               (1- (point)))))
+              `(reftex-label
+                ,(buffer-substring-no-properties start end)
+                ,start .  ,end))))))
+    (cl-pushnew 'consult-reftex--key-finder embark-target-finders))
   (setq consult-reftex-preview-function
                 #'consult-reftex-preview-make-window
                 consult-reftex-preferred-style-order
@@ -362,11 +384,14 @@ but mark is only pushed if region isn't active."
   :after latex
   :ensure t
   ;; :commands turn-on-cdlatex
-  :hook (LaTeX-mode . turn-on-cdlatex)
+  :hook ((LaTeX-mode . turn-on-cdlatex)
+         (LaTeX-mode . cdlatex-electricindex-mode)
+         (org-mode . cdlatex-electricindex-mode))
   :bind (:map cdlatex-mode-map ("[" . nil) ("(" . nil) ("{" . nil)
               ("<tab>" . cdlatex-tab))
-  :init
-  (defvar cdlatex-command-alist)
+  :defines (cdlatex-math-symbol-prefix cdlatex-command-alist)
+  :config
+  (setq cdlatex-math-symbol-prefix ?\;)
   (dolist (cmd '(("vc" "Insert \\vect{}" "\\vect{?}"
                   cdlatex-position-cursor nil nil t)
                  ("tfr" "Insert \\tfrac{}{}" "\\tfrac{?}{}"

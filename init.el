@@ -799,10 +799,18 @@ for details."
          ("," . easy-kill-expand-region)
          ("." . easy-kill-contract-region))
   :config
-  ;; (add-to-list 'easy-kill-alist '(40 sentence " "))
-  (add-to-list 'easy-kill-alist '(62 page "\n"))
-  (add-to-list 'easy-kill-alist '(104 paragraph "\n"))
-  (add-to-list 'easy-kill-alist '(41 sentence "\n"))
+  (setq easy-kill-alist
+        '((119 word " ")
+          (115 sexp "\n")
+          (101 line "\n")
+          (108 list "\n")
+          (100 defun "\n\n")
+          (41 sentence "\n")
+          (104 paragraph "\n")
+          (62 page "\n")
+          (102 filename "\n")
+          (68 defun-name " ")
+          (98 buffer-file-name)))
   (defun easy-kill-expand-region ()
     "Expand kill according to expand-region."
     (interactive)
@@ -1013,10 +1021,14 @@ for details."
 (use-package window
   :bind (("H-+" . balance-windows-area)
          ;; ("C-x +" . balance-windows-area)
-         ("C-x q" . my/kill-buffer-and-window))
+         ("C-x q" . my/kill-buffer-and-window)
+         ("ESC M-v" . scroll-other-window-down))
   :config
   (setq other-window-scroll-default
-      (lambda () (get-mru-window nil nil 'not-this-one-dummy)))
+      (lambda ()
+        (or (get-mru-window nil nil 'not-this-one-dummy)
+            (next-window)
+            (next-window nil nil 'visible))))
   (defun my/kill-buffer-and-window ()
     "Kill buffer.
 

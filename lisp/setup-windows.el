@@ -92,7 +92,6 @@ If buffer-or-name is nil return current buffer's mode."
 (defvar my/help-modes-list '(helpful-mode
                            help-mode
                            pydoc-mode
-                           eldoc-mode
                            TeX-special-mode)
   "List of major-modes used in documentation buffers")
 
@@ -290,7 +289,18 @@ If buffer-or-name is nil return current buffer's mode."
          ;;                       ))
          )
 
-        ("\\*\\(?:Warnings\\|Compile-Log\\|Messages\\)\\*" ;\\|Tex Help\\|TeX errors
+        ("\\*Messages\\*"
+         (display-buffer-at-bottom display-buffer-in-side-window display-buffer-in-direction)
+         (window-height . (lambda (win) (fit-window-to-buffer
+                                    win
+                                    (floor (frame-height) 5))))
+         (side . bottom)
+         (direction . below)
+         (slot . -6)
+         (body-function . select-window)
+         (window-parameters . ((split-window . #'ignore))))
+        
+        ("\\*\\(?:Warnings\\|Compile-Log\\)\\*" ;\\|Tex Help\\|TeX errors
          (display-buffer-at-bottom display-buffer-in-side-window display-buffer-in-direction)
          (window-height . (lambda (win) (fit-window-to-buffer
                                          win
@@ -298,11 +308,7 @@ If buffer-or-name is nil return current buffer's mode."
          (side . bottom)
          (direction . below)
          (slot . -5)
-         ;; (preserve-size . (nil . t))
-         (window-parameters . ((split-window . #'ignore)
-                               ;; (no-other-window . t)
-                               ;; (mode-line-format . (:eval (my/helper-window-mode-line-format)))
-                               )))
+         (window-parameters . ((split-window . #'ignore))))
 
         ("[Oo]utput\\*" display-buffer-in-side-window
          (window-height . (lambda (win)

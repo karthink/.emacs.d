@@ -173,11 +173,12 @@
 ;; Key to kill word backwards OR kill region 
 (global-set-key (kbd "C-w") 'backward-kill-word-or-region)
 (global-set-key (kbd "C-S-w") 'kill-region)
+(global-set-key (kbd "M-W") 'copy-region-as-kill)
 
 ;; Easy keys to traverse paragraphs
 (global-set-key (kbd "M-]") 'forward-paragraph)
 ;; tty emacs has mouse trouble with this binding:
-(when window-system
+(when (or window-system (daemonp))
     (global-set-key (kbd "M-[") 'backward-paragraph))
 
 ;; Re-search forward
@@ -238,6 +239,8 @@
 ;; Better mark behavior in tmm
 (define-key global-map [remap exchange-point-and-mark]
             'my/exchange-point-and-mark)
+(define-key global-map (kbd "C-@")
+            (lambda () (interactive) (activate-mark)))
 
 ;;----------------------------------------------------------------------
 
@@ -248,7 +251,7 @@
 (defun my/exchange-point-and-mark (&optional arg)
   "Identical to \\[exchange-point-and-mark] but will not activate the region."
   (interactive "P")
-  (exchange-point-and-mark (not arg)))
+  (exchange-point-and-mark (if (use-region-p) arg (not arg))))
 
 ;;;###autoload
 (defun forward-sexp (&optional arg interactive)

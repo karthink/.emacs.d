@@ -619,7 +619,9 @@ Cancel the previous one if present."
   (setq undo-limit (* 80 1024 1024))
   :bind
   (("M-z" . zap-to-char-save)
-   ("<C-M-backspace>" . backward-kill-sexp)))
+   ("<C-M-backspace>" . backward-kill-sexp)
+   :map ctl-x-r-map
+   ("a" . append-to-register)))
 
 (use-package expand-region
   :ensure (:remotes ("fork" :host github :repo "karthink/expand-region.el"))
@@ -3426,6 +3428,7 @@ _d_: subtree
         try-expand-all-abbrevs
         try-expand-list
         try-expand-line
+        try-expand-whole-kill
         try-expand-dabbrev-from-kill
         try-complete-lisp-symbol-partially
         try-complete-lisp-symbol))

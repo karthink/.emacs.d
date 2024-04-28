@@ -1901,7 +1901,7 @@ current buffer without truncation."
 (use-package macrostep
   :ensure t
   :bind (:map emacs-lisp-mode-map
-         ("C-c C-e" . macrostep-expand)))
+         ("C-c e" . macrostep-expand)))
 
 (use-package elisp-mode
   :defer t
@@ -3344,6 +3344,8 @@ _d_: subtree
                        ("t" . transpose-sexps)
                        ("e" . eval-sexp-maybe-pp)))
         (define-key map (kbd k) f))
+      (dolist (n (number-sequence 48 57))
+        (define-key map `[,n] 'digit-argument))
       map))
 
   (map-keymap

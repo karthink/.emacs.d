@@ -474,6 +474,17 @@ With prefix-arg REFRESH-TAGS, refresh the cached completion metadata."
       (consult--bookmark-candidates)
       :prompt "Elfeed bookmark: "
       :initial "elfeed/")))
+
+  (defun my/elfeed-zoom-image ()
+    (interactive)
+    (elfeed-with-open-entry
+      (save-excursion
+        (goto-char (window-start))
+        (when (text-property-search-forward 'image-url)
+          (forward-char -1)
+          (shr-zoom-image)))))
+  (define-key elfeed-search-mode-map (kbd "z") #'my/elfeed-zoom-image)
+  (define-key elfeed-show-mode-map (kbd "z") #'my/elfeed-zoom-image)
   ;;----------------------------------------------------------------------
   ;; Faces
   ;;----------------------------------------------------------------------

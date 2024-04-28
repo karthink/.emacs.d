@@ -6,6 +6,9 @@
            :repo "karthink/wombag")
   :commands (wombag wombag-add-entry)
   :hook ((wombag-pre-html-render . my/wombag-display-settings))
+  :bind (:map wombag-show-mode-map
+         ("d" . my/scroll-up-half)
+         ("u" . my/scroll-down-half))
   ;; :bind (
   ;;        ;; :map wombag-show-mode-map
   ;; ;;        ("SPC" . scroll-up-command)
@@ -32,7 +35,7 @@
                            ('elfeed-show-mode
                             (list elfeed-show-entry)))))
       (dolist (entry (ensure-list entries))
-        (wombag-url (elfeed-entry-link entry)))))
+        (wombag-add-entry (elfeed-entry-link entry) ""))))
   :config
   (use-package setup-reading
     :after wombag-search

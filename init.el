@@ -1417,7 +1417,10 @@ User buffers are those not starting with *."
   :ensure t
   :bind
   (("C-x o" . ace-window)
-   ("H-o"   . ace-window))
+   ("H-o"   . ace-window)
+   ("C-M-4" . ace-window-prefix)
+   :map ctl-x-4-map
+   ("o" . ace-window-prefix))
   ;; :custom-face
   ;; (aw-leading-char-face ((t (:height 2.5 :weight normal))))
   :defer 2
@@ -1434,6 +1437,23 @@ Delete current window in the process."
         (delete-window))
       (aw-switch-to-window window)
       (switch-to-buffer buf)))
+  (defun ace-window-prefix ()
+    "Use `ace-window' to display the buffer of the next command.
+The next buffer is the buffer displayed by the next command invoked
+immediately after this command (ignoring reading from the minibuffer).
+Creates a new window before displaying the buffer.
+When `switch-to-buffer-obey-display-actions' is non-nil,
+`switch-to-buffer' commands are also supported."
+    (interactive)
+    (display-buffer-override-next-command
+     (lambda (buffer _)
+       (let (window type)
+         (setq
+          window (aw-select (propertize " ACE" 'face 'mode-line-highlight))
+          type 'reuse)
+         (cons window type)))
+     nil "[ace-window]")
+    (message "Use `ace-window' to display next command buffer..."))
   (setq aw-swap-invert t)
   (setq aw-dispatch-always t
         aw-scope 'global

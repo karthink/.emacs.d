@@ -126,9 +126,11 @@
     t)
   
   (defun avy-action-kill-line (pt)
-    (save-excursion
-      (goto-char pt)
-      (kill-line))
+    (unwind-protect
+        (save-excursion
+          (goto-char pt)
+          (kill-line))
+      (avy-resume))
     (select-window
      (cdr (ring-ref avy-ring 0)))
     t)
@@ -145,9 +147,11 @@
     t)
   
   (defun avy-action-kill-whole-line (pt)
-    (save-excursion
-      (goto-char pt)
-      (kill-whole-line))
+    (unwind-protect
+        (save-excursion
+          (goto-char pt)
+          (kill-whole-line)
+          (avy-resume)))
     (select-window
      (cdr
       (ring-ref avy-ring 0)))

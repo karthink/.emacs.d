@@ -104,7 +104,7 @@
 (defvar mode-line-cleaner-alist
   `((company-mode . " ⇝")
     (corfu-mode . " ⇝")
-    (yas-minor-mode .  " Y")
+    (yas-minor-mode .  " ")
     (smartparens-mode . " ()")
     (evil-smartparens-mode . "")
     (eldoc-mode . "")
@@ -140,8 +140,7 @@
     (org-roam-mode . "")
     (visual-line-mode . "")
     (latex-mode . "TeX")
-    ;; (projectile-mode . " ϸ")
-    (outline-minor-mode . " [o]";; " ֍"
+    (outline-minor-mode . " ֍" ;; " [o]"
                         )
     (hs-minor-mode . "")
     (matlab-functions-have-end-minor-mode . "")
@@ -184,6 +183,8 @@
   :config
   (setq x-underline-at-descent-line t)
   ;; (moody-replace-sml/mode-line-buffer-identification)
+  (moody-replace-mode-line-buffer-identification)
+  (moody-replace-mode-line-front-space)
   (moody-replace-vc-mode)
   (moody-replace-eldoc-minibuffer-message-function)
   (advice-remove 'split-window #'moody-redisplay))

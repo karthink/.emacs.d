@@ -43,9 +43,11 @@
   (defun my/tab-bar-name ()
     "Use project as tab name."
     (let ((dir (expand-file-name
-                (or (if (fboundp 'project-root)
-                        (project-root (project-current)))
-                    default-directory))))
+                ;; (or (if (fboundp 'project-root)
+                ;;         (project-root (project-current)))
+                ;;     default-directory)
+                default-directory
+                )))
       (or
        (and dir
             (let ((name (file-name-nondirectory (substring dir 0 -1))))

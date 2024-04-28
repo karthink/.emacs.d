@@ -838,7 +838,19 @@ for details."
   :ensure t
   :bind (("M-g ;" . goto-last-change)
          ("M-i" . goto-last-change)
-         ("M-g M-;" . goto-last-change)))
+         ("M-g M-;" . goto-last-change))
+  :config
+  (use-package org
+    :bind (:map org-mode-map
+           ("M-g ;" . org-goto-last-change)
+           ("M-i" . org-goto-last-change)
+           ("M-g M-;" . org-goto-last-change))
+    :config
+    (defun org-goto-last-change ()
+      (interactive)
+      (call-interactively 'goto-last-change)
+      (when (org-invisible-p)
+        (org-fold-show-context 'link-search)))))
 
 (use-package quail
   :commands my/cdlatex-input-tex

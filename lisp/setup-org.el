@@ -18,12 +18,14 @@
          ("C-c C-M-l" . org-toggle-link-display)
          ("C-S-<right>" . nil)
          ("C-S-<left>" . nil)
-         ("C-M-e" . my/org-end-of-defun))
+         ("C-M-e" . my/org-end-of-defun)
+         :map org-cdlatex-mode-map
+         ("`" . nil)
+         (";" . cdlatex-math-symbol))
 
   :hook ((org-mode . turn-on-org-cdlatex)
          (org-cdlatex-mode . my/org-cdlatex-settings)
          (org-mode . er/add-latex-in-org-mode-expansions))
-  :init (setq org-fold-core-style 'text-properties)
   :config
   ;; General preferences
   (setq-default org-adapt-indentation nil 
@@ -31,13 +33,15 @@
                 org-footnote-auto-label 'confirm
                 org-image-actual-width nil
                 ;; org-refile-targets '((nil :maxlevel . 2) (org-agenda-files :maxlevel . 3)) 
-                org-refile-targets '((nil :level . 1) (org-agenda-files :todo . "PROJECT"))
+                org-refile-targets '((nil :maxlevel . 2)
+                                     (org-agenda-files :maxlevel . 2)
+                                     (org-agenda-files :todo . "PROJECT"))
                 org-refile-target-verify-function nil
                 org-refile-use-outline-path t
                 org-refile-use-cache t
                 org-refile-allow-creating-parent-nodes t
                 org-outline-path-complete-in-steps nil
-                org-use-tag-inheritance nil
+                org-use-tag-inheritance t
                 org-tags-column 0
                 org-special-ctrl-a/e t
                 org-special-ctrl-k t
@@ -192,7 +196,6 @@
 (use-package org-fold
   :after org
   :config
-  (setq org-fold-core-style 'text-properties)
   (setf (alist-get 'agenda org-fold-show-context-detail)
         'local))
 
@@ -347,12 +350,17 @@ appropriate.  In tables, insert a new row or end the table."
   ;; (add-hook 'org-mode-hook 'toggle-truncate-lines)
 
   ;; Keyword faces for reftex labels and references in Org
+  ;; ,(rx
+  ;; (group "\\" (or "label" "ref" "cref" "eqref"))
+  ;; (minimal-match "{" (group (1+ any)) "}"))
   (font-lock-add-keywords
    'org-mode
-   '(("\\(\\(?:\\\\\\(?:label\\|ref\\|eqref\\)\\)\\){\\(.+?\\)}"
+   '(("\\(\\(?:\\\\\\(?:label\\|cref\\|ref\\|eqref\\)\\)\\){\\(.+?\\)}"
       (1 font-lock-keyword-face)
       (2 font-lock-constant-face))))
 
+  (setq org-entities-user '(("nbsp" "~" nil "&nbsp" " " "\x00A0" "∼")))
+  
   (defun my/org-raise-scripts-no-braces (_)
     (when (and (eq (char-after (match-beginning 3)) ?{)
 	       (eq (char-before (match-end 3)) ?}))
@@ -377,7 +385,9 @@ appropriate.  In tables, insert a new row or end the table."
          (org-mode . my/org-latex-preview-precompile-idle))
   :bind (:map org-mode-map
          ("C-c C-x SPC" . org-latex-preview-clear-cache)
-         ("C-c i" . my/org-latex-preview-image-at-point))
+         ("C-c i" . my/org-latex-preview-image-at-point)
+         ("M-g m" . my/org-latex-next-env)
+         ("M-g M" . my/org-latex-prev-env))
   :config
   ;; (setq org-element-use-cache nil)
   (add-hook 'org-latex-preview-auto-ignored-commands 'next-line)
@@ -425,6 +435,28 @@ appropriate.  In tables, insert a new row or end the table."
             (when arg (start-process "olpsink" nil "dragon" (expand-file-name imgpath)))
             (message "Image path copied to kill-ring."))
       (message "No LaTeX preview image at point!")))
+  
+  ;; Utility command to navigate math fragments
+  (defun my/org-latex-next-env (&optional arg)
+    (interactive "p")
+    (save-match-data
+      (re-search-forward org-latex-preview--tentative-math-re
+                         nil t (or arg 1))))
+
+  (defun my/org-latex-prev-env (&optional arg)
+    (interactive "p")
+    (my/org-latex-next-env (- (or arg 1))))
+  
+  (defvar-keymap my/org-latex-env-map
+    :repeat t
+    "m" 'my/org-latex-next-env
+    "M" 'my/org-latex-prev-env
+    "n" 'my/org-latex-next-env
+    "p" 'my/org-latex-prev-env)
+  (put 'my/org-latex-next-env
+       'repeat-map 'my/org-latex-env-map)
+  (put 'my/org-latex-prev-env
+       'repeat-map 'my/org-latex-env-map)
   
   ;; Precompilation freezes emacs, do it in the background when possible.
   (defun my/org-latex-preview-precompile-idle (&optional beg end _)
@@ -682,6 +714,10 @@ appropriate.  In tables, insert a new row or end the table."
 (use-package org-src
   :after org
   :config
+  (when (fboundp 'LaTeX-mode)
+    (setf (alist-get "latex" org-src-lang-modes
+                     nil nil #'equal)
+          'LaTeX))
   (setq-default
    org-src-tab-acts-natively t
    org-src-preserve-indentation t
@@ -1046,9 +1082,9 @@ See `org-capture-templates' for more information."
     (setq org-html-htmlize-output-type 'css)
     (plist-put org-html-latex-image-options :inline "svg")
     (add-to-list 'org-structure-template-alist
-                 '("details" . "details"))
+                 '("D" . "details"))
     (add-to-list 'org-structure-template-alist
-                 '("summary" . "summary")))
+                 '("S" . "summary")))
   ;; (add-to-list 'org-latex-packages-alist '("" "listings"))
   ;; (add-to-list 'org-latex-packages-alist '("" "color"))
 

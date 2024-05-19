@@ -6,9 +6,6 @@
            :repo "karthink/wombag")
   :commands (wombag wombag-add-entry)
   :hook ((wombag-pre-html-render . my/wombag-display-settings))
-  :bind (:map wombag-show-mode-map
-         ("d" . my/scroll-up-half)
-         ("u" . my/scroll-down-half))
   ;; :bind (
   ;;        ;; :map wombag-show-mode-map
   ;; ;;        ("SPC" . scroll-up-command)
@@ -60,10 +57,15 @@
     :init
     (defsubst wombag-url (url)
       (wombag-add-entry url "")))
-  
-  (add-hook 'wombag-show-mode-hook (lambda () (let ((pulse-flag))
-                                             (unless (bobp)
-                                               (pulse-momentary-highlight-one-line)))))
+  (use-package wombag-show
+    :bind (:map wombag-show-mode-map
+           ("d" . my/scroll-up-half)
+           ("u" . my/scroll-down-half))
+    :config
+    (add-hook 'wombag-show-mode-hook
+              (lambda () (let ((pulse-flag))
+                      (unless (bobp)
+                        (pulse-momentary-highlight-one-line))))))
   
   (defun my/switch-to-elfeed ()
     (interactive)
@@ -100,16 +102,14 @@
   (setq wombag-search-filter "#30 !&")
   ;; (setq wombag-show-entry-switch #'pop-to-buffer-same-window)
   (setq wombag-host "https://read.karthinks.com")
-  (setq wombag-username (auth-source-pass-get "login" "www/read.karthinks.com"))
-  (setq wombag-password (auth-source-pass-get 'secret "www/read.karthinks.com"))
-  ;; (setq wallabag-clientid (auth-source-pass-get "client_id" "api/wallabag/qutescript"))
-  ;; (setq wallabag-secret (auth-source-pass-get 'secret "api/wallabag/qutescript"))
-  (setq wombag-client-id (auth-source-pass-get "client_id" "api/wallabag/qutescript"))
-  (setq wombag-client-secret (auth-source-pass-get 'secret "api/wallabag/qutescript"))
+  (let ((inhibit-message t))
+    (setq wombag-username (auth-source-pass-get "login" "www/read.karthinks.com")
+          wombag-password (auth-source-pass-get 'secret "www/read.karthinks.com")
+          wombag-client-id (auth-source-pass-get "client_id" "api/wallabag/qutescript")
+          wombag-client-secret (auth-source-pass-get 'secret "api/wallabag/qutescript")))
   ;; optional, auto refresh token, token should refresh every hour
   ;; (run-with-timer 0 3540 'wallabag-request-token) 
   ;; (setq wombag-db-file (expand-file-name "test-wallabag.sqlite" "~/Desktop/"))
-  (setq wombag-db-file (expand-file-name "wallabag.sqlite" user-cache-directory))
-  )
+  (setq wombag-db-file (expand-file-name "wallabag.sqlite" user-cache-directory)))
 
 (provide 'setup-wallabag)

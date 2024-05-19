@@ -6,7 +6,8 @@
   (setq avy-timeout-seconds 0.27)
   (setq avy-keys '(?a ?s ?d ?f ?g ?j ?l ?o
                    ?v ?b ?n ?, ?/ ?u ?p ?e ?.
-                   ?c ?q ?2 ?3 ?' ?\;))
+                   ?c ?q ?2 ?3 ?' ;; ?\;
+                   ))
   (setq avy-single-candidate-jump nil)
   (setq avy-dispatch-alist '((?m . avy-action-mark)
                              (?i . avy-action-ispell)
@@ -32,7 +33,8 @@
                              (?K . avy-action-kill-whole-line)
                              (?Y . avy-action-yank-whole-line)
                              (?T . avy-action-teleport-whole-line)
-                             (67108923 . avy-action-add-cursor)))
+                             ;; (67108923 . avy-action-add-cursor)
+                             (?\; . avy-action-add-cursor)))
   
   ;; (advice-add 'avy-goto-char-timer :around
   ;;             (defun my/avy-with-single-candidate-jump (orig-fn &optional arg)
@@ -173,9 +175,12 @@
 
   (defun avy-action-add-cursor (pt)
     (require 'macrursors)
-    (macrursors--add-overlay-at-point pt)
-    (kmacro-keyboard-quit)
-    (macrursors-start))
+    (unwind-protect
+        (progn
+          (macrursors--add-overlay-at-point pt)
+          (kmacro-keyboard-quit)
+          (avy-resume))
+      (macrursors-start)))
   
   (defun my/avy-goto-char-this-window (&optional arg)
     "Goto char in this window with hints."
@@ -352,11 +357,11 @@ This differs from Avy's goto-char-timer in how it processes parens."
       (avy-process avy--old-cands))))
   :bind (("C-M-'"   . avy-resume)
          ("C-'"     . my/avy-goto-char-this-window)
-         ("M-j"     . my/avy-goto-char-timer)
+         ("M-s j"   . my/avy-goto-char-timer)
          ("M-s y"   . avy-copy-line)
          ("M-s M-y" . avy-copy-region)
          ("M-s M-k" . avy-kill-whole-line)
-         ("M-s j"   . avy-goto-char-2)
+         ("M-j"   .   avy-goto-char-2)
          ("M-s M-p" . avy-goto-line-above)
          ("M-s M-n" . avy-goto-line-below)
          ("M-s C-w" . avy-kill-region)

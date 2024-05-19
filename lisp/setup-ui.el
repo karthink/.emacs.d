@@ -18,7 +18,7 @@
 (tool-bar-mode 0)
 (scroll-bar-mode 0)
 ;; Turn on image viewing
-(auto-image-file-mode t)
+;; (auto-image-file-mode t)
 
 ;; Get rid of the annoying system beep.
 (setq ring-bell-function 'ignore)

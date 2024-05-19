@@ -439,7 +439,6 @@ This relies on the external 'fd' executable."
          ("*c" . dired-delight-mark-color)))
 
 (use-package dired-preview
-  :disabled
   :after dired
   :ensure (:host github :protocol ssh
            :repo "karthink/dired-preview"
@@ -452,9 +451,10 @@ This relies on the external 'fd' executable."
          ("S-SPC" . my/dired-scroll-other-window-down))
   :config
   (setq dired-preview-delay 0.2)
-  (advice-add 'dired-preview--display-buffer :around
-              (defun my/dired-preview--display-buffer (origfn buffer)
-                (let ((display-buffer-base-action))
-                  (funcall origfn buffer)))))
+  ;; (advice-add 'dired-preview--display-buffer :around
+  ;;             (defun my/dired-preview--display-buffer (origfn buffer)
+  ;;               (let ((display-buffer-base-action))
+  ;;                 (funcall origfn buffer))))
+  )
 
 (provide 'setup-dired)

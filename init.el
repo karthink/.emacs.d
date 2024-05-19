@@ -2765,8 +2765,12 @@ normally have their errors suppressed."
                      (shell-quote-wildcard-pattern url)))
     
     (defun browse-url-mpv-enqueue (url &optional _)
-      (start-process "umpv_last" nil "umpv_last"
-                     (shell-quote-wildcard-pattern url)))
+      (let ((exit-status
+             (call-process "umpv_last" nil nil nil
+                           (shell-quote-wildcard-pattern url))))
+        (message "%S" exit-status)
+        (when (not (= exit-status 0))
+          (browse-url-mpv url))))
 
     (defun browse-url-mpv-hd (url &optional _)
       (start-process "mpv" nil "mpv"
@@ -2861,8 +2865,9 @@ normally have their errors suppressed."
                             (if (bound-and-true-p org-appear-mode)
                                 (progn (org-appear-mode -1)
                                        (setq-local org-hide-emphasis-markers nil))
-                              (setq-local org-hide-emphasis-markers t)
-                              (org-appear-mode 1))))
+                              (setq-local org-hide-emphasis-markers (not org-hide-emphasis-markers))
+                              ;; (org-appear-mode 1)
+                              )))
       ("oi" "Indent" org-indent-mode)
       ("on" "Numbers" org-num-mode)
       ("ol" "LaTeX" org-latex-preview-auto-mode)]
@@ -2878,6 +2883,11 @@ normally have their errors suppressed."
       ("n" "line numbers" display-line-numbers-mode)
       ("M-q" "auto fill" auto-fill-mode)
       ("fc" "fill column" set-fill-column)
+      ("se" (lambda () (if sentence-end-double-space
+                    "double spc" "single spc"))
+       (lambda () (interactive)
+         (setq-local sentence-end-double-space
+                     (not sentence-end-double-space))))
       ("i" "ispell" jinx-mode)
       ;; ("V" "view mode" view-mode)
       ("<tab>" "outline" outline-minor-mode

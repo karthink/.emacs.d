@@ -55,6 +55,7 @@
                                           ("4" . org-tree-to-indirect-buffer)
                                           ("S" . org-tree-to-indirect-buffer))
                 org-imenu-depth 7
+                org-log-into-drawer t
                 org-id-link-to-org-use-id 'create-if-interactive
                 org-extend-today-until 3
                 org-id-locations-file (dir-concat user-cache-directory "org-id-locations")
@@ -1029,7 +1030,9 @@ See `org-capture-templates' for more information."
           "* TODO [[%c][%^{Title: }]] %^G\n:PROPERTIES:\n:CREATED:  %U\n:END:\n"
           :immediate-finish t)
          ("t" "Add task" entry (file "~/org/inbox.org")
-          "* TODO %?\n:PROPERTIES:\n:CREATED:  %U\n:END:\n%a\n%c\n")
+          "* TODO %?\n:PROPERTIES:\n:CREATED:  %U\n:END:\n%a\n%i\n")
+         ("m" "Task from email" entry (file "~/org/inbox.org")
+          "* TODO %A\n:PROPERTIES:\n:CREATED:  %U\n:END:\n" :immediate-finish t)
          ("c" "Add calendar entry" entry (file "~/org/gmail-cal.org")
           "* %?\n%^{LOCATION}p\n:%(progn (require 'org-gcal) (symbol-value 'org-gcal-drawer-name)):
 %a\n:END:")

@@ -21,7 +21,7 @@
    ("M-s f" . nil))
   :config
   (put 'dired-find-alternate-file 'disabled nil)
-  (setq dired-listing-switches "-AGFhlv"
+  (setq dired-listing-switches "-AGFhlv --group-directories-first"
         dired-recursive-copies 'always
         dired-recursive-deletes 'always
         dired-kill-when-opening-new-dired-buffer t
@@ -67,6 +67,11 @@
   (setq  dired-switches-in-mode-line 'as-is
          dired-do-revert-buffer t
          dired-mark-region t))
+
+(use-package dired-aux
+  :defer
+  :config
+  (setq dired-vc-rename-file t))
 
 (use-package dired-aux
   ;; This functionality is superceded by affe-find and affe-grep from the

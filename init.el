@@ -4262,7 +4262,8 @@ becomes a blinking bar. Evil-mode (if bound) is disabled."
           (if (bound-and-true-p evil-mode)
               (evil-emacs-state))
           (setq-local line-spacing 0.16)
-          (setq-local cusor-type '(bar . 2)))
+          ;; (setq-local cursor-type '(bar . 2))
+          )
       (olivetti-mode -1)
       (set-window-fringes (selected-window) nil) ; Use default width
       (mixed-pitch-mode -1)
@@ -4570,6 +4571,7 @@ buffer's text scale."
           ;; (bg-main "#121212")
           (bg-region bg-lavender)
           (bg-main "#090909")
+          (fg-heading-1 magenta-faint)
           ;; (bg-main "#181A1B")
           (bg-mode-line-active bg-lavender) ;; bg-graph-magenta-1
           (fg-mode-line-active "#ffffff")))
@@ -4578,8 +4580,9 @@ buffer's text scale."
         modus-themes-prompts '(bold background)
         modus-themes-variable-pitch-ui nil
         modus-themes-headings
-        '((1 . (background 1.32))       ;variable-pitch
-          (2 . (1.26))                  ;variable-pitch
+        '((0 . (1.35))
+          (1 . (1.30))       ;variable-pitch
+          (2 . (1.24))       ;variable-pitch
           (3 . (semibold 1.17))
           (4 . (1.14))
           (t . (monochrome)))))

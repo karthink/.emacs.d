@@ -568,10 +568,14 @@ Cancel the previous one if present."
  (use-package visual-fill-column
   :ensure t
   :commands visual-fill-column-mode
-  :hook ((eww-after-render . visual-fill-column-mode)
+  :hook ((eww-after-render . my/visual-fill-in-window)
          (eww-after-render . visual-line-mode)
          (notmuch-show-mode . visual-fill-column-mode))
   :config
+  (defun my/visual-fill-in-window ()
+    (when-let ((win (get-buffer-window (current-buffer))))
+      (with-selected-window win
+        (visual-fill-column-mode 1))))
   (setq-default visual-fill-column-center-text t
                 visual-fill-column-width 94))
 

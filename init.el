@@ -12,7 +12,7 @@
 ;; * PACKAGE MANAGEMENT
 
 ;; ** ELPACA
-(defvar elpaca-installer-version 0.6)
+(defvar elpaca-installer-version 0.7)
 (defvar elpaca-directory (expand-file-name "elpaca/" "~/.local/share/git/"))
 (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
 (defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
@@ -4370,6 +4370,7 @@ the mode-line and switches to `variable-pitch-mode'."
 
 ;; ** SPACIOUS-PADDING
 (use-package spacious-padding
+  :disabled
   :ensure t
   :defer
   :config

@@ -2,7 +2,7 @@
   :ensure (:host github :repo "karthink/consult-web-mini"
            :protocol ssh)
   :bind (:map help-map
-         ("C-w" . cw-search)
+         ("C-s" . cw-search)
          ("C-l" . cw-search-local))
   :init
   (with-eval-after-load 'embark

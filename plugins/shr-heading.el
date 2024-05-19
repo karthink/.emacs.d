@@ -32,7 +32,13 @@ If ARG is negative move forwards instead, ARG defaults to 1."
 
 (defun shr-heading--line-at-point ()
   "Return the current line."
-  (buffer-substring (line-beginning-position) (line-end-position)))
+  (concat
+   (and-let* ((faces (ensure-list (get-char-property (point) 'face)))
+              (level (cl-find-if (lambda (f) (string-match "shr-h.$" (symbol-name f)))
+                                 faces))
+              (indent (- (aref (symbol-name level) 5) 49)))
+     (make-string indent ? ))
+   (buffer-substring (line-beginning-position) (line-end-position))))
 
 (defun shr-heading-setup-imenu ()
   "Setup imenu for h1-h5 headings in eww buffer.

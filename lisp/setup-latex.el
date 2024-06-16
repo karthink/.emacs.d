@@ -64,7 +64,7 @@
   (setq TeX-source-correlate-method 'synctex)
   (setq-default TeX-source-correlate-start-server t)
   (setq TeX-newline-function 'reindent-then-newline-and-indent)
-  (setq TeX-PDF-from-DVI "Dvips")
+  ;; (setq TeX-PDF-from-DVI "Dvips") ; Set to nil to call pdflatex directly
   (cond ((equal system-type 'cygwin)
          (setq TeX-view-program-list
                '(("Sumatra PDF" ("\"/cygdrive/c/Program Files/SumatraPDF/SumatraPDF.exe\" -reuse-instance"
@@ -272,7 +272,7 @@ but mark is only pushed if region isn't active."
         '(("[f]" ("footnote" "marginpar"))
           (my/TeX-fold-label ("cite"))
           (my/TeX-fold-label ("label"))
-          (my/TeX-fold-ref ("ref" "pageref" "eqref" "footref"))
+          (my/TeX-fold-ref ("ref" "pageref" "eqref" "footref" "cref"))
           ("[i]" ("index" "glossary"))
           ("[1]:||*" ("item"))
           ("..." ("dots"))
@@ -385,8 +385,7 @@ but mark is only pushed if region isn't active."
   :ensure t
   ;; :commands turn-on-cdlatex
   :hook ((LaTeX-mode . turn-on-cdlatex)
-         (LaTeX-mode . cdlatex-electricindex-mode)
-         (org-mode . cdlatex-electricindex-mode))
+         (LaTeX-mode . cdlatex-electricindex-mode))
   :bind (:map cdlatex-mode-map ("[" . nil) ("(" . nil) ("{" . nil)
               ("<tab>" . cdlatex-tab))
   :defines (cdlatex-math-symbol-prefix cdlatex-command-alist)

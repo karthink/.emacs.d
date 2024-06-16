@@ -1039,7 +1039,9 @@ for details."
   :bind (("H-+" . balance-windows-area)
          ;; ("C-x +" . balance-windows-area)
          ("C-x q" . my/kill-buffer-and-window)
-         ("ESC M-v" . scroll-other-window-down))
+         ("ESC M-v" . scroll-other-window-down)
+         :map window-prefix-map
+         ("1" . my/window-toggle-dedicated))
   :config
   (setq other-window-scroll-default
       (lambda ()
@@ -1069,6 +1071,12 @@ Also kill this window, tab or frame if necessary."
         (setf (window-parameter nil 'quit-restore)
               (car (window-parameter nil 'quit-restore-stack))))))
 
+  (defun my/window-toggle-dedicated (&optional win)
+    (interactive (list (selected-window)))
+    (let ((dedicated (window-dedicated-p win)))
+      (set-window-dedicated-p win (not dedicated))
+      (message "Window marked as %s." (if dedicated "free" "dedicated"))))
+
   (advice-add 'display-buffer :filter-return #'my/better-quit-window-save)
   (advice-add 'quit-restore-window :around #'my/better-quit-window-restore))
 
@@ -1097,6 +1105,7 @@ Also kill this window, tab or frame if necessary."
          ("H-6" . popper-toggle-type)
          ("C-x 6" . popper-toggle-type)
          ("H-M-k" . popper-kill-latest-popup)
+         ("s-M-k" . popper-kill-latest-popup)
          ("M-`" . my/switch-to-other-buffer)
          ("s-n" . my/next-buffer)
          ("s-p" . my/previous-buffer))

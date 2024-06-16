@@ -240,6 +240,16 @@
          ;; ("H-q" . read-only-mode)
          )
   :config
+  (defun other-window-prefix-maybe ()
+    (interactive)
+    (other-window-prefix)
+    (setq unread-command-events (list last-command-event))
+    (when-let ((seqs (read-key-sequence "[other-window]: "))
+               (cmd (key-binding seqs)))
+      (setq this-command cmd)
+      (call-interactively cmd)))
+  (keymap-set ctl-x-4-map "<t>" #'other-window-prefix-maybe)
+  
   (defun hyperify-prefix-key (key)
     (let* ((convert-function
 	    (lambda (event)

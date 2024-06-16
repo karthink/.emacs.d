@@ -125,7 +125,9 @@ This relies on the external 'fd' executable."
 
 (use-package dired-x
   :after dired
-  :bind ("H-d" . dired-jump)
+  :bind (("H-d" . dired-jump)
+         :map ctl-x-map
+         ("C-4" . dired-jump-other-window))
   :config
   (setq dired-omit-mode 1)
   (setq ls-lisp-use-insert-directory-program nil)

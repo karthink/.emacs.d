@@ -21,6 +21,11 @@
          ("C-M-<return>"  . embark-dwim)
          ("C-h b"   . embark-bindings)
          ("C-h C-b" . describe-bindings)
+         :map embark-meta-map
+         ("1" . same-window-prefix)
+         ("4" . other-window-prefix)
+         ("5" . other-frame-prefix)
+         ("6" . other-tab-prefix)
          :map embark-general-map
          ("M-SPC"     . embark-select)
          :map minibuffer-local-completion-map

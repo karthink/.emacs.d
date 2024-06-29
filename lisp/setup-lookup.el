@@ -9,6 +9,7 @@
          ("C-h C-f". describe-face)
          ("C-h C-k" . describe-keymap))
   :config
+  (put 'help-fns-edit-variable 'disabled nil)
   (defvar help-apropos-map
     (let ((map (make-sparse-keymap)))
       (define-key map (kbd "a") #'apropos)

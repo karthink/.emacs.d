@@ -1430,7 +1430,7 @@ User buffers are those not starting with *."
   :bind
   (("C-x o" . ace-window)
    ("H-o"   . ace-window)
-   ("C-M-4" . ace-window-prefix)
+   ("C-M-0" . ace-window-prefix)
    :map ctl-x-4-map
    ("o" . ace-window-prefix))
   ;; :custom-face

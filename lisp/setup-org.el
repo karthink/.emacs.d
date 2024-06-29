@@ -1991,11 +1991,13 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
   :bind (:map mode-specific-map
          ("o s" . org-ql-search)
          ("o v" . org-ql-view)
-         ("o f" . org-ql-find)
          ("o l" . org-ql-open-link)
          :map org-agenda-mode-map
          ("C-M-n" . my/org-agenda-next-header)
-         ("C-M-p" . my/org-agenda-previous-header))
+         ("C-M-p" . my/org-agenda-previous-header)
+         :map org-mode-map
+         ("C-c o w" . org-ql-refile)
+         ("C-c o f" . org-ql-find))
   :config
   (defun my/org-agenda-next-header (&optional arg)
     (interactive "p")

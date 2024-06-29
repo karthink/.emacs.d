@@ -229,6 +229,10 @@
          ("H-s" . isearch-forward)
          ("H-r" . isearch-backward)
          ("H-q" . kill-buffer-and-window)
+         ("C-M-4" . other-window-prefix)
+         ("C-M-1" . same-window-prefix)
+         ("C-M-5" . other-frame-prefix)
+         ("C-M-6" . other-tab-prefix)
          :map isearch-mode-map
          ("H-s" . isearch-repeat-forward)
          ("H-r" . isearch-repeat-backward)

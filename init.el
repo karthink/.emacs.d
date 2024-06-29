@@ -2774,7 +2774,8 @@ normally have their errors suppressed."
   :config
   (when IS-LINUX
     (defun browse-url-umpv (url &optional single)
-      (start-process "mpv" nil (if single "mpv" "umpv")
+      (start-process "mpv" nil "setsid" "--wait"
+                     (if single "mpv" "umpv")
                      (shell-quote-wildcard-pattern url)))
     
     (defun browse-url-mpv-enqueue (url &optional _)
@@ -2786,13 +2787,13 @@ normally have their errors suppressed."
           (browse-url-mpv url))))
 
     (defun browse-url-mpv-hd (url &optional _)
-      (start-process "mpv" nil "mpv"
-                     "--profile=protocol-hd-video"
+      (start-process "mpv" nil "setsid" "--wait" "--"
+                     "mpv" "--profile=protocol-hd-video"
                      (shell-quote-wildcard-pattern url)))
 
     (defun browse-url-mpv-audio (url &optional _)
-      (start-process "mpv" nil "mpv"
-                     "--video=no" "--force-window=yes"
+      (start-process "mpv" nil "setsid" "--wait" "--"
+                     "mpv" "--video=no" "--force-window=yes"
                      (shell-quote-wildcard-pattern url)))
     
     (defun browse-url-mpv (url &optional _)

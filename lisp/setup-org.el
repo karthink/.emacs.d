@@ -5,7 +5,6 @@
 ;;;----------------------------------------------------------------
 ;; Org settings to do with its default behavior
 (use-package org
-  ;; :straight (:type built-in)
   :bind (("\C-cl" . org-store-link)
          ("\C-ca" . org-agenda)
          ("<f5>"  . org-capture)
@@ -56,9 +55,7 @@
                                           ("S" . org-tree-to-indirect-buffer))
                 org-imenu-depth 7
                 org-log-into-drawer t
-                org-id-link-to-org-use-id 'create-if-interactive
                 org-extend-today-until 3
-                org-id-locations-file (dir-concat user-cache-directory "org-id-locations")
                 org-default-notes-file "~/org/do.org"
                 org-M-RET-may-split-line '((headline) (default . nil))
                 org-fast-tag-selection-single-key 'expert
@@ -193,6 +190,14 @@
   ;; Disabling this to try to use cookies with PROJECT.
   ;; (add-hook 'org-after-todo-statistics-hook #'org-summary-todo)
   )
+
+(use-package org-id
+  :after org
+  :config
+  (setq org-id-link-to-org-use-id
+        'create-if-interactive-and-no-custom-id
+        org-id-link-consider-parent-id t
+        org-id-search-archives nil))
 
 (use-package org-fold
   :after org
@@ -410,12 +415,12 @@ appropriate.  In tables, insert a new row or end the table."
    (progn (plist-put org-format-latex-options :background "Transparent")
           (plist-put org-format-latex-options :scale 1.0)
           (plist-put org-format-latex-options :zoom
-                     (+ 0.01 (/ (face-attribute 'default :height) 100.0))))
+                     (- (/ (face-attribute 'default :height) 100.0) 0.025)))
 
    org-latex-preview-appearance-options
    (progn (plist-put org-latex-preview-appearance-options :scale 1.0)
           (plist-put org-latex-preview-appearance-options :zoom
-                     (+ 0.01 (/ (face-attribute 'default :height) 100.0))))
+                     (- (/ (face-attribute 'default :height) 100.0) 0.025)))
 
    org-latex-preview-numbered t
    org-latex-preview-live-debounce 0.3
@@ -997,7 +1002,7 @@ has no effect."
   :after org
   :defer
   :commands (org-capture make-orgcapture-frame)
-  :hook ((org-capture-prepare-finalize . org-id-get-create)
+  :hook (;; (org-capture-prepare-finalize . org-id-get-create)
          (org-capture-after-finalize   . org-capture-after-delete-frame))
   :config
   (defun org-capture-after-delete-frame ()
@@ -1302,7 +1307,7 @@ parent."
   (setq-default org-download-image-dir "./figures")
   (setq org-download-image-attr-list
         '("#+attr_html: :width 40% :align center"
-          "#+attr_latex: :width 0.5\\textwidth")))
+          "#+attr_latex: :width \\textwidth")))
 
 ;;;----------------------------------------------------------------
 ;; ** ORG-BABEL

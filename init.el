@@ -1139,7 +1139,7 @@ Also kill this window, tab or frame if necessary."
              "^\\*ielm\\*"
              "^\\*TeX Help\\*"
              "^\\*ChatGPT\\*"
-             "^\\*gptel-quick\\*"
+             "^\\*gptel-ask\\*"
              "\\*Shell Command Output\\*"
              ("\\*Async Shell Command\\*" . hide)
              ("\\*Detached Shell Command\\*" . hide)
@@ -3904,31 +3904,18 @@ _d_: subtree
   :hook ((eshell-mode . my/gptel-eshell-keys))
   :bind (("C-c C-<return>" . gptel-menu)
          ("C-c <return>" . gptel-send)
-         ("C-h C-q" . gptel-quick)
          :map gptel-mode-map
          ("C-c C-x t" . gptel-set-topic))
-  :init
-  (setf (alist-get "^\\*ChatGPT\\*.*$"
-                   display-buffer-alist
-                   nil t #'equal)
-        '((my/display-buffer-reuse-minor-mode-window
-           display-buffer-in-direction)
-          (direction . below)
-          (minor-mode . (gptel-mode julia-snail-message-buffer-mode))
-          (window-height . 0.4)
-          (body-function . select-window)))
   :config
-  (with-eval-after-load 'gptel-org
-    (setq gptel-org-branching-context t))
-  
   (gptel-make-openai "Groq"
-    :host "api.groq.com"
-    :endpoint "/openai/v1/chat/completions"
-    :stream t
-    :key gptel-api-key
-    :models '("mixtral-8x7b-32768"
-              "gemma-7b-it"
-              "llama2-70b-4096"))
+        :host "api.groq.com"
+        :endpoint "/openai/v1/chat/completions"
+        :stream t
+        :key gptel-api-key
+        :models '("llama3-70b-8192"
+                  "llama3-8b-8192"
+                  "mixtral-8x7b-32768"
+                  "gemma-7b-it"))
   
   (defvar gptel--anthropic
     (gptel-make-anthropic "Claude" :key gptel-api-key :stream t))
@@ -3944,52 +3931,26 @@ _d_: subtree
                 "mistralai/Mixtral-8x7B-Instruct-v0.1"
                 "codellama/CodeLlama-13b-Instruct-hf"
                 "codellama/CodeLlama-34b-Instruct-hf")))
+
   (with-eval-after-load 'gptel-gemini
     (defvar gptel--gemini
       (gptel-make-gemini "Gemini" :key gptel-api-key :stream t)))
+  
   (with-eval-after-load 'gptel-ollama
     (defvar gptel--ollama
       (gptel-make-ollama
-       "Ollama"
-       :host "192.168.0.59:11434"
-       :models '("mistral:latest" "zephyr:latest" "openhermes:latest")
-       :stream t)))
+          "Ollama"
+        :host "192.168.0.59:11434"
+        :models '("mistral:latest" "zephyr:latest" "openhermes:latest")
+        :stream t)))
+
   (defvar gptel--gpt4all
     (gptel-make-gpt4all
-     "GPT4All"
-     :protocol "http"
-     :host "localhost:4891"
-     :models '("mistral-7b-openorca.Q4_0.gguf")))
-  (when (fboundp 'gptel-make-kagi)
-    (defvar gptel--kagi
-      (gptel-make-kagi
-       "Kagi"
-       :key (lambda ()
-              (auth-source-pass-get
-               'secret "api/kagi-ai.com"))))
-    (with-eval-after-load 'embark
-      (defun my/kagi-summarize (url)
-        (let ((gptel-backend gptel--kagi)
-              (gptel-model "summarize:agnes"))
-          (gptel-request
-           url
-           :callback
-           (lambda (response info)
-             (if response
-                 (with-current-buffer (get-buffer-create "*Pp Eval Output*")
-                   (let ((inhibit-read-only t))
-                     (erase-buffer)
-                     (visual-line-mode 1)
-                     (insert response)
-                     (display-buffer
-                      (current-buffer)
-                      '((display-buffer-in-side-window
-                         display-buffer-at-bottom)
-                        (side . bottom)))))
-               (message "gptel-request failed with message: %s"
-                        (plist-get info :status)))))))
-      (keymap-set embark-url-map "=" #'my/kagi-summarize)))
-
+        "GPT4All"
+      :protocol "http"
+      :host "localhost:4891"
+      :models '("mistral-7b-openorca.Q4_0.gguf")))
+  
   (defalias 'my/gptel-easy-page
     (let ((map (make-composed-keymap
                 (define-keymap "RET" 'gptel-end-of-response)
@@ -4009,20 +3970,14 @@ _d_: subtree
   (add-hook 'gptel-pre-response-hook 'my/gptel-easy-page)
   (define-key global-map (kbd "C-c SPC") 'my/gptel-easy-page)
 
-  (setf (alist-get 'org-mode gptel-prompt-prefix-alist) "*Prompt*: "
-        (alist-get 'org-mode gptel-response-prefix-alist) "*Response*:\n"
-        (alist-get 'markdown-mode gptel-prompt-prefix-alist) "#### ")
-
   (auth-source-pass-enable)
+  (add-hook 'gptel-post-response-functions #'font-lock-ensure)
   
-  (add-hook 'gptel-post-response-functions
-            #'font-lock-ensure)
-  
-  (with-eval-after-load 'gptel-transient
-    (transient-suffix-put 'gptel-menu (kbd "-m") :key "M")
-    (transient-suffix-put 'gptel-menu (kbd "-c") :key "C")
-    (transient-suffix-put 'gptel-menu (kbd "-n") :key "N")
-    (transient-suffix-put 'gptel-menu (kbd "-t") :key "T"))
+  ;; (with-eval-after-load 'gptel-transient
+  ;;   (transient-suffix-put 'gptel-menu (kbd "-m") :key "M")
+  ;;   (transient-suffix-put 'gptel-menu (kbd "-c") :key "C")
+  ;;   (transient-suffix-put 'gptel-menu (kbd "-n") :key "N")
+  ;;   (transient-suffix-put 'gptel-menu (kbd "-t") :key "T"))
 
   (setq gptel-directives
         `((default . "To assist:  Be terse.  Do not offer unprompted advice or clarifications. Speak in specific,
@@ -4034,7 +3989,7 @@ _d_: subtree
  ideas.
 
  Never apologize.  Ask questions when unsure.")
-          (programmer . "You are a careful programmer.  Provide code and only code as output without any additional text, prompt or note.")
+          (programmer . "You are a careful programmer.  Provide code and only code as output without any additional text, prompt or note.  Do NOT use markdown backticks (```) to format your response.")
           (cliwhiz . "You are a command line helper.  Generate command line commands that do what is requested, without any additional description or explanation.  Generate ONLY the command, without any markdown code fences.")
           (emacser . "You are an Emacs maven.  Reply only with the most appropriate built-in Emacs command for the task I specify.  Do NOT generate any additional description or explanation.")
           (explain . "Explain what this code does to a novice programmer.")
@@ -4054,30 +4009,15 @@ _d_: subtree
                             (buffer-substring-no-properties (point) (point-max))))
                 res)))
              res)))
-  (setq-default gptel--system-message (alist-get 'default gptel-directives))
+  (setq gptel--system-message (alist-get 'default gptel-directives)
+        gptel-default-mode 'org-mode)
+  (setf (alist-get 'org-mode gptel-prompt-prefix-alist) "*Prompt*: "
+        (alist-get 'org-mode gptel-response-prefix-alist) "*Response*:\n"
+        (alist-get 'markdown-mode gptel-prompt-prefix-alist) "#### ")
+  (with-eval-after-load 'gptel-org
+    (setq-default gptel-org-branching-context t))
   
-  (defun my/gptel-send (&optional arg)
-    (interactive "P")
-    (if (or gptel-mode (< (point) 20000) (use-region-p))
-        (gptel-send arg)
-      (if (y-or-n-p "Prompt has more than 20000 chars, send to ChatGPT?")
-          (gptel-send arg)
-        (message "ChatGPT: Request cancelled."))))
-  (setq gptel-default-mode 'org-mode)
-  (setf (alist-get "^\\*gptel-quick\\*" display-buffer-alist
-                   nil nil #'equal)
-        `((display-buffer-in-side-window)
-          (side . bottom)
-          (window-height . 0.3)))
-  (defun gptel-quick (&optional arg)
-    (interactive "P")
-    (unless (buffer-live-p (get-buffer "*gptel-quick*"))
-      (with-current-buffer (get-buffer-create "*gptel-quick*")
-        (add-hook 'gptel-post-stream-hook 'gptel-auto-scroll nil t)
-        (add-hook 'gptel-post-response-functions 'gptel-end-of-response nil t)))
-    (with-current-buffer (get-buffer "*gptel-quick*") (goto-char (point-max)))
-    (gptel--suffix-send (list "m" (if arg "e" "b*gptel-quick*"))))
-  (defun  my/gptel-eshell-send (&optional arg)
+  (defun my/gptel-eshell-send (&optional arg)
     (interactive "P")
     (if (use-region-p)
         (gptel-send arg)
@@ -4092,7 +4032,44 @@ _d_: subtree
     (define-key eshell-mode-map (kbd "C-c <return>")
                 #'my/gptel-eshell-send)))
 
+(use-package gptel-ask
+  :when (fboundp 'gptel)
+  :bind (("C-h C-q" . gptel-ask)
+         :map embark-url-map
+         ("?" . gptel-kagi-summarize))
+  :config
+  (defvar gptel--kagi
+    (gptel-make-kagi
+        "Kagi"
+      :key (lambda () (auth-source-pass-get 'secret "api/kagi-ai.com")))
+    "Kagi source for gptel")
 
+  (defun gptel-kagi-summarize (url)
+    (interactive "sSummarize url: ")
+    (let ((gptel-backend gptel--kagi)
+          (gptel-model "summarize:agnes")
+          (gptel-use-curl)
+          (gptel-use-context))
+      (gptel-request url
+        :callback
+        (lambda (response info)
+          (if response
+              (progn
+                (gptel--prepare-ask-buffer)
+                (let ((scroll-conservatively 0))
+                  (with-current-buffer gptel-ask--buffer-name
+                    (insert "\n" url "\nSummary:\n\n"
+                            response "\n\n----")
+                    (display-buffer (current-buffer)))))
+            (message "gptel-request failed with message: %s"
+                     (plist-get info :status)))))
+      (message "Generating summary for: %s" url))))
+
+(use-package gptel-quick
+  :ensure (:host github :protocol ssh
+           :repo "karthink/gptel-quick")
+  :bind (:map embark-general-map
+         ("?" . gptel-quick)))
 
 (use-package project
     :after (popper visual-fill-column)

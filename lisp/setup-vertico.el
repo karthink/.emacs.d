@@ -49,7 +49,7 @@
          '((file my/vertico-grid-mode reverse)
            (jinx grid (vertico-grid-annotate . 20))
            (project-file my/vertico-grid-mode reverse)
-           (imenu buffer)
+           (imenu (vertico-count . 14))
            (consult-location buffer)
            (consult-grep buffer)
            (notmuch-result reverse)

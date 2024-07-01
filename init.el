@@ -2756,11 +2756,22 @@ normally have their errors suppressed."
             (my-next-error-register 'flymake-goto-next-error)))
 
 (use-package flymake-diagnostic-at-point
+  :disabled
   :ensure t
   :after flymake
   :hook (flymake-mode . flymake-diagnostic-at-point-mode)
   :config (setq flymake-diagnostic-at-point-display-diagnostic-function
                 'flymake-diagnostic-at-point-display-popup))
+
+(use-package sideline-flymake
+  :ensure t
+  :hook (flymake-mode . sideline-mode)
+  :init
+  (setq sideline-flymake-display-mode 'point) 
+  ;; 'point to show errors only on point
+  ;; 'line to show errors on the current line
+  (setq sideline-backends-right '(sideline-flymake)
+        sideline-flymake-show-backend-name t))
 
 (use-package package-lint :ensure t :defer)
 

@@ -4234,10 +4234,10 @@ managers such as DWM, BSPWM refer to this state as 'monocle'."
 ;;;----------------------------------------------------------------
 (use-package mixed-pitch
   :ensure t
-  :hook (mixed-pitch-mode . my/mixed-pitch-spacing)
   :config
   (dolist (face '(line-number org-property-value org-drawer
-                  error org-cite corfu-current corfu-default))
+                  error org-cite corfu-current corfu-default
+                  org-meta-line org-tag))
     (add-to-list 'mixed-pitch-fixed-pitch-faces face))
   (setq mixed-pitch-set-height nil)
   (defun my/mixed-pitch-spacing ()
@@ -4275,7 +4275,7 @@ becomes a blinking bar. Evil-mode (if bound) is disabled."
             (mixed-pitch-mode 1))
           (if (bound-and-true-p evil-mode)
               (evil-emacs-state))
-          (setq-local line-spacing 0.16)
+          ;; (setq-local line-spacing 0.16)
           ;; (setq-local cursor-type '(bar . 2))
           )
       (olivetti-mode -1)
@@ -4409,18 +4409,20 @@ the mode-line and switches to `variable-pitch-mode'."
   :config
   (setq custom-theme-directory (expand-file-name "lisp" user-emacs-directory))
 
-  (defun my/toggle-theme (theme)
+  (defun my/toggle-theme ()
     "Swap color themes. With prefix arg, don't disable the
 currently loaded theme first."
-    (interactive
-     (list
-      (intern (completing-read "Load theme: "
-                               (cons "user" (mapcar #'symbol-name
-                                                    (custom-available-themes)))
-                                     nil t))))
-    (unless current-prefix-arg
-      (mapc #'disable-theme custom-enabled-themes))
-    (load-theme theme t))
+    (interactive)
+    (if (fboundp 'consult-theme)
+        (progn (setq this-command 'consult-theme)
+               (call-interactively #'consult-theme))
+      (let ((theme (intern (completing-read "Load theme: "
+                                            (cons "user" (mapcar #'symbol-name
+                                                                 (custom-available-themes)))
+                                            nil t))))
+        (unless current-prefix-arg
+          (mapc #'disable-theme custom-enabled-themes))
+        (load-theme theme t))))
 
   ;; :init
   ;; (load-theme 'smart-mode-line-atom-one-dark)
@@ -4457,12 +4459,13 @@ buffer's text scale."
 
 (use-package cus-face
   :config
-  (setf (alist-get "Merriweather" face-font-rescale-alist
-                   nil nil #'equal)
-        0.88)
-  (setf (alist-get "IM FELL" face-font-rescale-alist
-                 nil nil #'equal)
-      1.2)
+  (pcase-dolist (`(,font           . ,scale)
+                 '(("Merriweather" . 0.88)
+                   ("IM FELL"      . 1.18)
+                   ("Latin Modern" . 1.18)))
+    (setf (alist-get font face-font-rescale-alist nil nil #'equal)
+          scale))
+  
   (cond (IS-LINUX
          (set-fontset-font t 'unicode "Symbola" nil 'prepend)
          (pcase-let ((`(,vp ,fp)
@@ -4609,6 +4612,8 @@ buffer's text scale."
 (use-package doom-themes
   :ensure t
   :defer
+  :custom
+  (doom-gruvbox-dark-variant "hard")
   :init
   (defun my/doom-theme-settings (theme &rest args)
     "Additional face settings for doom themes"

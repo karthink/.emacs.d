@@ -2105,6 +2105,7 @@ current buffer without truncation."
 (load (expand-file-name "lisp/setup-latex" user-emacs-directory))
 
 (use-package ink
+  :disabled
   :load-path "plugins/ink/"
   :after latex
   :commands (ink-make-figure ink-edit-figure))
@@ -2243,6 +2244,18 @@ current buffer without truncation."
 ;;;################################################################
 
 ;;;----------------------------------------------------------------
+;; ** CW
+;;----------------------------------------------------------------
+(load (expand-file-name "lisp/setup-cw" user-emacs-directory))
+
+;; ** EDRAW
+(use-package edraw
+  :ensure (el-easydraw :host github
+                       :repo "misohena/el-easydraw"
+                       :main "edraw.el")
+  :defer
+  :mode "\\.edraw\\.svg$")
+
 ;; ** QRENCODE
 (use-package qrencode :ensure t :defer)
 ;; ** INDENT-BARS
@@ -3697,11 +3710,11 @@ _d_: subtree
   :bind (:map erc-mode-map
          ("\M-(" . insert-parentheses-sentence))
   :config
-  (setq erc-server "irc.karthinks.com"
-        erc-port 7078
+  (setq erc-server "irc.libera.chat"
+        erc-port 6667
         erc-nick "karthik"
         erc-user-full-name "Karthik"
-        erc-prompt-for-password nil
+        erc-prompt-for-password t
         ;; erc-track-shorten-start 6
         ;; erc-autojoin-channels-alist '(("irc.libera.chat" "#systemcrafters"
         ;;                                "#org-mode" "#emacs"))

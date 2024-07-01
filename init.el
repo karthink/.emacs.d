@@ -496,10 +496,10 @@ Cancel the previous one if present."
         (with-current-buffer htmlized-buffer
           (let* ((bufhash (sha1 (current-buffer)))
                  (ssh-url (format (car (alist-get 'pastebin my-server-url-alist))
-                                  (substring bufhash 0 8)
+                                  (concat (substring bufhash 0 8) "-")
                                   upload-file-name))
                  (web-url (format (cadr (alist-get 'pastebin my-server-url-alist))
-                                  (substring bufhash 0 8)
+                                  (concat (substring bufhash 0 8) "-")
                                   upload-file-name)))
             (write-file ssh-url)
             (message "Wrote file to: %s" web-url)

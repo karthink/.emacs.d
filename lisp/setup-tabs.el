@@ -31,6 +31,22 @@
                   'face (funcall tab-bar-tab-face-function tab)))
     (setq tab-bar-tab-name-format-function #'my/tab-bar-tab-name-format-comfortable)
     
+    ;; Make items in tab-bar-format-global clickable
+    (define-advice tab-bar-format-global (:override () with-buttons)
+      (let ((strings (split-string (format-mode-line global-mode-string))))
+        (mapcan (lambda (s)
+                  (list
+                   `(sep menu-item ,(tab-bar-separator) ignore)
+                   `(global menu-item ,s tab-bar-format-global-action)))
+                strings)))
+    
+    (defun tab-bar-format-global-action (event)
+      (interactive "e")
+      (let ((posn (event-start event)))
+        (when-let* ((str (posn-string posn))
+                    (str-button (get-text-property (cdr str) 'button (car str))))
+	  (button-activate str t))))
+    
     (setq tab-bar-format '(tab-bar-format-menu-bar
                            ;; tab-bar-format-history
                            tab-bar-format-tabs

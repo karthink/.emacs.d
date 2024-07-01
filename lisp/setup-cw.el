@@ -1,4 +1,5 @@
 (use-package cw
+  :after consult
   :ensure (:host github :repo "karthink/consult-web-mini"
            :protocol ssh)
   :bind (:map help-map

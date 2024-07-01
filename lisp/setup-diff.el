@@ -1,5 +1,7 @@
 (use-package diff-mode
   :defer
+  :bind (:map diff-mode-map
+         ("M-o" . nil))
   :config
   (use-package outline
     :hook (diff-mode . my/outline-mode-diff)

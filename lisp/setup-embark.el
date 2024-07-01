@@ -64,6 +64,31 @@
          ("M-m"      . browse-url-mpv-enqueue)
          ("m"        . browse-url-mpv))
   :config
+  
+  (cl-defun embark--verbose-indicator-section-bindings
+      (&key bindings &allow-other-keys)
+    "Format the BINDINGS section for the indicator buffer."
+    (let* ((max-width (apply #'max (cons 0 (mapcar (lambda (x)
+                                                     (string-width (car x)))
+                                                   bindings))))
+           (fmt (format "%%-%ds" (1+ max-width)))
+           (num-cols (floor (frame-width) (+ max-width 38)))
+           (col 0) (result nil))
+      (dolist (binding bindings (string-join (nreverse result)))
+        (setq col (1+ col))
+        (let ((cmd (caddr binding)))
+          (unless (embark--verbose-indicator-excluded-p cmd)
+            (let* ((keys (format fmt (car binding)))
+                   (doc (embark--function-doc cmd))
+                   (doc (and (stringp doc)
+                             (truncate-string-to-width doc 38))))
+              (push (format "%s%-38s " keys
+                            (propertize
+                             (car (split-string (or doc "") "\n"))
+                             'face 'embark-verbose-indicator-documentation))
+                    result)
+              (when (= (mod col num-cols) 0) (push "\n" result) (setq col 0))))))))
+
   (setq embark-keymap-prompter-key "'")
   (setq embark-cycle-key "SPC")
   (setq embark-quit-after-action

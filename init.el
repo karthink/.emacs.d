@@ -1879,7 +1879,7 @@ If region is active, add its contents to the new buffer."
 (use-package pp
   :bind (([remap eval-last-sexp] . eval-sexp-maybe-pp)
          ([remap eval-expression] . my/pp-eval-expression))
-  :hook (eval-expression-minibuffer-setup . my/eval-with-threading)
+  ;; :hook (eval-expression-minibuffer-setup . my/eval-with-threading)
   :config
   (defun my/eval-with-threading ()
     "Pre-insert a threading macro for easy chaining"

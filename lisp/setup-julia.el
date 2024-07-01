@@ -7,8 +7,15 @@
   (add-hook 'julia-mode-hook
             (defun my/julia-mode-settings ()
               (setq-local outline-regexp "^##+")
+              (remove-hook 'completion-at-point-functions
+                           #'julia-mode-latexsub-completion-at-point-before
+                           'local)
+              (remove-hook 'completion-at-point-functions
+                           #'julia-mode-latexsub-completion-at-point-around
+                           'local)
               (outline-minor-mode 1)))
   ;; (add-to-list 'julia-arguments "-t12")
+  (setq julia-automatic-latexsub nil)
   (defun my/julia-latexsub-or-indent ()
     (interactive)
     (require 'cdlatex nil t)

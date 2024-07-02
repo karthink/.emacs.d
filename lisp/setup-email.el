@@ -12,6 +12,7 @@
         message-send-mail-function 'message-send-mail-with-sendmail
         sendmail-program "msmtp"
         mail-specify-envelope-from t
+        message-kill-buffer-on-exit t
         message-sendmail-envelope-from 'header
         mail-envelope-from 'header)
 
@@ -31,8 +32,7 @@
             (setq message-sendmail-extra-arguments (list '"-a" account))))))
   ;; the original form of this script did not have the ' before "a" which causes
   ;; a very difficult to track bug --frozencemetery
-  (add-hook 'message-send-mail-hook #'cg-feed-msmtp)
-  )
+  (add-hook 'message-send-mail-hook #'cg-feed-msmtp))
 
 ;;* NOTMUCH
 
@@ -54,20 +54,10 @@
          (notmuch-mua-send . notmuch-mua-attachment-check))
   :config
   (setq-default notmuch-search-oldest-first nil)
-  (setq notmuch-show-logo nil
-        notmuch-fcc-dirs nil
+  (setq notmuch-fcc-dirs '(("contact@" . "sent +sent"))
+        notmuch-show-logo nil
         notmuch-column-control 0.6
         notmuch-message-headers-visible nil
-        ;; notmuch-saved-searches my-notmuch-saved-searches
-        message-kill-buffer-on-exit t
-        ;; notmuch-search-result-format
-        ;; '(("date" . "%12s ")
-        ;;   ("count" . "%-7s ")
-        ;;   ("authors" . "%-30s ")
-        ;;   ("subject" . "%-72s ")
-        ;;   ("tags" . "(%s)"))
-        ;; notmuch-tag-formats
-        ;; '(("unread" (propertize tag 'face 'notmuch-tag-unread)))
         notmuch-always-prompt-for-sender t
         notmuch-archive-tags '("-inbox" "-unread")
         notmuch-hello-sections
@@ -80,6 +70,15 @@
           ("ucsb"      . (:foreground "MediumPurple"))
 	  ("important" . (:foreground "CornflowerBlue"))
           ("unread"    . (:inherit notmuch-search-unread-face))))
+
+  (pcase-dolist (`(,key . ,ops)
+                 '(("d" ("+trash" "-inbox") "Delete")
+                   ("m" ("+money") "Money")
+                   ("b" ("+bills" "-inbox") "Bills")
+                   ("H" ("+medical") "Medical")
+                   ("I" ("+insurance") "Insurance")
+                   ("X" ("+tax") "Tax")))
+    (setf (alist-get key notmuch-tagging-keys nil nil #'equal) ops))
   
   ;; Hide patches and diffs in notmuch-show by default. Note: To turn them into
   ;; attachments from inline components you can customize
@@ -171,58 +170,19 @@
   (defun my/notmuch-tree-message-push-button ()
     (interactive)
     (when (window-live-p notmuch-tree-message-window)
-      (my/avy-link-hint notmuch-tree-message-window)))
+      (my/avy-link-hint notmuch-tree-message-window))))
 
- ;;; (define-key notmuch-show-mode-map "`" 'notmuch-show-apply-tag-macro)
-  ;;; (define-key notmuch-search-mode-map "`" 'notmuch-show-apply-tag-macro)
-    ;
-  ;;; (define-prefix-command notmuch-tagger-map)
-  ;;; (let ((map notmuch-tagger-map))
-  ;;;   (define-key map "")
-  ;;;   )
-    ;
-  ;;; (defun notmuch-show-apply-tag-macro (key)
-  ;;;   (interactive "k")
-  ;;;   (let ((macro (assoc key notmuch-show-tag-macro-alist)))
-  ;;;     (apply 'notmuch-show-tag-message (cdr macro))))
-    ;
-  ;;; (defun +disable-C-tab (mode-map)
-  ;;;   "Disable Control-Tab in mode-map"
-  ;;;   (define-key mode-map (kbd "C-TAB") nil)
-  ;;;   (define-key mode-map (kbd "C-<tab>") nil))
-    ;
-  ;;; (dolist (mode '((notmuch-hello-mode-hook . notmuch-hello-mode-map)
-  ;;;                 (notmuch-show-mode-hook . notmuch-show-mode-map)
-  ;;;                 (notmuch-message-mode-hook . notmuch-message-mode-map)
-  ;;;                 (notmuch-tree-mode-hook . notmuch-tree-mode-map)
-  ;;;                 (notmuch-search-mode-hook . notmuch-search-mode-map)))
-  ;;;   (let ((mode-hook (car mode))
-  ;;;         (mode-map (cdr mode)))
-  ;;;     (add-hook mode-hook
-  ;;;               (lambda ()
-  ;;;                 (+disable-C-tab mode-map)))))
-    ;
-    ;
-  ;;; (define-key notmuch-common-keymap (kbd "C-TAB") nil)
-  ;;; (define-key notmuch-common-keymap (kbd "C-<tab>") nil)
-    ;
-    ;
-  ;;; (add-hook 'notmuch-show-hook #'my-next-unread)
-  ;;; (defun my-next-unread ()
-  ;;;   (interactive)
-  ;;;   (let ((init (point)))
-  ;;;     (catch 'break
-  ;;;       (while t
-  ;;;         (when (member "unread" (notmuch-show-get-tags))
-  ;;;           (let ((props (notmuch-show-get-message-properties)))
-  ;;;             (notmuch-show-message-visible props t)
-  ;;;             (notmuch-show-mark-read)
-  ;;;             (throw 'break t)))
-  ;;;         (when (not (notmuch-show-goto-message-next))
-  ;;;           (message "No more unread messages.")
-  ;;;           (goto-char init)
-  ;;;           (throw 'break t))))))
-  )
+;; Use corfu in notmuch buffers
+(use-package notmuch-address
+  :when (or (daemonp) (display-graphic-p))
+  :defer
+  :config
+  (setq notmuch-address-use-company nil
+        notmuch-address-selection-function #'ignore)
+  (define-advice notmuch-address-setup (:after () use-corfu)
+    (add-hook 'completion-at-point-functions
+              (cape-company-to-capf 'notmuch-company)
+              nil t)))
 
 (use-package notmuch-bookmarks
 :after notmuch

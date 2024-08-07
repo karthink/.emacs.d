@@ -1582,7 +1582,7 @@ non-nil optional argument DELIMITED, only replace matches
 surrounded by word boundaries."
   (interactive "P")
   (reb-update-regexp)
-  (let* ((re (reb-target-binding reb-regexp))
+  (let* ((re (reb-target-value 'reb-regexp))
          (replacement (query-replace-read-to
                        re 
                        (concat "Query replace"
@@ -4126,8 +4126,8 @@ _d_: subtree
 ;;;----------------------------------------------------------------
 ;; *** browser-hist
 (use-package browser-hist
-  :ensure (:host github :repo "agzam/browser-hist"
-           :remotes ("copy" :repo "karthink/browser-hist"))
+  :ensure (:host github :repo "agzam/browser-hist.el"
+           :remotes ("copy" :repo "karthink/browser-hist.el" :protocol ssh))
   :bind ("M-s U" . browser-hist-search)
   :config
   (setf (alist-get 'firefox browser-hist-db-paths)

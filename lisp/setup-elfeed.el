@@ -814,6 +814,27 @@ This is an enhanced version of the default `elfeed-show-entry' that
            :repo "karthink/elfeed-tube")
   :after (elfeed-tube org))
 
+;; ** Elfeed prune: Remove elfeed entries
+(use-package elfeed-prune
+  :defer
+  :ensure (:host "www.codeberg.org"
+           :protocol https
+           :repo "bram85/elfeed-prune")
+  :config
+  (setq elfeed-prune-predicates nil
+        elfeed-prune-enabled nil)
+  (defun my/elfeed-remove-feed (_ feed)
+    "Add this function to the hook `elfeed-prune-predicates'.
+
+Make sure there's nothing else in `elfeed-prune-predicates'!
+
+And set `elfeed-prune-enabled' to true, then call `elfeed-prune'."
+    (seq-some
+     (lambda (title)
+       (string-match-p title (elfeed-feed-title feed)))
+     '("Feed title to be removed"
+       "Other feed"))))
+
 ;; ** +AUTOTAGGING SETUP+
 
 ;; Currently disabled: More Elfeed taggers

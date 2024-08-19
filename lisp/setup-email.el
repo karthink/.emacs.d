@@ -77,7 +77,8 @@
                    ("b" ("+bills" "-inbox") "Bills")
                    ("H" ("+medical") "Medical")
                    ("I" ("+insurance") "Insurance")
-                   ("X" ("+tax") "Tax")))
+                   ("X" ("+tax") "Tax")
+                   ("p" ("+purchases") "Purchases")))
     (setf (alist-get key notmuch-tagging-keys nil nil #'equal) ops))
   
   ;; Hide patches and diffs in notmuch-show by default. Note: To turn them into

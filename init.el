@@ -1857,6 +1857,8 @@ If region is active, add its contents to the new buffer."
 ;;;----------------------------------------------------------------
 ;; ** EGLOT - LSP
 ;;;----------------------------------------------------------------
+;; (use-package jsonrpc :ensure (:tag "1.0.25") :defer)
+;; (use-package eldoc :ensure t :defer)
 (use-package eglot
   ;; :ensure t
   :commands eglot
@@ -1869,9 +1871,13 @@ If region is active, add its contents to the new buffer."
           'eldoc-documentation-compose-eagerly))
   ;; (setq eglot-put-doc-in-help-buffer nil)
   (setq eglot-events-buffer-size 0)
-  (setq eglot-extend-to-xref t)
-  (add-to-list 'eglot-server-programs
-               '(matlab-mode . ("~/.local/share/git/matlab-langserver/matlab-langserver.sh" ""))))
+  (setq eglot-extend-to-xref t))
+
+;; (use-package dape
+;;   :ensure t
+;;   :defer t
+;;   :config
+;;   (setq dape-window-buffer-arrangement 'right))
 
 ;;;----------------------------------------------------------------
 ;; ** EMACS-LISP
@@ -2242,6 +2248,15 @@ current buffer without truncation."
 
 ;; * PLUGINS
 ;;;################################################################
+
+;;----------------------------------------------------------------
+;; ** BEANCOUNT
+(use-package beancount
+  :ensure (:host github :repo "beancount/beancount-mode")
+  :defer)
+;; ** ENVRC
+;;----------------------------------------------------------------
+(use-package envrc :ensure t :defer)
 
 ;;;----------------------------------------------------------------
 ;; ** CW
@@ -2696,7 +2711,6 @@ current buffer without truncation."
 
 ;; ** ELDOC
 (use-package eldoc
-  :defer
   :hook (ielm-mode . eldoc-mode)
   :config
   (setq eldoc-documentation-strategy

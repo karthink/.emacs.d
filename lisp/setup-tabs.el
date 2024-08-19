@@ -75,7 +75,7 @@
   (setq  tab-bar-close-last-tab-choice 'tab-bar-mode-disable
          tab-bar-show                   (when (version< "28.0" emacs-version) 1)
          tab-bar-tab-name-truncated-max 24
-         tab-bar-new-tab-choice        'ibuffer
+         tab-bar-new-tab-choice        "*scratch*"
          tab-bar-tab-name-function #'my/tab-bar-name)
 
   (setq tab-bar-select-tab-modifiers '(meta hyper))

@@ -457,6 +457,7 @@ This relies on the external 'fd' executable."
          ("DEL" . my/dired-scroll-other-window-down)
          ("S-SPC" . my/dired-scroll-other-window-down))
   :config
+  (setq dired-preview--buffers-threshold 2)
   (setq dired-preview-delay 0.2)
   ;; (advice-add 'dired-preview--display-buffer :around
   ;;             (defun my/dired-preview--display-buffer (origfn buffer)

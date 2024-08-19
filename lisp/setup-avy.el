@@ -327,6 +327,14 @@ The current window is chosen if WIN is not specified."
    '(avy-lead-face-1 ((t :background unspecified :inherit avy-lead-face)))
    '(avy-lead-face-2 ((t :background unspecified :inherit avy-lead-face))))
 
+  (define-advice avy-goto-line-below (:around (orig-fn &rest args) no-default-action)
+    "Ensure no default `avy-action' when moving, and go to end of line."
+    (let ((avy-action)) (apply orig-fn args) (end-of-line)))
+  
+  (define-advice avy-goto-line-above (:around (orig-fn &rest args) no-default-action)
+    "Ensure no default `avy-action' when moving, and go to end of line."
+    (let ((avy-action)) (apply orig-fn args) (end-of-line)))
+  
   ;; Jump to all paren types with [ and ]
   (advice-add 'avy-jump :filter-args
               (defun my/avy-jump-parens (args)

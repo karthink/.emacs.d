@@ -384,13 +384,17 @@ but mark is only pushed if region isn't active."
   :after latex
   :ensure t
   ;; :commands turn-on-cdlatex
-  :hook ((LaTeX-mode . turn-on-cdlatex)
+  :hook ((LaTeX-mode . cdlatex-mode)
          (LaTeX-mode . cdlatex-electricindex-mode))
-  :bind (:map cdlatex-mode-map ("[" . nil) ("(" . nil) ("{" . nil)
-              ("<tab>" . cdlatex-tab))
+  :bind (:map cdlatex-mode-map
+         ("[" . nil) ("(" . nil) ("{" . nil)
+         ("<tab>" . cdlatex-tab))
   :defines (cdlatex-math-symbol-prefix cdlatex-command-alist)
   :config
   (setq cdlatex-math-symbol-prefix ?\;)
+  (define-key cdlatex-mode-map
+              (cdlatex-get-kbd-vector cdlatex-math-symbol-prefix)
+              #'cdlatex-math-symbol)
   (dolist (cmd '(("vc" "Insert \\vect{}" "\\vect{?}"
                   cdlatex-position-cursor nil nil t)
                  ("tfr" "Insert \\tfrac{}{}" "\\tfrac{?}{}"

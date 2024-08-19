@@ -61,6 +61,7 @@
                 org-fast-tag-selection-single-key 'expert
                 org-link-elisp-confirm-function nil
                 org-export-backends '(ascii html latex)
+                org-yank-image-save-method "figures"
                 ;; org-indent-indentation-per-level 2 
                 org-return-follows-link t)
   
@@ -1088,7 +1089,7 @@ See `org-capture-templates' for more information."
     :defer
     :config
     (setq org-html-htmlize-output-type 'css)
-    (plist-put org-html-latex-image-options :inline "svg")
+    (plist-put org-html-latex-image-options :inline '(svg svg-embed))
     (add-to-list 'org-structure-template-alist
                  '("D" . "details"))
     (add-to-list 'org-structure-template-alist
@@ -1156,7 +1157,9 @@ parent."
                              ("\\paragraph{%s}"     . "\\paragraph*{%s}")
                              ("\\subparagraph{%s}"  . "\\subparagraph*{%s}"))))
     (pcase-dolist (`(,name ,class-string . ,extra)
-                   `(("IEEEtran" "\\documentclass{IEEEtran}")
+                   `(("siamart" "\\documentclass{siamart220329}")
+                     ("ieeeconf" "\\documentclass{ieeeconf}")
+                     ("IEEEtran" "\\documentclass{IEEEtran}")
                      ("ieeecolor" "\\documentclass{ieeecolor}")
                      ("article" "\\documentclass{scrartcl}")
                      ("report" "\\documentclass{scrreprt}")
@@ -1302,7 +1305,7 @@ parent."
          (org-mode . org-download-enable))
   :config
   ;; (setq org-download-backend (if IS-LINUX "curl" "url-retrieve"))
-  (setq org-download-heading-lvl nil)
+  (setq-default org-download-heading-lvl nil)
   (setq org-download-backend "curl")
   (setq-default org-download-image-dir "./figures")
   (setq org-download-image-attr-list

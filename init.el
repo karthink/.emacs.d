@@ -253,6 +253,7 @@ Cancel the previous one if present."
                                        "dired" "ibuffer" "pdf-tools"
                                        "emacs-wm"))
                           (with-demoted-errors "Error: %S" (load-library lib)))
+                         (with-temp-buffer (org-mode))
                         (let ((elapsed (float-time (time-subtract (current-time)
                                                                   after-init-time))))
                           (message "[Pre-loaded packages in %.3fs]" elapsed)))))))))
@@ -271,24 +272,27 @@ Cancel the previous one if present."
             :remotes ("tecosaur"
                       :repo "https://git.tecosaur.net/tec/org-mode.git"
                       :branch "dev")
-            :files (:defaults "etc")
+            :files (:defaults ("etc/styles/" "etc/styles/*" "doc/*.texi"))
             :build t
             :pre-build
-            (with-temp-file "org-version.el"
-             (require 'lisp-mnt)
-             (let ((version
-                    (with-temp-buffer
-                      (insert-file-contents "lisp/org.el")
-                      (lm-header "version")))
-                   (git-version
-                    (string-trim
-                     (with-temp-buffer
-                       (call-process "git" nil t nil "rev-parse" "--short" "HEAD")
-                       (buffer-string)))))
-              (insert
-               (format "(defun org-release () \"The release version of Org.\" %S)\n" version)
-               (format "(defun org-git-version () \"The truncate git commit hash of Org mode.\" %S)\n" git-version)
-               "(provide 'org-version)\n")))
+            (progn
+              (with-temp-file "org-version.el"
+               (require 'lisp-mnt)
+               (let ((version
+                      (with-temp-buffer
+                        (insert-file-contents "lisp/org.el")
+                        (lm-header "version")))
+                     (git-version
+                      (string-trim
+                       (with-temp-buffer
+                         (call-process "git" nil t nil "rev-parse" "--short" "HEAD")
+                         (buffer-string)))))
+                (insert
+                 (format "(defun org-release () \"The release version of Org.\" %S)\n" version)
+                 (format "(defun org-git-version () \"The truncate git commit hash of Org mode.\" %S)\n" git-version)
+                 "(provide 'org-version)\n")))
+              (require 'elpaca-menu-org)
+              (elpaca-menu-org--build))
             :pin nil))
 
 ;;;################################################################

@@ -23,7 +23,9 @@
               (inhibit-redisplay t))
       (cdlatex-math-symbol)
       ;; (julia-latexsub-or-indent 0)
-      (completion-at-point))))
+      (expand-abbrev)
+      ;; (completion-at-point)
+      )))
 
 (use-package julia-snail
   :ensure (:remotes ("copy" :host github :protocol ssh

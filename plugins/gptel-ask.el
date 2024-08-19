@@ -43,9 +43,12 @@
                 nil t)))
   (if-let ((win (get-buffer-window gptel-ask--buffer-name))
            ((window-live-p win)))
-      (with-selected-window win (goto-char (point-max)))
-    (with-current-buffer (get-buffer gptel-ask--buffer-name) (goto-char (point-max))))
-  (ensure-empty-lines 0))
+      (with-selected-window win
+        (goto-char (point-max))
+        (ensure-empty-lines 0))
+    (with-current-buffer (get-buffer gptel-ask--buffer-name)
+      (goto-char (point-max))
+      (ensure-empty-lines 0))))
 
 (defun gptel-ask (&optional arg)
   (interactive "P")

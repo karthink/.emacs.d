@@ -3943,8 +3943,8 @@ _d_: subtree
   
   (defvar gptel--anthropic
     (gptel-make-anthropic "Claude" :key gptel-api-key :stream t))
-  (setq-default gptel-model "claude-3-haiku-20240307"
-                gptel-backend gptel--anthropic)
+  (setq-default gptel-model "gpt-4o-mini"
+                gptel-backend gptel--openai)
   
   (defvar gptel--togetherai
     (gptel-make-openai "TogetherAI"
@@ -4057,8 +4057,9 @@ _d_: subtree
                 #'my/gptel-eshell-send)))
 
 (use-package gptel-ask
-  :when (fboundp 'gptel)
-  :bind (("C-h C-q" . gptel-ask)
+  :after gptel
+  :bind (:map help-map
+         ("C-q" . gptel-ask)
          :map embark-url-map
          ("?" . gptel-kagi-summarize))
   :config

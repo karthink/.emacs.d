@@ -2565,6 +2565,7 @@ current buffer without truncation."
 
 (use-package simple
   :if (> emacs-major-version 27)
+  :hook (next-error . recenter)
   :config
   (defcustom my-next-error-functions nil
     "Additional functions to use as `next-error-function'."
@@ -3125,8 +3126,7 @@ _d_: subtree
   :hook (((dumb-jump-after-jump
            imenu-after-jump) . my/recenter-and-pulse)
          ((bookmark-after-jump
-           magit-diff-visit-file
-           next-error) . my/recenter-and-pulse-line))
+           magit-diff-visit-file) . my/recenter-and-pulse-line))
   :config
   (setq pulse-delay 0.01
         pulse-iterations 15)
@@ -3146,13 +3146,13 @@ _d_: subtree
     
     (defun my/pulse-momentary-line (&rest _)
       "Pulse the current line."
-      (pulse-momentary-highlight-one-line (point)))
+      (pulse-momentary-highlight-one-line))
 
     (defun my/pulse-momentary (&rest _)
       "Pulse the region or the current line."
       (if (fboundp 'xref-pulse-momentarily)
           (xref-pulse-momentarily)
-        (my/pulse-momentary-line)))
+        (pulse-momentary-highlight-one-line)))
 
     (defun my/recenter-and-pulse(&rest _)
       "Recenter and pulse the region or the current line."
@@ -3183,18 +3183,16 @@ _d_: subtree
     (advice-add 'scroll-up-command   :after #'my/pulse-momentary-upper-bound)
     (advice-add 'scroll-down-command :after #'my/pulse-momentary-lower-bound)
 
-    (dolist (cmd '(recenter-top-bottom switchy-window
-                   windmove-do-window-select
+    (dolist (cmd '(;; recenter-top-bottom treemacs-select-window
+                   ;; goto-last-change
+                   switchy-window windmove-do-window-select
                    ace-window aw--select-window
                    pager-page-down pager-page-up
                    winum-select-window-by-number
-                   ;; treemacs-select-window
                    symbol-overlay-basic-jump))
       (advice-add cmd :after #'my/pulse-momentary-line))
 
-    (dolist (cmd '(pop-to-mark-command
-                   pop-global-mark
-                   goto-last-change))
+    (dolist (cmd '(pop-to-mark-command pop-global-mark))
       (advice-add cmd :after #'my/pulse-momentary))))
 
 ;;;----------------------------------------------------------------
@@ -4492,7 +4490,7 @@ buffer's text scale."
   (pcase-dolist (`(,font           . ,scale)
                  '(("Merriweather" . 0.88)
                    ("IM FELL"      . 1.18)
-                   ("Latin Modern" . 1.18)))
+                   ("Latin Modern" . 1.05)))
     (setf (alist-get font face-font-rescale-alist nil nil #'equal)
           scale))
   
@@ -4501,7 +4499,7 @@ buffer's text scale."
          (pcase-let ((`(,vp ,fp)
                       (cond
                        ((string= (getenv "XDG_SESSION_TYPE") "wayland")
-                        '(120 120))
+                        '(120 110))
                        (t '(95 110)))))
            (custom-set-faces
             `(variable-pitch ((t (:family "Merriweather" ;;:height ,vp

@@ -67,6 +67,7 @@
            (t flat)))
    (setq vertico-multiform-commands
          '((org-ql-find reverse)
+           (org-ql-refile reverse)
            (jinx-correct reverse)
            (tab-bookmark-open reverse)
            (dired-goto-file unobtrusive)

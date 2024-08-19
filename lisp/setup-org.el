@@ -2000,10 +2000,14 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
          :map org-agenda-mode-map
          ("C-M-n" . my/org-agenda-next-header)
          ("C-M-p" . my/org-agenda-previous-header)
+         ("C-c o w" . org-ql-refile)
          :map org-mode-map
          ("C-c o w" . org-ql-refile)
          ("C-c o f" . org-ql-find))
   :config
+  (use-package org-ql-view
+    :bind (:map org-ql-view-map
+           ("q" . quit-window)))
   (defun my/org-agenda-next-header (&optional arg)
     (interactive "p")
     (dotimes (_ (or arg 1))

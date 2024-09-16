@@ -262,10 +262,6 @@ project, as defined by `vc-root-dir'."
   :defer t
   ;; :commands magit-status
   :bind ("C-x g" . magit-status)
-  :hook (magit-diff-visit-file . (lambda ()
-                                   (when (and smerge-mode
-                                              (fboundp 'hydra-smerge/body))
-                                     (hydra-smerge/body))))
   :config
   ;; (define-key magit-mode-map (kbd "C-TAB") nil)
   ;; (define-key magit-mode-map (kbd "C-<tab>") nil)
@@ -274,6 +270,8 @@ project, as defined by `vc-root-dir'."
   ;;   (define-key keymap (kbd "C-<tab>") nil))
   (setq magit-diff-refine-hunk t)
   (use-package magit-section
+    :bind (:map magit-section-mode-map
+           ("," . magit-section-up))
     :config
     (setq magit-section-initial-visibility-alist
           '((stashes . hide)
@@ -336,11 +334,6 @@ project, as defined by `vc-root-dir'."
                                            (dired project-dir))
                                        (user-error (format "%s\n%s" command output))))))
       (set-process-filter proc #'comint-output-filter))))
-
-(use-package diff
-  :defer
-  :config
-  (setq diff-default-read-only t))
 
 (use-package abridge-diff
   :disabled

@@ -42,6 +42,8 @@
   :commands notmuch
   :bind (("C-x m" . notmuch-mua-new-mail)
          ("C-x M-m" . notmuch-jump-search)
+         :map notmuch-message-mode-map
+         ("C-c C-s" . nil)
          :map notmuch-search-mode-map
          ("RET"   . notmuch-tree-from-search-thread)
          ("M-RET" . notmuch-search-show-thread)
@@ -51,6 +53,7 @@
          ("<tab>" . my/notmuch-tree-message-push-button)
          ("S-SPC" . notmuch-tree-scroll-message-window-back))
   :hook ((notmuch-message-mode . turn-off-auto-fill)
+         (notmuch-search-mode . (lambda () (setq line-spacing 0.15)))
          (notmuch-mua-send . notmuch-mua-attachment-check))
   :config
   (setq-default notmuch-search-oldest-first nil)
@@ -272,5 +275,26 @@
     "Keymap for actions on Notmuch entries.")
   (add-to-list 'embark-keymap-alist '(notmuch-result . embark-notmuch-map))
   (add-to-list 'embark-exporters-alist '(notmuch-result . embark-export-consult-notmuch)))
+
+;; From Yantar92's config:
+;; https://github.com/yantar92/emacs-config/blob/master/config.org#browse-mailing-list-archive-urls-using-my-local-notmuch-archives
+(use-package browse-url
+  :after notmuch
+  :init
+  (defun yant/browse-url-orgmode-ml (url &optional new-window)
+    "Open an orgmode list url using notmuch."
+    (let ((id (and (or (string-match "^https?://orgmode\\.org/list/\\([^/]+\\)" url)
+                       (string-match "^https?://list\\.orgmode\\.org/\\(?:orgmode/\\)?\\([^/]+\\)" url))
+                   (match-string 1 url))))
+      (when id
+        (unless (notmuch-show (format "id:%s" id))
+          (browse-url-default-browser url new-window)))))
+  :config
+  (add-to-list 'browse-url-handlers
+               '("^https?://orgmode\\.org/list/\\([^/]+\\)"
+                 . yant/browse-url-orgmode-ml))
+  (add-to-list 'browse-url-handlers
+               '("^https?://list\\.orgmode\\.org/\\(?:orgmode/\\)?\\([^/]+\\)"
+                 . yant/browse-url-orgmode-ml)))
 
 (provide 'setup-email)

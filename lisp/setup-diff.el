@@ -3,6 +3,7 @@
   :bind (:map diff-mode-map
          ("M-o" . nil))
   :config
+  (setq diff-default-read-only t)
   (use-package outline
     :hook (diff-mode . my/outline-mode-diff)
     :config

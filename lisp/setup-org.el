@@ -1637,7 +1637,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
   (setq org-reveal-hlevel 2))
 
 ;;;----------------------------------------------------------------
-;; ** +INKSCAPE-FIGURES+
+;; ** +INKSCAPE-FIGURES+ DONT
 ;;;----------------------------------------------------------------
 (use-package inkscape-figures
   :disabled
@@ -1647,7 +1647,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
               ("C-c e" . #'+inkscape-figures-edit)))
 
 ;;;----------------------------------------------------------------
-;; ** ORG-REF
+;; ** ORG-REF DONT
 ;;;----------------------------------------------------------------
 (use-package org-ref
   :disabled

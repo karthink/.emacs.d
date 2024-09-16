@@ -2274,9 +2274,12 @@ current buffer without truncation."
 
 ;;----------------------------------------------------------------
 ;; ** BEANCOUNT
+;;----------------------------------------------------------------
 (use-package beancount
   :ensure (:host github :repo "beancount/beancount-mode")
   :defer)
+
+;;----------------------------------------------------------------
 ;; ** ENVRC
 ;;----------------------------------------------------------------
 (use-package envrc :ensure t :defer)
@@ -2286,7 +2289,9 @@ current buffer without truncation."
 ;;----------------------------------------------------------------
 (load (expand-file-name "lisp/setup-cw" user-emacs-directory))
 
+;;----------------------------------------------------------------
 ;; ** EDRAW
+;;----------------------------------------------------------------
 (use-package edraw
   :ensure (el-easydraw :host github
                        :repo "misohena/el-easydraw"
@@ -2294,10 +2299,14 @@ current buffer without truncation."
   :defer
   :mode "\\.edraw\\.svg$")
 
+;;----------------------------------------------------------------
 ;; ** QRENCODE
+;;----------------------------------------------------------------
 (use-package qrencode :ensure t :defer)
-;; ** INDENT-BARS
-;; Testing
+
+;;----------------------------------------------------------------
+;; ** INDENT-BARS MAYBE
+;;----------------------------------------------------------------
 (use-package indent-bars
   :ensure (:type git :host github
            :repo "jdtsmith/indent-bars")
@@ -2313,7 +2322,9 @@ current buffer without truncation."
    indent-bars-highlight-current-depth nil
    indent-bars-display-on-blank-lines nil))
 
-;; ** DETACHED
+;;----------------------------------------------------------------
+;; ** DETACHED 
+;;----------------------------------------------------------------
 ;; Testing detached
 (use-package detached
   :disabled
@@ -2334,6 +2345,7 @@ current buffer without truncation."
 
 ;;;----------------------------------------------------------------
 ;; ** VISIBLE MARK
+;;----------------------------------------------------------------
 (use-package visible-mark
   :ensure t
   :hook ((text-mode prog-mode conf-mode) . visible-mark-mode)
@@ -2343,9 +2355,10 @@ current buffer without truncation."
   :config
   (setq visible-mark-faces '(visible-mark-face1))
   (setq visible-mark-max 1))
+
+;;----------------------------------------------------------------
 ;; ** MACRURSORS
 ;;;----------------------------------------------------------------
-;; Testing fast multiple cursors
 (use-package macrursors
   :ensure (:host github :repo "corytertel/macrursors"
            :remotes ("fork" :host github :protocol ssh
@@ -2638,7 +2651,7 @@ current buffer without truncation."
   )
 
 ;;;----------------------------------------------------------------
-;; ** UNDO-TREE
+;; ** UNDO-TREE DONT
 ;;;----------------------------------------------------------------
 (use-package undo-tree
   :disabled
@@ -2668,7 +2681,8 @@ current buffer without truncation."
               ))
 
 ;;;----------------------------------------------------------------
-;; *** SPELL-FU
+;; *** SPELL-FU DONT
+;;----------------------------------------------------------------
 ;; Disabled while I test Jinx
 (use-package spell-fu
   :disabled
@@ -2714,6 +2728,7 @@ current buffer without truncation."
 
 ;;;----------------------------------------------------------------
 ;; *** JINX
+;;----------------------------------------------------------------
 (unless IS-GUIX (elpaca jinx))
 (use-package jinx
   ;; :hook ((text-mode prog-mode conf-mode) . my/jinx-mode)
@@ -2733,7 +2748,9 @@ current buffer without truncation."
          (append (alist-get 'tex-mode jinx-exclude-faces) pl)))
       (alist-get 'org-mode jinx-exclude-faces)))
 
+;;----------------------------------------------------------------
 ;; ** ELDOC
+;;----------------------------------------------------------------
 (use-package eldoc
   :hook (ielm-mode . eldoc-mode)
   :config
@@ -2741,7 +2758,10 @@ current buffer without truncation."
         'eldoc-documentation-compose-eagerly
         eldoc-echo-area-prefer-doc-buffer t))
 
-;; ** EDEBUG
+;;----------------------------------------------------------------
+;; ** DEBUGGING SUPPORT
+;;----------------------------------------------------------------
+;; *** EDEBUG
 ;;;----------------------------------------------------------------
 (use-package edebug
   :defer
@@ -2793,6 +2813,7 @@ normally have their errors suppressed."
   (add-hook 'flymake-mode-hook
             (my-next-error-register 'flymake-goto-next-error)))
 
+;; DONT
 (use-package flymake-diagnostic-at-point
   :disabled
   :ensure t
@@ -3014,7 +3035,7 @@ normally have their errors suppressed."
       ("p" "smartparens" smartparens-mode)]]))
 
 ;;;----------------------------------------------------------------
-;; ** HYDRAS
+;; ** HYDRAS DONT
 ;;;----------------------------------------------------------------
 (use-package hydra
   :disabled
@@ -3125,8 +3146,8 @@ _d_: subtree
 
 ;;;----------------------------------------------------------------
 ;; ** HIGHLIGHTS
-;;;----------------------------------------------------------------
-;; Testing: Beacon
+;; *** BEACON DONT
+;;----------------------------------------------------------------
 (use-package beacon
   :disabled
   :ensure t
@@ -3136,7 +3157,9 @@ _d_: subtree
   (setq beacon-blink-delay 0.1)
   (beacon-mode 1))
 
-;; Flash lines
+;;----------------------------------------------------------------
+;; *** PULSE
+;;----------------------------------------------------------------
 (use-package pulse
   :bind ("C-x l" . my/pulse-line)
   :custom-face
@@ -3208,14 +3231,12 @@ _d_: subtree
                    ace-window aw--select-window
                    pager-page-down pager-page-up
                    winum-select-window-by-number
+                   pop-to-mark-command pop-global-mark
                    symbol-overlay-basic-jump))
-      (advice-add cmd :after #'my/pulse-momentary-line))
-
-    (dolist (cmd '(pop-to-mark-command pop-global-mark))
-      (advice-add cmd :after #'my/pulse-momentary))))
+      (advice-add cmd :after #'my/pulse-momentary-line))))
 
 ;;;----------------------------------------------------------------
-;; ** WALLABAG
+;; ** WALLABAG DONT
 ;;;----------------------------------------------------------------
 
 ;; Wallabag is a self-hosted read-it-later service for webpages and articles.
@@ -3248,7 +3269,7 @@ _d_: subtree
 ;; ----------------------------------------------------------------
 
 ;;;----------------------------------------------------------------
-;; ** +NAV-FLASH+
+;; ** +NAV-FLASH+ DONT
 ;;;----------------------------------------------------------------
 (use-package nav-flash :disabled)
 
@@ -3456,7 +3477,7 @@ _d_: subtree
 (load (expand-file-name "lisp/setup-avy" user-emacs-directory))
 
 ;;;----------------------------------------------------------------
-;; ** IY-GO-TO-CHAR
+;; ** IY-GO-TO-CHAR DONT
 ;;;----------------------------------------------------------------
 (use-package iy-go-to-char
   :disabled
@@ -3517,21 +3538,23 @@ _d_: subtree
                   tramp-file-name-regexp))))
 ;;;----------------------------------------------------------------
 ;; ** DOT MODE
+;;----------------------------------------------------------------
 (use-package dot-mode
   :ensure t
   :commands dot-mode
   :bind (:map dot-mode-map
          ("C-c ." . nil)
          ("C-M-." . nil))
-  :hook ((prog-mode conf-mode text-mode tex-mode) . 'dot-mode-on)
-  ;; :bind ("C-." . (lambda () (interactive)
-  ;;                  (dot-mode 1)
-  ;;                  (message "Dot mode activated.")))
-  )
+  :hook ((prog-mode conf-mode text-mode tex-mode) . 'dot-mode-on))
+
+;;----------------------------------------------------------------
 ;; ** BOOKMARKS
+;;----------------------------------------------------------------
 (use-package bookmark
   :config
   (setq bookmark-default-file (dir-concat user-cache-directory "bookmarks")))
+
+;;----------------------------------------------------------------
 ;; * COMPLETION
 ;;;################################################################
 
@@ -3574,7 +3597,6 @@ _d_: subtree
 ;;;----------------------------------------------------------------
 ;; ** COMPANY-MODE
 ;;;----------------------------------------------------------------
-;; (load-library "setup-company")
 (use-package company
   :ensure t
   :bind (:map company-active-map
@@ -3631,7 +3653,9 @@ _d_: subtree
 
 ;; #+INCLUDE: "./lisp/setup-consult.org" :minlevel 2
 
-;; *** ELMO
+;;----------------------------------------------------------------
+;; *** ELMO DONT
+;;----------------------------------------------------------------
 
 ;; Embark-live-mode
 (use-package elmo
@@ -3656,7 +3680,7 @@ _d_: subtree
           consult-yank-pop)))
 
 ;;;----------------------------------------------------------------
-;; ** +IVY COUNSEL SWIPER+
+;; ** +IVY COUNSEL SWIPER+ DONT
 ;;;----------------------------------------------------------------
 (use-package setup-ivy :disabled)
 
@@ -3730,15 +3754,22 @@ _d_: subtree
 (use-package setup-anki
   :after (org-capture org))
 
+;;----------------------------------------------------------------
 ;; *** ROAM
+;;----------------------------------------------------------------
 (load (expand-file-name "lisp/setup-roam" user-emacs-directory))
 
 ;; ---------------------------
 ;; #+INCLUDE: "./lisp/setup-roam.org" :minlevel 2
 ;; ---------------------------
 
+;;################################################################
 ;; * APPLICATIONS
+;;################################################################
+
+;;----------------------------------------------------------------
 ;; ** PROFILER
+;;----------------------------------------------------------------
 (use-package profiler
   :bind ("C-<f9>" . my/run-profiler)
   :config
@@ -3751,6 +3782,8 @@ _d_: subtree
       (profiler-reset)
       (profiler-start 'cpu)
       (message "CPU Profiler started."))))
+
+;;----------------------------------------------------------------
 ;; ** DIRED
 ;;;----------------------------------------------------------------
 (load (expand-file-name "lisp/setup-dired" user-emacs-directory))
@@ -3766,7 +3799,9 @@ _d_: subtree
     :load-path "plugins/ffmpeg-crop/"
     :commands (ffmpeg-crop ffmpeg-crop-dired)))
 
+;;----------------------------------------------------------------
 ;; ** ERC
+;;----------------------------------------------------------------
 (use-package erc
   :commands (erc-tls erc)
   :bind (:map erc-mode-map
@@ -3874,13 +3909,15 @@ _d_: subtree
 (require 'setup-eww)
 
 ;;;----------------------------------------------------------------
-;; ** YTEL
+;; ** YTEL DONT
 ;;;----------------------------------------------------------------
 ;; ytel provides an elfeed-like interface to search invidious instances for
 ;; youtube videos. Phew. The churn rate of Invidious urls is quite high, which
 ;; makes this flaky, but anything's better than the browser interface to
 ;; Youtube.
-(use-package setup-ytel)
+;;
+;; Replaced by cw
+;; (use-package setup-ytel)
 
 ;; ----------------------------------------------------------------
 ;; #+INCLUDE: "./lisp/setup-ytel.org" :minlevel 2
@@ -4171,12 +4208,13 @@ _d_: subtree
           (popper-toggle-type)))))
 
 ;;;----------------------------------------------------------------
-;; *** Codeium (testing)
+;; *** Codeium (testing) DONT
 ;;;----------------------------------------------------------------
 ;; (load (expand-file-name "lisp/setup-codeium" user-emacs-directory))
 
 ;;;----------------------------------------------------------------
-;; *** browser-hist
+;; *** BROWSER-HIST MAYBE
+;;----------------------------------------------------------------
 (use-package browser-hist
   :ensure (:host github :repo "agzam/browser-hist.el"
            :remotes ("copy" :repo "karthink/browser-hist.el" :protocol ssh))
@@ -4187,6 +4225,7 @@ _d_: subtree
         browser-hist-default-browser 'firefox
         browser-hist-cache-timeout (* 24 60 60)))
 
+;;----------------------------------------------------------------
 ;; * PROJECTS
 ;;;----------------------------------------------------------------
 (load (expand-file-name "lisp/setup-project" user-emacs-directory))
@@ -4202,6 +4241,7 @@ _d_: subtree
 (use-package grep
   :hook ((grep-mode . toggle-truncate-lines)))
 
+;; RG DONT
 ;; consult-ripgrep handles this better
 (use-package rg
   :disabled 
@@ -4261,14 +4301,18 @@ This function is meant to be mapped to a key in `rg-mode-map'."
               ("C-x C-q" . wgrep-change-to-wgrep-mode)))
 
 ;; * VISUALS AND PRESENTATION
-;; ** ISCROLL
+;;----------------------------------------------------------------
+;; ** ISCROLL DONT
+;;----------------------------------------------------------------
 ;; Smooth scrolling through images.  What a pain Emacs' default behavior is here.
 (use-package iscroll
   :disabled
   :ensure t
   :hook ((text-mode eww-mode) . iscroll-mode))
 
+;;----------------------------------------------------------------
 ;; ** MONOCLE-MODE
+;;----------------------------------------------------------------
 (use-package emacs
   :bind (("H-m" . my/monocle-mode)
          ("C-x C-1" . my/monocle-mode))
@@ -4293,6 +4337,7 @@ managers such as DWM, BSPWM refer to this state as 'monocle'."
               (other-window 1)
               (switch-to-buffer buf)))
         (delete-other-windows)))))
+;;----------------------------------------------------------------
 ;; ** MIXED-PITCH-MODE
 ;;;----------------------------------------------------------------
 (use-package mixed-pitch
@@ -4310,6 +4355,7 @@ managers such as DWM, BSPWM refer to this state as 'monocle'."
 
 ;;;----------------------------------------------------------------
 ;; ** OLIVETTI
+;;----------------------------------------------------------------
 (use-package olivetti
   :commands (my/olivetti-mode)
   :ensure t
@@ -4374,7 +4420,9 @@ the mode-line and switches to `variable-pitch-mode'."
   ("C-c R" . my/reader-mode))
 
 
-;; ** PRESENTATION (BIG) MODE
+;;----------------------------------------------------------------
+;; ** PRESENTATION (BIG) MODE DONT
+;;----------------------------------------------------------------
 ;; Turned off since global-text-scale-adjust exists now
 (use-package presentation
   :disabled
@@ -4446,7 +4494,9 @@ the mode-line and switches to `variable-pitch-mode'."
   :bind
   ("C-c S" . my/screencast-mode))
 
-;; ** SPACIOUS-PADDING
+;;----------------------------------------------------------------
+;; ** SPACIOUS-PADDING DONT
+;;----------------------------------------------------------------
 (use-package spacious-padding
   :disabled
   :ensure t
@@ -4459,7 +4509,10 @@ the mode-line and switches to `variable-pitch-mode'."
          :tab-width 2
          :right-divider-width 24
          :scroll-bar-width 8)))
+
+;;;################################################################I
 ;; * NAVIGATION
+;;;################################################################I
 (use-package emacs
   :config
   (setq view-read-only t))
@@ -4493,6 +4546,7 @@ currently loaded theme first."
   )
 
 ;; Disabled while I work on the new org latex preview system.
+;; FACE-REMAP DONT
 (use-package face-remap
   :disabled
   :hook (text-scale-mode . my/text-scale-adjust-latex-previews)
@@ -4589,7 +4643,9 @@ buffer's text scale."
     (custom-theme-set-faces 'gruvbox-dark-hard
                             '(org-level-1 ((t (:inherit outline-1))))
                             '(org-level-2 ((t (:inherit outline-2)))))))
+;;----------------------------------------------------------------
 ;; ** MODUS THEMES
+;;----------------------------------------------------------------
 (use-package ef-themes
   :ensure t
   :defer
@@ -4668,7 +4724,9 @@ buffer's text scale."
           (t . (monochrome)))))
 
 
+;;----------------------------------------------------------------
 ;; ** DOOM THEMES
+;;----------------------------------------------------------------
 ;; Henrik Lissner's Doom themes are a mainstay, mostly doom-rouge:
 ;;
 ;; [[file:/img/dotemacs/doom-rouge-demo.png]]
@@ -4739,12 +4797,12 @@ buffer's text scale."
           doom-Iosvkem-brighter-modeline nil)))
 
 ;;;################################################################
-;; * EVIL-MODE
+;; * EVIL-MODE DONT
 ;;;################################################################
 ;;;(require 'setup-evil)
 
 ;;;################################################################
-;; * TERMINAL SETTINGS
+;; * TERMINAL SETTINGS DONT
 ;;;################################################################
 (use-package term-keys
   :disabled

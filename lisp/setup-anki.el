@@ -1,3 +1,4 @@
+;; DONT
 (use-package anki-editor
   :disabled
   :ensure t

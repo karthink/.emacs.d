@@ -496,7 +496,10 @@ Cancel the previous one if present."
   (defun pastebin-buffer (&optional buf)
     (interactive (list (current-buffer)))
     (with-current-buffer buf
-      (let ((upload-file-name (buffer-name))
+      (let ((upload-file-name
+             (if current-prefix-arg
+                 (read-string "Name of uploaded buffer: ")
+                 (buffer-name)))
             (htmlized-buffer
              (if (use-region-p)
                  (progn

@@ -21,11 +21,6 @@
          ("C-M-<return>"  . embark-dwim)
          ("C-h b"   . embark-bindings)
          ("C-h C-b" . describe-bindings)
-         :map embark-meta-map
-         ("1" . same-window-prefix)
-         ("4" . other-window-prefix)
-         ("5" . other-frame-prefix)
-         ("6" . other-tab-prefix)
          :map embark-general-map
          ("M-SPC"     . embark-select)
          :map minibuffer-local-completion-map
@@ -48,15 +43,22 @@
          ("5"        . find-file-other-frame)
          ("C-="      . diff)
          ("X"        . embark-drag-and-drop)
+         ("U"        . pastebin-file)
+         ("M-U"      . 0x0-upload-file)
          :map embark-buffer-map
          ("d"        . diff-buffer-with-file) ;FIXME
          ("l"        . eval-buffer)
          ("4"        . switch-to-buffer-other-window)
          ("5"        . switch-to-buffer-other-frame)
          ("C-="      . diff-buffers)
+         ("U"        . pastebin-buffer)
+         ("M-U"      . 0x0-dwim)
          :map embark-bookmark-map
          ("4"        . bookmark-jump-other-window)
          ("5"        . bookmark-jump-other-frame)
+         :map embark-region-map
+         ("U"        . pastebin-buffer)
+         ("M-U"      . 0x0-dwim)
          :map embark-url-map
          ("z"        . qrencode-string)
          ("B"        . eww)
@@ -159,49 +161,44 @@ are place there, otherwise you are prompted for a message buffer."
       (kill-new web-url)))
   (define-key embark-file-map (kbd "M-S") #'my/embark-share-file)
 
-  (eval-when-compile
-    (defmacro my/embark-ace-action (fn)
-      `(defun ,(intern (concat "my/embark-ace-" (symbol-name fn))) ()
-         (interactive)
-         (with-demoted-errors "%s"
-           (require 'ace-window)
-           (aw-switch-to-window (aw-select nil))
-           (call-interactively (symbol-function ',fn)))))
-    
-    (defmacro my/embark-split-action (fn split-type) 
-      `(defun ,(intern (concat "my/embark-"
-                               (symbol-name fn)
-                               "-"
-                               (car (last  (split-string
-                                            (symbol-name split-type) "-"))))) ()
-         (interactive)
-         (funcall #',split-type)
-         (call-interactively #',fn))))
+  ;; Dummy function, will be overridden by running `embark-around-action-hooks'
+  (defun my/embark-prefix-window () (interactive))
 
-    (define-key embark-file-map (kbd "t") (my/embark-split-action find-file tab-new))
-    (define-key embark-file-map (kbd "o") (my/embark-ace-action find-file))
-    (define-key embark-file-map (kbd "2") (my/embark-split-action find-file my/split-window-below))
-    (define-key embark-file-map (kbd "3") (my/embark-split-action find-file my/split-window-right))
-    (define-key embark-buffer-map (kbd "t") (my/embark-split-action switch-to-buffer tab-new))
-    (define-key embark-buffer-map (kbd "o") (my/embark-ace-action switch-to-buffer))
-    (define-key embark-buffer-map (kbd "2") (my/embark-split-action switch-to-buffer my/split-window-below))
-    (define-key embark-buffer-map (kbd "3") (my/embark-split-action switch-to-buffer my/split-window-right))
-    (define-key embark-bookmark-map (kbd "t") (my/embark-split-action bookmark-jump tab-new))
-    (define-key embark-bookmark-map (kbd "o") (my/embark-ace-action bookmark-jump))
-    (define-key embark-bookmark-map (kbd "2") (my/embark-split-action bookmark-jump my/split-window-below))
-    (define-key embark-bookmark-map (kbd "3") (my/embark-split-action bookmark-jump my/split-window-right))
-    (define-key embark-file-map (kbd "U") 'pastebin-file)
-    (define-key embark-file-map (kbd "M-U") '0x0-upload-file)
-    
-    (define-key embark-library-map (kbd "2") (my/embark-split-action find-library my/split-window-below))
-    (define-key embark-library-map (kbd "3") (my/embark-split-action find-library my/split-window-right))
-    (define-key embark-library-map (kbd "t") (my/embark-split-action find-library tab-new))
-    (define-key embark-library-map (kbd "o") (my/embark-ace-action find-library))
-    
-    (define-key embark-region-map (kbd "U") 'pastebin-buffer)
-    (define-key embark-buffer-map (kbd "U") 'pastebin-buffer)
-    (define-key embark-region-map (kbd "M-U") '0x0-upload-text)
-    (define-key embark-buffer-map (kbd "M-U") '0x0-dwim)
+  (setf (alist-get 'my/embark-prefix-window embark-around-action-hooks)
+        '(my/embark--call-prefix-action))
+
+  (defvar-keymap my/window-prefix-map
+    :doc "Keymap for various window-prefix maps"
+    :suppress 'nodigits
+    "o" #'ace-window-prefix
+    "0" #'ace-window-prefix
+    "1" #'same-window-prefix
+    "2" #'my/split-window-below
+    "3" #'my/split-window-right
+    "4" #'other-window-prefix
+    "5" #'other-frame-prefix
+    "6" #'other-tab-prefix
+    "t" #'other-tab-prefix)
+
+  (setf (alist-get 'buffer embark-default-action-overrides) #'switch-to-buffer)
+  (setf (alist-get 'file embark-default-action-overrides) #'find-file)
+  (setf (alist-get 'bookmark embark-default-action-overrides) #'bookmark-jump)
+  (setf (alist-get 'library embark-default-action-overrides) #'find-library)
+
+  ;; Look up the key in `my/window-prefix-map' and call that function first.
+  ;; Then run the default embark action.
+  (cl-defun my/embark--call-prefix-action (&rest rest &key run type &allow-other-keys)
+    (when-let ((cmd (keymap-lookup
+                     my/window-prefix-map
+                     (key-description (this-command-keys-vector)))))
+      (funcall cmd))
+    (plist-put rest :action (embark--default-action type))
+    (apply run rest))
+
+  (map-keymap (lambda (key cmd)
+                (keymap-set embark-general-map (key-description (make-vector 1 key))
+                            #'my/embark-prefix-window))
+              my/window-prefix-map)
 
     ;; Embark actions for this buffer/file
     (defun embark-target-this-buffer-file ()
@@ -242,11 +239,13 @@ are place there, otherwise you are prompted for a message buffer."
                ("#" recover-this-file)
                ("z" bury-buffer)
                ("|" embark-shell-command-on-buffer)
+               ("U" pastebin-buffer)
                ("M-U" 0x0-dwim)
                ("U" pastebin-buffer)
                ("g" revert-buffer-quick)
                ("u" rename-uniquely)
                ("n" clone-buffer)
+               ("M-S" my/embark-share-file)
                ("t" toggle-truncate-lines)))
           (define-key map (kbd key) command))
         map))
@@ -353,7 +352,9 @@ targets."
   :bind (:map embark-become-file+buffer-map
          ("m" . consult-bookmark)
          ("b" . consult-buffer)
-         ("j" . consult-find))
+         ("j" . consult-find)
+         :map embark-consult-search-map
+         ("f". consult-fd))
   :config
   
   (add-to-list
@@ -361,13 +362,7 @@ targets."
    '(consult-flymake-error . embark-export-flymake))
   
   (defun embark-export-flymake (_errors)
-    (flymake-show-buffer-diagnostics))
-  
-  ;; (dolist (pair '((consult-fd . list)))
-  ;;   (add-to-list 'embark-collect-initial-view-alist
-  ;;                pair))
-  :bind (:map embark-file-map
-              ("x" . embark-open-externally)))
+    (flymake-show-buffer-diagnostics)))
 
 ;;; Embark-Collect overlays
 ;; Disabled - don't need this with embark-live-mode (elm) active

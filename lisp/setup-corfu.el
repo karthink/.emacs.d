@@ -17,6 +17,28 @@
          ("M-." . corfu-info-location)
          ("C-h" . corfu-info-documentation))
   :config
+  (setq corfu-auto-prefix 3
+        corfu-auto-delay 0.05
+        corfu-count 8
+        corfu-auto  t
+        corfu-cycle t
+        corfu-quit-no-match 'separator
+        corfu-preselect 'prompt
+        corfu-scroll-margin 5)
+  
+  ;; Extensions
+  (use-package corfu-info
+    :bind (:map corfu-map ("M-g" . nil)))
+  (use-package corfu-history :defer 3 :config (corfu-history-mode 1))
+  (use-package corfu-popupinfo
+  :config (corfu-popupinfo-mode 1)
+  :bind (:map corfu-map
+         ([remap corfu-info-documentation] . corfu-popupinfo-toggle)))
+  (use-package corfu-quick
+    :bind (:map corfu-map ("'" . corfu-quick-complete))
+    :config (setq corfu-quick1 "asdfghjkl;"))
+
+  ;; Corfu in the minibuffer
   (defvar my-corfu-minibuffer-exclude-modes (list read-passwd-map)
     "Minibuffer-local keymaps for which Corfu should be disabled.")
   (defvar my-corfu-minibuffer-exclude-commands
@@ -40,30 +62,14 @@
     :config
     (defun corfu-move-to-minibuffer ()
       (interactive)
-      (let ((completion-extra-properties corfu--extra)
-            completion-cycle-threshold completion-cycling)
-        (setq this-command #'consult-completion-in-region)
-        (apply #'consult-completion-in-region completion-in-region--data))))
-
-  ;; Disabled -- interferes with dynamic completion tables
-  (use-package orderless
-    :disabled
-    :hook (corfu-mode . my/corfu-comp-style)
-    :config
-    (defun my/corfu-comp-style ()
-      "Set/unset a fast completion style for corfu"
-      (if corfu-mode
-          (setq-local completion-styles '(orderless-fast))
-        (kill-local-variable 'completion-styles))))
-    
-  (setq corfu-auto-prefix 3
-        corfu-auto-delay 0.05
-        corfu-count 8
-        corfu-auto  t
-        corfu-cycle t
-        corfu-quit-no-match 'separator
-        corfu-preselect 'prompt
-        corfu-scroll-margin 5)
+      (pcase completion-in-region--data
+        (`(,beg ,end ,table ,pred ,extras)
+         (let ((completion-extra-properties extras)
+               completion-cycle-threshold completion-cycling)
+           (consult-completion-in-region beg end table pred)))))
+    (add-to-list 'corfu-continue-commands #'corfu-move-to-minibuffer))
+  
+  ;; Corfu in the shell
   (defun my/corfu-shell-settings ()
     (setq-local corfu-quit-no-match t
                 corfu-auto nil)
@@ -80,43 +86,23 @@
      ((and (derived-mode-p 'eshell-mode) (fboundp 'eshell-send-input))
       (eshell-send-input))
      ((derived-mode-p 'comint-mode)
-      (comint-send-input)))))
+      (comint-send-input))))
 
-(use-package corfu-info
-  :after corfu
-  :ensure (:host github :repo "minad/corfu"
-             :files ("extensions/corfu-info.el")))
-
-(use-package corfu-indexed
-  :disabled
-  :after corfu
-  :ensure (:host github :repo "minad/corfu"
-             :files ("extensions/corfu-indexed.el")))
-
-(use-package corfu-quick
-  :after corfu
-  :ensure (:host github :repo "minad/corfu"
-             :files ("extensions/corfu-quick.el"))
-  :bind (:map corfu-map
-         ("'" . corfu-quick-complete))
-  :config
-  (setq corfu-quick1 "asdfghjkl;"))
-
-(use-package corfu-history
-  :disabled
-  :after corfu
-  :ensure (:host github :repo "minad/corfu"
-             :files ("extensions/corfu-history.el")))
-                                                     
-(use-package corfu-popupinfo
-  :after corfu
-  :config (corfu-popupinfo-mode 1)
-  :ensure (:host github :repo "minad/corfu"
-             :files ("extensions/corfu-popupinfo.el"))
-  :bind (:map corfu-map
-         ([remap corfu-info-documentation] . corfu-popupinfo-toggle)))
+  ;; Faster corfu
+  ;; Disabled -- interferes with dynamic completion tables
+  (use-package orderless
+    :disabled
+    :after orderless
+    :hook (corfu-mode . my/corfu-comp-style)
+    :config
+    (defun my/corfu-comp-style ()
+      "Set/unset a fast completion style for corfu"
+      (if corfu-mode
+          (setq-local completion-styles '(orderless-fast))
+        (kill-local-variable 'completion-styles)))))
 
 (use-package kind-icon
+  :disabled
   :ensure t
   :after corfu
   :custom
@@ -124,92 +110,42 @@
   :config
   (add-to-list 'corfu-margin-formatters #'kind-icon-margin-formatter))
 
-;; Corfu-doc shows help in an adjacent popup window
-;; (Package is deprecated, using corfu-popupinfo instead)
-(use-package corfu-doc
-    :disabled
-    :ensure (corfu-doc :host github :repo "galeo/corfu-doc")
-    :after corfu
-    :bind (:map corfu-map
-           ([remap corfu-show-documentation] . corfu-doc-toggle)
-           ([remap scroll-other-window] . corfu-doc-scroll-up)
-           ([remap scroll-other-window-down] . corfu-doc-scroll-down))
-    :config
-    (setq corfu-doc-max-width  77
-          corfu-echo-documentation nil
-          corfu-doc-max-height 20
-          corfu-doc-delay 0.2)
-    (defun corfu-doc--cleanup ()
-      (advice-remove 'corfu--popup-hide #'corfu-doc--cleanup)
-      (advice-remove 'corfu--popup-show #'corfu-doc--set-timer)
-      (corfu-doc--hide))
+(use-package nerd-icons-corfu
+  :ensure t
+  :after corfu
+  :config
+  ;; (setq nerd-icons-corfu-mapping
+  ;;       '((array :style "cod" :icon "symbol_array" :face font-lock-type-face)
+  ;;         (boolean :style "cod" :icon "symbol_boolean" :face font-lock-builtin-face)
+  ;;         ;; ...
+  ;;         (t :style "cod" :icon "code" :face font-lock-warning-face)))
+  (add-to-list 'corfu-margin-formatters #'nerd-icons-corfu-formatter))
 
-    (defun corfu-doc-toggle ()
-      (interactive)
-      (advice-add 'corfu--popup-hide :after #'corfu-doc--cleanup)
-      (if (and (frame-live-p corfu-doc--frame) (frame-visible-p corfu-doc--frame))
-          (progn (corfu-doc--hide)
-                 (advice-remove 'corfu--popup-show #'corfu-doc--set-timer))
-        (corfu-doc--show)
-        (advice-add 'corfu--popup-show :after #'corfu-doc--set-timer))))
-
-;; Add extensions
 (use-package cape
   :ensure t
   :bind (("C-$" . cape-dict)
-         ;; ("C-; e" . cape-line)
          ("C-S-f" . cape-file)
-         ;; ("C-M-/" . cape-dabbrev)
+         ("C-M-/" . cape-dabbrev)
          :map corfu-map
          ("M-/" . cape-dabbrev)
          ("C-x C-f" . cape-file))
-  ;; Bind dedicated completion commands
-  ;; :bind (("C-c p p" . completion-at-point) ;; capf
-  ;;        ("C-c p t" . complete-tag)        ;; etags
-  ;;        ("C-c p d" . cape-dabbrev)        ;; or dabbrev-completion
-  ;;        ("C-c p f" . cape-file)
-  ;;        ("C-c p k" . cape-keyword)
-  ;;        ("C-c p s" . cape-symbol)
-  ;;        ("C-c p a" . cape-abbrev)
-  ;;        ("C-c p i" . cape-ispell)
-  ;;        ("C-c p l" . cape-line)
-  ;;        ("C-c p w" . cape-dict)
-  ;;        ("C-c p \\" . cape-tex)
-  ;;        ("C-c p &" . cape-sgml)
-  ;;        ("C-c p r" . cape-rfc1345))
-  ;; :hook (text-mode . my/cape-text-mode-capfs)
   :init
-  
   ;; Add `completion-at-point-functions', used by `completion-at-point'.
   (add-to-list 'completion-at-point-functions #'cape-file)
-  ;; (add-to-list 'completion-at-point-functions #'cape-tex)
-  ;; (add-to-list 'completion-at-point-functions #'cape-dabbrev)
-  ;; (add-to-list 'completion-at-point-functions #'cape-keyword)
-  ;;(add-to-list 'completion-at-point-functions #'cape-sgml)
-  ;;(add-to-list 'completion-at-point-functions #'cape-rfc1345)
-  ;;(add-to-list 'completion-at-point-functions #'cape-abbrev)
-  ;;(add-to-list 'completion-at-point-functions #'cape-ispell)
-  ;; (add-to-list 'completion-at-point-functions #'cape-dict)
-  ;;(add-to-list 'completion-at-point-functions #'cape-symbol)
-  ;;(add-to-list 'completion-at-point-functions #'cape-line)
   :config
   (setq cape-dict-file (getenv "WORDLIST"))
   (defun my/cape-text-mode-capfs ()
     (add-to-list 'completion-at-point-functions #'cape-dict))
   
-  (use-package pcomplete
-    :defer
-    :config
-    ;; Silence the pcomplete capf, no errors or messages!
-    (advice-add 'pcomplete-completions-at-point :around #'cape-wrap-silent)
-    ;; (advice-remove 'pcomplete-completions-at-point #'cape-wrap-silent)
-
-    ;; Ensure that pcomplete does not write to the buffer
-    ;; and behaves as a pure `completion-at-point-function'.
-    (advice-add 'pcomplete-completions-at-point :around #'cape-wrap-purify)
-    ;; (advice-remove 'pcomplete-completions-at-point #'cape-wrap-purify)
-))
+  (when (< emacs-major-version 29)
+    (use-package pcomplete
+      :defer
+      :config
+      ;; Silence the pcomplete capf, no errors or messages!
+      (advice-add 'pcomplete-completions-at-point :around #'cape-wrap-silent)
+        ;; Ensure that pcomplete does not write to the buffer
+      ;; and behaves as a pure `completion-at-point-function'.
+      (advice-add 'pcomplete-completions-at-point :around #'cape-wrap-purify))))
 
 (provide 'setup-corfu)
 ;;; setup-corfu.el ends here
-

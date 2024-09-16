@@ -269,6 +269,7 @@
     "Find all visible buttons and links in window WIN and open one with Avy.
 
 The current window is chosen if WIN is not specified." 
+    (interactive)
     (with-selected-window (or win
                               (setq win (selected-window)))
       (let* ((avy-single-candidate-jump t)
@@ -376,8 +377,8 @@ This differs from Avy's goto-char-timer in how it processes parens."
          ("M-s M-w" . avy-kill-ring-save-region)
          ("M-s t"   . avy-move-line)
          ("M-s M-t" . avy-move-region)
-         ("M-s s"   . my/avy-next-char-2)
-         ("M-s r"   . my/avy-previous-char-2)
+         ;; ("M-s s"   . my/avy-next-char-2)
+         ;; ("M-s r"   . my/avy-previous-char-2)
          ("M-g l"   . avy-goto-end-of-line)
          ("M-s z"   . my/avy-copy-line-no-prompt)
          :map isearch-mode-map

@@ -2264,6 +2264,15 @@ current buffer without truncation."
 ;;;################################################################
 
 ;;----------------------------------------------------------------
+;; ** EL-SEARCH MAYBE
+;;----------------------------------------------------------------
+(use-package el-search
+  :ensure t
+  :defer
+  :config
+  (el-search-install-bindings-under-prefix [(meta ?s) ?s]))
+
+;;----------------------------------------------------------------
 ;; ** BEANCOUNT
 (use-package beancount
   :ensure (:host github :repo "beancount/beancount-mode")

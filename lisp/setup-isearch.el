@@ -13,6 +13,7 @@
   (setq lazy-count-suffix-format nil)
   (setq isearch-yank-on-move 'shift)
   (setq isearch-allow-scroll 'unlimited)
+  (setq isearch-repeat-on-direction-change t)
 
   (defvar isearch-repeat-map
     (let ((map (make-sparse-keymap)))

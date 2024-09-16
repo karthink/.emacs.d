@@ -68,7 +68,7 @@ If buffer-or-name is nil return current buffer's mode."
                            geiser-repl-mode
                            shell-mode
                            eat-mode
-                           ;; vterm-mode
+                           vterm-mode
                            inferior-python-mode
                            cider-repl-mode
                            fennel-repl-mode

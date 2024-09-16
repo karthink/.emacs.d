@@ -670,6 +670,7 @@ output instead."
 
 ;; ;TODO: Check recipe vs elpaca
 (use-package eat
+  :disabled
   :ensure
   (:host codeberg
    :repo "akib/emacs-eat"
@@ -691,6 +692,7 @@ output instead."
   (setq eat-kill-buffer-on-exit t))
 
 (use-package eat
+  :disabled
   :after project
   :bind ([remap project-shell] . eat-project))
 
@@ -758,5 +760,18 @@ output instead."
     ;; (if (looking-at term-prompt-regexp)
     ;;     (setq arg (1+ arg)))
     (my/vterm-next-prompt (- (or arg 1)))))
+
+(use-package vterm
+  :after project
+  :bind (:map project-prefix-map
+         ("s" . vterm-project))
+  :config
+  (defun vterm-project (&optional arg)
+    (interactive "P")
+    (require 'project)
+    (let* ((default-directory (project-root (project-current t)))
+           (buffer-name (project-prefixed-buffer-name "vterm")))
+      (vterm buffer-name))))
+
 
 (provide 'setup-shells)

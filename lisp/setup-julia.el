@@ -49,7 +49,7 @@
        (julia-snail--identifier-at-point))
       (and (window-live-p win)
           (select-window win))))
-  (setq julia-snail-terminal-type :eat)
+  (setq julia-snail-terminal-type :vterm)
   (setq-default
    julia-snail-extra-args '("-t12" "-q")
    julia-snail-multimedia-enable t

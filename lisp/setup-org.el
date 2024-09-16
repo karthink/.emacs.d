@@ -1919,10 +1919,49 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
 ;;;----------------------------------------------------------------
 (use-package org-noter
   :ensure t
-  :defer
+  :bind (:map org-noter-notes-mode-map
+         ("C-c ." . my/org-noter-associate-this-entry))
   :config
   (setq org-noter-always-create-frame nil
-        org-noter-kill-frame-at-session-end nil))
+        org-noter-kill-frame-at-session-end nil
+        org-noter-doc-split-fraction '(0.4 . 0.5)
+        org-noter-hide-other nil
+        org-noter-disable-narrowing t
+        org-noter-use-indirect-buffer nil
+        ;; This is buggy
+        org-noter-prefer-root-as-file-level nil)
+
+  (remove-hook 'org-noter--show-arrow-hook
+               #'org-noter-pdf--show-arrow)
+
+  (defun my/org-noter-associate-this-entry (&optional arg)
+    "Associate the current Org entry with the current org-noter location.
+
+With prefix arg, use a precise location."
+    (interactive "P")
+    (org-noter--with-valid-session
+     (let* ((precise-info (if arg (org-noter--get-precise-info) 'interactive))
+            (location (org-noter--doc-approx-location precise-info)))
+       (org-entry-put nil org-noter-property-note-location
+                      (org-noter--pretty-print-location location)))))
+
+  (defun my/org-noter--stay (orig-fn)
+    "After a sync action, stay in the doc or notes window.
+
+Whichever was already active."
+    (let ((win (selected-window))
+          (inhibit-redisplay t))
+      (funcall orig-fn)
+      (unless (eq (selected-window) win)
+        (select-window (org-noter--get-notes-window)))))
+
+  (dolist (sym '(org-noter-sync-next-note
+                 org-noter-sync-prev-note
+                 org-noter-sync-current-note
+                 org-noter-sync-next-page-or-chapter
+                 org-noter-sync-prev-page-or-chapter
+                 org-noter-sync-current-page-or-chapter))
+    (advice-add sym :around #'my/org-noter--stay)))
 
 ;;;----------------------------------------------------------------
 ;; ** ORG-ALERT

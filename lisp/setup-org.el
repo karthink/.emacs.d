@@ -198,6 +198,45 @@
   ;; (add-hook 'org-after-todo-statistics-hook #'org-summary-todo)
   )
 
+;; Custom DWIM functionality for `org-ctrl-c-ctrl-c'
+(use-package org
+  :after (org ox-latex org-latex-preview)
+  :config
+  (defvar my/org-output-buffers
+    '("*Org Preview LaTeX Output*"
+      "*Org Preview Convert Output*"
+      "*Org PDF LaTeX Output*"
+      "*Org Preview Preamble Precompilation*"
+      "*Org LaTeX Precompilation*"))
+  (defun my/org-output-next-buffer ()
+    "Cycle through Org output buffers"
+    (let* ((org-buffer (current-buffer))
+           (bufnames
+            (cl-sort
+              (cl-remove-if-not
+               #'buffer-live-p
+               (cl-mapcar #'get-buffer my/org-output-buffers))
+              #'> :key #'buffer-modified-tick))
+           (next-output-buffer
+            (lambda () (interactive)
+              (setq bufnames
+                    (nconc (cdr bufnames) (list (car bufnames))))
+              (switch-to-buffer (car bufnames))))
+           (back-to-org
+            (lambda () (interactive)
+              (while (memq (current-buffer) bufnames)
+                (quit-window))
+              (pop-to-buffer org-buffer))))
+      (when bufnames
+        (pop-to-buffer (car bufnames))
+        (set-transient-map
+         (define-keymap
+           "C-c C-c" next-output-buffer
+           "<remap> <keyboard-quit>" back-to-org)
+         (lambda () (eq (current-buffer) (car bufnames)))))))
+  (add-hook 'org-ctrl-c-ctrl-c-final-hook
+            #'my/org-output-next-buffer 99))
+
 (use-package org-id
   :after org
   :config

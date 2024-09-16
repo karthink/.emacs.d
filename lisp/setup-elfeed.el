@@ -285,7 +285,7 @@ ENQUEUE-P) add to mpv's playlist."
                       ((member word '("WE" "DAY" "HOW" "WHY" "NOW" "OLD"
                                       "NEW" "MY" "TOO" "GOT" "GET" "THE"
                                       "ONE" "DO" "YOU" "BAD" "ALL" "CAN"
-                                      "HE" "EAT"))
+                                      "HE" "EAT" "BUT" "AN" "WAY" "NOT"))
                        (capitalize word))
                       ((and (> (length word) 3)
                             (string-match-p "\\`[A-Z\\.\\?\\!\\':,’\\-]*\\'"
@@ -644,6 +644,7 @@ preferring the preferred type."
 ;;
 ;; Org-Link handling for Elfeed buffers
 (use-package ol
+  :disabled
   :after (elfeed org)
   :config
   (org-link-set-parameters "elfeed"

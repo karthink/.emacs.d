@@ -48,6 +48,11 @@ instead."
 (use-package find-func
   :bind (("C-h M-." . find-function-on-key)))
 
+;; MAYBE
+(use-package info-colors
+  :ensure t
+  :hook (Info-selection . info-colors-fontify-node))
+
 (use-package helpful
   :disabled
   :ensure t

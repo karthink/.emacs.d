@@ -151,6 +151,7 @@
     (latex-extra-mode . "")
     (strokes-mode . "")
     (flymake-mode . "fly")
+    (sideline-mode . "")
     (god-mode . ,(propertize "God" 'face 'success))
     (gcmh-mode . ""))
   "Alist for `clean-mode-line'.

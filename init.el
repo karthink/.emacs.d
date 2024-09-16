@@ -573,7 +573,7 @@ Cancel the previous one if present."
 ;;                         (display-line-numbers-mode))))
 
 (setq display-line-numbers-width-start t
-      display-line-numbers-type 'relative)
+      display-line-numbers-type t)
 
 ;;;################################################################
 ;; * EDITING
@@ -3163,8 +3163,8 @@ _d_: subtree
 (use-package pulse
   :bind ("C-x l" . my/pulse-line)
   :custom-face
-  (pulse-highlight-start-face ((t (:inherit region))))
-  (pulse-highlight-face ((t (:inherit region))))
+  (pulse-highlight-start-face ((t (:inherit next-error))))
+  (pulse-highlight-face ((t (:inherit next-error))))
   :hook (((dumb-jump-after-jump
            imenu-after-jump) . my/recenter-and-pulse)
          ((bookmark-after-jump
@@ -3211,7 +3211,7 @@ _d_: subtree
       (let ((pulse-delay 0.02)
             (pulse-iterations 10))
         (save-excursion
-          (move-to-window-line (1- next-screen-context-lines))
+          (move-to-window-line next-screen-context-lines)
           (my/pulse-momentary-line))))
 
     (defun my/pulse-momentary-lower-bound (&rest _)
@@ -3219,7 +3219,7 @@ _d_: subtree
       (let ((pulse-delay 0.02)
             (pulse-iterations 10))
         (save-excursion
-          (move-to-window-line (- next-screen-context-lines))
+          (move-to-window-line (- (1+ next-screen-context-lines)))
           (my/pulse-momentary-line))))
 
     (advice-add 'scroll-up-command   :after #'my/pulse-momentary-upper-bound)
@@ -4347,7 +4347,8 @@ managers such as DWM, BSPWM refer to this state as 'monocle'."
                   error org-cite corfu-current corfu-default
                   org-meta-line org-tag))
     (add-to-list 'mixed-pitch-fixed-pitch-faces face))
-  (setq mixed-pitch-set-height nil)
+  (setq mixed-pitch-set-height nil
+        mixed-pitch-variable-pitch-cursor nil)
   (defun my/mixed-pitch-spacing ()
     (if mixed-pitch-mode
         (setq line-spacing 0.12)
@@ -4579,7 +4580,8 @@ buffer's text scale."
   (pcase-dolist (`(,font           . ,scale)
                  '(("Merriweather" . 0.88)
                    ("IM FELL"      . 1.18)
-                   ("Latin Modern" . 1.05)))
+                   ;; ("Latin Modern$" . 1.05)
+                   ("Latin Modern Math" . 1.25)))
     (setf (alist-get font face-font-rescale-alist nil nil #'equal)
           scale))
   

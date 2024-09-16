@@ -68,6 +68,7 @@
    (setq vertico-multiform-commands
          '((org-ql-find reverse)
            (org-ql-refile reverse)
+           (my/consult-mark)
            (jinx-correct reverse)
            (tab-bookmark-open reverse)
            (dired-goto-file unobtrusive)

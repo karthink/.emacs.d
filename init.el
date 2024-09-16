@@ -236,6 +236,12 @@ Cancel the previous one if present."
   (add-hook
    'after-init-hook
    (defun my/load-packages-eagerly ()
+     (add-hook 'server-visit-hook
+               (lambda () (when (and (equal default-directory
+                                       temporary-file-directory)
+                                (equal major-mode 'text-mode)
+                                (fboundp 'markdown-mode))
+                       (markdown-mode))))
      (run-at-time 1 nil
                   (lambda () 
                     (when (fboundp 'pdf-tools-install) (pdf-tools-install t))
@@ -805,6 +811,7 @@ for details."
          ([remap mark-sexp]      . #'easy-mark)
          ("M-S-w" . kill-ring-save)
          :map easy-kill-base-map
+         ("+" . nil) ("=" . nil)
          ("," . easy-kill-expand-region)
          ("." . easy-kill-contract-region))
   :config
@@ -3325,17 +3332,18 @@ _d_: subtree
 (use-package elec-pair
        :defer
        :config
+       ;; (electric-pair-mode +1)
        (setq electric-pair-inhibit-predicate
              `(lambda (c)
-                (if (char-equal c ?\<) t (,electric-pair-inhibit-predicate c))))
-       ;; (electric-pair-mode +1)
-       )
+                (if (char-equal c ?\<) t (,electric-pair-inhibit-predicate c)))))
+
 (use-package smartparens
   :ensure t
   :hook ((emacs-lisp-mode
           lisp-interaction-mode
           fennel-mode scheme-mode
-          ielm-mode)
+          ielm-mode markdown-mode
+          git-commit-mode)
          . smartparens-mode)
   :bind
   (:map smartparens-mode-map
@@ -3368,9 +3376,22 @@ _d_: subtree
             (lambda ()
               "Enable \\[electric-pair-mode] when \[[smartparens-mode]] is disabled."
               (electric-pair-local-mode +1)))
+  (add-hook 'show-smartparens-mode-hook
+            (lambda ()
+              "Disable \\[show-paren-mode] when \[[show-smartparens-mode]] is enabled."
+              (if show-smartparens-mode
+                  (show-paren-mode -1)
+                (show-paren-mode 1))))
   :config
-  ;; Repeat actions
-  ;; Scratch buffer for: emacs-lisp-mode
+  (sp-pair "`" nil :actions :rem)
+  (sp-local-pair '(markdown-mode julia-mode)
+                 "`" "`" :actions '(insert wrap autoskip))
+  (sp-local-pair '(message-mode text-mode
+                   notmuch-message-mode)
+                 "`" "'" :actions '(insert wrap autoskip))
+  (sp-with-modes sp-lisp-modes
+    (sp-local-pair "`" "'" :actions '(wrap autoskip))
+    (sp-local-pair "'" nil :actions nil))
 
   (defun my/sp-duplicate-sexp (&optional arg)
     (interactive "p")
@@ -3415,13 +3436,7 @@ _d_: subtree
    (lambda (_ cmd)
      (put cmd 'repeat-map 'lisp-navigation-map))
    lisp-navigation-map)
-  (put 'kill-sexp 'repeat-map 'lisp-navigation-map)
-
-  ;; (require 'smartparens-config)
-  (sp-with-modes sp-lisp-modes
-    ;; disable ', it's the quote character!
-    ;; (sp-local-pair "`" "'")
-    (sp-local-pair "'" nil :actions nil)))
+  (put 'kill-sexp 'repeat-map 'lisp-navigation-map))
 
 ;;;----------------------------------------------------------------
 ;; ** AVY
@@ -3441,9 +3456,17 @@ _d_: subtree
 ;;;----------------------------------------------------------------
 (use-package wrap-region
   :ensure t
-  :init (wrap-region-mode 1))
-;; (add-hook 'text-mode-hook 'wrap-region-mode)
-;;;----------------------------------------------------------------
+  :hook (((text-mode tex-mode conf-mode) . wrap-region-mode))
+  :config
+  (wrap-region-remove-wrapper "'")
+  (wrap-region-add-wrappers
+   '(("/" "/" nil 'org-mode)
+     ("+" "+" nil 'org-mode)
+     ("=" "=" nil 'org-mode)
+     ("~" "~" nil 'org-mode)
+     ("*" "*" nil '(org-mode markdown-mode))
+     ("_" "_" nil '(org-mode markdown-mode)))))
+
 ;;;################################################################
 ;; ** TRAMP
 ;;;################################################################

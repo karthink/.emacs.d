@@ -2606,7 +2606,10 @@ current buffer without truncation."
   
   (defun my-next-error-delegate (orig-fn &optional arg reset)
     (if my-next-error-functions
-        (if-let* ((buf (ignore-errors (next-error-find-buffer t)))
+        (if-let* ((buf (ignore-errors
+                         (next-error-find-buffer
+                          t nil (lambda () (not (eq next-error-function
+                                               'org-occur-next-match))))))
                   ((get-buffer-window buf)))
             (funcall orig-fn arg reset)
           (run-hook-with-args-until-success

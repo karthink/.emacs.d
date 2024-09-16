@@ -33,7 +33,7 @@
                 org-image-actual-width nil
                 ;; org-refile-targets '((nil :maxlevel . 2) (org-agenda-files :maxlevel . 3)) 
                 org-refile-targets '((nil :maxlevel . 2)
-                                     (org-agenda-files :maxlevel . 2)
+                                     (org-agenda-files :maxlevel . 3)
                                      (org-agenda-files :todo . "PROJECT"))
                 org-refile-target-verify-function nil
                 org-refile-use-outline-path t
@@ -48,11 +48,6 @@
                 org-log-done 'time
                 org-catch-invisible-edits 'smart
                 org-use-speed-commands t
-                org-speed-commands-user '(("z" . org-add-note)
-                                          ("F" . org-babel-next-src-block)
-                                          ("B" . org-babel-previous-src-block)
-                                          ("4" . org-tree-to-indirect-buffer)
-                                          ("S" . org-tree-to-indirect-buffer))
                 org-imenu-depth 7
                 org-log-into-drawer t
                 org-extend-today-until 3
@@ -74,6 +69,13 @@
   ;; Make org use `display-buffer' like every other Emacs citizen.
   (advice-add #'org-switch-to-buffer-other-window :override #'switch-to-buffer-other-window)
 
+  (dolist (cmds '(("z" . org-add-note)
+                  ("F" . org-babel-next-src-block)
+                  ("B" . org-babel-previous-src-block)
+                  ("4" . org-tree-to-indirect-buffer)
+                  ("S" . org-tree-to-indirect-buffer)))
+    (cl-pushnew cmds org-speed-commands))
+
   (unless transient-mark-mode
     (advice-add 'org-mark-element :after #'my/activate-mark)
     (advice-add 'org-mark-subtree :after #'my/activate-mark))
@@ -83,6 +85,9 @@
               (when (org-at-item-checkbox-p)
                 ;; Checkbox: Insert new item with checkbox.
                 (org-insert-todo-heading nil) t)))
+
+  (remove-hook 'org-cycle-hook
+               #'org-cycle-optimize-window-after-visibility-change)
 
   (when (>= emacs-major-version 28)
     (defvar org-link-navigation-map
@@ -176,6 +181,7 @@
   
   (add-to-list 'org-structure-template-alist '("ma" . "src matlab"))
   (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
+  (add-to-list 'org-structure-template-alist '("sh" . "src sh"))
 
   (defun my/org-cdlatex-settings ()
     (define-key org-cdlatex-mode-map (kbd "$") 'cdlatex-dollar)
@@ -397,12 +403,10 @@ appropriate.  In tables, insert a new row or end the table."
          ("M-g M" . my/org-latex-prev-env))
   :config
   ;; (setq org-element-use-cache nil)
-  (add-hook 'org-latex-preview-auto-ignored-commands 'next-line)
-  (add-hook 'org-latex-preview-auto-ignored-commands 'previous-line)
-  (add-hook 'org-latex-preview-auto-ignored-commands 'scroll-up-command)
-  (add-hook 'org-latex-preview-auto-ignored-commands 'scroll-down-command)
-  (add-hook 'org-latex-preview-auto-ignored-commands 'scroll-other-window)
-  (add-hook 'org-latex-preview-auto-ignored-commands 'scroll-other-window-down)
+  (setq org-latex-preview-auto-ignored-commands
+        '(next-line previous-line
+          scroll-up-command scroll-down-command
+          scroll-other-window scroll-other-window-down))
   (setq-default
    ;; org-latex-preview-header
    ;;    "\\documentclass{article}
@@ -465,6 +469,11 @@ appropriate.  In tables, insert a new row or end the table."
   (put 'my/org-latex-prev-env
        'repeat-map 'my/org-latex-env-map)
   
+  (defun my/org-latex-preview-show-error ()
+    (display-local-help t))
+  (add-hook 'org-ctrl-c-ctrl-c-final-hook
+            #'my/org-latex-preview-show-error -10)
+
   ;; Precompilation freezes emacs, do it in the background when possible.
   (defun my/org-latex-preview-precompile-idle (&optional beg end _)
     (when (and (featurep 'async) (not (or beg end)))
@@ -1282,9 +1291,11 @@ parent."
        org-cite-global-bibliography citar-bibliography))))
 
 ;;;----------------------------------------------------------------------
-;; ** ORG-IMAGE-PREVIEW
+;; ** ORG-IMAGE-PREVIEW DONT
 ;;;----------------------------------------------------------------------
+;; Disabled while I work on the org-link-preview patch for Org
 (use-package org-image-preview
+  :disabled
   :ensure (:host github :protocol ssh
            :repo "karthink/org-image-preview")
   :after org
@@ -1296,10 +1307,11 @@ parent."
   (put 'org-image-preview 'repeat-map 'org-link-navigation-map))
 
 ;;;----------------------------------------------------------------------
-;; ** ORG-DOWNLOAD
+;; ** ORG-DOWNLOAD DONT
 ;;;----------------------------------------------------------------------
+;; Disabled while I work out the kinks with org-yank
 (use-package org-download
-  :ensure t
+  :disabled
   :after org
   :hook ((dired-mode . org-download-enable)
          (org-mode . org-download-enable))
@@ -1371,9 +1383,11 @@ Return the initialized session, if any."
 (with-ob-autoload "python")
 (with-ob-autoload "shell")
 (with-ob-autoload "scheme")
-(with-ob-autoload "ditaa"
-  )
+(with-ob-autoload "ditaa")
 (with-ob-autoload "emacs-lisp")
+
+;; ESS DONT
+;; Disabled in favor of julia-snail
 (use-package ess
   :disabled
   :ensure t
@@ -1392,7 +1406,8 @@ Return the initialized session, if any."
                    ("lco" "latex_class_options")
                    ("ao" "attr_org")
                    ("al" "attr_latex")
-                   ("ah" "attr_html")))
+                   ("ah" "attr_html")
+                   ("cap" "caption")))
     (setf (alist-get key org-tempo-keywords-alist
                      nil nil #'equal)
           expansion)))
@@ -1405,6 +1420,9 @@ Return the initialized session, if any."
   :config
   (setf (alist-get :eval org-babel-default-header-args)
         "no-export")
+  (setq org-confirm-babel-evaluate nil
+        org-export-use-babel t)
+
   (defun my/org-redisplay-babel-result ()
     (save-excursion
       (condition-case err
@@ -1413,26 +1431,13 @@ Return the initialized session, if any."
                       (end (- (org-element-property :end elem)
                               (org-element-property :post-blank elem))))
             (funcall
-             (if (featurep 'org-image-preview)
-                 #'org-image-preview--in-region
-               #'org-display-inline-images)
+             (cond
+              ((fboundp 'org-link-preview) #'org-link-preview-region)
+              ((featurep 'org-image-preview) #'org-image-preview--in-region)
+              (t #'org-display-inline-images))
              nil 'refresh beg end))
         (error (message "Could not display images: %S" err)))))
-  
-  (setq org-confirm-babel-evaluate nil
-        org-export-use-babel t)
-  ;; (org-babel-do-load-languages
-  ;;  'org-babel-load-languages '((clojure . t)
-  ;;                              (emacs-lisp . t)
-  ;;                              (matlab . t)
-  ;;                              (octave . t)
-  ;;                              (python . t)
-  ;;                              (R . nil)
-  ;;                              (shell . t)
-  ;;                              (scheme . t)
-  ;;                              (ditaa . nil)
-  ;;                              (julia . t)
-  ;;                              (jupyter . nil)))
+
   (defun my/org-babel-goto-tangle-file ()
     (if-let* ((args (nth 2 (org-babel-get-src-block-info t)))
               (tangle (alist-get :tangle args)))
@@ -1626,8 +1631,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
   (add-to-list 'org-structure-template-alist '("R" . "#+REVEAL_HTML: ?\n"))
   (use-package org-re-reveal-ref
     :disabled
-    :init (setq org-ref-default-bibliography '("~/Documents/research/control_systems.bib")))
-  )
+    :init (setq org-ref-default-bibliography '("~/Documents/research/control_systems.bib"))))
 
 (use-package ox-reveal
   :disabled 
@@ -1665,8 +1669,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
   (setq org-ref-completion-library 'org-ref-ivy-cite)
   (setq org-ref-bibliography-notes nil
         org-ref-default-bibliography reftex-default-bibliography
-        org-ref-pdf-directory "~/Documents/research/lit/")
-  )
+        org-ref-pdf-directory "~/Documents/research/lit/"))
 
 ;;;----------------------------------------------------------------
 ;; ** MY ORG PROJECTS
@@ -1761,8 +1764,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
 
       (display-warning 'org-publish
                        "Could not find RSYNC in PATH. Project not uploaded to server."
-                       :warning)))
-  )
+                       :warning))))
 
 ;;;----------------------------------------------------------------
 ;; ** ORG-TREE-SLIDE

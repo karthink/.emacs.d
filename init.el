@@ -3751,8 +3751,7 @@ _d_: subtree
 ;; ** ORG-ADDONS
 ;;;----------------------------------------------------------------
 ;; *** ANKI
-(use-package setup-anki
-  :after (org-capture org))
+(load (expand-file-name "lisp/setup-anki" user-emacs-directory))
 
 ;;----------------------------------------------------------------
 ;; *** ROAM

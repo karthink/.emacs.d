@@ -237,6 +237,84 @@
   (add-hook 'org-ctrl-c-ctrl-c-final-hook
             #'my/org-output-next-buffer 99))
 
+;; Auto insertion for Org
+(use-package org
+  :after (org autoinsert)
+  :config
+  (define-auto-insert 'org-mode
+    '(nil
+      ;;----------------------------------------------------------------
+      ;; Basic details
+      "#+title: " (read-string "Title: ") "\n"
+      "#+author: " (user-full-name) "\n"
+      (if (y-or-n-p "Add date? ") (concat "#+date: " (format-time-string "%Y-%m-%d") "\n"))
+      ;;----------------------------------------------------------------
+      ;; Export options completion
+      "#+options: "
+      '(setq v1
+       (append
+        ;; Hard-coded OPTION items always available.
+        '("H:" "\\n:" "num:" "timestamp:" "arch:" "author:" "c:"
+          "creator:" "date:" "d:" "email:" "*:" "e:" "::" "f:"
+          "inline:" "tex:" "p:" "pri:" "':" "-:" "stat:" "^:" "toc:"
+          "|:" "tags:" "tasks:" "<:" "todo:")
+        ;; OPTION items from registered backends.
+        (let (items)
+         (dolist (backend (bound-and-true-p
+        		   org-export-registered-backends))
+          (dolist (option (org-export-backend-options backend))
+           (let ((item (nth 2 option)))
+            (when item (push (concat item ":") items)))))
+         items)))
+      ((completing-read "Options: " v1) str " ") "\n"
+      "#+exclude_tags: noexport ignore\n"
+      ;;----------------------------------------------------------------
+      ;; Startup options completion
+      "#+startup: " ((completing-read "Startup: " org-startup-options nil t) str " ") "\n"
+
+      ;; Org-babel setup
+      '(setq v1
+        '(("julia" .
+           "#+property: header-args:julia :session *julia* :async yes :exports results")
+          ("matlab" .
+           (concat "#+property: header-args:matlab :session *MATLAB* :results output"
+            " :exports both :eval never-export :noweb yes"))))
+      (let ((lang (completing-read "Add language header props?: " v1 nil t)))
+       (unless (string-empty-p lang)
+        (concat (cdr (assoc lang v1)) "\n")))
+      ;;----------------------------------------------------------------
+      ;; HTML export setup
+      (if (y-or-n-p "HTML setup? ")
+          (concat "#+html_HEAD: <link rel=\"stylesheet\" type=\"text/css\" "
+           "href=\"https://gongzhitaao.org/orgcss/org.css\"/>\n"
+           "# #+setupfile: https://fniessen.github.io/org-html-themes/setup/theme-readtheorg.setup\n"))
+      ;;----------------------------------------------------------------
+      ;; LaTeX and latex previews setup
+      (when (y-or-n-p "LaTeX setup? ")
+       (concat
+        "#+latex_class: " (completing-read "Class: " org-latex-classes) "\n"
+        (when (y-or-n-p "Bibliography? ")
+         (concat
+          "#+bibliography: "
+          (progn (require 'reftex-cite)
+           (car reftex-default-bibliography))
+          "\n"))
+        "#+latex_header: \\usepackage[margin=1in]{geometry}\n"
+        "#+latex_class_options: [10pt]\n"
+        "#+latex_header: \\usepackage{arydshln}\n"
+        "#+latex_header: \\usepackage{bbm}\n"
+        "#+latex_header: \\usepackage{amsthm}\n"
+        "#+latex_header: \\newtheorem{theorem}{Theorem}\n"
+        "#+latex_header: \\newtheorem{lemma}{Lemma}[theorem]\n"
+        "#+latex_header: \\newcommand{\\abs}[1]{\\left| #1 \\right|}\n"
+        "#+latex_header: \\usepackage{cancel}\n"))
+      '(setq v1 (progn (require 'tex)
+                 (TeX-search-files-by-type 'texinputs 'global t t)))
+      ((completing-read "Packages: " v1 nil t) str
+       & '(progn (beginning-of-line) (insert "#+latex_header: \\usepackage{")
+                 (end-of-line)       (insert "}\n")))
+      _)))
+
 (use-package org-id
   :after org
   :config

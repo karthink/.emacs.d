@@ -381,20 +381,15 @@ If buffer-or-name is nil return current buffer's mode."
 
         ((lambda (buf act) (member (buffer-mode buf) my/help-modes-list))
          (display-buffer-reuse-window
-          display-buffer-in-direction
-          display-buffer-in-side-window)
+          display-buffer-in-side-window
+          display-buffer-in-direction)
          (body-function . select-window)
-         ;; (direction . bottom)
-         ;; (window-height . (lambda (win) (fit-window-to-buffer win 25 14)))
-         (window-width . 77 ;; (lambda (win) (fit-window-to-buffer win nil nil 75 65))
-                       )
+         (window-width . 77)
+         ;; (lambda (win) (fit-window-to-buffer win nil nil 75 65))
          (direction . below)
          (side . right)
          (slot . 2)
-         (window-parameters . ((split-window . #'ignore)
-                               ;; (no-other-window . t)
-                               ;; (mode-line-format . (:eval (my/helper-window-mode-line-format)))
-                               )))
+         (window-parameters . ((split-window . #'ignore))))
 
         (;; (lambda (buf act) (equal (buffer-mode buf) 'matlab-shell-help-mode))
          "\\*Matlab Help\\*"

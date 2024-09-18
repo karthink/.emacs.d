@@ -1057,6 +1057,7 @@ for details."
          :map window-prefix-map
          ("1" . my/window-toggle-dedicated))
   :config
+  (setq truncate-partial-width-windows t)
   (setq other-window-scroll-default
       (lambda ()
         (or (get-mru-window nil nil 'not-this-one-dummy)
@@ -1067,8 +1068,9 @@ for details."
 
 Also kill this window, tab or frame if necessary."
     (interactive)
-    (cl-letf ((symbol-function 'delete-window)
-              (symbol-function 'my/delete-window-or-delete-frame))
+    (if (one-window-p)
+        (progn (kill-buffer)
+               (my/delete-window-or-delete-frame))
       (kill-buffer-and-window)))
 
   ;; quit-window behavior is completely broken
@@ -1118,6 +1120,7 @@ Also kill this window, tab or frame if necessary."
          ("H-M-`" . popper-cycle)
          ("H-6" . popper-toggle-type)
          ("C-x 6" . popper-toggle-type)
+         ("C-^" . popper-toggle-type)
          ("H-M-k" . popper-kill-latest-popup)
          ("s-M-k" . popper-kill-latest-popup)
          ("M-`" . my/switch-to-other-buffer)

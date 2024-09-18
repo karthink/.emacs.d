@@ -351,6 +351,21 @@ but mark is only pushed if region isn't active."
          ("C-c (" . consult-reftex-goto-label)
          ("C-c )"   . consult-reftex-insert-reference))
   :config
+  (define-advice reftex-label (:around (label-fn &rest args) show-labels)
+    (let* ((enable-recursive-minibuffers t)
+           (minibuffer-local-map
+            (make-composed-keymap
+             (define-keymap
+               "C-i" (lambda ()
+                       (interactive)
+                       (when-let
+                           (label
+                            (with-minibuffer-selected-window
+                              (consult-reftex-select-reference current-prefix-arg t)))
+                         (delete-minibuffer-contents)
+                         (insert label))))
+             minibuffer-local-map)))
+      (apply label-fn args)))
   (with-eval-after-load 'embark
     (defun consult-reftex--key-finder ()
       (when (and
@@ -373,9 +388,9 @@ but mark is only pushed if region isn't active."
                 ,start .  ,end))))))
     (cl-pushnew 'consult-reftex--key-finder embark-target-finders))
   (setq consult-reftex-preview-function
-                #'consult-reftex-preview-make-window
-                consult-reftex-preferred-style-order
-                '("\\eqref" "\\ref"))
+        #'consult-reftex-preview-make-window
+        consult-reftex-preferred-style-order
+        '("\\cref" "\\eqref" "\\ref"))
   (consult-customize consult-reftex-insert-reference
                      :preview-key (list :debounce 0.3 'any)))
 
@@ -432,7 +447,8 @@ but mark is only pushed if region isn't active."
                                     (?6 ("\\partial"))
                                     (?v ("\\vee" "\\forall"))
                                     (?^ ("\\uparrow" "\\Updownarrow" "\\updownarrow"))))
-  (setq cdlatex-math-modify-alist '((?b "\\mathbf" "\\textbf" t nil nil)
+  (setq cdlatex-math-modify-alist '((?k "\\mathfrak" "\\textfrak" t nil nil)
+                                    (?b "\\mathbf" "\\textbf" t nil nil)
                                     (?B "\\mathbb" "\\textbf" t nil nil)
                                     (?t "\\text" nil t nil nil)))
   (setq cdlatex-paired-parens "$[{(")

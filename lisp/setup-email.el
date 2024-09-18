@@ -297,4 +297,48 @@
                '("^https?://list\\.orgmode\\.org/\\(?:orgmode/\\)?\\([^/]+\\)"
                  . yant/browse-url-orgmode-ml)))
 
+;; Commands to go to the web version of mailing list URLs.
+(use-package notmuch
+  :bind (:map notmuch-tree-mode-map
+         ("x" . my/notmuch-browse-externally)
+         ("C-c C-w" . my/notmuch-kill-web-url)
+         :map notmuch-show-mode-map
+         ("x" . my/notmuch-browse-externally)
+         ("C-c C-w" . my/notmuch-kill-web-url))
+  :config
+  (defvar my-notmuch-web-urls-alist
+    '(("<emacs-orgmode@gnu.org>" . "https://list.orgmode.org/")
+      ("<emacs-devel@gnu.org>" . "https://yhetil.org/emacs-devel/"))
+    "List of email addresses and web links for corresponding mailing lists.")
+  (defun my/notmuch-browse-externally ()
+    "If a web url is found for this email, open it in a browser."
+    (interactive)
+    (when-let ((url (my/notmuch-web-url)))
+      (browse-url-default-browser url)))
+  (defun my/notmuch-kill-web-url ()
+    "If a web url is found for this email, add it to the kill-ring."
+    (interactive)
+    (when-let ((url (my/notmuch-web-url)))
+      (message "Killed url: %s" url)
+      (kill-new url)))
+  (defun my/notmuch-web-url ()
+    "Create a web link based on the message ID.
+
+Uses entries in `my-notmuch-web-urls-alist'."
+    (let* ((id (thread-last
+                 (notmuch-show-get-message-id)
+                 (string-remove-prefix "id:")
+                 (string-remove-prefix "<")
+                 (string-remove-suffix ">")))
+           (to (concat (notmuch-show-get-to)
+                       (notmuch-show-get-cc)))
+          (addr-match
+           (seq-find (lambda (email)
+                       (string-match-p (regexp-quote email) to))
+                     (map-keys my-notmuch-web-urls-alist))))
+      (when addr-match
+        (concat (map-elt my-notmuch-web-urls-alist addr-match)
+                id)))))
+
+
 (provide 'setup-email)

@@ -2877,7 +2877,7 @@ normally have their errors suppressed."
   :config
   (when IS-LINUX
     (defun browse-url-umpv (url &optional single)
-      (start-process "mpv" nil "setsid" "--wait"
+      (start-process "mpv" nil "nohup"
                      (if single "mpv" "umpv")
                      (shell-quote-wildcard-pattern url)))
     
@@ -2890,12 +2890,12 @@ normally have their errors suppressed."
           (browse-url-mpv url))))
 
     (defun browse-url-mpv-hd (url &optional _)
-      (start-process "mpv" nil "setsid" "--wait" "--"
+      (start-process "mpv" nil "nohup"
                      "mpv" "--profile=protocol-hd-video"
                      (shell-quote-wildcard-pattern url)))
 
     (defun browse-url-mpv-audio (url &optional _)
-      (start-process "mpv" nil "setsid" "--wait" "--"
+      (start-process "mpv" nil "nohup"
                      "mpv" "--video=no" "--force-window=yes"
                      (shell-quote-wildcard-pattern url)))
     
@@ -2911,8 +2911,7 @@ normally have their errors suppressed."
                #'browse-url-umpv)))
         (browse-url-at-point)))
 
-    (setq browse-url-generic-program "/usr/bin/qutebrowser"
-          browse-url-new-window-flag t)
+    (setq browse-url-new-window-flag t)
     ;; (setq browse-url-browser-function
     ;;       '(("https:\\/\\/www\\.youtu\\.*be." . browse-url-umpv)
     ;;         ("." . browse-url-generic)))

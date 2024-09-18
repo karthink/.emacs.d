@@ -928,11 +928,14 @@ for details."
 ;; Keep track of recently opened files. Also feeds into the list of recent
 ;; directories used by consult-dir.
 (use-package recentf
-  ;; :defer 2
   :config
   (setq recentf-save-file (dir-concat user-cache-directory "recentf")
         recentf-max-saved-items 200
         recentf-auto-cleanup 300)
+  (define-advice recentf-cleanup (:around (fun) silently)
+    (let ((inhibit-message t)
+          (message-log-max nil))
+      (funcall fun)))
   (recentf-mode 1))
 
 ;; ** SAVEHIST

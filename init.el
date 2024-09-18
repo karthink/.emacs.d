@@ -215,9 +215,11 @@ Cancel the previous one if present."
 	            (run-with-timer idle-t nil #'gcmh-idle-garbage-collect))))))
       (setq gcmh-idle-delay 'auto  ; default is 15s
             gcmh-high-cons-threshold (* 32 1024 1024)
-            gcmh-verbose nil)
+            gcmh-verbose nil
+            gc-cons-percentage 0.2)
       (gcmh-mode 1))
-  (error (setq gc-cons-threshold (* 16 1024 1024))))
+  (error (setq gc-cons-threshold (* 16 1024 1024)
+               gc-cons-percentage 0.2)))
 
 ;; setup-core is the first of many concerns to be shunted into its own file.
 ;; ----------------------------------------------------------------

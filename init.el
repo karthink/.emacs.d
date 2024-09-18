@@ -2278,6 +2278,13 @@ current buffer without truncation."
   (el-search-install-bindings-under-prefix [(meta ?s) ?s]))
 
 ;;----------------------------------------------------------------
+;; ** SHOW-FONT MAYBE
+;;----------------------------------------------------------------
+(use-package show-font
+  :ensure (:host github :repo "protesilaos/show-font")
+  :defer)
+
+;;----------------------------------------------------------------
 ;; ** BEANCOUNT
 ;;----------------------------------------------------------------
 (use-package beancount
@@ -4590,7 +4597,7 @@ buffer's text scale."
   :config
   (pcase-dolist (`(,font           . ,scale)
                  '(("Merriweather" . 0.88)
-                   ("IM FELL"      . 1.18)
+                   ("IM FELL"      . 1.19)
                    ;; ("Latin Modern$" . 1.05)
                    ("Latin Modern Math" . 1.25)))
     (setf (alist-get font face-font-rescale-alist nil nil #'equal)
@@ -4604,18 +4611,11 @@ buffer's text scale."
                         '(120 110))
                        (t '(95 110)))))
            (custom-set-faces
-            `(variable-pitch ((t (:family "Merriweather" ;;:height ,vp
+            `(variable-pitch ((t (:family "Merriweather" ;; :height ,vp
                                   :width semi-expanded))))
-            ;; '(default ((t (:family "Ubuntu Mono" :foundry "PfEd"
-            ;;                        :slant normal :weight normal
-            ;;                        :height 125 :width normal))))
             `(default ((t (:family "Monospace" :foundry "PfEd"
-                                   :slant normal :weight normal
-                                   :height ,fp :width normal))))
-            ;; `(default ((t (:family "FantasqueSansMono" :foundry "PfEd"
-            ;;                       :slant normal :weight normal
-            ;;                       :height ,fp :width normal))))
-            )))
+                           :slant normal :weight normal
+                           :height ,fp :width normal)))))))
         (IS-WINDOWS
          (custom-set-faces
           '(default ((t (:family "Consolas" :foundry "outline"

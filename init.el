@@ -1936,7 +1936,9 @@ current buffer without truncation."
 (use-package macrostep
   :ensure t
   :bind (:map emacs-lisp-mode-map
-         ("C-c e" . macrostep-expand)))
+         ("C-c C-m" . macrostep-expand)
+         :map lisp-interaction-mode-map
+         ("C-c C-m" . macrostep-expand)))
 
 (use-package elisp-mode
   :defer t
@@ -3025,7 +3027,11 @@ normally have their errors suppressed."
       ;;  :reader (lambda () (interactive)
       ;;            (setq corfu-auto
       ;;                  (not corfu-auto))))
-      ("d" "debug?" toggle-debug-on-error)
+      ("dd" "debug (err)" toggle-debug-on-error)
+      ("dg" "debug (quit)" (lambda () (interactive)
+                             (cl-callf not debug-on-quit)
+                             (message "Debug on quit %sset"
+                                      (if debug-on-quit "" "un"))))
       ("g" "vc gutter" diff-hl-mode)
       ("fm" "flymake" (lambda (arg) (interactive "P")
                        (if (not arg)

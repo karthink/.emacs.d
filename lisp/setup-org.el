@@ -722,17 +722,16 @@ appropriate.  In tables, insert a new row or end the table."
   :ensure (:host github
              :repo "minad/org-modern")
   :after org
-  :hook ((org-modern-mode . my/org-modern-spacing)
-         ;; (org-mode . org-modern-mode)
-         )
+  :hook ((org-modern-mode . my/org-modern-spacing))
   :config
   (defun my/org-modern-spacing ()
     (setq-local line-spacing
                 (if org-modern-mode
                     0.1 0.0)))
-  (setq org-modern-todo nil
+  (setq org-modern-todo t
         org-modern-hide-stars nil
-        org-modern-horizontal-rule nil
+        org-modern-horizontal-rule t
+        org-modern-star 'replace
         org-modern-keyword "‣ "
         ;; org-modern-block-fringe 0 
         org-modern-table nil))

@@ -2760,8 +2760,10 @@ current buffer without truncation."
   (cl-callf
       (lambda (pl)
         (delete-dups
-         (append (alist-get 'tex-mode jinx-exclude-faces) pl)))
-      (alist-get 'org-mode jinx-exclude-faces)))
+         (append '(org-block)
+                 (alist-get 'tex-mode jinx-exclude-faces) pl)))
+      (alist-get 'org-mode jinx-exclude-faces))
+  (add-hook 'jinx-mode-hook (my-next-error-register 'jinx-next)))
 
 ;;----------------------------------------------------------------
 ;; ** ELDOC

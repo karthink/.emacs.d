@@ -1900,7 +1900,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
         org-tree-slide-activate-message
         (propertize "ORG PRESENTATION STARTED" 'face 'success)
         org-tree-slide-deactivate-message
-        (propertize "ORG PRESENTATIONS STOPPED" 'face 'error))
+        (propertize "ORG PRESENTATION STOPPED" 'face 'error))
   
   ;; (defun my/org-tree-slide-enlarge-latex-preview ()
   ;;   (dolist (ov (overlays-in (point-min) (point-max)))
@@ -1922,17 +1922,18 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
         (progn
           (unless (eq major-mode 'org-mode)
             (user-error "Not in an Org buffer"))
-          (org-tree-slide-mode 1)
           (setq-local org-hide-emphasis-markers t)
+          (org-tree-slide-mode 1)
           (setq olivetti-style nil)
+          (setq line-spacing 0.12)
           ;; (setq olivetti-margin-width 14)
           ;; (setq olivetti-body-width 0.7)
-          (text-scale-increase 2)
+          (text-scale-increase 6)
           (my/olivetti-mode 1))
       (org-tree-slide-mode -1)
-      (kill-local-variable 'org-hide-emphasis-markers)
+      ;; (kill-local-variable 'org-hide-emphasis-markers)
       (my/olivetti-mode -1)
-      (text-scale-decrease 2)
+      (text-scale-decrease 6)
       (text-scale-mode -1)))
 
   :bind (("C-c P"      . my/org-presentation-mode)

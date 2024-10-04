@@ -14,7 +14,6 @@
    :map dired-mode-map
    ("M-s f" . nil)
    ("M-s g" . nil)
-   ("C-c C-a" . gnus-dired-attach)
    ("," . dired-up-directory)
    ("." . dired-find-file)
    ("e" . ora-ediff-files)
@@ -281,7 +280,8 @@ This relies on the external 'fd' executable."
         (dir-concat user-cache-directory "image-dired/")))
 
 (use-package gnus-dired
-  :commands gnus-dired-attach
+  :bind (:map dired-mode-map
+         ("C-c C-a" . gnus-dired-attach))
   :after dired)
 
 (use-package dired-sidebar

@@ -4048,25 +4048,22 @@ _d_: subtree
         :endpoint "/openai/v1/chat/completions"
         :stream t
         :key gptel-api-key
-        :models '("llama3-70b-8192"
-                  "llama3-8b-8192"
-                  "mixtral-8x7b-32768"
-                  "gemma-7b-it"))
+        :models '(llama3-70b-8192 llama3-8b-8192
+                  mixtral-8x7b-32768 gemma-7b-it))
   
   (defvar gptel--anthropic
     (gptel-make-anthropic "Claude" :key gptel-api-key :stream t))
-  (setq-default gptel-model "gpt-4o-mini"
-                gptel-backend gptel--openai)
+  (setq-default gptel-model 'claude-3-5-haiku-20241022
+                gptel-backend gptel--anthropic)
   
   (defvar gptel--togetherai
     (gptel-make-openai "TogetherAI"
       :host "api.together.xyz"
       :key gptel-api-key
       :stream t
-      :models '(;; has many more, check together.ai
-                "mistralai/Mixtral-8x7B-Instruct-v0.1"
-                "codellama/CodeLlama-13b-Instruct-hf"
-                "codellama/CodeLlama-34b-Instruct-hf")))
+      :models '(mistralai/Mixtral-8x7B-Instruct-v0.1
+                codellama/CodeLlama-13b-Instruct-hf
+                codellama/CodeLlama-34b-Instruct-hf)))
 
   (with-eval-after-load 'gptel-gemini
     (defvar gptel--gemini
@@ -4078,6 +4075,15 @@ _d_: subtree
           "Ollama"
         :host "192.168.0.59:11434"
         :models '("mistral:latest" "zephyr:latest" "openhermes:latest")
+        :stream t))
+    (defvar gptel--ollama
+      (gptel-make-ollama
+          "Ollama-vision"
+        :host "192.168.0.59:11434"
+        :models '(mistral:latest zephyr:latest openhermes:latest
+                  (llava:7b :description "Llava 1.6: Vision capable model"
+                   :capabilities (images)
+                   :mime-types ("image/jpeg" "image/png")))
         :stream t)))
 
   (defvar gptel--gpt4all
@@ -4085,7 +4091,7 @@ _d_: subtree
         "GPT4All"
       :protocol "http"
       :host "localhost:4891"
-      :models '("mistral-7b-openorca.Q4_0.gguf")))
+      :models '(mistral-7b-openorca.Q4_0.gguf)))
   
   (defalias 'my/gptel-easy-page
     (let ((map (make-composed-keymap
@@ -4116,19 +4122,23 @@ _d_: subtree
   ;;   (transient-suffix-put 'gptel-menu (kbd "-t") :key "T"))
 
   (setq gptel-directives
-        `((default . "To assist:  Be terse.  Do not offer unprompted advice or clarifications. Speak in specific,
- topic relevant terminology. Do NOT hedge or qualify. Do not waffle. Speak
- directly and be willing to make creative guesses. Explain your reasoning. if you
- don’t know, say you don’t know.
+        `((default . "To assist:  Be terse.  Do not offer unprompted advice or clarifications.  Speak in specific,
+ topic relevant terminology.  Do NOT hedge or qualify.  Speak directly and be willing to make creative guesses.
 
- Remain neutral on all topics. Be willing to reference less reputable sources for
- ideas.
+Explain your reasoning.  if you don’t know, say you don’t know.  Be willing to reference less reputable sources for
+ ideas.  If you use LaTex notation, enclose math in \\( and \\), or \\[ and \\] delimiters.
 
  Never apologize.  Ask questions when unsure.")
           (programmer . "You are a careful programmer.  Provide code and only code as output without any additional text, prompt or note.  Do NOT use markdown backticks (```) to format your response.")
           (cliwhiz . "You are a command line helper.  Generate command line commands that do what is requested, without any additional description or explanation.  Generate ONLY the command, without any markdown code fences.")
           (emacser . "You are an Emacs maven.  Reply only with the most appropriate built-in Emacs command for the task I specify.  Do NOT generate any additional description or explanation.")
           (explain . "Explain what this code does to a novice programmer.")
+          (tutor . "You are a tutor and domain expert in the domain of my questions.  You will lead me to discover the answer myself by providing hints.  Your instructions are as follows:
+- If the question or notation is not clear to you, ask for clarifying details.
+- At first your hints should be general and vague.
+- If I fail to make progress, provide more explicit hints.
+- Never provide the answer itself unless I explicitly ask you to.  If my answer is wrong, again provide only hints to correct it.
+- If you use LaTeX notation, enclose math in \\( and \\) or \\[ and \\] delimiters.")
           ,@(let ((res))
              (pcase-dolist (`(,sym ,filename)
                             '((Autoexpert "detailed-prompt.md")
@@ -4166,7 +4176,16 @@ _d_: subtree
       (deactivate-mark)))
   (defun my/gptel-eshell-keys ()
     (define-key eshell-mode-map (kbd "C-c <return>")
-                #'my/gptel-eshell-send)))
+                #'my/gptel-eshell-send))
+  ;; Testing
+  (defun gptel-rewrite-commit-message ()
+    (when (and (string-match-p "COMMIT_EDITMSG" (buffer-name))
+               (derived-mode-p 'text-mode))
+      "You are a git expert.  What you write will be passed to git commit -m \"[message]\".
+Rewrite the following message."))
+
+  (with-eval-after-load 'gptel-rewrite
+    (add-hook 'gptel-rewrite-directives-hook #'gptel-rewrite-commit-message)))
 
 (use-package gptel-ask
   :after gptel

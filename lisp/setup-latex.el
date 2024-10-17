@@ -1,4 +1,4 @@
-(use-package auctex
+(use-package latex
   :after tex
   :ensure (auctex :pre-build (("./autogen.sh")
                               ("./configure"

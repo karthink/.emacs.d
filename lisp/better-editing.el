@@ -160,6 +160,7 @@
 
 ;; Key to duplicate line
 (global-set-key (kbd "C-S-d") 'duplicate-line)
+(global-set-key (kbd "C-S-y") 'copy-from-above-command)
 
 ;; Key to kill-whole-line
 (global-set-key (kbd "C-S-k") 'kill-whole-line)
@@ -379,26 +380,6 @@ go up/down the list instead."
     (indent-according-to-mode)))
 
 
-;;; zap-up-to-char: Leave char unchanged!
-;;;###autoload
-(defun zap-up-to-char (arg char)
-  "Zap up to CHAR, (optional) ARG number of times"
-  (interactive "p\ncZap up to char: ")
-  (if (char-table-p translation-table-for-input)
-      (setq char (or (aref translation-table-for-input char) char)))
-  (message (char-to-string char))
-  (kill-region (progn 
-                 (if (looking-at (char-to-string char))
-                     (if (> arg 0) 
-                         (forward-char)))
-                 (point))
-               (progn
-                 (search-forward (char-to-string char)
-                                 nil nil arg)
-                 (cond ((< arg 0) (forward-char))
-                       (t (backward-char)))
-                 (point))))
-
 ;;; zap-to-char, but copy instead of killing
 ;;;###autoload
 (defun zap-to-char-save (arg char)
@@ -431,8 +412,9 @@ go up/down the list instead."
   (interactive "p")
   (if (region-active-p)
       (kill-region (region-beginning) (region-end))
-    (backward-kill-word arg))
-  )
+    (if (looking-back "^[ \t]+" (line-beginning-position))
+        (delete-region (line-beginning-position) (point))
+      (backward-kill-word arg))))
 
 ;;; Modifies kill-region so that with no active mark, the current line
 ;;; is saved.

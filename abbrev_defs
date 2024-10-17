@@ -1,10 +1,11 @@
 ;;-*-coding: utf-8;-*-
 (define-abbrev-table 'emacs-lisp-mode-abbrev-table
   '(
-    ("lx" "LaTeX" nil :count 17)
-    ("olp" "org-latex-preview" nil :count 10)
+    ("lx" "LaTeX" nil :count 21)
+    ("olp" "org-latex-preview" nil :count 41)
     ("olpa" "org-latex-preview-auto" nil :count 1)
     ("olpl" "org-latex-preview-live" nil :count 4)
+    ("plp" "prog-latex-preview" nil :count 11)
    ))
 
 (define-abbrev-table 'eshell-mode-abbrev-table
@@ -29,7 +30,7 @@
     ("sjc" "sudo journalctl" nil :count 1)
     ("ssc" "sudo systemctl" nil :count 7)
     ("tri" "trizen -S" nil :count 5)
-    ("xo" "xdg-open" nil :count 5)
+    ("xo" "xdg-open" nil :count 6)
     ("yt" "youtube-dl -w -c -o '%(title)s.%(ext)s' -f 'bestvideo[height<=?1080]+bestaudio/best' --add-metadata" nil :count 3)
     ("yta" "youtube-dl -w -c -r 1M -o '%(playlist_index)s-%(title)s.%(ext)s' --add-metadata  -f 'bestaudio[ext=m4a]'" nil :count 2)
    ))
@@ -37,7 +38,7 @@
 (define-abbrev-table 'global-abbrev-table
   '(
     ("iamges" "images" nil :count 2)
-    ("resposne" "response" nil :count 3)
+    ("resposne" "response" nil :count 5)
    ))
 
 (define-abbrev-table 'notmuch-message-mode-abbrev-table
@@ -48,12 +49,15 @@
 
 (define-abbrev-table 'org-mode-abbrev-table
   '(
-    ("hte" "the" nil :count 3)
+    ("glnc" "\\mathfrak{gl}(n, \\mathbb{C})" nil :count 0)
+    ("hte" "the" nil :count 5)
     ("lapl" "Laplacian" nil :count 3)
     ("rfx" "RefTeX" nil :count 13)
     ("rl" "Rayleigh" nil :count 2)
+    ("shb" "Swift-Hohenberg" nil :count 4)
+    ("slnc" "\\mathfrak{sl}(n, \\mathbb{C})" nil :count 2)
     ("taht" "that" nil :count 2)
-    ("teh" "the" nil :count 6)
+    ("teh" "the" nil :count 15)
     ("yt" "Youtube" nil :count 7)
    ))
 
@@ -86,7 +90,7 @@
 
 (define-abbrev-table 'text-mode-abbrev-table
   '(
-    ("lx" "LaTeX" nil :count 17)
-    ("olp" "org-latex-preview" nil :count 1)
+    ("lx" "LaTeX" nil :count 21)
+    ("olp" "org-latex-preview" nil :count 7)
    ))
 

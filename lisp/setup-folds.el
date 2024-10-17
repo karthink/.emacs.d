@@ -9,8 +9,13 @@
   :bind (:map outline-minor-mode-map
               ("TAB" . outline-cycle)
               ("<tab>" . outline-cycle)
-              ("C-c C-n" . 'outline-next-visible-heading)
-              ("C-c C-p" . 'outline-previous-visible-heading))
+              ("C-c C-n" . outline-next-visible-heading)
+              ("C-c C-p" . outline-previous-visible-heading)
+              ("C-c C-u" . outline-up-heading)
+              ("C-c M-<up>" . outline-move-subtree-up)
+              ("C-c M-<down>" . outline-move-subtree-down)
+              ("C-c M-<left>" . outline-promote)
+              ("C-c M-<right>" . outline-demote))
   :config
   (define-key outline-minor-mode-map (kbd "<backtab>")
               ;; (lambda () (interactive)
@@ -33,7 +38,7 @@ Essentially a much simplified version of `next-line'."
 
   (defun outline-cycle-all (&optional arg)
     (interactive "p")
-    (let ((level (outline-level)))
+    (let ((level (save-match-data (funcall outline-level))))
       (if (eq last-command 'outline-cycle-all)
           (progn (outline-show-all)
                  (setq this-command 'outline-show-all))
@@ -43,7 +48,11 @@ Essentially a much simplified version of `next-line'."
   
   (defun outline-cycle () (interactive)
          (cond
-          ((save-excursion (beginning-of-line 1) (looking-at outline-regexp))
+          ((save-excursion (beginning-of-line 1)
+                           (and (looking-at outline-regexp)
+                                ;; (not (equal (save-match-data (funcall outline-level))
+                                ;;             1000))
+                                ))
            ;; At a heading: rotate between three different views
            (outline-back-to-heading)
            (let ((goal-column 0) beg eoh eol eos)
@@ -94,14 +103,20 @@ Essentially a much simplified version of `next-line'."
   :when (version< "28.0" emacs-version)
   :defer
   :bind (:map outline-navigation-repeat-map
-              ("TAB" . outline-cycle)
-              ("<tab>" . outline-cycle)
+              ("TAB" . nil)
+              ("<tab>" . nil)
               ("C-n" . nil)
               ("C-p" . nil)
               ("C-f" . nil)
-              ("C-b" . nil))
+              ("C-b" . nil)
+              ("M-<left>" . outline-promote)
+              ("M-<right>" . outline-demote)
+              ("M-<up>" . outline-move-subtree-up)
+              ("M-<down>" . outline-move-subtree-down))
   :config
-  (put 'outline-cycle 'repeat-map 'outline-navigation-repeat-map))
+  (dolist (sym '(outline-promote outline-demote outline-cycle
+                 outline-move-subtree-up outline-move-subtree-down))
+    (put sym 'repeat-map 'outline-navigation-repeat-map)))
 
 ;;;----------------------------------------------------------------
 ;; * HIDESHOW (built in)

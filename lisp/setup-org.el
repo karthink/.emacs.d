@@ -463,8 +463,9 @@ appropriate.  In tables, insert a new row or end the table."
    org-startup-folded t
    org-startup-indented nil
    org-startup-with-inline-images nil
-   org-startup-with-latex-preview nil
-   org-highlight-latex-and-related '(native)
+   org-startup-with-latex-preview t
+   ;; org-highlight-latex-and-related '(latex entities)
+   org-highlight-latex-and-related '(native entities)
    org-indent-mode-turns-on-hiding-stars nil
    org-use-sub-superscripts '{}
    org-pretty-entities nil
@@ -522,6 +523,7 @@ appropriate.  In tables, insert a new row or end the table."
   ;; (setq org-element-use-cache nil)
   (setq org-latex-preview-auto-ignored-commands
         '(next-line previous-line
+          mwheel-scroll pixel-scroll-precision
           scroll-up-command scroll-down-command
           scroll-other-window scroll-other-window-down))
   (setq-default
@@ -544,7 +546,7 @@ appropriate.  In tables, insert a new row or end the table."
           (plist-put org-latex-preview-appearance-options :zoom
                      (- (/ (face-attribute 'default :height) 100.0) 0.025)))
 
-   org-latex-preview-numbered t
+   org-latex-preview-numbered nil
    org-latex-preview-live-debounce 0.3
    ;; org-latex-preview-live-throttle 0.5
    org-latex-preview-auto-track-inserts t

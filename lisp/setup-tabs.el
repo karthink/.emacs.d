@@ -56,6 +56,15 @@
                            tab-bar-format-global)
           tab-bar-close-button-show nil))
 
+  (add-variable-watcher
+   'tab-bar-show
+   (defun my/tab-bar-show--handle-global-mode-string
+       (sym newval op _buf)
+     (when (eq op 'set)
+       (if newval
+           (add-to-list 'tab-bar-format 'tab-bar-format-global 'append)
+         (set 'tab-bar-format (delq 'tab-bar-format-global tab-bar-format))))))
+
   (defun my/tab-bar-name ()
     "Use project as tab name."
     (let ((dir (expand-file-name
@@ -73,10 +82,10 @@
   (timeout-throttle! #'my/tab-bar-name 0.6)
   
   (setq  tab-bar-close-last-tab-choice 'tab-bar-mode-disable
-         tab-bar-show                   (when (version< "28.0" emacs-version) 1)
+         tab-bar-show                   nil ;; (when (version< "28.0" emacs-version) 1)
          tab-bar-tab-name-truncated-max 24
          tab-bar-new-tab-choice        "*scratch*"
-         tab-bar-tab-name-function #'my/tab-bar-name)
+         tab-bar-tab-name-function #'tab-bar-tab-name-current-with-count)
 
   (setq tab-bar-select-tab-modifiers '(meta hyper))
 

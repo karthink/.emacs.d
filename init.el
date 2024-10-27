@@ -983,7 +983,9 @@ for details."
   :ensure t
   :init
   (activities-mode)
-  (activities-tabs-mode))
+  (activities-tabs-mode)
+  :config
+  (setq activities-mode-idle-frequency 30))
 
 (use-package activities
     :custom-face

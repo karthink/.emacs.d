@@ -1,7 +1,6 @@
 ;; -*- lexical-binding: t; -*-
 
 (require 'gptel)
-(require 'gptel-transient)
 
 (defvar gptel-ask--buffer-name "*gptel-ask*"
   "Name for one-off queries.")
@@ -52,7 +51,27 @@
 
 (defun gptel-ask (&optional arg)
   (interactive "P")
-  (gptel--prepare-ask-buffer)
-  (gptel--suffix-send (list "m" (if arg "e" (concat "b" gptel-ask--buffer-name)))))
+  (let ((gptel-backend (default-value 'gptel-backend))
+        (gptel-model (default-value 'gptel-model)))
+    (gptel--prepare-ask-buffer)
+    (letrec ((prompt
+              (read-string
+               (format "Ask %s: " (gptel-backend-name gptel-backend))
+               (and (use-region-p)
+                    (buffer-substring-no-properties
+                     (region-beginning) (region-end)))))
+             (before-resp
+              (lambda () (remove-hook 'gptel-pre-response-hook before-resp)
+                (when (eq (current-buffer) (get-buffer gptel-ask--buffer-name))
+                  (with-current-buffer gptel-ask--buffer-name
+                    (goto-char (point-max))
+                    (insert-before-markers prompt)
+                    (display-buffer gptel-ask--buffer-name))))))
+      (add-hook 'gptel-pre-response-hook before-resp)
+      (gptel-request prompt
+        :buffer (get-buffer-create gptel-ask--buffer-name)
+        :position (with-current-buffer gptel-ask--buffer-name (point-max))
+        :stream gptel-stream
+        :system (default-value 'gptel--system-message)))))
 
 (provide 'gptel-ask)

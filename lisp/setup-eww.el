@@ -16,7 +16,8 @@
          ("i" . imenu))
   :hook (eww-after-render . (lambda () (setq line-spacing 0.1)))
   :config
-  (setq eww-browse-url-new-window-is-tab nil)
+  (setq eww-browse-url-new-window-is-tab nil
+        eww-auto-rename-buffer t)
   (use-package setup-reading
     :disabled
     :config

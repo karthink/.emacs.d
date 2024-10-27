@@ -931,6 +931,7 @@ has no effect."
               ("S-SPC" . org-agenda-show-scroll-down))
   :config
   (timeout-debounce! 'org-agenda-do-context-action 0.3 t)
+  (setq org-show-notification-timeout 10)
   (setq org-agenda-files '("~/Documents/org/inbox.org"
                            "~/Documents/org/do.org"
                            "~/Documents/org/gmail-cal.org"
@@ -1124,6 +1125,32 @@ has no effect."
             (todo "WAITING"
                   ((org-agenda-overriding-header "\n💤 On Hold\n")
                    (org-agenda-block-separator nil))))))))
+
+;; *** APPT (for notifications)
+(use-package appt
+  :after org-agenda
+  :config
+  (setq appt-disp-window-function
+        (lambda (minutes-to now text)
+          (org-show-notification
+           (format "In %s minutes:\n%s"
+                   minutes-to text)))
+        appt-display-interval 15
+        appt-display-mode-line nil
+        appt-message-warning-time 60)
+
+  (define-advice appt-activate (:after (&optional _arg) hold-your-horses)
+    "`appt-activate' is too eager, rein it in."
+    (remove-hook 'write-file-functions #'appt-update-list)
+    (when (timerp appt-timer)
+      (timer-set-time appt-timer (current-time) 600)))
+
+  (define-advice appt-check (:before (&optional _force) read-from-org-agenda)
+    "Read events from Org agenda is possible."
+    (and (featurep 'org-agenda)
+         (ignore-errors
+           (let ((inhibit-message t))
+             (org-agenda-to-appt t))))))
 
 ;; *** ORG-CAPTURE
 (use-package org-capture

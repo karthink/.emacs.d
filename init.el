@@ -4773,19 +4773,22 @@ buffer's text scale."
   :defer
   :custom
   (doom-gruvbox-dark-variant "hard")
-  :init
+  :config
+  (add-hook 'enable-theme-functions #'my/doom-theme-settings)
   (defun my/doom-theme-settings (theme &rest args)
     "Additional face settings for doom themes"
     (if (eq theme 'doom-rouge)
-          (progn
-            (setq window-divider-default-right-width 2
-                  window-divider-default-bottom-width 2
-                  window-divider-default-places t)
-            (message "Turned on window dividers")
-            (window-divider-mode 1))
-        (window-divider-mode -1)
-        (message "Turned off window dividers"))
+        (progn
+          (setq window-divider-default-right-width 2
+                window-divider-default-bottom-width 2
+                window-divider-default-places t)
+          (message "Turned on window dividers")
+          (window-divider-mode 1))
+      (window-divider-mode -1)
+      (message "Turned off window dividers"))
     (when (string-match-p "^doom-" (symbol-name theme))
+      ;; (when (eq theme 'doom-rouge)
+      ;;   (custom-set-faces `(hl-line ((,class :background "#1f2a3f")))))
       ;; Window dividers
       (let ((class '((class color) (min-colors 256))))
         (dolist (face-spec
@@ -4810,14 +4813,7 @@ buffer's text scale."
                 (custom-set-faces `(,face ((,class ,@spec))))
               (with-eval-after-load library
                 (when (string-match-p "^doom-" (symbol-name theme))
-                  (custom-set-faces `(,face ((,class ,@spec)))))))))
-        ;; (when (eq theme 'doom-rouge)
-        ;;   (custom-set-faces `(hl-line ((,class :background "#1f2a3f")))))
-        )))
-
-  (advice-add 'load-theme :before #'my/doom-theme-settings)
-
-  :config
+                  (custom-set-faces `(,face ((,class ,@spec))))))))))))
   (doom-themes-org-config)
   (use-package doom-rouge-theme
     :config

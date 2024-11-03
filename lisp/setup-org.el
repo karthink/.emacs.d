@@ -953,6 +953,9 @@ has no effect."
    org-agenda-follow-indirect nil
    org-agenda-default-appointment-duration 60)
 
+  (add-hook 'org-agenda-after-show-hook
+            (lambda () (recenter (floor (window-height) 6))))
+
   (advice-add 'org-agenda-do-tree-to-indirect-buffer :after
      (defun my/org-agenda-collapse-indirect-buffer-tree (arg)
        (with-current-buffer org-last-indirect-buffer

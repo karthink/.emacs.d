@@ -74,4 +74,16 @@
         :stream gptel-stream
         :system (default-value 'gptel--system-message)))))
 
+(with-eval-after-load 'gptel-transient
+  (transient-append-suffix 'gptel-menu '(1 2 "k")
+    '("a" "\"Ask\" buffer" "a"))
+
+  (define-advice gptel--suffix-send (:filter-args (args) ask-buffer)
+    ";TODO: "
+    (when (member "a" (car args))
+      (with-current-buffer (get-buffer-create gptel-ask--buffer-name)
+        (goto-char (point-max)))
+      (setcar args (cons (concat "b" gptel-ask--buffer-name) (car args))))
+    args))
+
 (provide 'gptel-ask)

@@ -1909,6 +1909,16 @@ If region is active, add its contents to the new buffer."
   (setq eglot-events-buffer-size 0)
   (setq eglot-extend-to-xref t))
 
+;;;----------------------------------------------------------------
+;; *** EGLOT-BOOSTER
+;;;----------------------------------------------------------------
+(use-package eglot-booster
+  :ensure (:host github
+           :repo "jdtsmith/eglot-booster")
+  :if (executable-find "emacs-lsp-booster")
+  :after eglot
+  :init (eglot-booster-mode))
+
 ;; (use-package dape
 ;;   :ensure t
 ;;   :defer t
@@ -2841,6 +2851,26 @@ normally have their errors suppressed."
       (advice-add func :around #'my/reraise-error)
       (message "Debug on hidden errors enabled for %s" func)))))
 
+;;----------------------------------------------------------------
+;; *** INSPECTOR
+;;----------------------------------------------------------------
+(use-package inspector
+  :ensure (:host github :repo "mmontone/emacs-inspector")
+  :hook (inspector-mode . toggle-truncate-lines)
+  :bind (:map emacs-lisp-mode-map
+         ("C-c C-i" . inspector-inspect-last-sexp)
+         ("C-c M-i" . inspector-inspect-expression)
+         :map lisp-interaction-mode-map
+         ("C-c C-i" . inspector-inspect-last-sexp)
+         ("C-c M-i" . inspector-inspect-expression)
+         :map embark-expression-map
+         ("C-e" . inspector-inspect-expression)
+         :map embark-variable-map
+         ("C-e" . inspector-inspect-expression)
+         :map embark-defun-map
+         ("C-e" . inspector-inspect-defun)))
+
+;;----------------------------------------------------------------
 ;; ** FLYMAKE
 ;;;----------------------------------------------------------------
 (use-package flymake

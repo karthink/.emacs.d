@@ -465,7 +465,7 @@ appropriate.  In tables, insert a new row or end the table."
    org-startup-with-inline-images nil
    org-startup-with-latex-preview t
    ;; org-highlight-latex-and-related '(latex entities)
-   org-highlight-latex-and-related '(native entities)
+   org-highlight-latex-and-related '(latex)
    org-indent-mode-turns-on-hiding-stars nil
    org-use-sub-superscripts '{}
    org-pretty-entities nil
@@ -526,6 +526,8 @@ appropriate.  In tables, insert a new row or end the table."
           mwheel-scroll pixel-scroll-precision
           scroll-up-command scroll-down-command
           scroll-other-window scroll-other-window-down))
+  (plist-put org-latex-preview-appearance-options
+             :matchers '("begin" "\\(" "\\["))
   (setq-default
    ;; org-latex-preview-header
    ;;    "\\documentclass{article}
@@ -747,8 +749,11 @@ appropriate.  In tables, insert a new row or end the table."
   :hook (org-mode . org-appear-mode)
   :config
   (setq-default org-hide-emphasis-markers t)
+  (setq org-hidden-keywords t)
   (setq org-appear-autoemphasis t
-        org-appear-autosubmarkers nil))
+        org-appear-autosubmarkers nil
+        org-appear-autolinks nil
+        org-appear-autokeywords t))
 
 ;; TDOO Disabled while I test org-modern
 (use-package org-bullets

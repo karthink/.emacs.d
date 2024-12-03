@@ -674,6 +674,11 @@ Cancel the previous one if present."
                            '(er/expand-region er/contract-region
                              easy-kill-expand-region easy-kill-contract-region)))))
   
+  ;; The default er/save-org-mode-excursion uses org-fold-core-* and is too expensive
+  (defun er/save-org-mode-excursion (action)
+    "Save outline visibility while expanding in org-mode"
+    (org-with-wide-buffer
+     (funcall action)))
   ;; The default er/mark-comment is both expensive and incorrect for block
   ;; comments.
   (defun er/mark-comment ()

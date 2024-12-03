@@ -35,7 +35,7 @@
                 elfeed-search-filter "#50 +unread "
                 elfeed-search-date-format '("%Y-%m-%d" 10 :left) ;;'("%b %d" 6 :left)
                 ;; elfeed-show-entry-switch #'elfeed-display-buffer
-                elfeed-search-title-min-width 30)
+                elfeed-search-title-min-width 45)
   
 ;;----------------------------------------------------------------------
 ;;*** Helper functions
@@ -101,7 +101,12 @@
     (interactive "P")
     (let ((buffer (current-buffer))
           (entries (elfeed-search-selected))
-          (browse-url-browser-function #'eww-browse-url))
+          (browse-url-browser-function #'eww-browse-url)
+          ;; Synchronous retrieve needed to preserve focus in the elfeed-show
+          ;; window.  Without this, the rendering happens with the elfeed-search
+          ;; window current, leading to wrong widths.  See the async logic in
+          ;; `eww-retrieve'.
+          (eww-retrieve-command 'sync))
       (cl-loop for entry in entries
                do (elfeed-untag entry 'unread)
                when (elfeed-entry-link entry)
@@ -507,6 +512,8 @@ With prefix-arg REFRESH-TAGS, refresh the cached completion metadata."
            ("i" . my/reader-imenu)
            ("<tab>" . my/reader-push-button)
            ("M-s u" . my/reader-browse-url)
+           ("<" . my/reader-top)
+           (">" . my/reader-bottom)
            :map elfeed-show-mode-map
            ("SPC" . elfeed-scroll-up-command)
            ("S-SPC" . elfeed-scroll-down-command)

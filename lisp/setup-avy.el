@@ -36,10 +36,10 @@
                              ;; (67108923 . avy-action-add-cursor)
                              (?\; . avy-action-add-cursor)))
   
-  ;; (advice-add 'avy-goto-char-timer :around
-  ;;             (defun my/avy-with-single-candidate-jump (orig-fn &optional arg)
-  ;;               (let ((avy-single-candidate-jump t))
-  ;;                 (funcall orig-fn arg))))
+  ;; (define-advice avy-goto-char-timer (:around (orig-fn &optional arg)
+  ;;                                     single-candidate-jump)
+  ;;   (let ((avy-single-candidate-jump t))
+  ;;     (funcall orig-fn arg)))
 
   ;; Improved to include transposition by hylophile
   (defun avy-action-easy-kill (pt)
@@ -351,19 +351,21 @@ The current window is chosen if WIN is not specified."
                  (string-replace "'" "\\(?:'\\|\"\\)")))
 
   (defun my/avy-goto-char-timer (&optional arg)
-  "Read one or many consecutive chars and jump to the first one.
+    "Read one or many consecutive chars and jump to the first one.
 The window scope is determined by `avy-all-windows' (ARG negates it).
 
 This differs from Avy's goto-char-timer in how it processes parens."
-  (interactive "P")
-  (let ((avy-all-windows (if arg
-                             (not avy-all-windows)
-                           avy-all-windows)))
-    (avy-with avy-goto-char-timer
-      (setq avy--old-cands (avy--read-candidates
-                            (lambda (str) (my/avy-replace-syntax-class
-                                      (regexp-quote str)))))
-      (avy-process avy--old-cands))))
+    (interactive "P")
+    (let ((avy-all-windows (if arg
+                               (not avy-all-windows)
+                             avy-all-windows))
+          (avy-single-candidate-jump nil))
+      (avy-with avy-goto-char-timer
+        (setq avy--old-cands (avy--read-candidates
+                              (lambda (str) (my/avy-replace-syntax-class
+                                        (regexp-quote str)))))
+        (avy-process avy--old-cands))))
+
   :bind (("C-M-'"   . avy-resume)
          ("C-'"     . my/avy-goto-char-this-window)
          ("M-s j"   . my/avy-goto-char-timer)

@@ -1062,6 +1062,7 @@ for details."
          :map window-prefix-map
          ("1" . my/window-toggle-dedicated))
   :config
+  (setq switch-to-prev-buffer-skip 'this)
   (setq truncate-partial-width-windows t)
   (setq other-window-scroll-default
       (lambda ()
@@ -1261,16 +1262,19 @@ display names.")
 
   (defun my/popper-switch-to-popup (buf)
     ";TODO: "
-    (interactive (list (completing-read
-                        "Switch to popup: "
-                        (let ((grp-symb (when popper-group-function
-                                          (funcall popper-group-function))))
-                          (thread-last
-                            (alist-get grp-symb popper-buried-popup-alist nil nil 'equal)
-                            (mapcar #'cdr)
-                            (cl-remove-if-not #'buffer-live-p)
-                            (mapcar #'buffer-name)))
-                        nil t)))
+    (interactive
+     (list
+      (let ((pred (lambda (b)
+                    (if (consp b) (setq b (car b)))
+                    (setq b (get-buffer b))
+                    (and (popper-popup-p b)
+                         (or (not popper-group-function)
+                             (memq (get-buffer "*Messages*")
+                                   (mapcar #'cdr
+                                           (alist-get (funcall popper-group-function)
+                                                      popper-buried-popup-alist
+                                                      nil nil 'equal))))))))
+        (read-buffer "Switch to popup: " nil t pred))))
     (popper-close-latest)
     (display-buffer buf))
 
@@ -1284,7 +1288,12 @@ display names.")
   (put 'popper-cycle 'repeat-map 'popper-repeat-map)
   (put 'popper-toggle 'repeat-map 'popper-repeat-map)
 
-  (setq popper-group-function #'selected-frame)
+  (with-eval-after-load 'activities-tabs
+    (setq popper-group-function
+          (lambda ()
+            (or (and-let* ((act (activities-tabs-current)))
+                  (activities-activity-name act))
+                (selected-frame)))))
 
   (setq popper-display-function
         (defun my/popper-select-below (buffer &optional _alist)
@@ -2944,7 +2953,7 @@ normally have their errors suppressed."
   (mode-cycle 'electric-pair-mode 'smartparens-mode)
   
   (transient-bind-q-to-quit)
-  (setq transient-display-buffer-action '(display-buffer-below-selected))
+  ;; (setq transient-display-buffer-action '(display-buffer-below-selected))
   (setq transient-history-file (dir-concat user-cache-directory "transient/history.el")
         transient-levels-file (dir-concat user-cache-directory "transient/levels.el")
         transient-values-file (dir-concat user-cache-directory "transient/values.el"))

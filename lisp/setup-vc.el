@@ -216,6 +216,8 @@ project, as defined by `vc-root-dir'."
   :config
   ;; Highlight on-the-fly
   (diff-hl-flydiff-mode 1)
+  (put 'diff-hl-inline-popup-hide
+       'repeat-map 'diff-hl-command-map)
 
   ;; Recenter to location of diff
   (advice-add 'diff-hl-next-hunk :after

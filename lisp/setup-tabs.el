@@ -62,7 +62,8 @@
        (sym newval op _buf)
      (when (eq op 'set)
        (if newval
-           (add-to-list 'tab-bar-format 'tab-bar-format-global 'append)
+           (progn (add-to-list 'tab-bar-format 'tab-bar-format-global 'append)
+                  (tab-bar--define-keys))
          (set 'tab-bar-format (delq 'tab-bar-format-global tab-bar-format))))))
 
   (defun my/tab-bar-name ()

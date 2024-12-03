@@ -2230,5 +2230,29 @@ Whichever was already active."
        t)
       (forward-line 1))))
 
+;;------------------------------------------------------------------------
+;; MOVIEDATA
+;;------------------------------------------------------------------------
+(use-package moviedata
+  :after org
+  :autoload my/moviedata-add
+  :init
+  (add-hook 'org-ctrl-c-ctrl-c-final-hook
+            #'my/moviedata-add 85)
+  :config
+  (add-hook 'moviedata-post-insert-hook
+            #'org-display-inline-images)
+  (defun my/moviedata-add ()
+    (when-let* ((tags (org-get-tags))
+                (_ (member "@watch" tags))
+                (common (cl-intersection '("@tv" "@movie") tags
+                                         :test #'string=))
+                (type (substring (car common) 1))
+                (_ (require 'moviedata nil t))
+                (title (save-excursion
+                         (goto-char (org-entry-beginning-position))
+                         (org-element-property :title (org-element-context)))))
+      (moviedata-fetch title :type type :marker (set-marker (make-marker) (point))))))
+
 (provide 'setup-org)
 

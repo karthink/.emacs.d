@@ -50,14 +50,14 @@
 (define-abbrev-table 'org-mode-abbrev-table
   '(
     ("glnc" "\\mathfrak{gl}(n, \\mathbb{C})" nil :count 0)
-    ("hte" "the" nil :count 5)
+    ("hte" "the" nil :count 6)
     ("lapl" "Laplacian" nil :count 3)
     ("rfx" "RefTeX" nil :count 13)
     ("rl" "Rayleigh" nil :count 2)
     ("shb" "Swift-Hohenberg" nil :count 4)
     ("slnc" "\\mathfrak{sl}(n, \\mathbb{C})" nil :count 2)
     ("taht" "that" nil :count 2)
-    ("teh" "the" nil :count 15)
+    ("teh" "the" nil :count 19)
     ("yt" "Youtube" nil :count 7)
    ))
 
@@ -90,7 +90,8 @@
 
 (define-abbrev-table 'text-mode-abbrev-table
   '(
-    ("lx" "LaTeX" nil :count 21)
+    ("isntead" "instead" nil :count 2)
+    ("lx" "LaTeX" nil :count 23)
     ("olp" "org-latex-preview" nil :count 7)
    ))
 

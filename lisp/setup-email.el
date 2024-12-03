@@ -56,7 +56,8 @@
          (notmuch-search-mode . (lambda () (setq line-spacing 0.15)))
          (notmuch-mua-send . notmuch-mua-attachment-check))
   :config
-  (setq-default notmuch-search-oldest-first nil)
+  (setq-default notmuch-search-oldest-first nil
+                notmuch-show-indent-content nil)
   (setq notmuch-fcc-dirs '(("contact@" . "sent +sent"))
         notmuch-show-logo nil
         notmuch-column-control 0.6
@@ -307,8 +308,10 @@
          ("C-c C-w" . my/notmuch-kill-web-url))
   :config
   (defvar my-notmuch-web-urls-alist
-    '(("<emacs-orgmode@gnu.org>" . "https://list.orgmode.org/")
-      ("<emacs-devel@gnu.org>" . "https://yhetil.org/emacs-devel/"))
+    '(("<emacs-orgmode@gnu.org>"      . "https://list.orgmode.org/")
+      ("<emacs-devel@gnu.org>"        . "https://yhetil.org/emacs-devel/")
+      ("<comment@noreply.github.com>" . "https://github.com/")
+      ("<mention@noreply.github.com>" . "https://github.com/"))
     "List of email addresses and web links for corresponding mailing lists.")
   (defun my/notmuch-browse-externally ()
     "If a web url is found for this email, open it in a browser."

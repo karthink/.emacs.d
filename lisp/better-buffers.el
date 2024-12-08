@@ -8,7 +8,7 @@
 ;; ** KEYBINDINGS
 ;;----------------------------------------------------------------------
 
-(global-set-key (kbd "C-x k") 'my/kill-this-buffer)
+(global-set-key (kbd "C-x k") 'my/kill-current-buffer)
 (global-set-key (kbd "M-`")
                 (defun my/switch-to-other-buffer (&optional _arg)
                   (interactive)
@@ -94,7 +94,7 @@ nil."
 (global-set-key (kbd "H-3") 'my/split-window-right)
 (global-set-key (kbd "H-4") ctl-x-4-map)
 (global-set-key (kbd "H-5") ctl-x-5-map)
-(global-set-key (kbd "H-k") 'my/kill-this-buffer)
+(global-set-key (kbd "H-k") 'my/kill-current-buffer)
 (global-set-key (kbd "H-q") 'kill-buffer-and-window)
 ;; (global-set-key (kbd "<f7>") '+make-frame-floating-with-current-buffer)
 (global-set-key (kbd "<f7>") 'my/hide-cursor-mode)
@@ -114,22 +114,20 @@ nil."
 ;; (add-hook 'iswitchb-define-mode-map-hook 'iswitchb-local-keys)
 
 ;;;###autoload
-(defun my/kill-this-buffer (&optional arg)
-  "Kill this buffer with side effects.
+(defun my/kill-current-buffer (&optional arg)
+  "Kill current buffer, DWIM.
 
-- If in a server buffer with active clients, save it and mark as
-  done.
-- Otherwise, if prefix-arg ARG is true, call `kill-buffer'.
-- Otherwise, kill this buffer."
+- If prefix argument ARG is set, call `kill-buffer' instead.
+- If in a server buffer with active clients, call `server-edit'.
+- Otherwise, call `kill-current-buffer'."
   (interactive "P")
-  (if (and (daemonp) server-buffer-clients)
-      (cl-letf ((inhibit-message t)
-                ((symbol-function 'y-or-n-p)
-                 #'always))
-        (server-edit arg))
-    (if arg
-        (call-interactively #'kill-buffer)
-       (kill-buffer (current-buffer)))))
+  (cond (arg
+         (call-interactively #'kill-buffer))
+        ((and server-process server-buffer-clients)
+         (cl-letf ((inhibit-message t)
+                   ((symbol-function 'y-or-n-p) #'always))
+           (server-edit)))
+        ((kill-current-buffer))))
 
 ;;;###autoload
 (defun toggle-window-split ()

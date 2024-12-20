@@ -111,7 +111,7 @@
           embark-highlight-indicator
           embark-isearch-highlight-indicator))
   
-  ;; (setq embark-mixed-indicator-delay 0.8)
+  (setq embark-mixed-indicator-delay 0.75)
   ;; (setq embark-verbose-indicator-display-action
   ;;       '(display-buffer-at-bottom
   ;;         (window-height . (lambda (win) (fit-window-to-buffer
@@ -119,9 +119,13 @@
   ;;                                               3))))))
 
   (setq embark-verbose-indicator-display-action
-        '(display-buffer-in-side-window
+        `(display-buffer-in-side-window
           (side . bottom)
-          (window-height . fit-window-to-buffer)))
+          (window-height . fit-window-to-buffer)
+          (body-function . ,(lambda (win)
+                              (with-selected-window win
+                               (and mode-line-format
+                                (setq-local mode-line-format nil)))))))
   (setf (alist-get 'kill-buffer embark-pre-action-hooks) nil)
 
   ;; Selection

@@ -2857,18 +2857,31 @@ normally have their errors suppressed."
 (use-package inspector
   :ensure (:host github :repo "mmontone/emacs-inspector")
   :hook (inspector-mode . toggle-truncate-lines)
-  :bind (:map emacs-lisp-mode-map
+  :bind (("M-I" . inspector-inspect-expression)
+         :map lisp-mode-shared-map
          ("C-c C-i" . inspector-inspect-last-sexp)
-         ("C-c M-i" . inspector-inspect-expression)
-         :map lisp-interaction-mode-map
-         ("C-c C-i" . inspector-inspect-last-sexp)
-         ("C-c M-i" . inspector-inspect-expression)
+         :map edebug-mode-map
+         ("<remap> <inspector-inspect-expression>" .
+          inspector-inspect-edebug-expression)
          :map embark-expression-map
-         ("C-e" . inspector-inspect-expression)
+         ("I" . inspector-inspect-expression)
          :map embark-variable-map
-         ("C-e" . inspector-inspect-expression)
+         ("I" . inspector-inspect-expression)
          :map embark-defun-map
-         ("C-e" . inspector-inspect-defun)))
+         ("I" . inspector-inspect-defun))
+  :config
+  (use-package popper :defer
+    :config (add-to-list 'popper-reference-buffers 'inspector-mode))
+  (setf (alist-get '(major-mode . inspector-mode)
+                   display-buffer-alist
+                   nil nil #'equal)
+        `((display-buffer-in-side-window)
+          (window-height . ,(lambda (win)
+                              (fit-window-to-buffer win
+                               (floor (frame-height) 2.5))))
+          (side . bottom)
+          (slot . -4)
+          (body-function . ,#'select-window))))
 
 ;;----------------------------------------------------------------
 ;; ** FLYMAKE

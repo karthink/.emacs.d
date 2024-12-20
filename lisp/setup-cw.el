@@ -25,12 +25,15 @@
       (keymap-set cw-embark-general-actions-map
                   "m" (defun cw-embark-mpv (cand)
                         (when-let ((url (and (stringp cand) (get-text-property 0 :url cand))))
-                          (browse-url-mpv url)))))
+                          (browse-url-mpv url))))
+      (cl-pushnew '(cw-embark-copy) embark-quit-after-action)
+      (cl-pushnew '(cw-embark-mpv) embark-quit-after-action))
     (when (fboundp 'browse-url-mpv-enqueue)
       (keymap-set cw-embark-general-actions-map
                   "M-m" (defun cw-embark-mpv-enqueue (cand)
                           (when-let ((url (and (stringp cand) (get-text-property 0 :url cand))))
-                            (browse-url-mpv-enqueue url)))))
+                            (browse-url-mpv-enqueue url))))
+      (cl-pushnew '(cw-embark-mpv-enqueue) embark-quit-after-action))
     (defvar-keymap cw-embark-become-map
       :doc "Keymap for switching between cw commands."
       :parent embark-meta-map

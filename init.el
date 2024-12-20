@@ -2919,14 +2919,44 @@ normally have their errors suppressed."
 ;; ** BROWSE-URL
 ;;;----------------------------------------------------------------
 (use-package browse-url
-  :commands (browse-url-at-point-umpv browse-url-umpv)
+  :commands (browse-url-umpv)
   :config
   (when IS-LINUX
+    ;; I don't want unnecessary child processes
+    (defun my/systemd-run (&rest process-args)
+      (if (executable-find "systemd-run")
+          (apply #'start-process (car process-args) nil
+                 "systemd-run" "--user"
+                 (concat "--unit=emacs_media_"
+                         (format-time-string "%m%d%H%M%S_%3N"))
+                 "--property=StandardOutput=null"
+                 "--property=StandardError=null"
+                 "--quiet" process-args)
+        (apply #'start-process (car process-args) nil
+               "nohup" process-args)))
+
     (defun browse-url-umpv (url &optional single)
-      (start-process "mpv" nil "nohup"
-                     (if single "mpv" "umpv")
-                     (shell-quote-wildcard-pattern url)))
-    
+      (my/systemd-run (if single "mpv" "umpv")
+                      (shell-quote-wildcard-pattern url)))
+
+    (defun browse-url-mpv-enqueue (url &optional _)
+      (condition-case nil
+          (let ((enqueue-proc
+                 (make-network-process
+                  :name "mpv" :buffer nil
+                  :service "/tmp/mpvsocket"
+                  :family 'local :coding 'utf-8
+                  :sentinel
+                  (lambda (proc _)
+                    (unless (= (process-exit-status proc) 0)
+                      (browse-url-mpv url))))))
+            (process-send-string
+             enqueue-proc
+             (concat (json-serialize
+                      `(:command [ "loadfile" ,url "append-play" ]))
+                     "\n")))
+        (error (browse-url-mpv url))))
+
     (defun browse-url-mpv-enqueue (url &optional _)
       (let ((exit-status
              (call-process "umpv_last" nil nil nil
@@ -2936,32 +2966,24 @@ normally have their errors suppressed."
           (browse-url-mpv url))))
 
     (defun browse-url-mpv-hd (url &optional _)
-      (start-process "mpv" nil "nohup"
-                     "mpv" "--profile=protocol-hd-video"
-                     (shell-quote-wildcard-pattern url)))
+      (my/systemd-run
+       "mpv" "--profile=protocol-hd-video"
+       (shell-quote-wildcard-pattern url)))
 
     (defun browse-url-mpv-audio (url &optional _)
-      (start-process "mpv" nil "nohup"
-                     "mpv" "--video=no" "--force-window=yes"
-                     (shell-quote-wildcard-pattern url)))
-    
-    (defun browse-url-mpv (url &optional _)
-      (browse-url-umpv url t))
-    
-    (defun browse-url-at-point-umpv (&optional single)
-      "Open link in mpv"
-      (interactive "P")
-      (let ((browse-url-browser-function
-             (if single
-                 (lambda (url &optional _new-window) (browse-url-umpv url t))
-               #'browse-url-umpv)))
-        (browse-url-at-point)))
+      (my/systemd-run
+       "mpv" "--video=no" "--force-window=yes"
+       (shell-quote-wildcard-pattern url)))
 
-    (setq browse-url-new-window-flag t)
-    ;; (setq browse-url-browser-function
-    ;;       '(("https:\\/\\/www\\.youtu\\.*be." . browse-url-umpv)
-    ;;         ("." . browse-url-generic)))
-    ))
+    (defun browse-url-mpv (url &optional _)
+      (pcase (prefix-numeric-value current-prefix-arg)
+        (4 (browse-url-mpv-hd url))
+        (0 (browse-url-mpv-audio url))
+        (1 (my/systemd-run "mpv"
+            (shell-quote-wildcard-pattern url)))
+        (_ (browse-url-mpv-enqueue url))))
+
+    (setq browse-url-new-window-flag t)))
 
 ;;;----------------------------------------------------------------
 ;; ** TRANSIENT

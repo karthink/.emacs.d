@@ -214,34 +214,15 @@ MYTAG"
       (elfeed-show-visit use-generic-p)
       (add-hook 'eww-after-render-hook 'eww-readable nil t)))
 
-  (defun elfeed-umpv-url (&optional use-single-p)
-    "Visit the current entry in umpv or (with prefix arg
-USE-SINGLE-P) with mpv."
-    (interactive "P")
-    (let ((browse-url-browser-function
-           (if use-single-p
-               (lambda (url &optional _) (browse-url-umpv url t))
-             #'browse-url-umpv)))
-      (pcase major-mode
-        ('elfeed-search-mode (elfeed-search-browse-url))
-        ('elfeed-show-mode (elfeed-show-visit)))))
-  
   (defun elfeed-mpv-url (&optional arg)
     "Visit the current entry in mpv or (with prefix arg
 ENQUEUE-P) add to mpv's playlist."
     (interactive "p")
-    (let ((browse-url-browser-function
-           (pcase arg
-             (0 #'browse-url-mpv-audio)
-             (4 #'browse-url-mpv-hd)
-             (1 #'browse-url-mpv)
-             (_ #'browse-url-mpv-enqueue))))
+    (let ((browse-url-browser-function #'browse-url-mpv))
       (pcase major-mode
         ('elfeed-search-mode (elfeed-search-browse-url))
         ('elfeed-show-mode (elfeed-show-visit)))))
 
-  (bind-key "M" #'elfeed-umpv-url elfeed-search-mode-map)
-  (bind-key "M" #'elfeed-umpv-url elfeed-show-mode-map)
   (bind-key "m" #'elfeed-mpv-url elfeed-search-mode-map)
   (bind-key "m" #'elfeed-mpv-url elfeed-show-mode-map)
   

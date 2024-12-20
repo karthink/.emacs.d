@@ -62,7 +62,6 @@
          :map embark-url-map
          ("z"        . qrencode-string)
          ("B"        . eww)
-         ("M"        . browse-url-umpv)
          ("M-m"      . browse-url-mpv-enqueue)
          ("m"        . browse-url-mpv))
   :config

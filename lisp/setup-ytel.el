@@ -5,7 +5,6 @@
   :bind (:map ytel-mode-map
               ("x" . ytel-watch-browse-url)
               ("m" . ytel-watch-mpv)
-              ("M" . ytel-watch-umpv)
               ("w" . ytel-url-kill-new)
               ("f" . ytel-search-next-page)
               ("b" . ytel-search-previous-page))
@@ -50,19 +49,9 @@
   (defun ytel-watch-mpv (&optional arg)
     (interactive "p")
     (let ((browse-url-browser-function
-           (pcase arg
-             (0 #'browse-url-mpv-audio)
-             (4 #'browse-url-mpv-hd)
-             (1 #'browse-url-mpv)
-             (_ #'browse-url-mpv-enqueue))))
+           #'browse-url-mpv))
       (ytel-watch-browse-url)))
   
-  (defun ytel-watch-umpv (&optional arg)
-    (interactive "P")
-    (browse-url-umpv (ytel-video-url) arg)
-    (message "Playing video with mpv.")
-    (forward-line))
-
   (defun ytel-watch-browse-url (&optional arg)
     (interactive "P")
     (browse-url (ytel-video-url) arg)

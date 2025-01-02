@@ -20,7 +20,9 @@
          ("C-M-e" . my/org-end-of-defun)
          :map org-cdlatex-mode-map
          ("`" . nil)
-         (";" . cdlatex-math-symbol))
+         (";" . cdlatex-math-symbol)
+         :map org-link-navigation-repeat-map
+         ("v" . org-link-preview))
 
   :hook ((org-mode . turn-on-org-cdlatex)
          (org-cdlatex-mode . my/org-cdlatex-settings)
@@ -89,16 +91,7 @@
   (remove-hook 'org-cycle-hook
                #'org-cycle-optimize-window-after-visibility-change)
 
-  (when (>= emacs-major-version 28)
-    (defvar org-link-navigation-map
-            (let ((map (make-sparse-keymap)))
-              (define-key map (kbd "n") #'org-next-link)
-              (define-key map (kbd "p") #'org-previous-link)
-              map))
-    (map-keymap
-     (lambda (_ cmd)
-       (put cmd 'repeat-map 'org-link-navigation-map))
-     org-link-navigation-map))
+  (put 'org-link-preview 'repeat-map 'org-link-navigation-repeat-map)
   
   (defun my/org-beginning-of-defun (&optional arg)
     ";TODO: "
@@ -1442,22 +1435,6 @@ parent."
        org-cite-follow-processor 'citar
        org-cite-activate-processor 'citar
        org-cite-global-bibliography citar-bibliography))))
-
-;;;----------------------------------------------------------------------
-;; ** ORG-IMAGE-PREVIEW DONT
-;;;----------------------------------------------------------------------
-;; Disabled while I work on the org-link-preview patch for Org
-(use-package org-image-preview
-  :disabled
-  :ensure (:host github :protocol ssh
-           :repo "karthink/org-image-preview")
-  :after org
-  :bind (:map org-mode-map
-         ([remap org-toggle-inline-images] . org-image-preview)
-         :map org-link-navigation-map
-         ("v" . org-image-preview))
-  :config
-  (put 'org-image-preview 'repeat-map 'org-link-navigation-map))
 
 ;;;----------------------------------------------------------------------
 ;; ** ORG-DOWNLOAD DONT

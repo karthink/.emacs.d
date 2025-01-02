@@ -211,6 +211,7 @@
 (global-set-key (kbd "C-x i b") 'insert-buffer)
 (global-set-key (kbd "C-x i a") 'append-to-buffer)
 (global-set-key (kbd "C-x i f") 'insert-file)
+(global-set-key (kbd "C-x i w") 'write-region)
 
 ;; Easy align on regex
 (global-set-key (kbd "C-x \\") 'align-regexp)

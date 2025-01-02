@@ -857,6 +857,95 @@ for details."
         (deactivate-mark)
         (easy-kill-adjust-candidate thing (point) (mark))))))
 
+(use-package easy-kill
+  :after easy-kill
+  :config
+  ;; Incomplete implementation of using easy-kill to select backwards
+  (defun easy-kill-thing-alt (&optional thing n inhibit-handler)
+  (interactive
+   (list (cl-second (assq (+ last-command-event 32) easy-kill-alist))
+         (prefix-numeric-value current-prefix-arg)))
+  (let* ((thing (or thing (easy-kill-get thing)))
+         (n (or n 1))
+         (handler (and (not inhibit-handler)
+                       (easy-kill-thing-handler (format "easy-kill-on-%s" thing)
+                                                major-mode))))
+    (when (easy-kill-get mark)
+      (goto-char (easy-kill-get origin)))
+    (cond
+     (handler (funcall handler n))
+     ((or (memq n '(+ -))
+          (and (eq thing (easy-kill-get thing))
+               (not (zerop n))))
+      (easy-kill-thing-backward (pcase n
+                                  (`+ 1)
+                                  (`- -1)
+                                  (_ n))))
+     (t (pcase (easy-kill-bounds-of-thing-at-point thing)
+          (`nil (easy-kill-echo "No `%s'" thing))
+          (`(,start . ,end)
+           (easy-kill-adjust-candidate thing start end)
+           (unless (zerop n)
+             (easy-kill-thing-backward (1- n)))))))
+    (when (easy-kill-get mark)
+      (easy-kill-adjust-candidate (easy-kill-get thing)))))
+
+(defun easy-kill-thing-backward (n)
+  (when (and (easy-kill-get thing) (/= n 0))
+     (let* ((step (if (cl-minusp n) -1 +1))
+           (thing (easy-kill-get thing))
+           (bounds1 (or (easy-kill-pair-to-list
+                         (easy-kill-bounds-of-thing-at-point thing))
+                        (list (point) (point))))
+           (start (easy-kill-get start))
+           (end (easy-kill-get end))
+           (rear (or (car (cl-set-difference (list start end) bounds1))
+                     (pcase step
+                       (`-1 end)
+                       (`1 start))))
+           (new-rear (save-excursion
+                        (goto-char rear)
+                        (with-demoted-errors "%S"
+                          (dotimes (_ (abs n))
+                            (easy-kill-thing-backward-1 thing step)))
+                        (point))))
+      (pcase (and (/= rear new-rear)
+                  (sort (cons new-rear bounds1) #'<))
+        (`(,start ,_ ,end)
+         (easy-kill-adjust-candidate thing start end)
+         t)))))
+
+(defun easy-kill-thing-backward-1 (thing &optional n)
+  "Easy Kill wrapper for `forward-thing'."
+  (pcase (easy-kill-thing-handler
+          (format "easy-kill-thing-backward-%s" thing)
+          major-mode)
+    ((and (pred functionp) fn) (funcall fn n))
+    (_ (forward-thing thing (- n)))))
+
+(defun easy-kill-map ()
+  "Build the keymap according to `easy-kill-alist'."
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map easy-kill-base-map)
+    (when easy-kill-unhighlight-key
+      (with-demoted-errors "easy-kill-unhighlight-key: %S"
+        (define-key map easy-kill-unhighlight-key #'easy-kill-unhighlight)))
+    (define-key map "[" (lambda () (interactive)
+                          (cl-letf* (((symbol-function 'easy-kill-thing)
+                                      #'easy-kill-thing-alt))
+                            (call-interactively #'easy-kill-thing-alt))))
+    (define-key map "]" #'easy-kill-thing)
+    (dolist (c easy-kill-alist)
+      ;; (define-key map (vector meta-prefix-char (car c)) #'easy-kill-select)
+      (when (<= 97 (car c) 122)
+        (define-key map (char-to-string (- (car c) 32))
+                    (lambda () (interactive)
+                      (cl-letf* (((symbol-function 'easy-kill-thing)
+                                  #'easy-kill-thing-alt))
+                        (call-interactively #'easy-kill-thing-alt)))))
+      (define-key map (char-to-string (car c)) #'easy-kill-thing))
+    map)))
+
 (use-package goto-chg
   :ensure t
   :bind (("M-g ;" . goto-last-change)
@@ -2153,12 +2242,14 @@ current buffer without truncation."
 
 (use-package isayt
   :ensure (:host gitlab :repo "andreyorst/isayt.el" :protocol https)
-  :hook ((lisp-mode elisp-mode lisp-interaction-mode) . isayt-mode))
+  :hook ((lisp-mode emacs-lisp-mode lisp-interaction-mode) . isayt-mode))
 
 ;;;----------------------------------------------------------------
 ;; ** AUCTEX-MODE & ADDITIONS
 ;;;----------------------------------------------------------------
 (load (expand-file-name "lisp/setup-latex" user-emacs-directory))
+
+(use-package writer :commands writer-settings)
 
 (use-package ink
   :disabled
@@ -2533,6 +2624,9 @@ current buffer without truncation."
   (defun  embrace--fallback-re-search (open close)
     (my/find-bounds-of-regexps open close))
   
+  (cl-pushnew '(?  . activate-mark)
+              (default-value 'embrace-semantic-units-alist))
+
   (defun my/embrace-latex-mode-hook-extra ()
     (add-to-list 'embrace-semantic-units-alist '(?E . er/mark-LaTeX-inside-environment))
     (add-to-list 'embrace-semantic-units-alist '(?e . LaTeX-mark-environment))

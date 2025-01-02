@@ -368,11 +368,11 @@ This differs from Avy's goto-char-timer in how it processes parens."
 
   :bind (("C-M-'"   . avy-resume)
          ("C-'"     . my/avy-goto-char-this-window)
-         ("M-s j"   . my/avy-goto-char-timer)
+         ("M-j"     . my/avy-goto-char-timer)
          ("M-s y"   . avy-copy-line)
          ("M-s M-y" . avy-copy-region)
          ("M-s M-k" . avy-kill-whole-line)
-         ("M-j"   .   avy-goto-char-2)
+         ("M-s j"   .   avy-goto-char-2)
          ("M-s M-p" . avy-goto-line-above)
          ("M-s M-n" . avy-goto-line-below)
          ("M-s C-w" . avy-kill-region)

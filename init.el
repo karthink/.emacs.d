@@ -71,12 +71,9 @@
   :init
   (add-to-list 'popper-reference-buffers
                'elpaca-log-mode)
-  (setf (alist-get (lambda (buf &rest _)
-                     (eq
-                      (buffer-local-value 'major-mode
-                                          (get-buffer buf))
-                      'elpaca-log-mode))
-                   display-buffer-alist)
+  (setf (alist-get '(major-mode . elpaca-log-mode)
+                   display-buffer-alist
+                   nil nil #'equal)
         '((display-buffer-at-bottom
           display-buffer-in-side-window)
           (side . bottom)
@@ -1067,7 +1064,7 @@ for details."
          :map window-prefix-map
          ("1" . my/window-toggle-dedicated))
   :config
-  (setq switch-to-prev-buffer-skip 'this)
+  (setq switch-to-prev-buffer-skip nil) ;'this
   (setq truncate-partial-width-windows t)
   (setq other-window-scroll-default
       (lambda ()
@@ -1114,7 +1111,7 @@ Also kill this window, tab or frame if necessary."
 
 
 ;;;----------------------------------------------------------------
-;; ** POPUPS
+;; ** POPPER
 ;;;----------------------------------------------------------------
 
 ;; Designate buffers to popup status and toggle or cycle through them
@@ -1123,7 +1120,6 @@ Also kill this window, tab or frame if necessary."
            :repo "karthink/popper")
   ;; :load-path "plugins/popper/"
   :after (setup-windows setup-project)
-  :hook (emacs-startup . popper-mode)
   :commands popper-mode
   :bind (("C-`" . popper-toggle)
          ("C-M-`" . popper-cycle)
@@ -1144,36 +1140,40 @@ Also kill this window, tab or frame if necessary."
   ;;           (alist-get 'name (nth (tab-bar--current-tab-index tabs)
   ;;                                 tabs)))))
 
+  (if (boundp 'elpaca-after-init-hook)
+      (add-hook 'elpaca-after-init-hook #'popper-mode)
+    (add-hook 'emacs-startup-hook #'popper-mode))
+
   (setq popper-reference-buffers
-   (append my/help-modes-list
-           my/man-modes-list
-           my/repl-modes-list
-           my/repl-names-list
-           my/occur-grep-modes-list
-           ;; my/man-modes-list
-           '(Custom-mode
-             compilation-mode
-             messages-buffer-mode)
-           '(("^\\*Warnings\\*$" . hide)
-             ("^\\*Compile-Log\\*$" . hide)
-             "^\\*Matlab Help.*\\*$"
-             ;; "^\\*Messages\\*$"
-             "^\\*Backtrace\\*"
-             "^\\*evil-registers\\*"
-             "^\\*Apropos"
-             "^Calc:"
-             "^\\*eldoc\\*"
-             "^\\*TeX errors\\*"
-             "^\\*ielm\\*"
-             "^\\*TeX Help\\*"
-             "^\\*ChatGPT\\*"
-             "^\\*gptel-ask\\*"
-             "\\*Shell Command Output\\*"
-             ("\\*Async Shell Command\\*" . hide)
-             ("\\*Detached Shell Command\\*" . hide)
-             "\\*Completions\\*"
-             ;; "\\*scratch.*\\*$"
-             "[Oo]utput\\*")))
+        (append my/help-modes-list
+                my/man-modes-list
+                my/repl-modes-list
+                my/repl-names-list
+                my/occur-grep-modes-list
+                ;; my/man-modes-list
+                '(Custom-mode
+                  compilation-mode
+                  messages-buffer-mode)
+                '(("^\\*Warnings\\*$" . hide)
+                  ("^\\*Compile-Log\\*$" . hide)
+                  "^\\*Matlab Help.*\\*$"
+                  ;; "^\\*Messages\\*$"
+                  "^\\*Backtrace\\*"
+                  "^\\*evil-registers\\*"
+                  "^\\*Apropos"
+                  "^Calc:"
+                  "^\\*eldoc\\*"
+                  "^\\*TeX errors\\*"
+                  "^\\*ielm\\*"
+                  "^\\*TeX Help\\*"
+                  "^\\*ChatGPT\\*"
+                  "^\\*gptel-ask\\*"
+                  "\\*Shell Command Output\\*"
+                  ("\\*Async Shell Command\\*" . hide)
+                  ("\\*Detached Shell Command\\*" . hide)
+                  "\\*Completions\\*"
+                  ;; "\\*scratch.*\\*$"
+                  "[Oo]utput\\*")))
 
   (use-package embark
     :defer
@@ -1432,6 +1432,7 @@ User buffers are those not starting with *."
          :map other-window-repeat-map
          ("o" . switchy-window))
   :config
+  (setq switchy-window-delay 0.75)
   (put 'switchy-window 'repeat-map 'other-window-repeat-map))
 
 (use-package window
@@ -1467,6 +1468,7 @@ User buffers are those not starting with *."
   (("C-x o" . ace-window)
    ("H-o"   . ace-window)
    ("C-M-0" . ace-window-prefix)
+   ("C-M-9" . ace-window)
    :map ctl-x-4-map
    ("o" . ace-window-prefix))
   ;; :custom-face
@@ -1761,7 +1763,7 @@ If region is active, add its contents to the new buffer."
     (let* ((mode major-mode))
       (rename-buffer (format "*Scratch for %s*" mode) t)))
   (setf (alist-get "\\*Scratch for" display-buffer-alist nil nil #'equal)
-        '((display-buffer-pop-up-window)))
+        '((display-buffer-same-window)))
   :hook (scratch-create-buffer . my/scratch-buffer-setup)
   :bind ("C-c s" . scratch))
 
@@ -4263,6 +4265,15 @@ Explain your reasoning.  if you don’t know, say you don’t know.  Be willing 
       "You are a git expert.  What you write will be passed to git commit -m \"[message]\".
 Rewrite the following message."))
 
+  (add-to-list 'popper-reference-buffers "\\*gptel-log\\*")
+  (setf (alist-get "\\*gptel-log\\*" display-buffer-alist nil nil #'equal)
+        `((display-buffer-reuse-window display-buffer-in-side-window)
+          (side . right)
+          (window-width . 72)
+          (slot . 20)
+          (body-function . ,(lambda (win)
+                              (select-window win)
+                              (my/easy-page)))))
   (with-eval-after-load 'gptel-rewrite
     (add-hook 'gptel-rewrite-directives-hook #'gptel-rewrite-commit-message)))
 

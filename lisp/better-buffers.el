@@ -123,7 +123,8 @@ nil."
   (interactive "P")
   (cond (arg
          (call-interactively #'kill-buffer))
-        ((and server-process server-buffer-clients)
+        ((and (bound-and-true-p server-process)
+              server-buffer-clients)
          (cl-letf ((inhibit-message t)
                    ((symbol-function 'y-or-n-p) #'always))
            (server-edit)))

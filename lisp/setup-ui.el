@@ -31,6 +31,9 @@
 ;; Mouse available in terminal
 ;; (add-hook 'tty-setup-hook #'xterm-mouse-mode)
 
+(setq dnd-indicate-insertion-point t
+      dnd-scroll-margin 4)
+
 ;; Scrolling
 (setq scroll-margin 0
       scroll-preserve-screen-position t

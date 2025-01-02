@@ -51,7 +51,7 @@
           (select-window win))))
   (setq julia-snail-terminal-type :vterm)
   (setq-default
-   julia-snail-extra-args '("-t12" "-q")
+   julia-snail-extra-args '("--threads=auto,auto" "-q")
    julia-snail-multimedia-enable t
    julia-snail-multimedia-buffer-style :single-new
    julia-snail-show-error-window t))

@@ -113,8 +113,9 @@
                do (elfeed-with-open-entry 
                     (if use-generic-p
                         (browse-url-generic it)
-                      (browse-url it))
-                    (add-hook 'eww-after-render-hook 'eww-readable nil t)))
+                      (browse-url it)
+                      ;; (add-hook 'eww-after-render-hook 'eww-readable nil t)
+                      (eww-readable))))
       (with-current-buffer buffer
         (mapc #'elfeed-search-update-entry entries)
         (unless (or elfeed-search-remain-on-entry (use-region-p))

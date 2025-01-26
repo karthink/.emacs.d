@@ -12,7 +12,7 @@
 ;; * PACKAGE MANAGEMENT
 
 ;; ** ELPACA
-(defvar elpaca-installer-version 0.7)
+(defvar elpaca-installer-version 0.8)
 (defvar elpaca-directory (expand-file-name "elpaca/" "~/.local/share/git/"))
 (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
 (defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
@@ -150,8 +150,13 @@
         use-package-compute-statistics nil
         ;use-package-ignore-unknown-keywords t
         use-package-minimum-reported-time 0.01
-        ;; use-package-expand-minimally t
+        use-package-expand-minimally t
         use-package-enable-imenu-support t)
+  (when init-file-debug
+    (setq use-package-expand-minimally nil
+          use-package-verbose t
+          use-package-compute-statistics t
+          debug-on-error t))
   (require 'use-package))
 
 ;;; (require 'bind-key)
@@ -3099,7 +3104,7 @@ normally have their errors suppressed."
 ;;;----------------------------------------------------------------
 
 (use-package transient
-  ;; :ensure nil
+  :ensure (:host github :repo "magit/transient" :tag "v0.7.7")
   :defines toggle-modes
   :bind (("<f8>"  . toggle-modes)
          ("C-c b" . toggle-modes))
@@ -3109,10 +3114,12 @@ normally have their errors suppressed."
     (lambda ()
       (interactive)
       (cond 
-       ((bound-and-true-p (symbol-value mode1))
+       ((and (boundp (symbol-value mode1))
+             (symbol-value mode1))
         (progn (call-interactively (symbol-function mode1))
                (call-interactively (symbol-function mode2))))
-       ((bound-and-true-p (symbol-value mode2))
+       ((and (boundp (symbol-value mode2))
+             (symbol-value mode2))
         (call-interactively (symbol-function mode2)))
        (t (call-interactively (symbol-function mode1))))))
   
@@ -3122,7 +3129,8 @@ normally have their errors suppressed."
   ;; (setq transient-display-buffer-action '(display-buffer-below-selected))
   (setq transient-history-file (dir-concat user-cache-directory "transient/history.el")
         transient-levels-file (dir-concat user-cache-directory "transient/levels.el")
-        transient-values-file (dir-concat user-cache-directory "transient/values.el"))
+        transient-values-file (dir-concat user-cache-directory "transient/values.el")
+        transient-show-popup t)
   (transient-define-prefix toggle-modes ()
     "Turn on and off various frequently used modes."
     
@@ -3220,7 +3228,12 @@ normally have their errors suppressed."
                              (cl-callf not debug-on-quit)
                              (message "Debug on quit %sset"
                                       (if debug-on-quit "" "un"))))
-      ("g" "vc gutter" diff-hl-mode)
+      ("g" "diff-hl" (lambda (&optional arg) (interactive "P")
+                         (if (null arg) (diff-hl-mode 'toggle)
+                           (let ((ref (read-string "Reference revision for diff-hl: ")))
+                             (setq-local diff-hl-reference-revision ref)
+                             (diff-hl-mode) (diff-hl-update)
+                             (message "Showing changes against %s" ref)))))
       ("fm" "flymake" (lambda (arg) (interactive "P")
                        (if (not arg)
                            (call-interactively #'flymake-mode)

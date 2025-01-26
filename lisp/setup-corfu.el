@@ -17,8 +17,8 @@
          ("M-." . corfu-info-location)
          ("C-h" . corfu-info-documentation))
   :config
-  (setq corfu-auto-prefix 3
-        corfu-auto-delay 0.05
+  (setq corfu-auto-prefix 4
+        corfu-auto-delay 0.07
         corfu-count 8
         corfu-auto  t
         corfu-cycle t
@@ -123,27 +123,75 @@
 
 (use-package cape
   :ensure t
+  :after (corfu orderless)
+  :defines my/toggle-writing-capf
   :bind (("C-$" . cape-dict)
          ("C-S-f" . cape-file)
          ("C-M-/" . cape-dabbrev)
          :map corfu-map
          ("M-/" . cape-dabbrev)
          ("C-x C-f" . cape-file))
+  :hook ((text-mode conf-mode) . my/text-mode-capfs)
   :init
   ;; Add `completion-at-point-functions', used by `completion-at-point'.
-  (add-to-list 'completion-at-point-functions #'cape-file)
+  (add-hook 'completion-at-point-functions #'cape-file 85)
+  ;; (add-hook 'completion-at-point-functions #'cape-dabbrev 90)
   :config
-  (setq cape-dict-file (getenv "WORDLIST"))
-  (defun my/cape-text-mode-capfs ()
-    (add-to-list 'completion-at-point-functions #'cape-dict))
+  (defvar my/writing-capf (cape-capf-super #'cape-dabbrev #'cape-dict))
+  (defun my/toggle-writing-capf ()
+    "Turn on CAPFs suitable for writing."
+    (interactive)
+    (if (memq my/writing-capf completion-at-point-functions)
+        (progn
+          (kill-local-variable 'corfu-count)
+          (kill-local-variable 'corfu-auto-prefix)
+          (kill-local-variable 'completion-styles)
+          (remove-hook 'completion-at-point-functions
+                       my/writing-capf 'local)
+          (message "Turned off writing CAPFs."))
+      (setq-local corfu-count 5 corfu-auto-prefix 5)
+      (add-hook 'completion-at-point-functions
+                my/writing-capf nil 'local)
+      (setq-local completion-styles '(basic emacs22))
+      (message "Turned on writing CAPFs.")))
+
+  ;; Cape-dict settings
+
+  ;; Use Peter Norvig's 300,000 most used English words as the word list
+  (let ((wordlist (expand-file-name
+                   "wordlist.txt" user-cache-directory)))
+    (setq cape-dict-file
+          (cond
+           ((or (file-readable-p wordlist)
+                (and (url-copy-file "https://norvig.com/ngrams/count_1w.txt"
+                                    wordlist)
+                     (shell-command
+                      (concat "sed -re 's_[ \t0-9]*__g' -i " wordlist))))
+            (message "Downloaded wordlist")
+            wordlist)
+           ((getenv "WORDLIST"))
+           (t "/usr/share/dict/words"))))
+  (when (bound-and-true-p text-mode-ispell-word-completion)
+    (setq text-mode-ispell-word-completion nil))
   
+  (setf cape-dict-limit 8
+        (alist-get 'cape-dict completion-category-defaults)
+        '((styles basic)))
+
+  ;; Cape-dabbrev settings
+  (defun my/text-mode-capfs ()
+    (add-hook 'completion-at-point-functions 'cape-dabbrev 85 t))
+  (setf cape-dabbrev-check-other-buffers nil
+        (alist-get 'cape-dabbrev completion-category-defaults)
+        '((styles orderless-fast)))
+
   (when (< emacs-major-version 29)
     (use-package pcomplete
       :defer
       :config
       ;; Silence the pcomplete capf, no errors or messages!
       (advice-add 'pcomplete-completions-at-point :around #'cape-wrap-silent)
-        ;; Ensure that pcomplete does not write to the buffer
+      ;; Ensure that pcomplete does not write to the buffer
       ;; and behaves as a pure `completion-at-point-function'.
       (advice-add 'pcomplete-completions-at-point :around #'cape-wrap-purify))))
 

@@ -2396,6 +2396,49 @@ current buffer without truncation."
 ;;;################################################################
 
 ;;----------------------------------------------------------------
+;; ** STICKER
+;;----------------------------------------------------------------
+(use-package emacs
+  :bind ("C-c p" . sticker)
+  :config
+  (defvar sticker-list nil)
+
+  (defun sticker (&optional arg label)
+    (interactive "P")
+    (cl-flet ((store-sticker (beg end)
+                (or (assoc (buffer-substring beg end) sticker-list)
+                    (push (list (buffer-substring beg end)) sticker-list))
+                (deactivate-mark)
+                (message "Sticker stored"))
+              (new-sticker (l &optional o)
+                (unless o
+                  (setq o (make-overlay (line-beginning-position)
+                                        (line-end-position))))
+                (overlay-put o 'evaporate t)
+                (overlay-put o 'sticker l)
+                (overlay-put
+                 o 'after-string
+                 (concat " " (if (get-text-property 0 'face l)
+                                 l
+                               (propertize l 'face '(:inverse-video t)))))
+                (push o (alist-get l sticker-list nil nil #'equal)))
+              (read-label ()
+                (let ((minibuffer-allow-text-properties t))
+                  (completing-read "Attach sticker: " sticker-list))))
+      (if (use-region-p)
+          (store-sticker (region-beginning) (region-end))
+        (if-let* ((exist-ov (cdr-safe (get-char-property-and-overlay (point) 'sticker))))
+            (if arg
+                (new-sticker (read-label) exist-ov)
+              (let* ((old-l (overlay-get exist-ov 'sticker))
+                     (matches (assoc old-l sticker-list)))
+                (delq exist-ov matches)
+                (when (= (length matches) 1)
+                  (setq sticker-list (delete matches sticker-list)))
+                (delete-overlay exist-ov)))
+          (new-sticker (or label (read-label))))))))
+
+;;----------------------------------------------------------------
 ;; ** EL-SEARCH MAYBE
 ;;----------------------------------------------------------------
 (use-package el-search

@@ -72,6 +72,7 @@
         :buffer (get-buffer-create gptel-ask--buffer-name)
         :position (with-current-buffer gptel-ask--buffer-name (point-max))
         :stream gptel-stream
+        :fsm (gptel-make-fsm :handlers gptel-send--handlers)
         :system (default-value 'gptel--system-message)))))
 
 (with-eval-after-load 'gptel-transient

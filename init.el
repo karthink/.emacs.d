@@ -3560,6 +3560,22 @@ _d_: subtree
 (load (expand-file-name "lisp/setup-diff" user-emacs-directory))
 
 ;;;----------------------------------------------------------------
+;; *** INLINE DIFF
+;;;----------------------------------------------------------------
+(use-package inline-diff
+  :ensure (:repo "https://code.tecosaur.net/tec/inline-diff.git")
+  :bind (:map inline-diff-overlay-map
+         ("M-a" . nil)
+         ("M-k" . nil)
+         ("SPC" . inline-diff-apply)
+         ("DEL" . inline-diff-reject)
+         :map inline-diff-repeat-map
+         ("M-a" . nil)
+         ("M-k" . nil)
+         ("SPC" . inline-diff-apply)
+         ("DEL" . inline-diff-reject)))
+
+;;;----------------------------------------------------------------
 ;; ** VERSION CONTROL
 ;;;----------------------------------------------------------------
 (load (expand-file-name "lisp/setup-vc" user-emacs-directory))
@@ -4278,6 +4294,30 @@ _d_: subtree
 ;;;----------------------------------------------------------------
 ;; *** gptel
 ;;;----------------------------------------------------------------
+(use-package gptel-rewrite
+  :after gptel
+  :bind (:map gptel-rewrite-actions-map
+         ("C-c C-i" . gptel--rewrite-inline-diff))
+  :config
+  (defun gptel--rewrite-inline-diff (&optional ovs)
+    (interactive (list (gptel--rewrite-overlay-at)))
+    (unless (require 'inline-diff nil t)
+      (user-error "Inline diffs require the inline-diff package."))
+    (when-let* ((ov-buf (overlay-buffer (or (car-safe ovs) ovs)))
+                ((buffer-live-p ov-buf)))
+      (with-current-buffer ov-buf
+        (cl-loop for ov in (ensure-list ovs)
+                 for ov-beg = (overlay-start ov)
+                 for ov-end = (overlay-end ov)
+                 for response = (overlay-get ov 'gptel-rewrite)
+                 do (delete-overlay ov)
+                 (inline-diff-words
+                  ov-beg ov-end response)))))
+  (when (boundp 'gptel--rewrite-dispatch-actions)
+    (add-to-list
+     'gptel--rewrite-dispatch-actions '(?i "inline-diff")
+     'append)))
+
 ;; gptel: A simple LLM client
 (use-package gptel
   ;; :straight (:local-repo "~/.local/share/git/gptel/")
@@ -4287,21 +4327,28 @@ _d_: subtree
   :hook ((eshell-mode . my/gptel-eshell-keys))
   :bind (("C-c C-<return>" . gptel-menu)
          ("C-c <return>" . gptel-send)
+         ("C-c j" . gptel-menu)
+         ("C-c C-g" . gptel-abort)
          :map gptel-mode-map
-         ("C-c C-x t" . gptel-set-topic))
+         ("C-c C-x t" . gptel-set-topic)
+         :map embark-region-map
+         ("+" . gptel-add)
+         :map this-buffer-file-map
+         ("+" . gptel-add))
   :config
   (gptel-make-openai "Groq"
         :host "api.groq.com"
         :endpoint "/openai/v1/chat/completions"
         :stream t
-        :key gptel-api-key
-        :models '(llama3-70b-8192 llama3-8b-8192
+        :key #'gptel-api-key-from-auth-source
+        :models '(llama-3.3-70b-versatile llama-3.1-8b-instant
                   mixtral-8x7b-32768 gemma-7b-it))
   
   (defvar gptel--anthropic
     (gptel-make-anthropic "Claude" :key gptel-api-key :stream t))
   (setq-default gptel-model 'claude-3-5-haiku-20241022
-                gptel-backend gptel--anthropic)
+                gptel-backend gptel--anthropic
+                gptel-display-buffer-action '(pop-to-buffer-same-window))
   
   (defvar gptel--togetherai
     (gptel-make-openai "TogetherAI"
@@ -4321,15 +4368,9 @@ _d_: subtree
       (gptel-make-ollama
           "Ollama"
         :host "192.168.0.59:11434"
-        :models '("mistral:latest" "zephyr:latest" "openhermes:latest")
-        :stream t))
-    (defvar gptel--ollama
-      (gptel-make-ollama
-          "Ollama-vision"
-        :host "192.168.0.59:11434"
-        :models '(mistral:latest zephyr:latest openhermes:latest
+        :models '("mistral:latest" "zephyr:latest" "openhermes:latest" "llama3.1:8b" "llama3.2:3b"
                   (llava:7b :description "Llava 1.6: Vision capable model"
-                   :capabilities (images)
+                   :capabilities (media)
                    :mime-types ("image/jpeg" "image/png")))
         :stream t)))
 
@@ -4368,14 +4409,45 @@ _d_: subtree
   ;;   (transient-suffix-put 'gptel-menu (kbd "-n") :key "N")
   ;;   (transient-suffix-put 'gptel-menu (kbd "-t") :key "T"))
 
+  (defun my/gptel-code-infill ()
+    "Fill in code at point based on buffer context.  Note: Sends the whole buffer."
+    (let ((lang (gptel--strip-mode-suffix major-mode)))
+      `(,(format "You are a %s programmer and assistant in a code buffer in a text editor.
+
+Follow my instructions and generate %s code to be inserted at the cursor.
+For context, I will provide you with the code BEFORE and AFTER the cursor.
+
+
+Generate %s code and only code without any explanations or markdown code fences.  NO markdown.
+You may include code comments.
+
+Do not repeat any of the BEFORE or AFTER code." lang lang lang)
+       nil
+       "What is the code AFTER the cursor?"
+       ,(format "AFTER\n```\n%s\n```\n"
+               (buffer-substring-no-properties
+                (if (use-region-p) (max (point) (region-end)) (point))
+                (point-max)))
+       "And what is the code BEFORE the cursor?"
+       ,(format "BEFORE\n```%s\n%s\n```\n" lang
+               (buffer-substring-no-properties
+                (point-min)
+                (if (use-region-p) (min (point) (region-beginning)) (point))))
+       ,@(when (use-region-p) "What should I insert at the cursor?"))))
+
   (setq gptel-directives
         `((default . "To assist:  Be terse.  Do not offer unprompted advice or clarifications.  Speak in specific,
  topic relevant terminology.  Do NOT hedge or qualify.  Speak directly and be willing to make creative guesses.
 
 Explain your reasoning.  if you don’t know, say you don’t know.  Be willing to reference less reputable sources for
- ideas.  If you use LaTex notation, enclose math in \\( and \\), or \\[ and \\] delimiters.
+ ideas.
+
+Do NOT summarize your answers.
+
+If you use LaTex notation, enclose math in \\( and \\), or \\[ and \\] delimiters.
 
  Never apologize.  Ask questions when unsure.")
+          (code-infill . ,#'my/gptel-code-infill)
           (programmer . "You are a careful programmer.  Provide code and only code as output without any additional text, prompt or note.  Do NOT use markdown backticks (```) to format your response.")
           (cliwhiz . "You are a command line helper.  Generate command line commands that do what is requested, without any additional description or explanation.  Generate ONLY the command, without any markdown code fences.")
           (emacser . "You are an Emacs maven.  Reply only with the most appropriate built-in Emacs command for the task I specify.  Do NOT generate any additional description or explanation.")
@@ -4385,23 +4457,7 @@ Explain your reasoning.  if you don’t know, say you don’t know.  Be willing 
 - At first your hints should be general and vague.
 - If I fail to make progress, provide more explicit hints.
 - Never provide the answer itself unless I explicitly ask you to.  If my answer is wrong, again provide only hints to correct it.
-- If you use LaTeX notation, enclose math in \\( and \\) or \\[ and \\] delimiters.")
-          ,@(let ((res))
-             (pcase-dolist (`(,sym ,filename)
-                            '((Autoexpert "detailed-prompt.md")
-                              (writer "writer-prompt.md"))
-                            res)
-              (when-let* ((big-prompt (locate-user-emacs-file filename))
-                          (_ (file-exists-p big-prompt)))
-               (push
-                `(,sym . ,(with-temp-buffer
-                            (insert-file-contents big-prompt)
-                            (goto-char (point-min))
-                            (when (search-forward-regexp "^#" nil t)
-                             (goto-char (match-beginning 0)))
-                            (buffer-substring-no-properties (point) (point-max))))
-                res)))
-             res)))
+- If you use LaTeX notation, enclose math in \\( and \\) or \\[ and \\] delimiters.")))
   (setq gptel--system-message (alist-get 'default gptel-directives)
         gptel-default-mode 'org-mode)
   (setf (alist-get 'org-mode gptel-prompt-prefix-alist) "*Prompt*: "
@@ -4440,6 +4496,25 @@ Rewrite the following message."))
           (body-function . ,(lambda (win)
                               (select-window win)
                               (my/easy-page)))))
+
+  (cl-pushnew '(:propertize
+               (:eval
+                (when (local-variable-p 'gptel--system-message)
+                  (concat
+                   "["
+                   (if-let ((n (car-safe (rassoc gptel--system-message gptel-directives))))
+                       (symbol-name n)
+                     (gptel--describe-directive gptel--system-message 12))
+                   "]")))
+               'face 'gptel-rewrite-highlight-face)
+              mode-line-misc-info)
+  (add-to-list
+   'mode-line-misc-info
+   '(:eval
+     (unless gptel-mode
+      (when (and (local-variable-p 'gptel-model)
+             (not (eq gptel-model (default-value 'gptel-model))))
+       (concat "[" (gptel--model-name gptel-model) "]")))))
   (with-eval-after-load 'gptel-rewrite
     (add-hook 'gptel-rewrite-directives-hook #'gptel-rewrite-commit-message)))
 

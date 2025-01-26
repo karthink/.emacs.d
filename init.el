@@ -2003,7 +2003,9 @@ If region is active, add its contents to the new buffer."
           'eldoc-documentation-compose-eagerly))
   ;; (setq eglot-put-doc-in-help-buffer nil)
   (setq eglot-events-buffer-size 0)
-  (setq eglot-extend-to-xref t))
+  (setq eglot-extend-to-xref t)
+  (add-to-list 'eglot-server-programs
+               '(beancount-mode . ("beancount-language-server" "--stdio"))))
 
 ;;;----------------------------------------------------------------
 ;; *** EGLOT-BOOSTER
@@ -2437,6 +2439,15 @@ current buffer without truncation."
                   (setq sticker-list (delete matches sticker-list)))
                 (delete-overlay exist-ov)))
           (new-sticker (or label (read-label))))))))
+
+;;----------------------------------------------------------------
+;; ** ULTRA-SCROLL
+;;----------------------------------------------------------------
+(use-package ultra-scroll
+  :ensure (ultra-scroll :host github :repo "jdtsmith/ultra-scroll")
+  :defer
+  :init (setq scroll-conservatively 101 ; important!
+              scroll-margin 0))
 
 ;;----------------------------------------------------------------
 ;; ** EL-SEARCH MAYBE
@@ -3438,11 +3449,14 @@ _d_: subtree
                 (setq pulse-flag t))))
   
   (with-no-warnings
-    (defun my/pulse-line ()
+    (defun my/pulse-line (&optional arg)
       "Pulse line at point"
-      (interactive)
+      (interactive "P")
       (let ((pulse-command-advice-flag t))
-        (pulse-line-hook-function)))
+        (if arg
+            (pulse-momentary-highlight-region
+             (region-beginning) (region-end))
+          (pulse-line-hook-function))))
     
     (defun my/pulse-momentary-line (&rest _)
       "Pulse the current line."

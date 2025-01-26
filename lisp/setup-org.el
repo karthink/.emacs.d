@@ -32,6 +32,7 @@
   (setq-default org-adapt-indentation nil 
                 org-cycle-include-plain-lists t 
                 org-footnote-auto-label 'confirm
+                org-agenda-file-menu-enabled nil
                 org-image-actual-width nil
                 ;; org-refile-targets '((nil :maxlevel . 2) (org-agenda-files :maxlevel . 3)) 
                 org-refile-targets '((nil :maxlevel . 2)
@@ -118,6 +119,16 @@
                         (LaTeX-forward-environment (or arg 1))
                         (point))
                       (org-element-end (org-element-context))))))
+
+  (defun er/mark-org-code-block ()
+    (let ((case-fold-search t)
+          (re "#\\+begin_\\(\\sw+\\)"))
+      (unless (looking-at re) (search-backward-regexp re))
+      (forward-line)
+      (set-mark (point))
+      (search-forward (concat "#+end_" (match-string 1)))
+      (beginning-of-line)
+      (exchange-point-and-mark)))
 
   (defun er/add-latex-in-org-mode-expansions ()
     ;; Make Emacs recognize \ as an escape character in org
@@ -931,6 +942,7 @@ has no effect."
   (timeout-debounce! 'org-agenda-do-context-action 0.3 t)
   (setq org-show-notification-timeout 10)
   (setq org-agenda-files '("~/Documents/org/inbox.org"
+                           "~/Documents/org/phone.org"
                            "~/Documents/org/do.org"
                            "~/Documents/org/gmail-cal.org"
                            "~/Documents/org/ucsb-cal.org"))

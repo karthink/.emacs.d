@@ -3707,8 +3707,11 @@ _d_: subtree
   (sp-pair "`" nil :actions :rem)
   (sp-local-pair '(markdown-mode julia-mode)
                  "`" "`" :actions '(insert wrap autoskip))
-  (sp-local-pair '(message-mode text-mode
-                   notmuch-message-mode)
+  (sp-with-modes '(markdown-mode)
+    (sp-local-pair "_" "_" :actions '(wrap autoskip))
+    (sp-local-pair "*" "*" :actions '(wrap autoskip))
+    (sp-local-pair "'" nil :actions '(wrap)))
+  (sp-local-pair '(message-mode text-mode notmuch-message-mode)
                  "`" "'" :actions '(insert wrap autoskip))
   (sp-with-modes sp-lisp-modes
     (sp-local-pair "`" "'" :actions '(wrap autoskip))

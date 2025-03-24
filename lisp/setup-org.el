@@ -2151,6 +2151,54 @@ Whichever was already active."
         org-xournalpp-path-default "figures/sketch"
         org-xournalpp-image-type 'png))
 
+(use-package org-xopp
+  :ensure (:host github :repo "mahmoodsh36/org-xopp")
+  :after org
+  :defer
+  :config
+  (org-link-set-parameters "xopp-pages"
+                           :follow #'org-xopp-link-open
+                           :export #'org-xopp-export-pages
+                           :preview #'my/org-xopp-preview-file)
+  (org-link-set-parameters "xopp-figure"
+                           :follow #'org-xopp-link-open
+                           :export #'org-xopp-export-figure
+                           :preview #'my/org-xopp-preview-file)
+  (define-advice org-xopp-open-xournalpp
+      (:override (xopp-filepath) extra-cmdline-args)
+    (start-process "xournalpp" nil "xournalpp"
+                   "--name=dropdown_xournalpp"
+                   xopp-filepath))
+  (defun org-xopp-export-figure (path desc backend)
+    "handles figures on org exports."
+    (let* ((image-filepath (car (org-xopp-generate-figures path))))
+      ;; perhaps allow the user to specify how the figures are handled on export?
+      ;; this behavior is somewhat of a "placeholder".
+      (if (string= backend "html")
+          (format "<img src='%s' />" image-filepath)
+        (when (string= backend "latex")
+          (format "\\begin{center}\\includegraphics[width=0.5\\linewidth]{%s}\\end{center}"
+                  image-filepath)))))
+  (defun my/org-xopp-preview-file (ov path link)
+    "preview xopp figure"
+    (let* ((absolute-path (expand-file-name path))
+           (output-path (org-xopp-temp-file absolute-path org-xopp-image-format)))
+      (if (not (file-exists-p absolute-path))
+          (message "file not found: %s" absolute-path)
+        ;; export the .xopp file to an image if not already done
+        (prog1 t
+          (if (or (not org-xopp-regenerate-only-on-change)
+                  (file-newer-than-file-p absolute-path output-path))
+              (progn
+                (org-xopp-extract-figures
+                 absolute-path
+                 output-path
+                 (lambda (final-output-paths)
+                   (org-link-preview-file ov (car final-output-paths) link))
+                 org-xopp-generate-image-async))
+            ;; display without generation (file already present)
+            (org-link-preview-file ov output-path link)))))))
+
 ;;;----------------------------------------------------------------
 ;; ** TOC-ORG
 ;;;----------------------------------------------------------------

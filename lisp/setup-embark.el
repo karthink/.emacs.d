@@ -237,6 +237,7 @@ are place there, otherwise you are prompted for a message buffer."
                ("x" embark-open-externally)
                ("C-a" embark-attach-file)
                ("c" copy-file)
+               ("4" clone-indirect-buffer-other-window)
                ("k" kill-buffer)
                ;; ("l" org-store-link)
                ("#" recover-this-file)

@@ -677,8 +677,8 @@ Cancel the previous one if present."
                              easy-kill-expand-region easy-kill-contract-region)))))
   
   ;; The default er/save-org-mode-excursion uses org-fold-core-* and is too expensive
-  (defun er/save-org-mode-excursion (action)
-    "Save outline visibility while expanding in org-mode"
+  (define-advice er/save-org-mode-excursion
+      (:override (action) "ignore-org-fold")
     (org-with-wide-buffer
      (funcall action)))
   ;; The default er/mark-comment is both expensive and incorrect for block
@@ -3757,7 +3757,6 @@ _d_: subtree
                        ("}" . sp-forward-barf-sexp)
                        ("{" . sp-backward-barf-sexp)
                        ("r" . raise-sexp)
-                       (";" . sp-comment)
                        ("C" . sp-convolute-sexp)
                        ("D" . my/sp-duplicate-sexp)
                        ("J" . sp-join-sexp)
@@ -3795,15 +3794,16 @@ _d_: subtree
 ;;;----------------------------------------------------------------
 (use-package wrap-region
   :ensure t
-  :hook (((text-mode tex-mode conf-mode) . wrap-region-mode))
+  :hook (((text-mode tex-mode conf-mode) . wrap-region-mode)
+         (wrap-region-mode . (lambda () (wrap-region-remove-wrapper "'"))))
   :config
-  (wrap-region-remove-wrapper "'")
   (wrap-region-add-wrappers
    '(("/" "/" nil 'org-mode)
      ("+" "+" nil 'org-mode)
      ("=" "=" nil 'org-mode)
      ("~" "~" nil 'org-mode)
-     ("*" "*" nil '(org-mode markdown-mode))
+     ("*" "*" nil 'markdown-mode)
+     ("*" "*" nil 'org-mode)
      ("_" "_" nil '(org-mode markdown-mode)))))
 
 ;;;################################################################

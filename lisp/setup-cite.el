@@ -7,6 +7,7 @@
          :map org-mode-map
          ("C-c C-x ]" . citar-insert-citation))
   :config
+  (delete citar-indicator-cited citar-indicators)
   (setq citar-bibliography ;; '("~/Documents/research/control_systems.bib")
         `(,(expand-file-name "~/Documents/roam/biblio.bib"))
         citar-at-point-function 'embark-act

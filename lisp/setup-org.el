@@ -42,6 +42,7 @@
                 org-refile-use-outline-path t
                 org-refile-use-cache t
                 org-refile-allow-creating-parent-nodes t
+                org-reverse-note-order t
                 org-outline-path-complete-in-steps nil
                 org-use-tag-inheritance t
                 org-tags-column 0
@@ -183,6 +184,7 @@
                        (when (eq detail 'local)
                          (org-ctrl-c-tab) (org-show-entry))))
   
+  (add-to-list 'org-structure-template-alist '("no" . "notes"))
   (add-to-list 'org-structure-template-alist '("ma" . "src matlab"))
   (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
   (add-to-list 'org-structure-template-alist '("sh" . "src sh"))
@@ -552,6 +554,7 @@ appropriate.  In tables, insert a new row or end the table."
           (plist-put org-latex-preview-appearance-options :zoom
                      (- (/ (face-attribute 'default :height) 100.0) 0.025)))
 
+   org-latex-preview-persist-expiry 30
    org-latex-preview-numbered nil
    org-latex-preview-live-debounce 0.3
    ;; org-latex-preview-live-throttle 0.5
@@ -1768,12 +1771,26 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
   :commands (org-re-reveal-export-to-html
              org-re-reveal-export-to-html-and-browse)
   :config
-  (setq org-re-reveal-root "/home/karthik/.local/share/git/reveal.js"
-        org-re-reveal-subtree-with-title-slide t)
-  (add-to-list 'org-structure-template-alist '("R" . "#+REVEAL_HTML: ?\n"))
+  (setq org-re-reveal-subtree-with-title-slide t)
+  (pcase-dolist (`(,key ,expansion)
+                 '(("col" "col") ("row" "row")
+                   ("card" "card") ("cell" "cell")))
+    (setf (alist-get key org-structure-template-alist
+                     nil nil #'equal)
+          expansion))
+  (pcase-dolist (`(,key ,expansion) '(("rh" "reveal_html")
+                                      ("R" "reveal")
+                                      ("ar" "attr_reveal")))
+    (setf (alist-get key org-tempo-keywords-alist
+                     nil nil #'equal)
+          expansion))
   (use-package org-re-reveal-ref
     :disabled
     :init (setq org-ref-default-bibliography '("~/Documents/research/control_systems.bib"))))
+
+(use-package org-re-reveal-citeproc
+  :ensure t
+  :after org-re-reveal)
 
 (use-package ox-reveal
   :disabled 

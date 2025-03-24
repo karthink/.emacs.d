@@ -51,6 +51,12 @@
          (insert "\\begin{bmatrix}  \\end{bmatrix}")
          (backward-char 14))
 
+  (setf (alist-get '(major-mode . TeX-special-mode)
+                   display-buffer-alist)
+        `((display-buffer-at-bottom)
+          (window-height . ,(lambda (win) (fit-window-to-buffer win
+                                      (floor (frame-height) 3))))))
+
   (setq
    TeX-auto-save t
    TeX-parse-self t
@@ -351,21 +357,21 @@ but mark is only pushed if region isn't active."
          ("C-c (" . consult-reftex-goto-label)
          ("C-c )"   . consult-reftex-insert-reference))
   :config
-  (define-advice reftex-label (:around (label-fn &rest args) show-labels)
-    (let* ((enable-recursive-minibuffers t)
-           (minibuffer-local-map
-            (make-composed-keymap
-             (define-keymap
-               "C-i" (lambda ()
-                       (interactive)
-                       (when-let
-                           (label
-                            (with-minibuffer-selected-window
-                              (consult-reftex-select-reference current-prefix-arg t)))
-                         (delete-minibuffer-contents)
-                         (insert label))))
-             minibuffer-local-map)))
-      (apply label-fn args)))
+  ;; (define-advice reftex-label (:around (label-fn &rest args) show-labels)
+  ;;   (let* ((enable-recursive-minibuffers t)
+  ;;          (minibuffer-local-map
+  ;;           (make-composed-keymap
+  ;;            (define-keymap
+  ;;              "C-i" (lambda ()
+  ;;                      (interactive)
+  ;;                      (when-let
+  ;;                          (label
+  ;;                           (with-minibuffer-selected-window
+  ;;                             (consult-reftex-select-reference current-prefix-arg t)))
+  ;;                        (delete-minibuffer-contents)
+  ;;                        (insert label))))
+  ;;            minibuffer-local-map)))
+  ;;     (apply label-fn args)))
   (with-eval-after-load 'embark
     (defun consult-reftex--key-finder ()
       (when (and

@@ -52,7 +52,7 @@
 ;; (push 'transient elpaca-ignored-dependencies)
 ;; (setq elpaca-ignored-dependencies
 ;;       (delete 'seq elpaca-ignored-dependencies))
-(push 'transient elpaca-ignored-dependencies)
+;; (push 'transient elpaca-ignored-dependencies)
 (push 'notmuch elpaca-ignored-dependencies)
 (push 'elnode elpaca-ignored-dependencies)
 
@@ -1995,17 +1995,28 @@ If region is active, add its contents to the new buffer."
   ;; :ensure t
   :commands eglot
   :bind (:map eglot-mode-map
-              ("C-h ." . eldoc))
+         ("C-h ." . eldoc))
   :hook ((eglot-managed-mode . my/eglot-eldoc-settings))
   :config
   (defun my/eglot-eldoc-settings ()
     (setq eldoc-documentation-strategy
           'eldoc-documentation-compose-eagerly))
   ;; (setq eglot-put-doc-in-help-buffer nil)
-  (setq eglot-events-buffer-size 0)
+  (setq eglot-events-buffer-size 0
+        eglot-report-progress nil)
   (setq eglot-extend-to-xref t)
   (add-to-list 'eglot-server-programs
-               '(beancount-mode . ("beancount-language-server" "--stdio"))))
+               '(beancount-mode . ("beancount-language-server" "--stdio")))
+  (add-to-list 'eglot-server-programs
+               '((python-mode python-ts-mode)
+                 "basedpyright-langserver" "--stdio"))
+  (setq-default
+   eglot-workspace-configuration
+   '(:basedpyright (:typeCheckingMode "recommended")
+     :basedpyright.analysis
+     (:diagnosticSeverityOverrides
+      (:reportUnusedCallResult "none")
+      :inlayHints (:callArgumentNames :json-false)))))
 
 ;;;----------------------------------------------------------------
 ;; *** EGLOT-BOOSTER
@@ -3043,7 +3054,7 @@ normally have their errors suppressed."
 ;;;----------------------------------------------------------------
 (use-package flymake
   :defer
-  :config
+  :init
   (add-hook 'flymake-mode-hook
             (my-next-error-register 'flymake-goto-next-error)))
 
@@ -3158,10 +3169,13 @@ normally have their errors suppressed."
 ;;;----------------------------------------------------------------
 
 (use-package transient
-  :ensure (:host github :repo "magit/transient" :tag "v0.7.7")
+  :ensure (:host github :repo "magit/transient")
   :defines toggle-modes
   :bind (("<f8>"  . toggle-modes)
          ("C-c b" . toggle-modes))
+  :custom
+  (transient-levels-file (dir-concat user-cache-directory "transient/levels.el"))
+  (transient-values-file (dir-concat user-cache-directory "transient/values.el"))
   :config
   (defun mode-cycle (mode1 mode2)
     "Cycle between mode1, mode2 and neither enabled."
@@ -3180,7 +3194,8 @@ normally have their errors suppressed."
   (mode-cycle 'electric-pair-mode 'smartparens-mode)
   
   (transient-bind-q-to-quit)
-  ;; (setq transient-display-buffer-action '(display-buffer-below-selected))
+  ;; (setq transient-display-buffer-action
+  ;;       '(display-buffer-below-selected (dedicated . t) (inhibit-same-window . t)))
   (setq transient-history-file (dir-concat user-cache-directory "transient/history.el")
         transient-levels-file (dir-concat user-cache-directory "transient/levels.el")
         transient-values-file (dir-concat user-cache-directory "transient/values.el")

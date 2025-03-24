@@ -103,7 +103,7 @@ highlighting of word-wise changes (local to the current buffer)."
         (unless diff-refine
           (setq-local diff-refine 'font-lock))))))
 
-    :bind-keymap ("H-v" . vc-prefix-map)
+    ;; :bind-keymap ("H-v" . vc-prefix-map)
     :bind (("C-x v C-l" . my/vc-print-log)
            :map vc-prefix-map
            ("=" . my/diff-buffer-dwim)
@@ -255,12 +255,13 @@ project, as defined by `vc-root-dir'."
     (with-eval-after-load 'magit
       (add-hook 'magit-post-refresh-hook #'diff-hl-magit-post-refresh)))
 
-(if IS-GUIX
-    (load-library "magit-autoloads")
-  (elpaca magit)
-  (elpaca orgit))
+;; (if IS-GUIX
+;;     (load-library "magit-autoloads")
+;;   (elpaca magit)
+;;   (elpaca orgit))
 
 (use-package magit
+  :ensure t
   :defer t
   ;; :commands magit-status
   :bind ("C-x g" . magit-status)
@@ -279,17 +280,22 @@ project, as defined by `vc-root-dir'."
           '((stashes . hide)
             ([file unstaged status] . hide)))))
 
-(if IS-GUIX
-    (load-library "forge-autoloads")
-  (elpaca forge)
-  (elpaca orgit-forge))
+(use-package orgit :ensure t :defer)
+
+;; (if IS-GUIX
+;;     (load-library "forge-autoloads")
+;;   (elpaca forge)
+;;   (elpaca orgit-forge))
 (use-package forge
+  :ensure t
   :defer
   :config
   (auth-source-pass-enable)
   (setq forge-database-file
         (dir-concat user-cache-directory "forge-database.sqlite")
         forge-owned-accounts '(("karthink"))))
+
+(use-package orgit-forge :ensure t :defer)
 
 ;; Misc git functions
 (use-package emacs

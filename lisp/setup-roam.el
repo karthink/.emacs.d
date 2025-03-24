@@ -1,12 +1,13 @@
 ;;; setup-roam
 
-(if IS-GUIX
-    (progn (load-library "org-roam-autoloads")
-           (load-library "org-roam-ui-autoloads"))
-  (elpaca org-roam)
-  (elpaca org-roam-ui))
+;; (if IS-GUIX
+;;     (progn (load-library "org-roam-autoloads")
+;;            (load-library "org-roam-ui-autoloads"))
+;;   (elpaca org-roam)
+;;   (elpaca org-roam-ui))
 
 (use-package org-roam
+      :ensure t
       :init (setq org-roam-v2-ack t)
       :bind (("C-c n l" . org-roam-buffer-toggle)
              ("C-c n f" . org-roam-node-find)
@@ -138,6 +139,7 @@
           (put cmd 'repeat-map 'org-roam-dailies-repeat-map))))))
 
 (use-package org-roam-ui
+  :ensure t
   :defer
   :config
   (setq org-roam-ui-sync-theme t))

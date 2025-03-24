@@ -4355,19 +4355,33 @@ _d_: subtree
          ("+" . gptel-add))
   :config
   (gptel-make-openai "Groq"
-        :host "api.groq.com"
-        :endpoint "/openai/v1/chat/completions"
-        :stream t
-        :key #'gptel-api-key-from-auth-source
-        :models '(llama-3.3-70b-versatile llama-3.1-8b-instant
-                  mixtral-8x7b-32768 gemma-7b-it))
-  
+    :host "api.groq.com"
+    :endpoint "/openai/v1/chat/completions"
+    :stream t
+    :key #'gptel-api-key-from-auth-source
+    :models '(deepseek-r1-distill-llama-70b
+              llama-3.3-70b-versatile llama-3.1-8b-instant
+              mixtral-8x7b-32768 gemma-7b-it))
+
   (defvar gptel--anthropic
     (gptel-make-anthropic "Claude" :key gptel-api-key :stream t))
   (setq-default gptel-model 'claude-3-5-haiku-20241022
                 gptel-backend gptel--anthropic
                 gptel-display-buffer-action '(pop-to-buffer-same-window))
-  
+
+  (gptel-make-anthropic "Claude-thinking"
+    :key #'gptel-api-key-from-auth-source
+    :stream t
+    :models '(claude-3-7-sonnet-20250219)
+    :header (lambda () (when-let* ((key (gptel--get-api-key)))
+                    `(("x-api-key" . ,key)
+                      ("anthropic-version" . "2023-06-01")
+                      ("anthropic-beta" . "pdfs-2024-09-25")
+                      ("anthropic-beta" . "output-128k-2025-02-19")
+                      ("anthropic-beta" . "prompt-caching-2024-07-31"))))
+    :request-params '(:thinking (:type "enabled" :budget_tokens 1024)
+                      :max_tokens 2048))
+
   (defvar gptel--togetherai
     (gptel-make-openai "TogetherAI"
       :host "api.together.xyz"
@@ -4377,19 +4391,43 @@ _d_: subtree
                 codellama/CodeLlama-13b-Instruct-hf
                 codellama/CodeLlama-34b-Instruct-hf)))
 
+  (gptel-make-deepseek "Deepseek"
+    :key #'gptel-api-key-from-auth-source
+    :stream t)
+
+  (gptel-make-perplexity "Perplexity"
+    :stream t
+    :key #'gptel-api-key-from-auth-source)
+
+  (gptel-make-openai "OpenRouter"
+    :host "openrouter.ai"
+    :endpoint "/api/v1/chat/completions"
+    :stream t
+    :key #'gptel-api-key-from-auth-source
+    :models '(deepseek/deepseek-r1-distill-llama-70b:free
+              deepseek/deepseek-r1-distill-llama-70b:free))
+
+  (gptel-make-openai "Github Models"
+    :host "models.inference.ai.azure.com"
+    :endpoint "/chat/completions?api-version=2024-05-01-preview"
+    :stream t
+    :key (lambda () (auth-source-pass-get 'secret "api/api.github.com"))
+    :models '(DeepSeek-R1 gpt-4o-mini))
+
   (with-eval-after-load 'gptel-gemini
     (defvar gptel--gemini
       (gptel-make-gemini "Gemini" :key gptel-api-key :stream t)))
-  
+
   (with-eval-after-load 'gptel-ollama
     (defvar gptel--ollama
       (gptel-make-ollama
           "Ollama"
         :host "192.168.0.59:11434"
-        :models '("mistral:latest" "zephyr:latest" "openhermes:latest" "llama3.1:8b" "llama3.2:3b"
-                  (llava:7b :description "Llava 1.6: Vision capable model"
+        :models '(mistral:latest zephyr:latest openhermes:latest
+                  llama3.1:8b llama3.2:3b deepseek-r1:8b
+                  (llava:7b :description Llava 1.6: Vision capable model
                    :capabilities (media)
-                   :mime-types ("image/jpeg" "image/png")))
+                   :mime-types (image/jpeg image/png)))
         :stream t)))
 
   (defvar gptel--gpt4all
@@ -4398,10 +4436,13 @@ _d_: subtree
       :protocol "http"
       :host "localhost:4891"
       :models '(mistral-7b-openorca.Q4_0.gguf)))
-  
+
   (defalias 'my/gptel-easy-page
     (let ((map (make-composed-keymap
-                (define-keymap "RET" 'gptel-end-of-response)
+                (define-keymap
+                  "RET" 'gptel-end-of-response
+                  "n"   'gptel-end-of-response
+                  "p"   'gptel-beginning-of-response)
                 my-pager-map))
           (scrolling
            (propertize  "SCRL" 'face '(:inherit highlight))))
@@ -4419,8 +4460,19 @@ _d_: subtree
   (define-key global-map (kbd "C-c SPC") 'my/gptel-easy-page)
 
   (auth-source-pass-enable)
-  (add-hook 'gptel-post-response-functions #'font-lock-ensure)
-  
+  (defun my/gptel-remove-headings (beg end)
+    (when (derived-mode-p 'org-mode)
+      (save-excursion
+        (goto-char beg)
+        (while (re-search-forward org-heading-regexp end t)
+          (forward-line 0)
+          (delete-char (1+ (length (match-string 1))))
+          (insert-and-inherit "*")
+          (end-of-line)
+          (skip-chars-backward " \t\r")
+          (insert-and-inherit "*")))))
+  (add-hook 'gptel-post-response-functions #'my/gptel-remove-headings)
+
   ;; (with-eval-after-load 'gptel-transient
   ;;   (transient-suffix-put 'gptel-menu (kbd "-m") :key "M")
   ;;   (transient-suffix-put 'gptel-menu (kbd "-c") :key "C")
@@ -4440,18 +4492,18 @@ Generate %s code and only code without any explanations or markdown code fences.
 You may include code comments.
 
 Do not repeat any of the BEFORE or AFTER code." lang lang lang)
-       nil
-       "What is the code AFTER the cursor?"
-       ,(format "AFTER\n```\n%s\n```\n"
-               (buffer-substring-no-properties
-                (if (use-region-p) (max (point) (region-end)) (point))
-                (point-max)))
-       "And what is the code BEFORE the cursor?"
-       ,(format "BEFORE\n```%s\n%s\n```\n" lang
-               (buffer-substring-no-properties
-                (point-min)
-                (if (use-region-p) (min (point) (region-beginning)) (point))))
-       ,@(when (use-region-p) "What should I insert at the cursor?"))))
+        nil
+        "What is the code AFTER the cursor?"
+        ,(format "AFTER\n```\n%s\n```\n"
+          (buffer-substring-no-properties
+           (if (use-region-p) (max (point) (region-end)) (point))
+           (point-max)))
+        "And what is the code BEFORE the cursor?"
+        ,(format "BEFORE\n```%s\n%s\n```\n" lang
+          (buffer-substring-no-properties
+           (point-min)
+           (if (use-region-p) (min (point) (region-beginning)) (point))))
+        ,@(when (use-region-p) "What should I insert at the cursor?"))))
 
   (setq gptel-directives
         `((default . "To assist:  Be terse.  Do not offer unprompted advice or clarifications.  Speak in specific,
@@ -4483,7 +4535,7 @@ If you use LaTex notation, enclose math in \\( and \\), or \\[ and \\] delimiter
         (alist-get 'markdown-mode gptel-prompt-prefix-alist) "#### ")
   (with-eval-after-load 'gptel-org
     (setq-default gptel-org-branching-context t))
-  
+
   (defun my/gptel-eshell-send (&optional arg)
     (interactive "P")
     (if (use-region-p)
@@ -4516,15 +4568,15 @@ Rewrite the following message."))
                               (my/easy-page)))))
 
   (cl-pushnew '(:propertize
-               (:eval
-                (when (local-variable-p 'gptel--system-message)
+                (:eval
+                 (when (local-variable-p 'gptel--system-message)
                   (concat
                    "["
                    (if-let ((n (car-safe (rassoc gptel--system-message gptel-directives))))
                        (symbol-name n)
                      (gptel--describe-directive gptel--system-message 12))
                    "]")))
-               'face 'gptel-rewrite-highlight-face)
+                'face 'gptel-rewrite-highlight-face)
               mode-line-misc-info)
   (add-to-list
    'mode-line-misc-info

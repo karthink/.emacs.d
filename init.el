@@ -2806,34 +2806,15 @@ current buffer without truncation."
   :if (> emacs-major-version 27)
   :hook (next-error . recenter)
   :config
-  (defcustom my-next-error-functions nil
-    "Additional functions to use as `next-error-function'."
-    :group 'next-error
-    :type 'hook)
-  
-  (defun my-next-error-delegate (orig-fn &optional arg reset)
-    (if my-next-error-functions
-        (if-let* ((buf (ignore-errors
-                         (next-error-find-buffer
-                          t nil (lambda () (not (eq next-error-function
-                                               'org-occur-next-match))))))
-                  ((get-buffer-window buf)))
-            (funcall orig-fn arg reset)
-          (run-hook-with-args-until-success
-           'my-next-error-functions (or arg 1)))
-      (funcall orig-fn arg reset)))
-  
-  (defun my-next-error-register (fn)
-    "Add FUN to `my-next-error-functions'."
-    (lambda ()
-      (if (memq fn my-next-error-functions)
-          (remove-hook 'my-next-error-functions fn 'local)
-        (add-hook 'my-next-error-functions fn nil 'local))))
-  
-  (advice-add 'next-error :around #'my-next-error-delegate)
-  
   (setq next-error-message-highlight t
         next-error-found-function #'next-error-quit-window))
+
+(use-package poi
+  :demand t
+  :bind (:map next-error-repeat-map
+         ("`" . poi-action))
+  :config
+  (advice-add 'next-error :around #'poi-delegate))
 
 ;;;----------------------------------------------------------------
 ;; ** DUMB-JUMP
@@ -2900,7 +2881,7 @@ current buffer without truncation."
   :commands text-spell-fu-mode
   :config
   (add-hook 'spell-fu-mode-hook
-            (my-next-error-register
+            (poi-register
              #'spell-fu--goto-next-or-previous-error))
   (add-hook 'spell-fu-mode-hook
             (lambda ()
@@ -2958,7 +2939,8 @@ current buffer without truncation."
          (append '(org-block)
                  (alist-get 'tex-mode jinx-exclude-faces) pl)))
       (alist-get 'org-mode jinx-exclude-faces))
-  (add-hook 'jinx-mode-hook (my-next-error-register 'jinx-next)))
+  (add-hook 'jinx-mode-hook
+            (poi-register 'jinx-next 'jinx-correct)))
 
 ;;----------------------------------------------------------------
 ;; ** ELDOC
@@ -3056,7 +3038,7 @@ normally have their errors suppressed."
   :defer
   :init
   (add-hook 'flymake-mode-hook
-            (my-next-error-register 'flymake-goto-next-error)))
+            (poi-register 'flymake-goto-next-error)))
 
 ;; DONT
 (use-package flymake-diagnostic-at-point

@@ -178,6 +178,7 @@ When the number of characters in a buffer exceeds this threshold,
                    "-e ARG OPTS "
                      (shell-quote-argument buffer-file-name))))
       (consult-ripgrep))))
+  (consult-customize my/consult-ripgrep-or-line :initial (thing-at-point 'symbol))
 
   (dolist (func '(consult-fd consult-git-grep
                   consult-ripgrep consult-grep))

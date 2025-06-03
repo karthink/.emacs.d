@@ -138,9 +138,11 @@
         (call-interactively #'next-line))))
 
   ;; Drag and drop
-  (defun embark-drag-and-drop (file)
+  (defun embark-drag-and-drop (files)
     (interactive "fDrag and drop: ")
-    (start-process "dragon" nil "dragon" (expand-file-name file)))
+    (apply #'start-process "dragon-drop" nil "dragon-drop"
+           (mapcar #'expand-file-name (ensure-list files))))
+  (add-to-list 'embark-multitarget-actions 'embark-drag-and-drop)
 
   (defun embark-attach-file (file)
     "Attach FILE to an  email message.
@@ -163,6 +165,14 @@ are place there, otherwise you are prompted for a message buffer."
       (message "Copied %s to %s." file web-url)
       (kill-new web-url)))
   (define-key embark-file-map (kbd "M-S") #'my/embark-share-file)
+
+  (defun my/embark-eval-interactive (expr)
+    "Insert EXPR into the `eval-expression' prompt."
+    (unless (string-prefix-p "(" expr)
+      (setq expr (concat "(" expr ")")))
+    (pp-eval-expression (read--expression "Eval: " expr)))
+  (keymap-set embark-function-map ":" #'my/embark-eval-interactive)
+  (keymap-set embark-expression-map ":" #'my/embark-eval-interactive)
 
   ;; Dummy function, will be overridden by running `embark-around-action-hooks'
   (defun my/embark-prefix-window () (interactive))
@@ -193,7 +203,7 @@ are place there, otherwise you are prompted for a message buffer."
   (cl-defun my/embark--call-prefix-action (&rest rest &key run type &allow-other-keys)
     (when-let ((cmd (keymap-lookup
                      my/window-prefix-map
-                     (key-description (this-command-keys-vector)))))
+                     (key-description `[,last-command-event]))))
       (funcall cmd))
     (plist-put rest :action (embark--default-action type))
     (apply run rest))

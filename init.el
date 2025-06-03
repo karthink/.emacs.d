@@ -67,6 +67,7 @@
   :bind (:map elpaca-ui-mode-map
          ("p" . previous-line)
          ("F" . elpaca-ui-mark-pull))
+  :hook (elpaca-log-mode . elpaca-log-update-mode)
   :after popper
   :init
   (add-to-list 'popper-reference-buffers
@@ -148,7 +149,7 @@
     `(setq ad-redefinition-action 'accept))
   (setq use-package-verbose nil
         use-package-compute-statistics nil
-        ;use-package-ignore-unknown-keywords t
+        ;; use-package-ignore-unknown-keywords t
         use-package-minimum-reported-time 0.01
         use-package-expand-minimally t
         use-package-enable-imenu-support t)

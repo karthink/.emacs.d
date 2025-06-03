@@ -670,7 +670,6 @@ output instead."
 
 ;; ;TODO: Check recipe vs elpaca
 (use-package eat
-  :disabled
   :ensure
   (:host codeberg
    :repo "akib/emacs-eat"
@@ -681,11 +680,15 @@ output instead."
            (:exclude ".dir-locals.el" "*-tests.el")))
   :hook ((eshell-mode . eat-eshell-mode)
          (eat-mode . my/eat-keys))
+  :bind (:map eat-semi-char-mode-map
+         ("M-v" . eat-emacs-mode)
+         :map eat-mode-map
+         ("RET" . eat-semi-char-mode))
   :config
   (defun my/eat-keys ()
     (remove-hook 'eat-mode-hook 'my/eat-keys)
     (dolist (key `([?\e ?o] [?\e ?`] ,(kbd "C-`")
-                   [?\e 67108960] [C-M-v]))
+                   [?\e 67108960] [C-M-v] [?\e v]))
       (push key eat-semi-char-non-bound-keys))
     (eat-update-semi-char-mode-map)
     (eat-reload))

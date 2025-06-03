@@ -166,7 +166,8 @@
                 (and (url-copy-file "https://norvig.com/ngrams/count_1w.txt"
                                     wordlist)
                      (shell-command
-                      (concat "sed -re 's_[ \t0-9]*__g' -i " wordlist))))
+                      (concat "sed -re 's_[ \t0-9]*__g' -e '/^.{1,4}$/d' -i "
+                              wordlist))))
             (message "Downloaded wordlist")
             wordlist)
            ((getenv "WORDLIST"))
@@ -174,7 +175,7 @@
   (when (bound-and-true-p text-mode-ispell-word-completion)
     (setq text-mode-ispell-word-completion nil))
   
-  (setf cape-dict-limit 8
+  (setf cape-dict-limit 4
         (alist-get 'cape-dict completion-category-defaults)
         '((styles basic)))
 

@@ -2214,8 +2214,10 @@ Whichever was already active."
          ("C-c )" . 'consult-reftex-insert-reference)))
 
 (use-package reftex-xref
+  :ensure (:host github :repo "karthink/reftex-xref")
   :after (org latex)
-  :hook (org-mode . reftex-xref-activate))
+  :hook ((org-mode . reftex-xref-activate)
+         (org-mode . reftex-eldoc-activate)))
 
 ;;;----------------------------------------------------------------
 ;; ** ORG-AUCTEX

@@ -38,7 +38,8 @@
                   (save-excursion
                     (gptel-end-of-response)
                     (goto-char end)
-                    (insert "\n\n----")))
+                    (unless (looking-at-p "[\n[:blank:]]+----")
+                      (insert "\n\n----"))))
                 nil t)))
   (if-let ((win (get-buffer-window gptel-ask--buffer-name))
            ((window-live-p win)))
@@ -55,11 +56,17 @@
         (gptel-model (default-value 'gptel-model)))
     (gptel--prepare-ask-buffer)
     (letrec ((prompt
-              (read-string
-               (format "Ask %s: " (gptel-backend-name gptel-backend))
-               (and (use-region-p)
-                    (buffer-substring-no-properties
-                     (region-beginning) (region-end)))))
+              (minibuffer-with-setup-hook
+                  (lambda () (add-hook 'completion-at-point-functions
+                                  #'gptel-preset-capf nil t)
+                    (use-local-map
+                     (define-keymap :parent (current-local-map)
+                       "<tab>" #'completion-at-point)))
+                  (read-string
+                   (format "Ask %s: " (gptel-backend-name gptel-backend))
+                   (and (use-region-p)
+                        (buffer-substring-no-properties
+                         (region-beginning) (region-end))))))
              (before-resp
               (lambda () (remove-hook 'gptel-pre-response-hook before-resp)
                 (when (eq (current-buffer) (get-buffer gptel-ask--buffer-name))
@@ -72,6 +79,7 @@
         :buffer (get-buffer-create gptel-ask--buffer-name)
         :position (with-current-buffer gptel-ask--buffer-name (point-max))
         :stream gptel-stream
+        :transforms gptel-prompt-transform-functions
         :fsm (gptel-make-fsm :handlers gptel-send--handlers)
         :system (default-value 'gptel--system-message)))))
 

@@ -55,6 +55,8 @@
 ;; means less to process at startup.
 (unless IS-MAC   (setq command-line-ns-option-alist nil))
 (unless IS-LINUX (setq command-line-x-option-alist nil))
+;; (when IS-LINUX (when (fboundp 'pgtk-use-im-context)
+;;                  (pgtk-use-im-context nil)))
 
 ;; File-name-handler optimization
 ;; ;; This is consulted on every `require', `load' and various path/io functions.

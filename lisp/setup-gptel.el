@@ -1,0 +1,515 @@
+;; -*- lexical-binding: t; -*-
+
+;;---------------------------------------------------------
+;; * gptel general behavior
+;;---------------------------------------------------------
+(use-package gptel
+  ;; :straight (:local-repo "~/.local/share/git/gptel/")
+  :ensure (:host github :protocol ssh :repo "karthink/gptel")
+  :commands (gptel gptel-send)
+  :hook ((gptel-pre-response . my/gptel-easy-page))
+  :bind (("C-c C-<return>" . gptel-menu)
+         ("C-c <return>" . gptel-send)
+         ("C-c j" . gptel-menu)
+         ("C-c C-g" . gptel-abort)
+         ("C-c SPC" . my/gptel-easy-page)
+         :map gptel-mode-map
+         ("C-c C-x t" . gptel-set-topic)
+         :map embark-region-map
+         ("+" . gptel-add)
+         :map this-buffer-file-map
+         ("+" . gptel-add))
+  :config
+  (auth-source-pass-enable)  
+  (setq-default gptel-model 'gpt-4.1-nano
+                gptel-backend gptel--openai
+                gptel-display-buffer-action '(pop-to-buffer-same-window))
+
+  (defalias 'my/gptel-easy-page
+    (let ((map (make-composed-keymap
+                (define-keymap
+                  "RET" 'gptel-end-of-response
+                  "n"   'gptel-end-of-response
+                  "p"   'gptel-beginning-of-response)
+                my-pager-map))
+          (scrolling
+           (propertize  "SCRL" 'face '(:inherit highlight))))
+      (require 'pixel-scroll)
+      (lambda ()
+        (interactive)
+        (when (eq (window-buffer (selected-window))
+                  (current-buffer))
+          (add-to-list 'mode-line-format scrolling)
+          (set-transient-map
+           map t
+           (lambda () (setq mode-line-format
+                       (delete scrolling mode-line-format))))))))
+
+  (defun my/gptel-remove-headings (beg end)
+    (when (derived-mode-p 'org-mode)
+      (save-excursion
+        (goto-char beg)
+        (while (re-search-forward org-heading-regexp end t)
+          (forward-line 0)
+          (delete-char (1+ (length (match-string 1))))
+          (insert-and-inherit "*")
+          (end-of-line)
+          (skip-chars-backward " \t\r")
+          (insert-and-inherit "*")))))
+  (defun my/gptel-latex-preview (beg end)
+    (when (derived-mode-p 'org-mode)
+      (org-latex-preview--preview-region 'dvisvgm beg end)))
+  (add-hook 'gptel-post-response-functions #'my/gptel-latex-preview)
+  (add-hook 'gptel-post-response-functions #'my/gptel-remove-headings)
+  
+  ;; (with-eval-after-load 'gptel-transient
+  ;;   (transient-suffix-put 'gptel-menu (kbd "-m") :key "M")
+  ;;   (transient-suffix-put 'gptel-menu (kbd "-c") :key "C")
+  ;;   (transient-suffix-put 'gptel-menu (kbd "-n") :key "N")
+  ;;   (transient-suffix-put 'gptel-menu (kbd "-t") :key "T"))
+
+  (setq gptel--system-message (alist-get 'default gptel-directives)
+        gptel-default-mode 'org-mode)
+  (setf (alist-get 'org-mode gptel-prompt-prefix-alist) "*Prompt*: "
+        (alist-get 'org-mode gptel-response-prefix-alist) "*Response*:\n"
+        (alist-get 'markdown-mode gptel-prompt-prefix-alist) "#### ")
+  (with-eval-after-load 'gptel-org
+    (setq-default gptel-org-branching-context t))
+
+  (add-to-list 'popper-reference-buffers "\\*gptel-log\\*")
+  (setf (alist-get "\\*gptel-log\\*" display-buffer-alist nil nil #'equal)
+        `((display-buffer-reuse-window display-buffer-in-side-window)
+          (side . right)
+          (window-width . 72)
+          (slot . 20)
+          (body-function . ,(lambda (win)
+                              (select-window win)
+                              (my/easy-page)))))
+
+  (cl-pushnew '(:propertize
+                (:eval
+                 (when (local-variable-p 'gptel--system-message)
+                  (concat
+                   "["
+                   (if-let ((n (car-safe (rassoc gptel--system-message gptel-directives))))
+                       (symbol-name n)
+                     (gptel--describe-directive gptel--system-message 12))
+                   "]")))
+                'face 'gptel-rewrite-highlight-face)
+              mode-line-misc-info)
+  (add-to-list
+   'mode-line-misc-info
+   '(:eval
+     (unless gptel-mode
+      (when (and (local-variable-p 'gptel-model)
+             (not (eq gptel-model (default-value 'gptel-model))))
+       (concat "[" (gptel--model-name gptel-model) "]"))))))
+
+;;---------------------------------------------------------
+;; * gptel LLM backends
+;;---------------------------------------------------------
+(use-package gptel
+  :after gptel
+  :config
+  (gptel-make-deepseek "Groq"
+    :host "api.groq.com"
+    :endpoint "/openai/v1/chat/completions"
+    :stream t
+    :key #'gptel-api-key-from-auth-source
+    :models '(deepseek-r1-distill-llama-70b
+              llama-3.3-70b-versatile llama-3.1-8b-instant
+              mixtral-8x7b-32768 gemma-7b-it))
+  
+  (defvar gptel--anthropic
+    (gptel-make-anthropic "Claude" :key gptel-api-key :stream t))
+
+  (gptel-make-anthropic "Claude-thinking"
+    :key #'gptel-api-key-from-auth-source
+    :stream t
+    :models '(claude-sonnet-4-20250514 claude-3-7-sonnet-20250219)
+    :request-params '(:thinking (:type "enabled" :budget_tokens 1024)
+                      :max_tokens 2048))
+
+  (defvar gptel--togetherai
+    (gptel-make-openai "TogetherAI"
+      :host "api.together.xyz"
+      :key gptel-api-key
+      :stream t
+      :models '(mistralai/Mixtral-8x7B-Instruct-v0.1
+                codellama/CodeLlama-13b-Instruct-hf
+                codellama/CodeLlama-34b-Instruct-hf)))
+
+  (gptel-make-deepseek "Deepseek"
+    :key #'gptel-api-key-from-auth-source
+    :stream t)
+
+  (gptel-make-perplexity "Perplexity"
+    :stream t
+    :key #'gptel-api-key-from-auth-source)
+
+  (gptel-make-openai "OpenRouter"
+    :host "openrouter.ai"
+    :endpoint "/api/v1/chat/completions"
+    :stream t
+    :key #'gptel-api-key-from-auth-source
+    :models '(deepseek/deepseek-r1-distill-llama-70b:free
+              deepseek/deepseek-r1-distill-llama-70b:free))
+
+  (gptel-make-openai "Github Models"
+    :host "models.inference.ai.azure.com"
+    :endpoint "/chat/completions?api-version=2024-05-01-preview"
+    :stream t
+    :key (lambda () (auth-source-pass-get 'secret "api/api.github.com"))
+    :models '(DeepSeek-R1 gpt-4o-mini))
+
+  (defvar gptel--gemini
+    (gptel-make-gemini "Gemini" :key gptel-api-key :stream t))
+
+  (with-eval-after-load 'gptel-ollama
+    (defvar gptel--ollama
+      (gptel-make-ollama
+          "Ollama"
+        :host "192.168.1.11:11434"
+        :models '(qwen3:4b llama3.1:8b qwen3:8b
+                  (llava:7b :description Llava 1.6: Vision capable model
+                   :capabilities (media)
+                   :mime-types ("image/jpeg" "image/png")))
+        :stream t)))
+
+  (defvar gptel--gpt4all
+    (gptel-make-gpt4all
+        "GPT4All"
+      :protocol "http"
+      :host "localhost:4891"
+      :models '(mistral-7b-openorca.Q4_0.gguf))))
+
+;;================================================================
+;; * Directives and presets
+;;================================================================
+
+;;----------------------------------------------------------------
+;; ** gptel-prompts: Get directives from a prompts directory
+;;----------------------------------------------------------------
+(use-package gptel-prompts
+  :ensure (:host github :repo "jwiegley/gptel-prompts")
+  :after gptel
+  :config (gptel-prompts-update))
+
+;;----------------------------------------------------------------
+;; ** gptel presets
+;;----------------------------------------------------------------
+(use-package gptel
+  :after gptel
+  :config
+  (gptel-make-preset 'default
+    :description "My default settings for gptel"
+    :system 'default
+    :backend "ChatGPT"
+    :model 'gpt-4.1-mini
+    :tools nil :temperature nil :stream t
+    :include-reasoning 'ignore)
+
+  (gptel-make-preset 'nostream
+    :description "No streaming"
+    :stream nil)
+
+  (gptel-make-preset 'prog
+    :description "Claude Sonnet, with context, generates only code"
+    :backend "Claude" :model 'claude-3-7-sonnet-20250219 :system 'programmer
+    :tools nil :stream t :temperature nil :max-tokens nil :use-context 'system
+    :include-reasoning nil)
+
+  (gptel-make-preset 'sonar-gen
+    :description "Sonar (non pro) with default instructions"
+    :system 'default
+    :backend "Perplexity"
+    :model 'sonar :stream nil
+    :tools nil :temperature 0.66)
+
+  (gptel-make-preset 'cliwhiz
+    :description "Haiku, no context, generates CLI commands" :backend "Claude"
+    :model 'claude-3-5-haiku-20241022 :system 'cliwhiz :tools nil :stream t
+    :temperature 0.66 :max-tokens nil :use-context 'nil :include-reasoning nil)
+
+  (gptel-make-preset 'websearch
+    :description "Add basic web search tools"
+    :tools '(:append "search_web" "read_url" "get_youtube_meta"))
+
+  (gptel-make-preset 'files
+    :description "Add filesystem tools"
+    :tools '("filesystem"))
+
+  (gptel-make-preset 'tutor
+    :description "Get Claude Sonnet to teach using hints"
+    :system 'tutor
+    :backend "Claude"
+    :model 'claude-3-7-sonnet-20250219
+    :tools nil :temperature 0.7
+    :max-tokens 600)
+
+  (gptel-make-preset 'pro
+    :description "Sonnet 4, no-holds bared"
+    :system 'default
+    :backend "Claude"
+    :model 'claude-sonnet-4-20250514
+    :tools nil
+    :include-reasoning nil)
+
+  (gptel-make-preset 'explain
+    :description "Deepseek-R1, explains the prompt text"
+    :backend "Deepseek" :model 'deepseek-reasoner :system 'explain :tools nil
+    :stream t :temperature nil :max-tokens nil
+    :use-context 'system :include-reasoning nil))
+
+;;================================================================
+;; * gptel addons and other integration
+;;================================================================
+
+;;----------------------------------------------------------------
+;; ** gptel-rewrite: rewrite regions of text
+;;----------------------------------------------------------------
+(use-package gptel-rewrite
+  :after gptel
+  :bind (:map gptel-rewrite-actions-map
+         ("C-c C-i" . gptel--rewrite-inline-diff))
+  :config
+  (defun gptel--rewrite-inline-diff (&optional ovs)
+    (interactive (list (gptel--rewrite-overlay-at)))
+    (unless (require 'inline-diff nil t)
+      (user-error "Inline diffs require the inline-diff package."))
+    (when-let* ((ov-buf (overlay-buffer (or (car-safe ovs) ovs)))
+                ((buffer-live-p ov-buf)))
+      (with-current-buffer ov-buf
+        (cl-loop for ov in (ensure-list ovs)
+                 for ov-beg = (overlay-start ov)
+                 for ov-end = (overlay-end ov)
+                 for response = (overlay-get ov 'gptel-rewrite)
+                 do (delete-overlay ov)
+                 (inline-diff-words
+                  ov-beg ov-end response)))))
+  
+  (when (boundp 'gptel--rewrite-dispatch-actions)
+    (add-to-list
+     'gptel--rewrite-dispatch-actions '(?i "inline-diff")
+     'append))
+
+  (setf (alist-get 'infill gptel-directives) #'my/gptel-code-infill)
+  (defun my/gptel-code-infill ()
+    "Fill in code at point based on buffer context.  Note: Sends the whole buffer."
+    (let ((lang (gptel--strip-mode-suffix major-mode)))
+      `(,(format "You are a %s programmer and assistant in a code buffer in a text editor.
+
+Follow my instructions and generate %s code to be inserted at the cursor.
+For context, I will provide you with the code BEFORE and AFTER the cursor.
+
+
+Generate %s code and only code without any explanations or markdown code fences.  NO markdown.
+You may include code comments.
+
+Do not repeat any of the BEFORE or AFTER code." lang lang lang)
+        nil
+        "What is the code AFTER the cursor?"
+        ,(format "AFTER\n```\n%s\n```\n"
+          (buffer-substring-no-properties
+           (if (use-region-p) (max (point) (region-end)) (point))
+           (point-max)))
+        "And what is the code BEFORE the cursor?"
+        ,(format "BEFORE\n```%s\n%s\n```\n" lang
+          (buffer-substring-no-properties
+           (point-min)
+           (if (use-region-p) (min (point) (region-beginning)) (point))))
+        ,@(when (use-region-p) "What should I insert at the cursor?")))))
+
+;;----------------------------------------------------------------
+;; ** gptel-ask: persistent side-buffer for one-off queries
+;;----------------------------------------------------------------
+(use-package gptel-ask
+  :after gptel
+  :bind (:map help-map
+         ("C-q" . gptel-ask)
+         :map embark-url-map
+         ("?" . gptel-kagi-summarize))
+  :config
+  (defvar gptel--kagi
+    (gptel-make-kagi
+        "Kagi"
+      :key (lambda () (auth-source-pass-get 'secret "api/kagi-ai.com")))
+    "Kagi source for gptel")
+
+  (setf (alist-get "^\\*gptel-ask\\*" display-buffer-alist
+                   nil nil #'equal)
+        '((display-buffer-reuse-window display-buffer-in-side-window)
+          (side . right) (slot . 10) (window-width . 0.25)
+          (window-parameters (no-delete-other-windows . t))
+          (post-command-select-window . t)
+          (bump-use-time . t)))
+
+  (defun gptel-kagi-summarize (url)
+    (interactive "sSummarize url: ")
+    (let ((gptel-backend gptel--kagi)
+          (gptel-model "summarize:agnes")
+          (gptel-use-curl)
+          (gptel-use-context))
+      (gptel-request url
+        :callback
+        (lambda (response info)
+          (if response
+              (progn
+                (gptel--prepare-ask-buffer)
+                (let ((scroll-conservatively 0))
+                  (with-current-buffer gptel-ask--buffer-name
+                    (insert "\n" url "\nSummary:\n\n"
+                            response "\n\n----")
+                    (display-buffer (current-buffer)))))
+            (message "gptel-request failed with message: %s"
+                     (plist-get info :status)))))
+      (message "Generating summary for: %s" url))))
+
+;;----------------------------------------------------------------
+;; ** gptel-quick: describe thing at point
+;;----------------------------------------------------------------
+(use-package gptel-quick
+  :ensure (:host github :protocol ssh
+           :repo "karthink/gptel-quick")
+  :bind (:map embark-general-map
+         ("?" . gptel-quick)))
+
+;;----------------------------------------------------------------
+;; ** Project-specific chat file
+;;----------------------------------------------------------------
+(use-package project
+  :after (popper visual-fill-column)
+  :bind (:map project-prefix-map
+         ("C" . gptel-project))
+  :config
+  (setf (alist-get ".*Chat.org$" display-buffer-alist nil nil #'equal)
+        `((display-buffer-below-selected)
+          (window-height . 0.5)
+          (body-function . ,#'select-window)))
+  (defun gptel-project ()
+    "Open the ChatGPT file for the current project."
+    (interactive)
+    (let ((default-directory (or (project-root (project-current))
+                                 default-directory)))
+      (find-file "Chat.org")
+      (require 'gptel)
+      (unless gptel-mode
+        (gptel-mode 1))
+      (unless visual-fill-column-mode
+        (visual-fill-column-mode 1))
+      (unless (equal popper-popup-status 'user-popup)
+        (popper-toggle-type)))))
+
+;;----------------------------------------------------------------
+;; ** Fake eshell integration (pretty silly)
+;;----------------------------------------------------------------
+(use-package gptel
+  :hook ((eshell-mode . my/gptel-eshell-keys))
+  :config
+  (defun my/gptel-eshell-send (&optional arg)
+    (interactive "P")
+    (if (use-region-p)
+        (gptel-send arg)
+      (push-mark)
+      (or (eshell-previous-prompt 0)
+          (eshell-previous-prompt 1))
+      (activate-mark)
+      (gptel-send arg)
+      (exchange-point-and-mark)
+      (deactivate-mark)))
+  (defun my/gptel-eshell-keys ()
+    (define-key eshell-mode-map (kbd "C-c <return>")
+                #'my/gptel-eshell-send)))
+
+;;----------------------------------------------------------------
+;; ** Actual eshell integration, currently non-functional
+;;----------------------------------------------------------------
+(use-package gptel-eshell
+  :ensure (:host github :protocol ssh
+           :repo "karthink/gptel-eshell")
+  :defer)
+
+;;----------------------------------------------------------------
+;; ** git commit headings
+;;----------------------------------------------------------------
+(use-package gptel
+  :after (gptel git-commit)
+  :hook ((git-commit-setup . my/gptel-commit-summary))
+  :config
+  (gptel-make-preset 'commit-summary
+    :description "For generating commit message summaries"
+    :system (lambda () (with-temp-buffer
+                    (insert-file-contents
+                     (expand-file-name
+                      "commit-summary.txt" user-emacs-directory))
+                    (buffer-string)))
+    :backend "ChatGPT"
+    :model 'gpt-4.1-nano
+    :include-reasoning nil
+    :tools nil)
+  (defun my/gptel-commit-summary ()
+    "Insert a commit message header line in the format I use, followed by a
+standard magit (GNU style) changelog.
+
+Don't get the LLM to write the commit message itself, because it's bad
+at inferring my intent.
+
+Intended to be placed in `git-commit-setup-hook'."
+    (gptel-with-preset 'commit-summary
+      (let ((commit-buffer (current-buffer))) ;commit message buffer
+
+        (when (looking-at-p "[\n[:blank:]]+") ;Heuristic for blank message
+          (with-temp-buffer
+            (vc-git-command             ;insert diff
+             (current-buffer) 1 nil
+             "diff-index" "--exit-code" "--patch"
+             (and (magit-anything-staged-p) "--cached")
+             "HEAD" "--")
+
+            (gptel-request nil          ;Run request on diff buffer contents
+              :context commit-buffer
+              :callback
+              (lambda (resp info)
+                (if (not (stringp resp))
+                    (message "Git commit summary generation failed")
+                  (with-current-buffer (plist-get info :context)
+                    (save-excursion
+                      (goto-char (point-min))
+                      (insert resp "\n\n")
+                      (magit-generate-changelog))))))))))))
+
+;;================================================================
+;; * Tools and MCP
+;;================================================================
+
+(use-package llm-tool-collection
+  :ensure (:host github :repo "skissue/llm-tool-collection")
+  :config (mapcar (apply-partially #'apply #'gptel-make-tool)
+                  (llm-tool-collection-get-all))
+  :defer)
+
+(use-package mcp
+  :after gptel
+  :ensure (:host github :repo "lizqwerscott/mcp.el")
+  :config
+  (require 'gptel-integrations)
+  (setq mcp-hub-servers
+        `(("github"
+           :command "github-mcp-server"
+           :args ("stdio")
+           :env (:GITHUB_PERSONAL_ACCESS_TOKEN
+                 ,(auth-source-pass-get 'secret "api/api.github.com")))
+          ("filesystem"
+           :command "mcp-server-filesystem"
+           :args (,(expand-file-name "~/dotnix/")))
+          ("memory"
+           :command "mcp-server-memory")
+          ("nixos"
+           :command "nix"
+           :args ("run" "github:utensils/mcp-nixos" "--")))))
+
+(provide 'setup-gptel)
+
+;; Local Variables:
+;; outline-regexp: ";; \\*+"
+;; End:

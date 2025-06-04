@@ -604,7 +604,7 @@ appropriate.  In tables, insert a new row or end the table."
 
   ;; Precompilation freezes emacs, do it in the background when possible.
   (defun my/org-latex-preview-precompile-idle (&optional beg end _)
-    (when (and (featurep 'async) (not (or beg end)))
+    (when (and (require 'async nil t) (not (or beg end)))
       (run-with-idle-timer
        2 nil #'my/org-latex-preview-precompile-async
        (current-buffer))))
@@ -2154,7 +2154,6 @@ Whichever was already active."
 (use-package org-xopp
   :ensure (:host github :repo "mahmoodsh36/org-xopp")
   :after org
-  :defer
   :config
   (org-link-set-parameters "xopp-pages"
                            :follow #'org-xopp-link-open
@@ -2182,7 +2181,7 @@ Whichever was already active."
   (defun my/org-xopp-preview-file (ov path link)
     "preview xopp figure"
     (let* ((absolute-path (expand-file-name path))
-           (output-path (org-xopp-temp-file absolute-path org-xopp-image-format)))
+           (output-path (org-xopp-cache-file absolute-path org-xopp-image-format)))
       (if (not (file-exists-p absolute-path))
           (message "file not found: %s" absolute-path)
         ;; export the .xopp file to an image if not already done

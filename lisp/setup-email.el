@@ -172,6 +172,10 @@
   (define-key notmuch-show-mode-map (kbd "d") (notmuch-show-make-tagger "trash" "inbox"))
   (define-key notmuch-tree-mode-map (kbd "d") (notmuch-tree-make-tagger "trash" "inbox"))
 
+  (define-key notmuch-search-mode-map (kbd "D") (notmuch-search-make-tagger "list/trash"))
+  (define-key notmuch-show-mode-map (kbd "D") (notmuch-show-make-tagger "list/trash"))
+  (define-key notmuch-tree-mode-map (kbd "D") (notmuch-tree-make-tagger "list/trash"))
+
   (defun my/notmuch-tree-message-push-button ()
     (interactive)
     (when (window-live-p notmuch-tree-message-window)
@@ -212,6 +216,10 @@
    consult-notmuch-latest consult-notmuch-latest-tree
    consult-notmuch consult-notmuch-tree
    (list :debounce 0.4 'any))
+  (define-advice consult-notmuch--command
+      (:filter-return (result) limit-count)
+    (append (cl-subseq result 0 2)
+           '("--limit=20") (cl-subseq result 2)))
   (defun consult-notmuch-latest (&optional arg)
     (interactive "P")
     (let ((consult-async-input-debounce 0.6)
@@ -308,10 +316,10 @@
          ("C-c C-w" . my/notmuch-kill-web-url))
   :config
   (defvar my-notmuch-web-urls-alist
-    '(("<emacs-orgmode@gnu.org>"      . "https://list.orgmode.org/")
-      ("<emacs-devel@gnu.org>"        . "https://yhetil.org/emacs-devel/")
-      ("<comment@noreply.github.com>" . "https://github.com/")
-      ("<mention@noreply.github.com>" . "https://github.com/"))
+    '(("emacs-orgmode@gnu.org"      . "https://list.orgmode.org/")
+      ("emacs-devel@gnu.org"        . "https://yhetil.org/emacs-devel/")
+      ("comment@noreply.github.com" . "https://github.com/")
+      ("mention@noreply.github.com" . "https://github.com/"))
     "List of email addresses and web links for corresponding mailing lists.")
   (defun my/notmuch-browse-externally ()
     "If a web url is found for this email, open it in a browser."

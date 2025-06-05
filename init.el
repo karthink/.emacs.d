@@ -1891,6 +1891,35 @@ If region is active, add its contents to the new buffer."
 ;;                                       (replace-regexp-in-string regex replacement
 ;;                                                                 string rest)))))
 
+(use-package emacs
+  :when (executable-find "tesseract")
+  :config
+  (defun tesseract-file (&optional files)
+    "Run tesseract on FILE, with output to kill ring.
+
+If no FILE is specified get its path from the kill ring."
+    (interactive (list
+                  (cond ((derived-mode-p 'dired-mode) (dired-get-marked-files))
+                        (t (read-file-name "File to tesseract: ")))))
+    (let ((output-buf (generate-new-buffer " tesseract-out" t)))
+      (dolist (f (ensure-list files))
+        (if (not (file-readable-p f))
+            (message "File %s not readable"
+                     (truncate-string-to-width f 40))
+          (let ((status (call-process "tesseract" nil
+                                      `(,output-buf nil) t f "-")))
+            (if (not (= status 0))
+                (message "Tesseract failed on %s!" f)))))
+      (with-current-buffer output-buf
+        (kill-new (buffer-string))
+        (kill-buffer (current-buffer))
+        (message "Copied Tesseract output to kill-ring"))))
+
+  (defun tesseract-clipboard ()
+    "Run tesseract on file path from kill-ring."
+    (interactive)
+    (tesseract-file (string-trim (current-kill 0 t)))))
+
 ;;;################################################################
 ;; * COMPILATION
 ;;;################################################################

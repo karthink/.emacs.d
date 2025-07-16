@@ -16,7 +16,10 @@
    ;; ("s-S-U" . tab-bar-history-forward)
    :map tab-prefix-map
    ("h" . my/tab-bar-show-hide-tabs)
-   ("H-t" . tab-bar-select-tab-by-name))
+   ("H-t" . tab-bar-select-tab-by-name)
+   :map tab-bar-mode-map
+   ("C-<tab>" . nil)
+   ("C-S-<iso-lefttab>" . nil))
   :custom-face
   (tab-bar-tab ((t (:inherit font-lock-function-name-face))))
   :config
@@ -126,7 +129,6 @@
 ;; Show a list of the tabs in the echo area when switching tabs. Disabled since
 ;; I've taken to showing the tab-bar instead
 (use-package tab-bar-echo-area
-  :if (version< emacs-version "28.0")
   :ensure t
   :after tab-bar
   :init

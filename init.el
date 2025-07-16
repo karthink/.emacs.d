@@ -1092,7 +1092,7 @@ for details."
   :when (daemonp)
   :ensure t
   :init
-  (setq activities-mode-idle-frequency 45)
+  (setq activities-mode-idle-frequency 10)
   (activities-tabs-mode))
 
 (use-package activities

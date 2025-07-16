@@ -144,4 +144,31 @@
   :config
   (setq org-roam-ui-sync-theme t))
 
+(use-package org-node
+  :ensure t
+  :bind-keymap (("C-c k" . org-node-global-prefix-map))
+  :config
+  (setq org-mem-do-sync-with-org-id t
+        org-mem-watch-dirs '("~/org/" "~/Documents/roam/"))
+  (org-mem-updater-mode)
+  (org-node-cache-mode)
+  (org-node-roam-accelerator-mode)
+  (setq org-node-creation-fn #'org-node-new-via-roam-capture)
+  (setq org-node-file-slug-fn #'org-node-slugify-like-roam-default)
+  (setq org-node-file-timestamp-format "%Y%m%d%H%M%S-")
+  (defun my/org-agenda-files-update (&rest _)
+    (setq org-agenda-files
+          (cl-loop
+           for file in (org-mem-all-files)
+           unless (string-search "archive" file)
+           when (seq-find (lambda (entry)
+                            (or (org-mem-entry-active-timestamps entry)
+                                ;; (org-mem-entry-todo-state entry)
+                                (org-mem-entry-scheduled entry)
+                                (org-mem-entry-deadline entry)))
+                          (org-mem-entries-in file))
+           collect file)))
+  (add-hook 'org-mem-post-full-scan-functions
+            #'my/org-agenda-files-update))
+
 (provide 'setup-roam)

@@ -2046,8 +2046,8 @@ If no FILE is specified get its path from the kill ring."
     (setq eldoc-documentation-strategy
           'eldoc-documentation-compose-eagerly))
   ;; (setq eglot-put-doc-in-help-buffer nil)
-  (setq eglot-events-buffer-size 0
-        eglot-report-progress nil)
+  ;; (setq eglot-events-buffer-size 0
+  ;;       eglot-report-progress nil)
   (setq eglot-extend-to-xref t)
   (add-to-list 'eglot-server-programs
                '(beancount-mode . ("beancount-language-server" "--stdio")))
@@ -2069,6 +2069,7 @@ If no FILE is specified get its path from the kill ring."
   :ensure (:host github
            :repo "jdtsmith/eglot-booster")
   :if (executable-find "emacs-lsp-booster")
+  :custom (eglot-booster-io-only t)
   :after eglot
   :init (eglot-booster-mode))
 

@@ -3835,7 +3835,6 @@ _d_: subtree
 ;;;################################################################
 ;; ** TRAMP
 ;;;################################################################
-;; Tramp ssh'es into root@host to edit files. The emacs sudo, kindof.
 (use-package tramp
   :commands (sudo-find-file sudo-this-file)
   :bind ("C-x C-S-f" . sudo-find-file)
@@ -3863,6 +3862,16 @@ _d_: subtree
   (setq tramp-persistency-file-name
         (dir-concat user-cache-directory "tramp"))
   (setq tramp-verbose 1)
+  (setq remote-file-name-inhibit-locks t
+        remote-file-name-inhibit-auto-save-visited t
+        tramp-copy-size-limit (* 1024 1024))
+  (connection-local-set-profile-variables
+   'remote-direct-async-process '((tramp-direct-async-process . t)))
+  (connection-local-set-profiles
+   '(:application tramp :protocol "scp") 'remote-direct-async-process)
+  (with-eval-after-load 'compile
+    (remove-hook 'compilation-mode-hook
+                 #'tramp-compile-disable-ssh-controlmaster-options))
   (with-eval-after-load 'vc
     (setq vc-ignore-dir-regexp
           (format "%s\\|%s"

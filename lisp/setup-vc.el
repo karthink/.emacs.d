@@ -272,6 +272,7 @@ project, as defined by `vc-root-dir'."
   ;;   (define-key keymap (kbd "C-TAB") nil)
   ;;   (define-key keymap (kbd "C-<tab>") nil))
   (setq magit-diff-refine-hunk t)
+  (setq magit-tramp-pipe-stty-settings 'pty)
   (use-package magit-section
     :bind (:map magit-section-mode-map
            ("," . magit-section-up))

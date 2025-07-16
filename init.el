@@ -1974,6 +1974,10 @@ If no FILE is specified get its path from the kill ring."
 (when IS-GUIX
   (load-library "nix-mode-autoloads")
   (load-library "nix-modeline-autoloads"))
+
+(use-package nix-mode
+  :hook ((nix-mode . electric-pair-local-mode)))
+
 ;; ** MARKDOWN
 ;;;----------------------------------------------------------------
 (use-package markdown-mode :ensure t :defer)
@@ -2871,6 +2875,7 @@ current buffer without truncation."
   )
 
 (use-package dumb-jump
+  :disabled
   :ensure t
   ;; :after xref
   :init (add-hook 'xref-backend-functions #'dumb-jump-xref-activate)
@@ -3114,9 +3119,15 @@ normally have their errors suppressed."
                         nil :local))))
 
 (use-package flymake-proselint
+  :disabled
   :ensure t
   :after flymake
   :hook ((markdown-mode org-mode text-mode) . flymake-proselint-setup))
+
+(use-package flymake-vale
+  :ensure (:host github :repo "tpeacock19/flymake-vale")
+  :after flymake
+  :hook ((markdown-mode org-mode text-mode) . flymake-vale-load))
 
 ;;;----------------------------------------------------------------
 ;; ** BROWSE-URL

@@ -233,6 +233,8 @@
          ("C-M-1" . same-window-prefix)
          ("C-M-5" . other-frame-prefix)
          ("C-M-6" . other-tab-prefix)
+         ("H-v"   . scroll-other-window)
+         ("H-V" . scroll-other-window-down)
          :map isearch-mode-map
          ("H-s" . isearch-repeat-forward)
          ("H-r" . isearch-repeat-backward)
@@ -306,6 +308,38 @@
   :config
   (setq repeat-help-key "<f1>"
         repeat-help-popup-type 'embark))
+
+(use-package repeat-help
+  :disabled                             ;doesn't work with repeat-help yet
+  :config
+  ;; From JDTSmith https://gist.github.com/jdtsmith/a169362879388bc1bdf2bbb977782d4f
+  (let ((orig (default-value 'repeat-echo-function))
+	rcol ccol in-repeat)
+    (setq
+     repeat-echo-function
+     (lambda (map)
+       (if orig (funcall orig map))
+       (unless rcol (setq rcol (face-foreground 'error)))
+       (if map
+	   (unless in-repeat		; new repeat sequence
+	     (setq in-repeat t
+		   ccol (face-background 'cursor))
+	     (set-frame-parameter nil 'my/repeat-cursor ccol))
+	 (setq in-repeat nil)
+	 (set-frame-parameter nil 'my/repeat-cursor nil))
+       (set-cursor-color (if map rcol ccol))))
+
+    (add-function
+     :after after-focus-change-function
+     (let ((sym 'my/remove-repeat-cursor-color-on-focus-change))
+       (defalias sym
+	 (lambda ()
+	   (when in-repeat
+	     (dolist (frame (frame-list))
+	       (when-let ((col (frame-parameter frame 'my/repeat-cursor)))
+		 (with-selected-frame frame
+		   (set-cursor-color col)))))))
+       sym))))
 
 
 

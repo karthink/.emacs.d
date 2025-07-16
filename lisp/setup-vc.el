@@ -281,6 +281,14 @@ project, as defined by `vc-root-dir'."
           '((stashes . hide)
             ([file unstaged status] . hide)))))
 
+(use-package git-commit
+  :after magit
+  :hook (git-commit-setup . my/git-commit-fill)
+  :config
+  (setq git-commit-summary-max-length 54
+        git-commit-use-local-message-ring t)
+  (defun my/git-commit-fill () (setq fill-column 66)))
+
 (use-package orgit :ensure t :defer)
 
 ;; (if IS-GUIX
@@ -290,13 +298,20 @@ project, as defined by `vc-root-dir'."
 (use-package forge
   :ensure t
   :defer
+  :hook ((forge-post-mode . jinx-mode))
   :config
+  (remove-hook 'forge-post-mode-hook 'turn-on-flyspell)
   (auth-source-pass-enable)
-  (setq forge-database-file
+  (setq forge-bug-reference-remote-files nil
+        forge-database-file
         (dir-concat user-cache-directory "forge-database.sqlite")
         forge-owned-accounts '(("karthink"))))
 
 (use-package orgit-forge :ensure t :defer)
+
+(use-package git-link :ensure t :defer)
+
+(use-package pr-review :ensure t :defer)
 
 ;; Misc git functions
 (use-package emacs

@@ -819,6 +819,7 @@ for details."
             ;; (backward-char 1)
             (exchange-point-and-mark))
         (er/mark-outside-pairs)))
+    ;; TODO: Replace with setq-mode-local
     (defun er/set-latex-mode-expansions ()
       (make-variable-buffer-local 'er/try-expand-list)
       (setq er/try-expand-list
@@ -1263,7 +1264,7 @@ Also kill this window, tab or frame if necessary."
                   messages-buffer-mode)
                 '(("^\\*Warnings\\*$" . hide)
                   ("^\\*Compile-Log\\*$" . hide)
-                  "^\\*Matlab Help.*\\*$"
+                  ;; "^\\*Matlab Help.*\\*$"
                   ;; "^\\*Messages\\*$"
                   "^\\*Backtrace\\*"
                   "^\\*evil-registers\\*"
@@ -1275,7 +1276,7 @@ Also kill this window, tab or frame if necessary."
                   "^\\*TeX Help\\*"
                   "^\\*gptel-ask\\*"
                   "\\*Shell Command Output\\*"
-                  ("\\*Async Shell Command\\*" . hide)
+                  "\\*Async Shell Command\\*"
                   ("\\*Detached Shell Command\\*" . hide)
                   "\\*Completions\\*"
                   ;; "\\*scratch.*\\*$"
@@ -1442,7 +1443,7 @@ display names.")
           (my/previous-buffer)
           (setq prefix-arg current-prefix-arg))
       (dotimes (or (abs (prefix-numeric-value arg)) 1)
-      (my/switch-buffer-1 #'previous-buffer))))
+        (my/switch-buffer-1 #'previous-buffer))))
   (defun my/switch-buffer-1 (switch)
     "Switch to the next user buffer in cyclic order.
 User buffers are those not starting with *."
@@ -1452,7 +1453,7 @@ User buffers are those not starting with *."
                   (member (buffer-local-value 'popper-popup-status (current-buffer))
                           '(popup user-popup)))
         (setq i (1+ i)) (funcall switch))))
-  
+
   (define-key global-map (kbd "C-x C-p") #'my/previous-buffer)
   (define-key global-map (kbd "C-x C-n") #'my/next-buffer)
   (define-key global-map (kbd "C-x n g") #'set-goal-column)
@@ -1461,18 +1462,18 @@ User buffers are those not starting with *."
       (define-key map (kbd "n") #'my/next-buffer)
       (define-key map (kbd "p") #'my/previous-buffer)
       (define-key map (kbd "b")
-        (defun my/switch-buffer ()
-          "Switch to consult-buffer"
-               (interactive)
-               (run-at-time
-                0 nil
-                (lambda (&optional arg)
-                  (interactive "P")
-                  (if-let (((equal arg '(4)))
-                           (win (other-window-for-scrolling)))
-                      (with-selected-window win (consult-buffer))
-                    (consult-buffer)))
-                current-prefix-arg)))
+                  (defun my/switch-buffer ()
+                    "Switch to consult-buffer"
+                    (interactive)
+                    (run-at-time
+                     0 nil
+                     (lambda (&optional arg)
+                       (interactive "P")
+                       (if-let (((equal arg '(4)))
+                                (win (other-window-for-scrolling)))
+                           (with-selected-window win (consult-buffer))
+                         (consult-buffer)))
+                     current-prefix-arg)))
       map))
   (map-keymap
    (lambda (_ cmd) (put cmd 'repeat-map 'my/buffer-cycle-map))
@@ -3248,7 +3249,7 @@ normally have their errors suppressed."
       ("vl" "visual lines" visual-line-mode)
       ("vt" "trunc lines" toggle-truncate-lines)
       ("vo" "olivetti"    olivetti-mode)
-      ("vf" "visual fill" visual-fill-column-mode)]
+      ("vf" "visual fill" visual-line-fill-column-mode)]
 
      ["Org"
       :if-derived org-mode
@@ -4334,6 +4335,7 @@ ARGS is the raw argument list (STRING &optional TRANS-CASE)."
 ;; ---------------------------
 
 (use-package emacs
+  :no-require t
   :bind (("C-c SPC" . my/easy-page))
   :config
   (defvar-keymap my-pager-map
@@ -4605,7 +4607,7 @@ the mode-line and switches to `variable-pitch-mode'."
 ;; into a gif.
 (use-package keycast
   :ensure t
-  :commands keycast-mode
+  :defer
   :config
   (setq keycast-separator-width 1)
   (dolist (input '(self-insert-command

@@ -47,10 +47,31 @@ Code stolen from `TeX-region-create'."
           (if (not (re-search-forward TeX-header-end nil t))
               ""
             (re-search-backward TeX-header-end nil t)
-            (string-replace
-             "\\pdfoutput=1"            ; HACK
-             ""
-             (buffer-substring-no-properties (point-min) (point)))))))))
+            (let ((pre (buffer-substring-no-properties (point-min) (point))))
+              (with-temp-buffer
+                (insert pre)
+                (goto-char (point-min))
+                (when (search-forward "\\pdfoutput=1" nil t)
+                  (replace-match ""))
+                (goto-char (point-min))
+                (when (search-forward "hyperref" nil t)
+                  (delete-line))
+                (goto-char (point-min))
+                (when (search-forward "\\hypersetup" nil t)
+                  (delete-region (line-beginning-position) (point))
+                  (let ((p (point)))
+                    (forward-sexp)
+                    (delete-region (point) p)))
+                (goto-char (point-min))
+                (when (search-forward "\\urlstyle")
+                  (backward-kill-sexp)
+                  (kill-sexp))
+                (buffer-string))
+              ;; (string-replace
+              ;;  "\\pdfoutput=1"          ; HACK
+              ;;  ""
+              ;;  pre)
+              )))))))
 
 (defconst latex-latex-preview--start-strings
   '(("\\$\\$" . "$$")

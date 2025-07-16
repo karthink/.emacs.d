@@ -65,6 +65,9 @@
                 ;; org-indent-indentation-per-level 2 
                 org-return-follows-link t)
   
+  ;; Debugging
+  (setq org-element--cache-self-verify 'backtrace)
+
   ;; My defaults
   (setq org-file-apps '((auto-mode . emacs)
                         ("\\.mm\\'" . default)
@@ -529,9 +532,8 @@ appropriate.  In tables, insert a new row or end the table."
   :config
   ;; (setq org-element-use-cache nil)
   (setq org-latex-preview-auto-ignored-commands
-        '(next-line previous-line
-          mwheel-scroll pixel-scroll-precision
-          scroll-up-command scroll-down-command
+        '(next-line previous-line ultra-scroll
+          mwheel-scroll scroll-up-command scroll-down-command
           scroll-other-window scroll-other-window-down))
   (plist-put org-latex-preview-appearance-options
              :matchers '("begin" "\\(" "\\["))
@@ -2164,6 +2166,7 @@ Whichever was already active."
                            :follow #'org-xopp-link-open
                            :export #'org-xopp-export-figure
                            :preview #'my/org-xopp-preview-file)
+  (setq org-xopp-imagemagick-extra-args (list "-resize" "x420"))
   (define-advice org-xopp-open-xournalpp
       (:override (xopp-filepath) extra-cmdline-args)
     (start-process "xournalpp" nil "xournalpp"
@@ -2257,7 +2260,8 @@ Whichever was already active."
          ("C-c o w" . org-ql-refile)
          :map org-mode-map
          ("C-c o w" . org-ql-refile)
-         ("C-c o f" . org-ql-find))
+         ("C-c o f" . org-ql-find)
+         ("C-c o /" . org-ql-sparse-tree))
   :config
   (use-package org-ql-view
     :bind (:map org-ql-view-map

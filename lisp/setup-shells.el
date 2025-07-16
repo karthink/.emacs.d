@@ -604,7 +604,6 @@ send a notification when the process has exited."
 (use-package shell
   :defer
   :config
-  (setq async-shell-command-buffer 'new-buffer)
   (defun zsh-shell-mode-setup ()
     ;; (setq-local shell-prompt-pattern "^[^#$%\n]*[#$%>❯] *" )
     (setq-local comint-process-echoes t))
@@ -653,6 +652,11 @@ output instead."
                (ansi-color-apply
                 (shell-command-to-string command))))
       (exchange-point-and-mark))))
+
+(use-package simple
+  :config
+  (setq async-shell-command-display-buffer nil
+        async-shell-command-buffer 'new-buffer))
 
 ;; ** COMINT EXTRAS
 

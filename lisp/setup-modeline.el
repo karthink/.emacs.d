@@ -1,3 +1,5 @@
+;; -*- lexical-binding: t; -*-
+
 (define-minor-mode my/mode-line-hidden-mode
     "Toggle modeline visibility in the current buffer."
     :init-value nil
@@ -98,8 +100,8 @@
 
 ;; Disable help mouse-overs for mode-line segments (i.e. :help-echo text).
 ;; They're generally unhelpful and only add confusing visual clutter.
-(setq mode-line-default-help-echo nil
-      show-help-function nil)
+;; (setq mode-line-default-help-echo nil
+;;       show-help-function nil)
 
 (defvar mode-line-cleaner-alist
   `((company-mode . " ⇝")
@@ -130,8 +132,8 @@
     (dot-mode . "")
     (scheme-mode . " SCM")
     (matlab-mode . "M")
-    (org-mode . " ORG";; "⦿"
-              )
+    (org-mode . " ORG" ;; "⦿"
+     )
     (valign-mode . "")
     (eldoc-mode . "")
     (org-cdlatex-mode . "")
@@ -141,7 +143,7 @@
     (visual-line-mode . "")
     (latex-mode . "TeX")
     (outline-minor-mode . " ֍" ;; " [o]"
-                        )
+     )
     (hs-minor-mode . "")
     (matlab-functions-have-end-minor-mode . "")
     (org-roam-ui-mode . " UI")
@@ -150,7 +152,7 @@
     (evil-traces-mode . "")
     (latex-extra-mode . "")
     (strokes-mode . "")
-    (flymake-mode . "fly")
+    (flymake-mode . " fly")
     (sideline-mode . "")
     (god-mode . ,(propertize "God" 'face 'success))
     (gcmh-mode . ""))
@@ -172,7 +174,7 @@
                   (setq mode-name mode-str)))))
 
 
-(add-hook 'after-change-major-mode-hook 'clean-mode-line)
+;; (add-hook 'after-change-major-mode-hook 'clean-mode-line)
 
 ;; (display-time-mode 1)
 

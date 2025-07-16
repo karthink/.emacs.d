@@ -1,4 +1,5 @@
-;;;----------------------------------------------------------------
+;; -*- lexical-binding: t; -*-
+;;;---------------------------------------------------------------- 
 ;; * OUTLINE MODE
 ;;;----------------------------------------------------------------
 ;; :PROPERTIES:
@@ -6,6 +7,7 @@
 ;; :END:
 
 (use-package outline
+  :diminish (outline-minor-mode . " ֍")
   :bind (:map outline-minor-mode-map
               ("TAB" . outline-cycle)
               ("<tab>" . outline-cycle)

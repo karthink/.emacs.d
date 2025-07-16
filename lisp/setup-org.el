@@ -24,6 +24,7 @@
          :map org-link-navigation-repeat-map
          ("v" . org-link-preview))
 
+  :diminish org-cdlatex-mode
   :hook ((org-mode . turn-on-org-cdlatex)
          (org-cdlatex-mode . my/org-cdlatex-settings)
          (org-mode . er/add-latex-in-org-mode-expansions))

@@ -203,6 +203,7 @@
     (use-package gcmh
       :defer 2
       :ensure t
+      :diminish
       ;; :hook (after-init . gcmh-mode)
       :config
       (defun gcmh-register-idle-gc ()
@@ -309,7 +310,18 @@ Cancel the previous one if present."
 ;;;################################################################
 ;; * MODELINE
 ;;;################################################################
-(load (expand-file-name "lisp/setup-modeline" user-emacs-directory))
+(use-package emacs
+  :preface
+  (define-minor-mode my/mode-line-hidden-mode
+    "Toggle modeline visibility in the current buffer."
+    :init-value nil
+    :global nil
+    (if my/mode-line-hidden-mode
+        (setq-local mode-line-format nil)
+      (kill-local-variable 'mode-line-format)
+      (force-mode-line-update))))
+
+(use-package diminish :ensure t)
 
 ;; ----------------------------------------------------------------
 ;; #+INCLUDE: "./lisp/setup-modeline.org" :minlevel 2
@@ -1676,11 +1688,9 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
 ;;----------------------------------------------------------------
 
 (use-package autorevert
-  :hook ((prog-mode
-          text-mode
-          tex-mode
-          org-mode
-          conf-mode) . auto-revert-mode))
+  :diminish auto-revert-mode
+  :hook ((prog-mode text-mode tex-mode org-mode conf-mode)
+         . auto-revert-mode))
 
 ;;----------------------------------------------------------------
 ;; ** Re-Builder
@@ -2288,6 +2298,7 @@ current buffer without truncation."
                  normal-indent)))))))
 
 (use-package isayt
+  :diminish
   :ensure (:host gitlab :repo "andreyorst/isayt.el" :protocol https)
   :hook ((lisp-mode emacs-lisp-mode lisp-interaction-mode) . isayt-mode))
 
@@ -3080,6 +3091,7 @@ normally have their errors suppressed."
 
 (use-package sideline-flymake
   :ensure t
+  :diminish sideline-mode
   :hook (flymake-mode . sideline-mode)
   :init
   (setq sideline-flymake-display-mode 'point) 
@@ -3666,6 +3678,7 @@ _d_: subtree
 ;; ** ABBREV MODE
 ;;;----------------------------------------------------------------
 (use-package abbrev
+  :diminish
   :hook ((prog-mode text-mode) . abbrev-mode)
   :config
   ;; (setq abbrev-file-name (expand-file-name (dir-concat user-cache-directory "abbvev-defs")))
@@ -3686,6 +3699,7 @@ _d_: subtree
 
 (use-package smartparens
   :ensure t
+  :diminish "()"
   :hook ((emacs-lisp-mode
           lisp-interaction-mode
           fennel-mode scheme-mode
@@ -3805,6 +3819,7 @@ _d_: subtree
 ;;;----------------------------------------------------------------
 (use-package wrap-region
   :ensure t
+  :diminish
   :hook (((text-mode tex-mode conf-mode) . wrap-region-mode)
          (wrap-region-mode . (lambda () (wrap-region-remove-wrapper "'"))))
   :config
@@ -3858,6 +3873,7 @@ _d_: subtree
 ;;----------------------------------------------------------------
 (use-package dot-mode
   :ensure t
+  :diminish " ·"
   :commands dot-mode
   :bind (:map dot-mode-map
          ("C-c ." . nil)

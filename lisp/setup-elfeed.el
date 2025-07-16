@@ -91,10 +91,40 @@
   (keymap-set elfeed-search-mode-map
               "M-p" (elfeed-search-show-entry-pre -1))
   
+  ;; TODO: This code causes Elfeed to hang(?)
+  ;; ;; Idempotent version so consolidated queues don't get reprocessed into the
+  ;; ;; wrong shape
+  ;; (defun elfeed-curl--queue-consolidate (queue-in)
+  ;;     "Group compatible requests together and return a new queue.
+  ;; Compatible means the requests have the same protocol, domain,
+  ;; port, headers, method, and body, allowing them to be used safely
+  ;; in the same curl invocation."
+  ;;     ;; (elfeed-log 'info "queue-in: %S" queue-in)
+  ;;     (let ((table (make-hash-table :test 'equal))
+  ;;           (keys ())
+  ;;           (queue-out ()))
+  ;;       (dolist (entry queue-in)
+  ;;         (cl-destructuring-bind (url _ headers method data) entry
+  ;;           (let* ((key (elfeed-curl--request-key url headers method data)))
+  ;;             (push key keys)
+  ;;             (push entry (gethash key table nil)))))
+  ;;       (dolist (key (nreverse keys))
+  ;;         (let ((entry (gethash key table)))
+  ;;           (when entry
+  ;;             (let ((rotated (list (nreverse (flatten-tree (cl-mapcar #'car entry)))
+  ;;                                  (nreverse (flatten-tree (cl-mapcar #'cadr entry)))
+  ;;                                  (cl-caddar entry)
+  ;;                                  (elt (car entry) 3)
+  ;;                                  (elt (car entry) 4))))
+  ;;               (push rotated queue-out)
+  ;;               (setf (gethash key table) nil)))))
+  ;;       ;; (elfeed-log 'info "queue-out: %S" queue-out)
+  ;;       (nreverse queue-out)))
+
   (defun my/elfeed-search-imenu ()
     (interactive)
     (elfeed-with-open-entry
-     (consult-imenu)))
+      (consult-imenu)))
   
   (defun elfeed-search-eww-open (&optional use-generic-p)
     "Visit the current entry in your browser using `eww'."
@@ -267,7 +297,7 @@ ENQUEUE-P) add to mpv's playlist."
                      (cond
                       ((member word '("AND" "OR" "IF" "ON" "IT" "TO"
                                       "A" "OF" "VS" "IN" "FOR" "WAS"
-                                      "IS" "BE" "SO" "BY"))
+                                      "IS" "BE" "SO" "BY" "ARE"))
                        (downcase word))
                       ((member word '("WE" "DAY" "HOW" "WHY" "NOW" "OLD"
                                       "NEW" "MY" "TOO" "GOT" "GET" "THE"

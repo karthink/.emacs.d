@@ -14,29 +14,29 @@
       load-prefer-newer t)
 
 (unless (or (daemonp) noninteractive)
-  (let ((old-file-name-handler-alist file-name-handler-alist))
-    ;; `file-name-handler-alist' is consulted on each `require', `load' and
-    ;; various path/io functions. You get a minor speed up by unsetting this.
-    ;; Some warning, however: this could cause problems on builds of Emacs where
-    ;; its site lisp files aren't byte-compiled and we're forced to load the
-    ;; *.el.gz files (e.g. on Alpine).
-    (setq-default file-name-handler-alist nil)
-    ;; ...but restore `file-name-handler-alist' later, because it is needed for
-    ;; handling encrypted or compressed files, among other things.
-    (defun my/reset-file-handler-alist ()
-      (setq file-name-handler-alist
-            ;; Merge instead of overwrite because there may have bene changes to
-            ;; `file-name-handler-alist' since startup we want to preserve.
-            (delete-dups (append file-name-handler-alist
-                                 old-file-name-handler-alist))))
-    (add-hook 'emacs-startup-hook #'my/reset-file-handler-alist 101))
-
+  (let ((orig-handlers (default-toplevel-value 'file-name-handler-alist)))
+    (set-default-toplevel-value
+     'file-name-handler-alist
+     (if (eval-when-compile
+           (locate-file-internal "calc-loaddefs.el" load-path))
+         nil
+       (list (rassq 'jka-compr-handler orig-handlers))))
+    (set-default-toplevel-value 'file-name-handler-alist
+                                file-name-handler-alist)
+    ;; Reset after startup
+    (add-hook 'emacs-startup-hook
+              (lambda ()
+                (set-default-toplevel-value
+                 'file-name-handler-alist
+                 ;; Merge instead of overwrite to preserve any changes made
+                 ;; since startup.
+                 (delete-dups (append file-name-handler-alist orig-handlers))))
+              101))
   (setq-default inhibit-redisplay t
                 inhibit-message t)
   (add-hook 'window-setup-hook
-            (lambda ()
-              (setq-default inhibit-redisplay nil
-                            inhibit-message nil)
+            (lambda () (setq-default inhibit-redisplay nil
+                                inhibit-message nil)
               (redisplay)))
 
   ;; Site files tend to use `load-file', which emits "Loading X..." messages in
@@ -55,19 +55,33 @@
 (push '(menu-bar-lines . 0) default-frame-alist)
 (push '(tool-bar-lines . 0) default-frame-alist)
 (push '(vertical-scroll-bars) default-frame-alist)
+(push '(horizontal-scroll-bars) default-frame-alist)
+(when (fboundp 'horizontal-scroll-bar-mode)
+  (horizontal-scroll-bar-mode -1))
 
 (setq frame-inhibit-implied-resize t)
+(setq auto-mode-case-fold nil)
+(setq jka-compr-verbose nil)
+(setq bidi-inhibit-bpa t)
 
-;; Ignore X resources; its settings would be redundant with the other settings
-;; in this file and can conflict with later config (particularly where the
-;; cursor color is concerned).
-;;; (advice-add #'x-apply-session-resources :override #'ignore)
-;; (setq inhibit-x-resources nil)
+;; NOTE: High memory usage, watch out
+;; (setq inhibit-compacting-font-caches t)
+
+;; (advice-add #'x-apply-session-resources :override #'ignore)
+(setq inhibit-x-resources t
+      inhibit-startup-buffer-menu t
+      initial-buffer-choice t)
+(setq inhibit-startup-message t
+      inhibit-splash-screen t
+      inhibit-startup-echo-area-message user-login-name
+      inhibit-default-init t
+      initial-major-mode 'fundamental-mode
+      initial-scratch-message nil)
+(advice-add #'display-startup-screen :override #'ignore)
+(fset #'display-startup-echo-area-message #'ignore)
 
 ;; * NATIVE-COMP
 
-;; I'm still using Emacs 27.2, because it's good enough. This code configures
-;; the native compiler and is in preparation for 28.1.
 ;; - Move eln files to a cache dir
 ;; - Don't bombard the user with warnings
 ;; - Compile packages on install, not at runtime

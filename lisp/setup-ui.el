@@ -1,13 +1,3 @@
-;; Get rid of the splash screen, and make the *scratch* buffer suitable for
-;; writing.
-(setq inhibit-startup-message t
-      inhibit-splash-screen t
-      inhibit-startup-echo-area-message user-login-name
-      inhibit-default-init t
-      initial-major-mode 'fundamental-mode
-      initial-scratch-message nil)
-(fset #'display-startup-echo-area-message #'ignore)
-
 ;; Stop the cursor from blinking.
 (blink-cursor-mode 0)
 ;; No fat cursors.

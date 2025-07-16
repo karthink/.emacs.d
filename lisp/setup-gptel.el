@@ -375,6 +375,22 @@ Do not repeat any of the BEFORE or AFTER code." lang lang lang)
          ("?" . gptel-quick)))
 
 ;;----------------------------------------------------------------
+;; ** flymake-gptel
+;;----------------------------------------------------------------
+(use-package flymake-gptel
+  :ensure (:host github :protocol ssh
+           :repo "karthink/flymake-gptel")
+  :bind (:map flymake-gptel-repeat-map
+         ("SPC" . flymake-gptel-accept-and-next))
+  :config
+  (put 'flymake-gptel-accept-and-next
+       'repeat-map 'flymake-gptel-repeat-map)
+  (defun flymake-gptel-accept-and-next ()
+    (interactive)
+    (flymake-gptel-accept (point))
+    (flymake-gptel-next)))
+
+;;----------------------------------------------------------------
 ;; ** Project-specific chat file
 ;;----------------------------------------------------------------
 (use-package project

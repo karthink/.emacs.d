@@ -1981,7 +1981,30 @@ If no FILE is specified get its path from the kill ring."
 ;; ** MARKDOWN
 ;;;----------------------------------------------------------------
 (use-package markdown-mode :ensure t :defer)
-(use-package edit-indirect :ensure t :defer)
+(use-package edit-indirect
+  :ensure t
+  :bind ( :map mode-specific-map
+          ("'" . my/edit-indirect-region)
+          :map edit-indirect-mode-map
+          ("C-c C-c" . nil))
+  :config
+  (setq edit-indirect-guess-mode-function
+        'my/edit-indirect-guess-mode-function)
+  (defun my/edit-indirect-region (rb re disp)
+    (interactive (list (region-beginning) (region-end) t))
+    (edit-indirect-region rb re disp))
+  (defun my/edit-indirect-guess-mode-function (parent rb re)
+    "Heuristic to set major mode when using edit-indirect"
+    (let ((pmode (buffer-local-value 'major-mode parent)))
+      (cond
+       ((provided-mode-derived-p pmode 'message-mode) (org-mode))
+       ((with-current-buffer parent
+          (save-excursion
+            (goto-char rb)
+            (skip-chars-forward "\n\r\t ")
+            (eq (char-after) 40)))
+        (lisp-interaction-mode))
+       (t (normal-mode))))))
 
 ;;;----------------------------------------------------------------
 ;; ** LSP SUPPORT

@@ -1865,6 +1865,19 @@ To be used with `imenu-after-jump-hook' or equivalent."
   (defun my/scratch-buffer-setup ()
     "Add contents to `scratch' buffer and name it accordingly.
 If region is active, add its contents to the new buffer."
+    (unless (derived-mode-p
+             'text-mode 'prog-mode 'conf-mode 'tex-mode)
+      (condition-case nil
+          (let ((pick
+                 (read-multiple-choice
+                  "Switch major mode?"
+                  '((?o "org") (?m "markdown")
+                    (?l "lisp-interaction") (?e "elisp")
+                    (?  "Continue")))))
+            (pcase (car pick)
+              (?o (org-mode)) (?m (markdown-mode))
+              (?l (lisp-interaction-mode)) (?e (emacs-lisp-mode))))
+        (quit nil)))
     (let* ((mode major-mode))
       (rename-buffer (format "*Scratch for %s*" mode) t)))
   (setf (alist-get "\\*Scratch for" display-buffer-alist nil nil #'equal)

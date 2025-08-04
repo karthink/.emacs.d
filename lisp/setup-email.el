@@ -47,6 +47,7 @@
          :map notmuch-search-mode-map
          ("RET"   . notmuch-tree-from-search-thread)
          ("M-RET" . notmuch-search-show-thread)
+         ("=" . my/notmuch-search-filter-sender)
          :map notmuch-tree-mode-map
          ("h" . my/notmuch-tree-show-hide-header)
          ("M-s u" . my/notmuch-tree-browse-url)
@@ -93,6 +94,16 @@
 
   (defvar my/notmuch-hide-content-types '("text/x-patch" "text/x-diff"))
 
+  (defun my/notmuch-search-filter-sender (query)
+    (interactive
+     (list (concat
+            "from:\""
+            (seq-first
+             (split-string
+              (plist-get (notmuch-search-get-result) :authors) "|"))
+            "\"")))
+    (notmuch-search-filter query))
+
   (defun my/notmuch-tree-show-hide-header ()
     "Show or hide mail headers."
     (interactive)
@@ -120,7 +131,7 @@
   (defun my/notmuch-tree-show-message-split-sensibly (orig-fn)
     "Split window sensibly when showing messages in notmuch-tree."
     (cl-letf (((symbol-function 'split-window-vertically)
-               (lambda (_) (if (> (frame-width) 160)
+               (lambda (_) (if (> (window-width) 140)
                             (split-window-horizontally
                              (* 2 (floor (window-width) 5)))
                           (split-window-below

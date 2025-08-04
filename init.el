@@ -2485,6 +2485,17 @@ current buffer without truncation."
   :config
   (defvar sticker-list nil)
 
+  (defun sticker-next (&optional arg)
+    (interactive "p")
+    (let ((func (if (< arg 0)
+                    'previous-single-char-property-change
+                  'next-single-char-property-change)))
+      (dotimes (_ (abs arg))
+        (goto-char (funcall func (point) 'sticker))
+        (forward-line 0))))
+
+  (add-hook 'poi-functions #'sticker-next)
+
   (defun sticker (&optional arg label)
     (interactive "P")
     (cl-flet ((store-sticker (beg end)

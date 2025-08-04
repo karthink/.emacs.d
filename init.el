@@ -2664,9 +2664,20 @@ current buffer without truncation."
     (defun my/macrursors-at-avy ()
       (interactive)
       (let* ((avy-all-windows nil)
+             (avy-timeout-seconds 0.40)
              (positions (mapcar #'caar (avy--read-candidates))))
         (when positions
-          (mapc #'macrursors--add-overlay-at-point positions)
+          (when-let* ((buf (overlay-buffer mouse-secondary-overlay))
+                      ((eq buf (current-buffer))))
+            (setq positions
+                  (cl-delete-if-not
+                   (lambda (p) (<= (overlay-start mouse-secondary-overlay)
+                              p (overlay-end mouse-secondary-overlay)))
+                   positions))))
+        (when positions
+          (push-mark)
+          (goto-char (car positions))
+          (mapc #'macrursors--add-overlay-at-point (cdr positions))
           (macrursors-start)))))
   
   :config

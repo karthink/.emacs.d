@@ -175,12 +175,25 @@
 
   (defun avy-action-add-cursor (pt)
     (require 'macrursors)
-    (unwind-protect
-        (progn
-          (macrursors--add-overlay-at-point pt)
-          (kmacro-keyboard-quit)
-          (avy-resume))
-      (macrursors-start)))
+     (unwind-protect
+         (progn
+           (if (or macrursors--overlays
+                   (cl-some
+                    (pcase-lambda (`((,from . ,to) . _))
+                      (<= from (point) to))
+                    avy-last-candidates))
+               (pcase-let* ((`(_ . ,ov) (get-char-property-and-overlay
+                                        pt 'macrursors-type)))
+                 (if (not (overlayp ov)) ;Add or remove a cursor
+                     (macrursors--add-overlay-at-point pt)
+                   (setq macrursors--overlays (delq ov macrursors--overlays))
+                   (delete-overlay ov)))
+             (goto-char pt)             ;jump to first selection
+             (push t macrursors--overlays)) ;to make it non-nil
+           (kmacro-keyboard-quit)
+           (avy-resume))
+       (setq macrursors--overlays (delq t macrursors--overlays))
+       (macrursors-start)))
   
   (defun my/avy-goto-char-this-window (&optional arg)
     "Goto char in this window with hints."

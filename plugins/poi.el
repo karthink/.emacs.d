@@ -41,9 +41,9 @@
 
 (defun poi-next (arg)
   (interactive "p")
-  (let ((next-point (if (> arg 0) (point-max) (point-min)))
+  (let ((final-point (if (> arg 0) (point-max) (point-min)))
         (comparison (if (> arg 0) #'< #'>))
-        (here (point)))
+        next-point (here (point)))
     (run-hook-wrapped
      'poi-functions
      (lambda (func)
@@ -52,11 +52,11 @@
            (condition-case nil (funcall func arg)
              (user-error nil)
              (:success
-              (when (and (funcall comparison (point) next-point)
+              (when (and (funcall comparison (point) (or next-point final-point))
                          (funcall comparison here (point)))
                 (setq poi--choice func
                       next-point (point)))))))))
-    (goto-char next-point)))
+    (if next-point (goto-char next-point) (ding t))))
 
 (defun poi-previous (arg)
   (interactive "p")

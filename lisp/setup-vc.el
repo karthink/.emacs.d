@@ -309,7 +309,26 @@ project, as defined by `vc-root-dir'."
 
 (use-package orgit-forge :ensure t :defer)
 
-(use-package git-link :ensure t :defer)
+(use-package git-link
+  :ensure t
+  :defer
+  :config
+  (defun git-link-tecosaur (hostname dirname filename branch commit start end)
+    (format "https://%s/%s/src/%s/%s"
+	    hostname
+	    dirname
+	    (if commit
+                (format "commit/%s" commit)
+              (format "branch/%s" branch))
+	    (concat filename
+                    (when start
+                      (concat "#"
+                              (if end
+                                  (format "L%s-%s" start end)
+                                (format "L%s" start)))))))
+  (setf (alist-get "git.tecosaur.net" git-link-remote-alist
+                   nil nil #'equal)
+        (list 'git-link-tecosaur)))
 
 (use-package pr-review :ensure t :defer)
 

@@ -1279,6 +1279,7 @@ Also kill this window, tab or frame if necessary."
                   "\\*Async Shell Command\\*"
                   ("\\*Detached Shell Command\\*" . hide)
                   "\\*Completions\\*"
+                  "^\\*Org QL View:notmuch-links\\*$"
                   ;; "\\*scratch.*\\*$"
                   "[Oo]utput\\*")))
 

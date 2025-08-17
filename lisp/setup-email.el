@@ -375,5 +375,64 @@ Uses entries in `my-notmuch-web-urls-alist'."
         (concat (map-elt my-notmuch-web-urls-alist addr-match)
                 id)))))
 
+(use-package org-ql
+  :after notmuch
+  :bind ( :map notmuch-show-mode-map
+          ("/" . my/org-ql-query-email-at-point)
+          :map notmuch-tree-mode-map
+          ("/" . my/org-ql-query-email-at-point)
+          :map notmuch-search-mode-map
+          ("/" . my/org-ql-query-email-at-point))
+  :config
+  (setf (alist-get "^\\*Org QL View:notmuch-links\\*$"
+                   display-buffer-alist nil nil #'equal)
+        '((display-buffer-reuse-window
+           display-buffer-at-bottom)
+          (window-height . 10)
+          (body-function . select-window)))
+  (defun my/org-ql-query-email-at-point (ids tags)
+    "Display Org items with links to Notmuch IDS."
+    (interactive
+     (pcase major-mode
+       ('notmuch-show-mode
+        (list (notmuch-show-get-message-id)
+              (notmuch-show-get-tags)))
+       ('notmuch-tree-mode
+        (list
+         (split-string
+          (notmuch-tree-get-messages-ids-thread-search))
+         (notmuch-tree-get-tags)))
+       ('notmuch-search-mode
+        (let ((res (notmuch-search-get-result)))
+          (list
+           (delete-dups
+            (mapcan #'split-string (delq nil (plist-get res :query))))
+           (plist-get res :tags))))))
+    (let* ((query-ids
+            (cl-loop for id in ids
+                     unless (member id '("or" "and"))
+                     collect (list 'link :target id)))
+           (active-tags
+            (cl-set-difference
+             tags '("inbox" "unread" "important" "new"
+                    "updates" "personal" "replied" "sent")
+             :test 'equal))
+           (query-tags (and active-tags (cons 'tags active-tags)))
+           (query-categories (and active-tags (cons 'category active-tags)))
+           (query (delq nil `(or ,@query-ids ,query-tags ,query-categories)))
+           (headings
+            (org-ql-select org-agenda-files query
+              :action 'element-with-markers
+              :sort '(date reverse todo)))
+          (strings (mapcar #'org-ql-view--format-element headings)))
+      (when headings
+        (org-ql-view--display
+          :buffer (get-buffer-create "*Org QL View:notmuch-links*")
+          :header (org-ql-view--header-line-format
+                   :buffers-files org-agenda-files
+                   :query query
+                   :title org-ql-view-title)
+          :strings strings)))))
+
 
 (provide 'setup-email)

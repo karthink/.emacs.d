@@ -20,7 +20,33 @@
 
 ;;; Commentary:
 
+;; Jump to next/previous Point-Of-Interest
 ;;
+;; This package provides two commands, `poi-next' and `poi-previous' to navigate
+;; between points of interest in the buffer.  A point-of-interest is any
+;; location with some (usually diagnostic) importance.
+;;
+;; To define a point-of-interest, you need a function FUNC that moves point to
+;; the next instance of something, and to the previous instance when called with
+;; an arg of -1.
+;;
+;; Then you can add it as a point-of-interest source via
+;;
+;; (poi-register FUNC)
+;;
+;; For example, here we add three diagnostic sources to poi in the current
+;; buffer:
+;;
+;; (poi-register 'flymake-goto-next-error)
+;; (poi-register 'next-error)
+;; (poi-register 'jinx-next)
+;;
+;; (`poi-register' works buffer-locally, so you will typically want to do this
+;; in a hook.)
+;; 
+;; Now you can use `poi-next' and `poi-previous' to jump to the next/previous
+;; instance of all of these, in the order of increasing/decreasing cursor
+;; position.
 
 ;;; Code:
 (require 'simple)

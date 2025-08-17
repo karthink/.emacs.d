@@ -1,4 +1,4 @@
-;; * SHELL COMPLETION
+;; * SHELL COMPLETION  -*- lexical-binding: t; -*-
 
 ;; ** FISH-COMPLETION
 

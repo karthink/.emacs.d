@@ -3337,7 +3337,7 @@ normally have their errors suppressed."
                               )))
       ("oi" "Indent" org-indent-mode)
       ("on" "Numbers" org-num-mode)
-      ("ol" "LaTeX" org-latex-preview-auto-mode)
+      ("ol" "LaTeX" org-latex-preview-mode)
       ("ow" "CAPF" my/toggle-writing-capf)]
 
      ["Markdown"

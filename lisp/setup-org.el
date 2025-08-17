@@ -473,7 +473,7 @@ appropriate.  In tables, insert a new row or end the table."
    org-startup-folded t
    org-startup-indented nil
    org-startup-with-inline-images nil
-   org-startup-with-latex-preview t
+   org-startup-with-latex-preview nil
    ;; org-highlight-latex-and-related '(latex entities)
    org-highlight-latex-and-related '(latex)
    org-indent-mode-turns-on-hiding-stars nil
@@ -522,16 +522,16 @@ appropriate.  In tables, insert a new row or end the table."
 ;; Settings to do with org-latex-preview
 (use-package org-latex-preview
   :after org
-  :hook ((org-mode . org-latex-preview-auto-mode)
+  :hook (;; (org-mode . org-latex-preview-mode)
          (org-mode . my/org-latex-preview-precompile-idle))
   :bind (:map org-mode-map
          ("C-c C-x SPC" . org-latex-preview-clear-cache)
-         ("C-c i" . my/org-latex-preview-image-at-point)
+         ("C-c i w" . my/org-latex-preview-image-at-point)
          ("M-g m" . my/org-latex-next-env)
          ("M-g M" . my/org-latex-prev-env))
   :config
   ;; (setq org-element-use-cache nil)
-  (setq org-latex-preview-auto-ignored-commands
+  (setq org-latex-preview-mode-ignored-commands
         '(next-line previous-line ultra-scroll
           mwheel-scroll scroll-up-command scroll-down-command
           scroll-other-window scroll-other-window-down))
@@ -559,10 +559,9 @@ appropriate.  In tables, insert a new row or end the table."
 
    org-latex-preview-persist-expiry 30
    org-latex-preview-numbered nil
-   org-latex-preview-live-debounce 0.3
-   ;; org-latex-preview-live-throttle 0.5
-   org-latex-preview-auto-track-inserts t
-   org-latex-preview-live '(block edit-special)
+   org-latex-preview-mode-update-delay 0.3
+   org-latex-preview-mode-track-inserts t
+   org-latex-preview-mode-display-live '(block edit-special)
    org-latex-preview-process-active-indicator nil)
 
   ;; Get the image at point
@@ -619,18 +618,14 @@ appropriate.  In tables, insert a new row or end the table."
     (when (and (buffer-live-p org-buf)
                (window-live-p (get-buffer-window org-buf 'all-frames)))
       (with-current-buffer org-buf
-        (when org-latex-preview-process-precompiled
+        (when org-latex-preview-process-precompile
           (let* ((org-location (org-find-library-dir "org"))
                  (compiler-keywords
                   (org-collect-keywords
                    '("LATEX_PREVIEW_COMPILER" "LATEX_COMPILER")
                    '("LATEX_PREVIEW_COMPILER" "LATEX_COMPILER")))
-                 (compiler
-                  (or (cdr (assoc "LATEX_PREVIEW_COMPILER" compiler-keywords))
-                      (and (boundp 'org-latex-preview-compiler)
-                           org-latex-preview-compiler)
-                      (cdr (assoc "LATEX_COMPILER" compiler-keywords))
-                      org-latex-compiler))
+                 (compiler (or (cdr (assoc "LATEX_COMPILER" compiler-keywords))
+                               org-latex-compiler))
                  (header (concat
                           (or org-latex-preview--preamble-content
                               (org-latex-preview--get-preamble))
@@ -664,53 +659,15 @@ appropriate.  In tables, insert a new row or end the table."
                    ',info ,header
                    ,(expand-file-name preamble-hash temporary-file-directory)))
                `(lambda (dump-file)
-                 (let ((inhibit-message t))
+                  (let ((inhibit-message t))
                    (org-persist--load-index)
                    (cadr
                     (org-persist-register `(,"LaTeX format file cache"
                                             (file ,dump-file))
-                                          (list :key ,preamble-hash)
-                                          :write-immediately t))
+                     (list :key ,preamble-hash)
+                     :write-immediately t))
                    (message "Precompiled in background: %S"
-                            (file-name-base dump-file)))))))))))
-
-  ;; org-html-format-latex from Org 9.6 - this is needed because the new version does not work with ox-hugo
-  ;; (defun org-html-format-latex (latex-frag processing-type info)
-;;     "Format a LaTeX fragment LATEX-FRAG into HTML.
-;; PROCESSING-TYPE designates the tool used for conversion.  It can
-;; be `mathjax', `verbatim', `html', nil, t or symbols in
-;; `org-preview-latex-process-alist', e.g., `dvipng', `dvisvgm' or
-;; `imagemagick'.  See `org-html-with-latex' for more information.
-;; INFO is a plist containing export properties."
-;;     (let ((cache-relpath "") (cache-dir ""))
-;;       (unless (or (eq processing-type 'mathjax)
-;;                   (eq processing-type 'html))
-;;         (let ((bfn (or (buffer-file-name)
-;;                        (make-temp-name
-;;                         (expand-file-name "latex" temporary-file-directory))))
-;;               (latex-header
-;;                (let ((header (plist-get info :latex-header)))
-;;                  (and header
-;;                       (concat (mapconcat
-;;                                (lambda (line) (concat "#+LATEX_HEADER: " line))
-;;                                (org-split-string header "\n")
-;;                                "\n")
-;;                               "\n")))))
-;;           (setq cache-relpath
-;;                 (concat (file-name-as-directory org-preview-latex-image-directory)
-;;                         (file-name-sans-extension
-;;                          (file-name-nondirectory bfn)))
-;;                 cache-dir (file-name-directory bfn))
-;;           ;; Re-create LaTeX environment from original buffer in
-;;           ;; temporary buffer so that dvipng/imagemagick can properly
-;;           ;; turn the fragment into an image.
-;;           (setq latex-frag (concat latex-header latex-frag))))
-;;       (with-temp-buffer
-;;         (insert latex-frag)
-;;         (org-format-latex cache-relpath nil nil cache-dir nil
-;;                           "Creating LaTeX Image..." nil processing-type)
-;;         (buffer-string))))
-  )
+                    (file-name-base dump-file))))))))))))
 
 ;; code for centering LaTeX previews -- a terrible idea
 (use-package org-latex-preview

@@ -104,6 +104,19 @@
             "\"")))
     (notmuch-search-filter query))
 
+  (define-advice notmuch-show-reply-sender
+      (:before-while (&optional prompt-for-sender) reply-all-check)
+    (when-let* ((metadata (pcase major-mode
+                            ('notmuch-tree-mode #'notmuch-tree-get-message-properties)
+                            ('notmuch-show-mode #'notmuch-show-get-message-properties)))
+                (headers (plist-get (funcall metadata) :headers)))
+      (if (or (plist-get headers :Cc)
+              (plist-get headers :Reply-To)
+              (string-match-p "," (plist-get headers :To)))
+          (y-or-n-p (format "Multiple recipients; reply only to %s? "
+                            (plist-get headers :From)))
+        t)))
+
   (defun my/notmuch-tree-show-hide-header ()
     "Show or hide mail headers."
     (interactive)

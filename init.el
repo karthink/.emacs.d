@@ -2161,6 +2161,7 @@ current buffer without truncation."
          ("C-c C-m" . macrostep-expand)))
 
 (use-package elisp-mode
+  :disabled
   :defer t
   :config
   ;; From https://emacs.stackexchange.com/questions/10230/how-to-indent-keywords-aligned
@@ -2872,6 +2873,7 @@ current buffer without truncation."
 ;; ** STROKES
 ;;;----------------------------------------------------------------
 (use-package strokes
+  :diminish 'stokes-mode
   :bind ("<down-mouse-9>" . strokes-do-stroke)
   :config
   (setq strokes-file (dir-concat user-cache-directory "strokes"))
@@ -3956,9 +3958,9 @@ _d_: subtree
   :ensure t
   :diminish " ·"
   :commands dot-mode
-  :bind (:map dot-mode-map
-         ("C-c ." . nil)
-         ("C-M-." . nil))
+  :bind ( :map dot-mode-map
+          ("C-c ." . nil)
+          ("C-M-." . nil))
   :hook ((prog-mode conf-mode text-mode tex-mode) . 'dot-mode-on))
 
 ;;----------------------------------------------------------------

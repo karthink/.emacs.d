@@ -45,10 +45,12 @@
   (defun avy-action-easy-kill (pt)
     (unless (require 'easy-kill nil t)
       (user-error "Easy Kill not found, please install."))
-    (cl-letf* ((bounds (if (use-region-p)
-                           (prog1 (cons (region-beginning) (region-end))
-                             (deactivate-mark))
-                         (bounds-of-thing-at-point 'sexp)))
+    (cl-letf* ((bounds (cond
+                        ((use-region-p)
+                         (prog1 (cons (region-beginning) (region-end))
+                           (deactivate-mark)))
+                        ((bounds-of-thing-at-point 'sexp))
+                        (t (cons (point) (point)))))
                (transpose-map
                 (define-keymap
                   "M-t" (lambda () (interactive "*")

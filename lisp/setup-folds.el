@@ -9,8 +9,10 @@
 (use-package outline
   :diminish (outline-minor-mode . " ֍")
   :bind (:map outline-minor-mode-map
-              ("TAB" . outline-cycle)
-              ("<tab>" . outline-cycle)
+              ("TAB" . my/outline-cycle)
+              ("<tab>" . my/outline-cycle)
+              ("<backtab>" . outline-cycle-buffer)
+              ("S-<iso-lefttab>" . outline-cycle-buffer)
               ("C-c C-n" . outline-next-visible-heading)
               ("C-c C-p" . outline-previous-visible-heading)
               ("C-c C-u" . outline-up-heading)
@@ -19,87 +21,19 @@
               ("C-c M-<left>" . outline-promote)
               ("C-c M-<right>" . outline-demote))
   :config
-  (define-key outline-minor-mode-map (kbd "<backtab>")
-              ;; (lambda () (interactive)
-              ;;   (outline-back-to-heading)
-              ;;   (outline-cycle))
-              #'outline-cycle-all
-              )
-;;;###autoload
-  (defun outline-next-line ()
-    "Forward line, but mover over invisible line ends.
-Essentially a much simplified version of `next-line'."
+  (defun my/outline-cycle ()
     (interactive)
-    (beginning-of-line 2)
-    (while (and (not (eobp))
-                (get-char-property (1- (point)) 'invisible))
-      (beginning-of-line 2)))
-
-  (defvar outline-cycle-emulate-tab nil
-    "Use tab to indent (when not on a heading) in outline-minor-mode")
-
-  (defun outline-cycle-all (&optional arg)
-    (interactive "p")
-    (let ((level (save-match-data (funcall outline-level))))
-      (if (eq last-command 'outline-cycle-all)
-          (progn (outline-show-all)
-                 (setq this-command 'outline-show-all))
-        (save-excursion
-          (outline-back-to-heading)
-          (call-interactively #'outline-hide-sublevels)))))
-  
-  (defun outline-cycle () (interactive)
-         (cond
-          ((save-excursion (beginning-of-line 1)
-                           (and (looking-at outline-regexp)
-                                ;; (not (equal (save-match-data (funcall outline-level))
-                                ;;             1000))
-                                ))
-           ;; At a heading: rotate between three different views
-           (outline-back-to-heading)
-           (let ((goal-column 0) beg eoh eol eos)
-             ;; First, some boundaries
-             (save-excursion
-               (outline-back-to-heading)           (setq beg (point))
-               (save-excursion (outline-next-line) (setq eol (point)))
-               (outline-end-of-heading)            (setq eoh (point))
-               (outline-end-of-subtree)            (setq eos (point)))
-             ;; Find out what to do next and set `this-command'
-             (cond
-              ((= eos eoh)
-               ;; Nothing is hidden behind this heading
-               (message "EMPTY ENTRY"))
-              ((>= eol eos)
-               ;; Entire subtree is hidden in one line: open it
-               (outline-show-entry)
-               (outline-show-children)
-               (message "CHILDREN")
-               (setq this-command 'outline-cycle-children))
-              ((eq last-command 'outline-cycle-children)
-               ;; We just showed the children, now show everything.
-               (outline-show-subtree)
-               (message "SUBTREE"))
-              (t
-               ;; Default action: hide the subtree.
-               (outline-hide-subtree)
-               (message "FOLDED")))))
-
-          ;; TAB emulation
-          (outline-cycle-emulate-tab
-           (call-interactively (key-binding (vector last-input-event)))
-           ;; (indent-according-to-mode)
-           )
-
-          (t
-           ;; Not at a headline: Do whatever this key would do otherwise.
-           ;; (outline-back-to-heading)
-           (let ((normal-binding (let ((outline-minor-mode nil))
-                                    (key-binding (this-command-keys-vector)))))
-             (if normal-binding
-                 (progn
-                   (setq this-command normal-binding)
-                   (call-interactively normal-binding))
-               (indent-according-to-mode)))))))
+    (if (save-excursion (forward-line 0)
+                        (looking-at-p outline-regexp))
+        (call-interactively #'outline-cycle)
+      (let* ((outline-minor-mode nil)
+             (cmd (or (key-binding (this-command-keys-vector))
+                      (key-binding (key-parse "TAB")))))
+        (when cmd
+          (setq this-command cmd)
+          (call-interactively cmd)))))
+  (put 'my/outline-cycle 'repeat-map
+       'outline-navigation-repeat-map))
 
 (use-package outline
   :when (version< "28.0" emacs-version)

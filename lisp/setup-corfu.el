@@ -31,9 +31,12 @@
     :bind (:map corfu-map ("M-g" . nil)))
   (use-package corfu-history :defer 3 :config (corfu-history-mode 1))
   (use-package corfu-popupinfo
-  :config (corfu-popupinfo-mode 1)
-  :bind (:map corfu-map
-         ([remap corfu-info-documentation] . corfu-popupinfo-toggle)))
+    :bind ( :map corfu-map
+            ([remap corfu-info-documentation] . corfu-popupinfo-toggle))
+    :config
+    (setq corfu-popupinfo-hide nil
+          corfu-popupinfo-delay '(2 . 0.2))
+    (corfu-popupinfo-mode 1))
   (use-package corfu-quick
     :bind (:map corfu-map ("'" . corfu-quick-complete))
     :config (setq corfu-quick1 "asdfghjkl;"))
@@ -172,6 +175,7 @@
             wordlist)
            ((getenv "WORDLIST"))
            (t "/usr/share/dict/words"))))
+  (setq ispell-alternate-dictionary cape-dict-file)
   (when (bound-and-true-p text-mode-ispell-word-completion)
     (setq text-mode-ispell-word-completion nil))
   

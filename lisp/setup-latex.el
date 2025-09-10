@@ -21,11 +21,16 @@
             TeX-view-program-list
             TeX-view-program-selection
             TeX-mode-map)
-  :bind
-  (:map LaTeX-mode-map
-   ("M-RET" . LaTeX-insert-item)
-   :map TeX-source-correlate-map     
-   ([C-down-mouse-1] . TeX-view-mouse))
+  :bind ( :map LaTeX-mode-map
+          ("M-RET" . LaTeX-insert-item)
+          :map TeX-source-correlate-map     
+          ([C-down-mouse-1] . TeX-view-mouse)
+          :map TeX-output-mode-map
+          ("M-g n" . nil)
+          ("M-g p" . nil)
+          :map TeX-mode-map
+          ([remap next-error] . nil)
+          ([remap previous-error] . nil))
   :config
   ;; (add-to-list 'Info-directory-list "/usr/share/texmf-dist/tex/texinfo/")
   (defun my/latex-with-outline ()
@@ -38,6 +43,8 @@
              ("M-s a" . embrace-add)
              ("M-s c" . embrace-change)
              ("M-s d" . embrace-delete)))
+
+  (add-hook 'LaTeX-mode-hook (poi-register 'TeX-next-error))
 
   (defvar my-preamble-file (concat (expand-file-name
                                     (file-name-as-directory "~/Documents/"))

@@ -16,9 +16,7 @@
          ("C-S-SPC"  . my/embark-select)
          ;; ("C-c SPC"  . embark-act)
          ("M-*"      . embark-act-all)
-         ("C-c RET"  . embark-dwim)
          ("S-<return>"  . embark-dwim)
-         ("C-M-<return>"  . embark-dwim)
          ("C-h b"   . embark-bindings)
          ("C-h C-b" . describe-bindings)
          :map embark-general-map

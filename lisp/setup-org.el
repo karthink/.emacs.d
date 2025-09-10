@@ -30,12 +30,12 @@
          (org-mode . er/add-latex-in-org-mode-expansions))
   :config
   ;; General preferences
-  (setq-default org-adapt-indentation nil 
-                org-cycle-include-plain-lists t 
+  (setq-default org-adapt-indentation nil
+                org-cycle-include-plain-lists t
                 org-footnote-auto-label 'confirm
                 org-agenda-file-menu-enabled nil
                 org-image-actual-width nil
-                ;; org-refile-targets '((nil :maxlevel . 2) (org-agenda-files :maxlevel . 3)) 
+                ;; org-refile-targets '((nil :maxlevel . 2) (org-agenda-files :maxlevel . 3))
                 org-refile-targets '((nil :maxlevel . 2)
                                      (org-agenda-files :maxlevel . 3)
                                      (org-agenda-files :todo . "PROJECT"))
@@ -62,9 +62,9 @@
                 org-link-elisp-confirm-function nil
                 org-export-backends '(ascii html latex)
                 org-yank-image-save-method "figures"
-                ;; org-indent-indentation-per-level 2 
+                ;; org-indent-indentation-per-level 2
                 org-return-follows-link t)
-  
+
   ;; Debugging
   (setq org-element--cache-self-verify 'backtrace)
 
@@ -98,7 +98,7 @@
                #'org-cycle-optimize-window-after-visibility-change)
 
   (put 'org-link-preview 'repeat-map 'org-link-navigation-repeat-map)
-  
+
   (defun my/org-beginning-of-defun (&optional arg)
     ";TODO: "
     (interactive "p")
@@ -117,9 +117,9 @@
     (interactive "p")
     (if (not (texmathp))
         (if (not (org-at-heading-p))
-	    (org-forward-element)
-	  (org-forward-element)
-	  (forward-char -1))
+            (org-forward-element)
+          (org-forward-element)
+          (forward-char -1))
       (goto-char (min (save-mark-and-excursion
                         (LaTeX-forward-environment (or arg 1))
                         (point))
@@ -150,12 +150,12 @@
                                       '(er/mark-method-call
                                         er/mark-inside-pairs
                                         er/mark-outside-pairs))
-                   '(LaTeX-mark-environment 
+                   '(LaTeX-mark-environment
                      er/mark-LaTeX-inside-math
                      er/mark-latex-inside-pairs
                      er/mark-latex-outside-pairs
                      er/mark-LaTeX-math)))))
-  
+
   (defun org-cdlatex-pbb (&rest _arg)
     "Execute `cdlatex-pbb' in LaTeX fragments.
   Revert to the normal definition outside of these fragments."
@@ -187,7 +187,7 @@
                        "Expand local tree after setting visibility."
                        (when (eq detail 'local)
                          (org-ctrl-c-tab) (org-show-entry))))
-  
+
   (add-to-list 'org-structure-template-alist '("no" . "notes"))
   (add-to-list 'org-structure-template-alist '("ma" . "src matlab"))
   (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
@@ -261,18 +261,18 @@
        (when marker (goto-char marker))
        (let ((cnt ?0) end links)
          (save-excursion
-	   (org-back-to-heading t)
-	   (setq end (save-excursion
+           (org-back-to-heading t)
+           (setq end (save-excursion
                        (outline-get-next-sibling)
                        (point)))
-	   (while (re-search-forward org-link-any-re end t)
+           (while (re-search-forward org-link-any-re end t)
              ;; Only consider valid links or links openable via `org-open-at-point'.
              (when (org-element-type-p
                     (save-match-data (org-element-context))
                     '(link comment comment-block node-property keyword))
-	       (push (cons (match-string 0) (match-beginning 0))
+               (push (cons (match-string 0) (match-beginning 0))
                      links)))
-	   (setq links (org-uniquify (reverse links))))))))
+           (setq links (org-uniquify (reverse links))))))))
 
   ;; (or (outline-get-next-sibling) ;forward same level
   ;;     (progn (outline-next-heading) (point)))
@@ -285,7 +285,7 @@
       (cond
        ((derived-mode-p 'org-agenda-mode)
         (setq marker (or (org-get-at-bol 'org-hd-marker)
-		         (org-get-at-bol 'org-marker))
+                         (org-get-at-bol 'org-marker))
               buffer (and marker (marker-buffer marker))))
        ((derived-mode-p 'org-mode) (setq buffer (current-buffer)))
        (t (user-error "Not called from Org mode!")))
@@ -338,7 +338,7 @@
         ;; OPTION items from registered backends.
         (let (items)
          (dolist (backend (bound-and-true-p
-        		   org-export-registered-backends))
+                           org-export-registered-backends))
           (dolist (option (org-export-backend-options backend))
            (let ((item (nth 2 option)))
             (when item (push (concat item ":") items)))))
@@ -411,7 +411,7 @@
   :bind (:map org-mode-map
          ("RET" . my/org-return-dwim))
   :config
-  
+
   (defun my/org-element-descendant-of (type element)
     "Return non-nil if ELEMENT is a descendant of TYPE.
 TYPE should be an element type, like `item' or `paragraph'.
@@ -434,7 +434,7 @@ appropriate.  In tables, insert a new row or end the table."
         (org-return)
       (cond
        ;; Act depending on context around point.
-       
+
        ((and (eq 'link (car (org-element-context)))
              org-return-follows-link)
         ;; Link: Open it.
@@ -549,7 +549,7 @@ appropriate.  In tables, insert a new row or end the table."
    org-image-align 'center
    ;; org-priority-faces '((?a . error) (?b . warning) (?c . success))
    org-pretty-entities-include-sub-superscripts t)
-  
+
   ;; Pretty symbols
   ;; (add-hook 'org-mode-hook 'org-toggle-pretty-entities)
   ;; Org LaTeX options
@@ -568,20 +568,20 @@ appropriate.  In tables, insert a new row or end the table."
       (2 font-lock-constant-face))))
 
   (setq org-entities-user '(("nbsp" "~" nil "&nbsp" " " "\x00A0" "∼")))
-  
+
   (defun my/org-raise-scripts-no-braces (_)
     (when (and (eq (char-after (match-beginning 3)) ?{)
-	       (eq (char-before (match-end 3)) ?}))
+               (eq (char-before (match-end 3)) ?}))
       (remove-text-properties (match-beginning 3) (1+ (match-beginning 3))
-		              (list 'invisible nil))
+                              (list 'invisible nil))
       (remove-text-properties (1- (match-end 3)) (match-end 3)
-		              (list 'invisible nil))))
+                              (list 'invisible nil))))
 
   (advice-add 'org-raise-scripts :after #'my/org-raise-scripts-no-braces)
 
   (setq org-todo-keyword-faces
         '(;; ("TODO"    :foreground "#6e90c8" :weight bold)
-          ("WAITING" :foreground "red" :weight bold)
+          ("WAIT" :foreground "red" :weight semibold)
           ("MAYBE"   :foreground "#6e8996" :weight bold)
           ("PROJECT" :foreground "#088e8e" :weight bold)
           ("SUSPENDED" :foreground "#6e8996" :weight bold))))
@@ -643,7 +643,7 @@ appropriate.  In tables, insert a new row or end the table."
             (when arg (start-process "olpsink" nil "dragon" (expand-file-name imgpath)))
             (message "Image path copied to kill-ring."))
       (message "No LaTeX preview image at point!")))
-  
+
   ;; Utility command to navigate math fragments
   (defun my/org-latex-next-env (&optional arg)
     (interactive "p")
@@ -654,7 +654,7 @@ appropriate.  In tables, insert a new row or end the table."
   (defun my/org-latex-prev-env (&optional arg)
     (interactive "p")
     (my/org-latex-next-env (- (or arg 1))))
-  
+
   (defvar-keymap my/org-latex-env-map
     :repeat t
     "m" 'my/org-latex-next-env
@@ -665,7 +665,7 @@ appropriate.  In tables, insert a new row or end the table."
        'repeat-map 'my/org-latex-env-map)
   (put 'my/org-latex-prev-env
        'repeat-map 'my/org-latex-env-map)
-  
+
   (defun my/org-latex-preview-show-error ()
     (display-local-help t))
   (add-hook 'org-ctrl-c-ctrl-c-final-hook
@@ -852,7 +852,7 @@ appropriate.  In tables, insert a new row or end the table."
         org-modern-horizontal-rule t
         org-modern-star 'replace
         org-modern-keyword "‣ "
-        ;; org-modern-block-fringe 0 
+        ;; org-modern-block-fringe 0
         org-modern-table nil))
 
 ;; *** Modify latex previews to respect the theme
@@ -923,7 +923,7 @@ appropriate.  In tables, insert a new row or end the table."
   :after org-agenda
   :config
   (setq org-habit-preceding-days 42)
-  
+
   (defvar my/org-habit-show-graphs-everywhere nil
     "If non-nil, show habit graphs in all types of agenda buffers.
 
@@ -946,12 +946,12 @@ has no effect."
     (when (and my/org-habit-show-graphs-everywhere
                (not (get-text-property (point) 'org-series)))
       (let ((cursor (point))
-            item data) 
+            item data)
         (while (setq cursor (next-single-property-change cursor 'org-marker))
           (setq item (get-text-property cursor 'org-marker))
-          (when (and item (org-is-habit-p item)) 
+          (when (and item (org-is-habit-p item))
             (with-current-buffer (marker-buffer item)
-              (setq data (org-habit-parse-todo item))) 
+              (setq data (org-habit-parse-todo item)))
             (put-text-property cursor
                                (next-single-property-change cursor 'org-marker)
                                'org-habit-p data))))))
@@ -1038,7 +1038,7 @@ has no effect."
 
   (defun org-current-is-todo ()
     (member (org-get-todo-state) '("TODO" "STARTED")))
-  
+
   (defun my/org-agenda-should-skip-p ()
   "Skip all but the first non-done entry."
   (let (should-skip-entry)
@@ -1066,7 +1066,7 @@ has no effect."
                               '("PROJECT" "TODO")))))
       (setq should-skip-entry t))
     should-skip-entry))
-  
+
   (defun my/org-agenda-skip-all-siblings-but-first ()
   "Skip all but the first non-done entry."
   (when (my/org-agenda-should-skip-p)
@@ -1100,7 +1100,7 @@ has no effect."
             (org-agenda-skip-function '(org-agenda-skip-entry-if 'notscheduled))
             (org-agenda-sorting-strategy '(category-up))
             (org-agenda-prefix-format "%-11c%s ")))
-          
+
           ("u" "Unscheduled tasks" tags "TODO<>\"\"&TODO<>{DONE\\|CANCELED\\|NOTE\\|PROJECT\\|DEFERRED\\|MAYBE}"
            ((org-agenda-overriding-header "Unscheduled tasks: ")
             (org-agenda-skip-function
@@ -1209,7 +1209,7 @@ has no effect."
                     "dropdown_org-capture")
              (not (eq this-command 'org-capture-refile)))
         (delete-frame)))
-  
+
   (defun org-hugo-new-subtree-post-capture-template ()
     "Returns `org-capture' template string for new Hugo post.
 See `org-capture-templates' for more information."
@@ -1258,7 +1258,7 @@ See `org-capture-templates' for more information."
           :kill-buffer t)))
     (setf (alist-get key org-capture-templates nil nil #'equal)
           template))
-  
+
   (defun make-orgcapture-frame ()
     "Create a new frame and run org-capture."
     (interactive)
@@ -1415,7 +1415,7 @@ parent."
 (use-package org
   :defer
   :config
-  
+
   ;; Engrave faces, or
   (use-package ox
     :if (version<= "9.5.4" org-version)
@@ -1700,7 +1700,7 @@ the :consume parameter extracted from KEYWORD."
   (defun my/org-hugo-preview (&optional arg)
     (interactive "P")
     (pcase-let* ((sec nil)
-                 (`(,sec . ,title) 
+                 (`(,sec . ,title)
                  (save-excursion
                    (org-previous-visible-heading 1)
                    (let ((title (org-element-property
@@ -1761,7 +1761,7 @@ the :consume parameter extracted from KEYWORD."
                                              (file-name-as-directory org-directory)
                                              "ucsb-cal.org")))
         org-gcal-recurring-events-mode 'top-level)
-  
+
   ;; Without this 'org-gcal is not registered as an oauth provider
   (org-gcal-reload-client-id-secret)
 
@@ -1820,7 +1820,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
   :after org-re-reveal)
 
 (use-package ox-reveal
-  :disabled 
+  :disabled
   :ensure t
   :init
   (setq org-reveal-root "file:///home/karthik/.local/share/git/reveal.js")
@@ -1846,9 +1846,9 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
   ;; (setq reftex-default-bibliography '("~/Dropbox/bibliography/references.bib"))
   (setq org-latex-pdf-process
         '("pdflatex -interaction nonstopmode -output-directory %o %f"
-	"bibtex %b"
-	"pdflatex -interaction nonstopmode -output-directory %o %f"
-	"pdflatex -interaction nonstopmode -output-directory %o %f")
+        "bibtex %b"
+        "pdflatex -interaction nonstopmode -output-directory %o %f"
+        "pdflatex -interaction nonstopmode -output-directory %o %f")
         )
   (setq org-latex-pdf-process
         (list "latexmk -shell-escape -bibtex -f -pdf %f"))
@@ -1940,7 +1940,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
                (destdir (plist-get project-plist :remote-directory)))
           (message "Running rsync: %s → %s" basedir destdir)
           (start-process "rsync-project-html-and-figures" "*project-rsync-html-output*"
-                         "rsync" "-a" "-v" 
+                         "rsync" "-a" "-v"
                          "--include=*.png"
                          "--include=*.html"
                          "--include=/figures/***"
@@ -1971,14 +1971,14 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
         (propertize "ORG PRESENTATION STARTED" 'face 'success)
         org-tree-slide-deactivate-message
         (propertize "ORG PRESENTATION STOPPED" 'face 'error))
-  
+
   ;; (defun my/org-tree-slide-enlarge-latex-preview ()
   ;;   (dolist (ov (overlays-in (point-min) (point-max)))
   ;;     (if (eq (overlay-get ov 'org-overlay-type)
   ;;             'org-latex-overlay)
   ;;         (overlay-put
   ;;          ov 'display
-  ;;          (cons 'image 
+  ;;          (cons 'image
   ;;                (plist-put
   ;;                 (cdr (overlay-get ov 'display))
   ;;                 :scale (+ 1.0 (* 0.2 text-scale-mode-amount))))))))
@@ -2016,7 +2016,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
          ("<C-left>"  . org-tree-slide-move-previous-tree)))
 
 ;;;----------------------------------------------------------------
-;; ** ORG-MIME 
+;; ** ORG-MIME
 ;;;----------------------------------------------------------------
 ;; Compose HTML emails in org-mode.
 (use-package org-mime
@@ -2029,7 +2029,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
                                   :with-author nil
                                   :with-toc nil))
   (setq org-mime-org-html-with-latex-default 'dvipng)
-  
+
   ;; (add-hook 'message-send-hook 'org-mime-confirm-when-no-multipart)
   ;; (setq org-mime-export-ascii 'latin1)
   (setq org-mime-export-ascii 'utf-8)
@@ -2315,7 +2315,7 @@ Whichever was already active."
       (forward-line 1))))
 
 ;;------------------------------------------------------------------------
-;; MOVIEDATA
+;; ** MOVIEDATA
 ;;------------------------------------------------------------------------
 (use-package moviedata
   :after org
@@ -2339,4 +2339,3 @@ Whichever was already active."
       (moviedata-fetch title :type type :marker (set-marker (make-marker) (point))))))
 
 (provide 'setup-org)
-

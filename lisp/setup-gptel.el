@@ -20,7 +20,7 @@
          :map this-buffer-file-map
          ("+" . gptel-add))
   :config
-  (auth-source-pass-enable)  
+  (auth-source-pass-enable)
   (setq-default gptel-model 'gpt-4.1-nano
                 gptel-backend gptel--openai
                 gptel-display-buffer-action '(pop-to-buffer-same-window))
@@ -61,7 +61,11 @@
       (org-latex-preview--preview-region 'dvisvgm beg end)))
   (add-hook 'gptel-post-response-functions #'my/gptel-latex-preview)
   (add-hook 'gptel-post-response-functions #'my/gptel-remove-headings)
-  
+
+  (define-advice gptel-api-key-from-auth-source
+      (:around (func &rest args) silence)
+    (let ((inhibit-message t)) (apply func args)))
+
   ;; (with-eval-after-load 'gptel-transient
   ;;   (transient-suffix-put 'gptel-menu (kbd "-m") :key "M")
   ;;   (transient-suffix-put 'gptel-menu (kbd "-c") :key "C")
@@ -304,10 +308,16 @@
   :bind (:map gptel-rewrite-actions-map
          ("C-c C-i" . gptel--rewrite-inline-diff))
   :config
+  (add-hook 'poi-functions
+            (lambda (arg) (interactive "p")
+              (dotimes (_ (abs arg))
+                (if (> arg 0)
+                    (gptel--rewrite-next)
+                  (gptel--rewrite-previous)))))
   (defun gptel--rewrite-inline-diff (&optional ovs)
     (interactive (list (gptel--rewrite-overlay-at)))
     (unless (require 'inline-diff nil t)
-      (user-error "Inline diffs require the inline-diff package."))
+      (user-error "Inline diffs require the inline-diff package"))
     (when-let* ((ov-buf (overlay-buffer (or (car-safe ovs) ovs)))
                 ((buffer-live-p ov-buf)))
       (with-current-buffer ov-buf
@@ -318,7 +328,7 @@
                  do (delete-overlay ov)
                  (inline-diff-words
                   ov-beg ov-end response)))))
-  
+
   (when (boundp 'gptel--rewrite-dispatch-actions)
     (add-to-list
      'gptel--rewrite-dispatch-actions '(?i "inline-diff")
@@ -430,8 +440,9 @@ Do not repeat any of the BEFORE or AFTER code." lang lang lang)
          ("C" . gptel-project))
   :config
   (setf (alist-get ".*Chat.org$" display-buffer-alist nil nil #'equal)
-        `((display-buffer-below-selected)
-          (window-height . 0.5)
+        `((display-buffer-in-side-window)
+          (window-width . 0.3)
+          (side . right)
           (body-function . ,#'select-window)))
   (defun gptel-project ()
     "Open the ChatGPT file for the current project."

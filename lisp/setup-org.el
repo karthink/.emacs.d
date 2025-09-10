@@ -960,30 +960,31 @@ has no effect."
 
 ;; *** ORG-AGENDA
 (use-package org-agenda
-  :after org
+  :after (org org-review)
   :commands org-agenda
   :hook (org-agenda-finalize . hl-line-mode)
-  :bind (:map org-agenda-mode-map
-              ("D" . org-agenda-day-view)
-              ("W" . org-agenda-week-view)
-              ("w" . org-agenda-refile)
-              ("S-SPC" . org-agenda-show-scroll-down))
+  :bind ( :map org-agenda-mode-map
+          ("D" . org-agenda-day-view)
+          ("W" . org-agenda-week-view)
+          ("w" . org-agenda-refile)
+          ("S-SPC" . org-agenda-show-scroll-down)
+          ("C-M-n" . my/org-agenda-next-header)
+          ("C-M-p" . my/org-agenda-previous-header)
+          ([remap org-agenda-open-link] . my/search-occur-org-browse-url))
   :config
-  (timeout-debounce! 'org-agenda-do-context-action 0.3 t)
-  (setq org-show-notification-timeout 10)
   (setq org-agenda-files '("~/Documents/org/inbox.org"
                            "~/Documents/org/phone.org"
                            "~/Documents/org/do.org"
                            "~/Documents/org/gmail-cal.org"
                            "~/Documents/org/ucsb-cal.org"))
   (setq-default
-   org-agenda-span 2
+   org-agenda-span 'day
    org-agenda-restore-windows-after-quit t
    org-agenda-window-setup 'current-window
    org-stuck-projects '("TODO=\"PROJECT\"|TODO=\"SUSPENDED\"" ("TODO" "DEFERRED") nil "")
    org-agenda-use-time-grid nil
    org-agenda-todo-ignore-scheduled nil
-   org-agenda-text-search-extra-files nil ;'(agenda-archives)
+   org-agenda-text-search-extra-files '(agenda-archives)
    org-agenda-tags-column 'auto
    org-agenda-skip-scheduled-if-done t
    org-agenda-skip-scheduled-if-deadline-is-shown t
@@ -991,36 +992,65 @@ has no effect."
    org-agenda-inhibit-startup t
    org-agenda-include-diary nil
    org-agenda-follow-indirect nil
+   org-agenda-use-tag-inheritance '(todo search)
+   org-agenda-compact-blocks t
+   org-agenda-show-all-dates t
+   org-agenda-show-outline-path t
+   org-agenda-skip-timestamp-if-done t
+   org-agenda-skip-unavailable-files t
+   org-agenda-log-mode-items '(closed clock state)
+   org-agenda-log-mode-add-notes t
    org-agenda-default-appointment-duration 60)
+
+  ;; Org agenda UI
+  ;; =============
+  (timeout-debounce! 'org-agenda-do-context-action 0.3 t)
+  (setq org-show-notification-timeout 10)
 
   (add-hook 'org-agenda-after-show-hook
             (lambda () (recenter (floor (window-height) 6))))
 
   (advice-add 'org-agenda-do-tree-to-indirect-buffer :after
-     (defun my/org-agenda-collapse-indirect-buffer-tree (arg)
-       (with-current-buffer org-last-indirect-buffer
-         (org-ctrl-c-tab) (org-fold-show-entry 'hide-drawers))))
+              (defun my/org-agenda-collapse-indirect-buffer-tree (arg)
+                (with-current-buffer org-last-indirect-buffer
+                  (org-ctrl-c-tab) (org-fold-show-entry 'hide-drawers))))
 
-  (defun my/org-agenda-next-section (arg)
+  (defun my/org-agenda-next-header (&optional arg)
     (interactive "p")
-    (when (> arg 0)
-      (dotimes (_ arg)
-        (when-let ((m (text-property-search-forward 'face 'org-agenda-structure t t)))
-          (goto-char (prop-match-beginning m))
-          (forward-char 1)))))
+    (dotimes (_ (or arg 1))
+      (when (text-property-search-forward
+             'face nil
+             (lambda (_ val)
+               (memq val '( org-super-agenda-header
+                            org-agenda-structure
+                            org-agenda-structure-secondary)))
+             t)
+        (forward-line 1))))
 
-  ;; FIXME this is broken
-  (defun my/org-agenda-previous-section (arg)
+  (defun my/org-agenda-previous-header (&optional arg)
     (interactive "p")
-    (when (> arg 0)
-      (dotimes (_ arg)
-        (when-let ((m (text-property-search-backward 'face 'org-agenda-structure nil nil)))
-          (goto-char (prop-match-end m))
-          ;; (forward-char 1)
-          ))))
+    (dotimes (_ (or arg 1))
+      (forward-line -1)
+      (unless (text-property-search-backward
+               'face nil
+               (lambda (_ val)
+                 (memq val '( org-super-agenda-header
+                              org-agenda-structure
+                              org-agenda-structure-secondary)))
+               t)
+        (goto-char (point-min)))
+      (forward-line 1)))
 
-  (defun org-todo-age (&optional pos)
-    (if-let* ((entry-age (org-todo-age-time pos))
+  ;; Org agenda utility functions
+  ;; ============================
+  (defun my/org-todo-age-time (&optional pos)
+    (let ((stamp (org-entry-get (or pos (point)) "CREATED" t)))
+      (when stamp
+        (time-subtract (current-time)
+                       (org-time-string-to-time stamp)))))
+
+  (defun my/org-todo-age (&optional pos)
+    (if-let* ((entry-age (my/org-todo-age-time pos))
               (days (time-to-number-of-days entry-age)))
         (cond
          ((< days 1)   "today")
@@ -1030,11 +1060,26 @@ has no effect."
          (t            (format "%.1fY" (/ days 365.0))))
       ""))
 
-  (defun org-todo-age-time (&optional pos)
-    (let ((stamp (org-entry-get (or pos (point)) "CREATED" t)))
-      (when stamp
-        (time-subtract (current-time)
-                       (org-time-string-to-time stamp)))))
+  (defun my/org-compare-todo-age (a b)
+    (let ((time-a (my/org-todo-age-time (get-text-property 0 'org-hd-marker a)))
+          (time-b (my/org-todo-age-time (get-text-property 0 'org-hd-marker b))))
+      (if (time-less-p time-a time-b)
+          -1
+        (if (equal time-a time-b) 0 1))))
+
+  (defun my/org-review-compare (a b)
+    (let* ((ma (or (get-text-property 0 'org-marker a)
+                   (get-text-property 0 'org-hd-marker a)))
+           (mb (or (get-text-property 0 'org-marker b)
+                   (get-text-property 0 'org-hd-marker b)))
+           (a-prop (org-review-last-review-prop ma))
+           (b-prop (org-review-last-review-prop mb)))
+      (cond
+       ((and a-prop b-prop)
+        (if (time-less-p (org-review-toreview-p ma) (org-review-toreview-p mb))
+            1 -1))
+       ((and (null a-prop) (null b-prop)) (my/org-compare-todo-age a b))
+       (t (if a-prop -1 1)))))
 
   (defun org-current-is-todo ()
     (member (org-get-todo-state) '("TODO" "STARTED")))
@@ -1072,10 +1117,75 @@ has no effect."
   (when (my/org-agenda-should-skip-p)
     (or (outline-next-heading)
         (goto-char (point-max)))))
-  
+
+  (defmacro my/org-agenda-skip-entry-if (condition)
+    `(when ,condition
+      (org-with-wide-buffer
+       (or (outline-next-heading) (goto-char (point-max))))))
+
+  (defsubst my/org-agenda-skip-if-review-not-needed ()
+    (my/org-agenda-skip-entry-if (not (org-review-toreview-p))))
+
+  ;; Org agenda views
+  ;; ================
+  (setf (alist-get 'todo org-agenda-prefix-format)
+        " %i %-12:c%-5(my/org-todo-age)"
+        (alist-get 'search org-agenda-prefix-format)
+        " %i %-12:c%-5(my/org-todo-age)%-2(or (org-entry-get nil \"REVIEWS\") \" \")"
+        (alist-get 'agenda org-agenda-sorting-strategy)
+        '(habit-down time-up todo-state-up priority-down))
+
   (setq org-agenda-custom-commands
 
-        '(("n" "Project Next Actions" alltodo ""
+        '(("a" "Agenda (+review)\n"
+           ((agenda ""
+                    ((org-agenda-skip-function
+                      '(org-agenda-skip-entry-if
+                        (and (org-review-last-review-prop nil)
+                             (not (org-review-toreview-p)))))))
+            (alltodo ""
+                     ((org-agenda-overriding-header "\nItems needing review")
+                      (org-agenda-skip-function
+                       '(or (my/org-agenda-skip-if-review-not-needed)
+                            (org-agenda-skip-entry-if
+                             'scheduled 'deadline 'timestamp
+                             'todo org-done-keywords)))
+                      (org-agenda-max-entries 64)
+                      (org-agenda-sorting-strategy '(user-defined-down))
+                      (org-agenda-cmp-user-defined 'my/org-review-compare)
+                      (org-agenda-prefix-format
+                       "  %-10:c%-2(or (org-entry-get nil \"REVIEWS\") \" \")")
+                      (org-overriding-columns-format
+                       "%9CATEGORY %52ITEM(Task) %LAST_REVIEW %NEXT_REVIEW")))))
+
+          ("r" "Review" alltodo ""
+           ((org-agenda-overriding-header "Tasks to review")
+            (org-agenda-skip-function
+             '(or (my/org-agenda-skip-if-review-not-needed)
+                  (org-agenda-skip-entry-if
+                   'scheduled 'deadline 'timestamp
+                   'todo org-done-keywords)))
+            (org-agenda-sorting-strategy '(user-defined-down))
+            (org-agenda-cmp-user-defined 'my/org-review-compare)
+            (org-agenda-prefix-format
+             "  %-10:c%-5(my/org-todo-age) %3(or (org-entry-get nil \"REVIEWS\") \" \") ")
+            (org-overriding-columns-format
+             "%9CATEGORY %52ITEM(Task) %LAST_REVIEW %NEXT_REVIEW")))
+
+          ("u" "Never reviewed" alltodo ""
+           ((org-agenda-skip-function
+             '(or (org-agenda-skip-entry-if 'todo org-done-keywords)
+                  (org-agenda-skip-entry-if
+                   (and-let* ((num-reviews (org-entry-get nil "REVIEWS")))
+                     (not (equal num-reviews "0"))))))
+            (org-agenda-prefix-format
+             "%-10:c%-2(or (and (org-entry-get nil \"SCHEDULED\") \"✓\") \"\")")
+            (org-agenda-cmp-user-defined 'my/org-review-compare)
+            (org-agenda-sorting-strategy '(user-defined-down))
+            (org-overriding-columns-format
+             "%9CATEGORY %52ITEM %LAST_REVIEW %NEXT_REVIEW")))
+
+          ("n" "Project Next Actions" alltodo ""
            ((org-agenda-overriding-header "Project Next Actions")
             (org-agenda-skip-function #'my/org-agenda-skip-all-siblings-but-first)))
 
@@ -1083,9 +1193,11 @@ has no effect."
            ((org-agenda-overriding-header "All Projects")))
 
           ("i" "Inbox" tags "CATEGORY=\"Inbox\"&LEVEL=1"
-           ((org-agenda-overriding-header "Uncategorized items")))
+           ((org-agenda-overriding-header "Uncategorized items")
+            (org-agenda-prefix-format "%-8:c%5(my/org-todo-age) \
+%-2(or (and (org-entry-get nil \"SCHEDULED\") \"✓\") \"\") ")))
 
-          ("W" "Waiting tasks" tags "W-TODO=\"DONE\"|TODO={WAITING\\|DELEGATED}"
+          ("W" "Waiting tasks" tags "W-TODO=\"DONE\"|TODO={WAIT\\|TASK}"
            ((org-agenda-overriding-header "Waiting/delegated tasks:")
             (org-agenda-skip-function '(org-agenda-skip-entry-if 'scheduled))
             (org-agenda-sorting-strategy '(todo-state-up priority-down category-up))))
@@ -1106,68 +1218,20 @@ has no effect."
             (org-agenda-skip-function
              '(org-agenda-skip-entry-if 'scheduled 'deadline 'timestamp))
             (org-agenda-sorting-strategy '(user-defined-up))
-            (org-agenda-prefix-format "%-11c%5(org-todo-age) ")
+            (org-agenda-prefix-format "%-11c%5(my/org-todo-age) ")
             (org-agenda-files '("~/org/do.org"))))
 
           ("~" "Maybe tasks" tags "TODO=\"MAYBE\""
            ((org-agenda-overriding-header "Maybe tasks:")
             (org-agenda-sorting-strategy '(user-defined-up))
-            (org-agenda-prefix-format "%-11c%5(org-todo-age) ")
-            ;; (org-agenda-prefix-format "%-11c%5(org-todo-age) ")
+            (org-agenda-prefix-format "%-11c%5(my/org-todo-age) ")
+            ;; (org-agenda-prefix-format "%-11c%5(my/org-todo-age) ")
             ))
 
           ("K" "Habits" tags "STYLE=\"habit\""
            ((my/org-habit-show-graphs-everywhere t)
             (org-agenda-overriding-header "Habits:")
-            (org-habit-show-all-today t)))
-          
-          ("o" "Overview"
-           ((tags-todo "*"
-               ((org-agenda-skip-function '(org-agenda-skip-if nil '(timestamp)))
-                (org-agenda-skip-function
-                 `(org-agenda-skip-entry-if
-                   'notregexp ,(format "\\[#%s\\]" ;;(char-to-string org-priority-highest)
-                                       "\\(?:A\\|B\\|C\\)")))
-                (org-agenda-block-separator nil)
-                (org-agenda-overriding-header "⛤ Important\n")))
-            (agenda ""
-                    ((org-agenda-overriding-header "\n🕐 Today\n")
-                     (org-agenda-span 1)
-                     (org-deadline-warning-days 0)
-                     (org-agenda-day-face-function (lambda (date) 'org-agenda-date))
-                     (org-agenda-block-separator nil)))
-            (agenda "" ((org-agenda-start-on-weekday nil)
-                (org-agenda-start-day "+1d")
-                (org-agenda-span 3)
-                (org-deadline-warning-days 0)
-                (org-agenda-block-separator nil)
-                (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
-                (org-agenda-overriding-header "\n📅 Next three days\n")))
-            (tags "CATEGORY=\"Inbox\"&LEVEL=1"
-             ((org-agenda-block-separator nil)
-              (org-agenda-overriding-header "\n📧 Inbox\n")))
-            (agenda ""
-                    ((org-agenda-time-grid nil)
-                     (org-agenda-start-on-weekday nil)
-                     ;; We don't want to replicate the previous section's
-                     ;; three days, so we start counting from the day after.
-                     (org-agenda-start-day "+3d")
-                     (org-agenda-span 14)
-                     (org-agenda-show-all-dates nil)
-                     (org-deadline-warning-days 0)
-                     (org-agenda-block-separator nil)
-                     (org-agenda-entry-types '(:deadline))
-                     (org-agenda-skip-function '(org-agenda-skip-entry-if 'todo 'done))
-                     (org-agenda-overriding-header "\n🞜 Upcoming deadlines (+14d)\n")))
-            (tags "TODO=\"PROJECT\"&LEVEL>1&CATEGORY=\"Research\""
-                  ((org-agenda-block-separator nil)
-                   (org-agenda-overriding-header "\n⨕ Research\n")))
-            ;; (alltodo ""
-            ;;  ((org-agenda-overriding-header "Project Next Actions")
-            ;;   (org-agenda-skip-function #'my/org-agenda-skip-all-siblings-but-first)))
-            (todo "WAITING"
-                  ((org-agenda-overriding-header "\n💤 On Hold\n")
-                   (org-agenda-block-separator nil))))))))
+            (org-habit-show-all-today t))))))
 
 ;; *** APPT (for notifications)
 (use-package appt
@@ -1224,16 +1288,15 @@ See `org-capture-templates' for more information."
                      "\n:EXPORT_HUGO_CUSTOM_FRONT_MATTER: :comments "
                      (if commentp "true" "false"))
                    "\n:END:"
-                   "\n%?\n") 
-                 ""))) 
-  
+                   "\n%?\n")
+                 "")))
+
   (pcase-dolist
       (`(,key . ,template)
-       '(("r" "Add resource" entry (file "~/org/inbox.org")
-          "* TODO [[%c][%^{Title: }]] %^G\n:PROPERTIES:\n:CREATED:  %U\n:END:\n"
-          :immediate-finish t)
+       '(("n" "Note" entry (file "~/org/inbox.org")
+          "* %? %^G\n:PROPERTIES:\n:CREATED:  %U\n:END:\n%a\n%x\n")
          ("t" "Add task" entry (file "~/org/inbox.org")
-          "* TODO %?\n:PROPERTIES:\n:CREATED:  %U\n:END:\n%a\n%i\n")
+          "* TODO %?\n:PROPERTIES: \n:CREATED:  %U \n:ID:  %(org-id-uuid) \n:END:\n%a\n%i\n")
          ("m" "Task from email" entry (file "~/org/inbox.org")
           "* TODO %A\n:PROPERTIES:\n:CREATED:  %U\n:END:\n" :immediate-finish t)
          ("c" "Add calendar entry" entry (file "~/org/gmail-cal.org")
@@ -2318,9 +2381,8 @@ Whichever was already active."
          ("o s" . org-ql-search)
          ("o v" . org-ql-view)
          ("o l" . org-ql-open-link)
+         ("o f" . org-ql-find-in-agenda)
          :map org-agenda-mode-map
-         ("C-M-n" . my/org-agenda-next-header)
-         ("C-M-p" . my/org-agenda-previous-header)
          ("C-c o w" . org-ql-refile)
          :map org-mode-map
          ("C-c o w" . org-ql-refile)
@@ -2329,30 +2391,79 @@ Whichever was already active."
   :config
   (use-package org-ql-view
     :bind (:map org-ql-view-map
-           ("q" . quit-window)))
-  (defun my/org-agenda-next-header (&optional arg)
-    (interactive "p")
-    (dotimes (_ (or arg 1))
-      (when (text-property-search-forward
-             'face nil
-             (lambda (_ val)
-               (memq val '(org-super-agenda-header
-                           org-agenda-structure
-                           org-agenda-structure-secondary)))
-             t)
-        (forward-line 1))))
-  (defun my/org-agenda-previous-header (&optional arg)
-    (interactive "p")
-    (dotimes (_ (or arg 1))
-      (forward-line -1)
-      (text-property-search-backward
-       'face nil
-       (lambda (_ val)
-         (memq val '(org-super-agenda-header
-                     org-agenda-structure
-                     org-agenda-structure-secondary)))
-       t)
-      (forward-line 1))))
+           ("q" . quit-window))))
+
+;;------------------------------------------------------------------------
+;; ** ORG-REVIEW
+;;----------------------------------------------------------------
+(use-package org-review
+  :ensure t
+  :after org
+  :demand t
+  :bind ( :map org-agenda-mode-map
+          ("C-c C-r" . my/org-review-insert-last-and-next-review)
+          :map org-mode-map
+          ("C-c C-r" . my/org-review-insert-last-and-next-review))
+  :hook ((org-capture-before-finalize . my/org-reviewed-today)
+         (org-after-todo-state-change . my/org-reviewed-today))
+  :config
+  (setq org-review-next-timestamp-format 'inactive
+        org-review-last-timestamp-format 'inactive)
+  (defun my/org-review-insert-last-and-next-review (&optional arg)
+    "Insert LAST_REVIEW and NEXT_REVIEW dates.
+
+If prefix-arg ARG is non-nil, query for NEXT_REVIEW date with
+`org-read-date'.
+
+Otherwise, read a short-form delay of the form [number][unit], like 2m,
+1w, 3d etc.  Press <tab> when reading the short-form delay to switch to
+the full date reader."
+    (interactive "P")
+    (if arg
+        (progn (org-review-insert-last-review nil)
+               (call-interactively #'org-review-insert-next-review))
+      (if-let* ((num (read-char "Next Review [ 1-9]: "))
+                ((not (= num 9)))
+                (period (read-char "Next Review [dwmy]: "))
+                ((not (= period 9))))
+          (let ((org-review-delay (format "+%c%c" num period)))
+              (cl-assert (and (<= 49 num 57) (memq period '(?d ?w ?m ?y)))
+                         nil "Canceled: Next Review time %c%c not according to spec!"
+                         num period)
+            (org-review-insert-last-review))
+        (my/org-review-insert-last-and-next-review t))))
+
+  ;; From John Wiegley
+  (defun my/org-review-increment-count (&rest _)
+    (interactive)
+    (let* ((where (if (equal major-mode 'org-agenda-mode)
+                      (or (org-get-at-bol 'org-marker)
+                          (org-agenda-error))
+                    (point)))
+           (reviews (org-entry-get where "REVIEWS")))
+      (if reviews
+          (org-entry-put where "REVIEWS"
+                         (number-to-string
+                          (1+ (string-to-number reviews))))
+        (org-entry-put where "REVIEWS" "0"))))
+
+  (defun my/org-reviewed-today ()
+    (interactive)
+    (when (or (ignore-errors
+                (and-let* ((state (org-get-todo-state)))
+                     (not (member state '("NOTE" "LINK")))))
+              (save-excursion
+                (goto-char (point-min))
+                (looking-at "^\\(DRAFT\\|TODO\\|TASK\\|HABIT\\) ")))
+      (save-excursion
+        (org-review-insert-last-review)
+        (org-review-insert-date
+         org-review-next-property-name
+         org-review-next-timestamp-format
+         (format-time-string (car org-time-stamp-formats)
+                             (current-time))))))
+  (advice-add 'org-review-insert-last-review
+              :after #'my/org-review-increment-count))
 
 ;;------------------------------------------------------------------------
 ;; ** MOVIEDATA

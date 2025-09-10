@@ -4374,6 +4374,23 @@ ARGS is the raw argument list (STRING &optional TRANS-CASE)."
 ;; ----------------------------------------------------------------
 
 ;;;----------------------------------------------------------------
+;; ** YEETUBE
+;; Simple Youtube search from Emacs
+(use-package yeetube
+  :ensure t
+  :bind ( :map yeetube-mode-map
+          ("w" . yeetube-copy-url)
+          ("m" . yeetube-play)
+          ("s" . yeetube-search)
+          ("p" . previous-line)
+          ("x" . yeetube-browse-url)
+          ("r" . nil) ("a" . nil)
+          ("v" . nil) ("C-q" . nil) ("V" . nil)
+          ("Q" . yeetube-mpv-change-video-quality))
+  :hook ((yeetube-mode . hl-line-mode))
+  :config
+  (setq yeetube-play-function #'browse-url-mpv))
+
 ;; ** NOV.EL
 ;;;----------------------------------------------------------------
 (use-package nov

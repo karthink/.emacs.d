@@ -111,15 +111,19 @@
 (use-package gptel
   :after gptel
   :config
-  (gptel-make-deepseek "Groq"
+  (gptel-make-openai "Groq"
     :host "api.groq.com"
     :endpoint "/openai/v1/chat/completions"
     :stream t
     :key #'gptel-api-key-from-auth-source
-    :models '(deepseek-r1-distill-llama-70b
-              llama-3.3-70b-versatile llama-3.1-8b-instant
-              mixtral-8x7b-32768 gemma-7b-it))
-  
+    :models '( openai/gpt-oss-120b openai/gpt-oss-20b
+               deepseek-r1-distill-llama-70b gemma-7b-it
+               llama-3.3-70b-versatile llama-3.1-8b-instant))
+
+  (gptel-make-xai "xai"
+    :stream t
+    :key #'gptel-api-key-from-auth-source)
+
   (defvar gptel--anthropic
     (gptel-make-anthropic "Claude" :key gptel-api-key :stream t))
 
@@ -127,8 +131,8 @@
     :key #'gptel-api-key-from-auth-source
     :stream t
     :models '(claude-sonnet-4-20250514 claude-3-7-sonnet-20250219)
-    :request-params '(:thinking (:type "enabled" :budget_tokens 1024)
-                      :max_tokens 2048))
+    :request-params '( :thinking (:type "enabled" :budget_tokens 1024)
+                       :max_tokens 2048))
 
   (defvar gptel--togetherai
     (gptel-make-openai "TogetherAI"
@@ -139,7 +143,16 @@
                 codellama/CodeLlama-13b-Instruct-hf
                 codellama/CodeLlama-34b-Instruct-hf)))
 
-  (gptel-make-deepseek "Deepseek"
+  (gptel-make-openai "Deepseek"
+    :host "api.deepseek.com"
+    :models '((deepseek-reasoner
+               :capabilities (tool reasoning)
+               :context-window 64 :input-cost 0.55 :output-cost 2.19)
+              (deepseek-chat
+               :capabilities (tool)
+               :context-window 64
+               :input-cost 0.27
+               :output-cost 1.1))
     :key #'gptel-api-key-from-auth-source
     :stream t)
 
@@ -152,7 +165,9 @@
     :endpoint "/api/v1/chat/completions"
     :stream t
     :key #'gptel-api-key-from-auth-source
-    :models '(deepseek/deepseek-r1-distill-llama-70b:free
+    :models '(openai/gpt-oss-120b
+              openai/gpt-oss-20b:free
+              deepseek/deepseek-r1-distill-llama-70b:free
               deepseek/deepseek-r1-distill-llama-70b:free))
 
   (gptel-make-openai "Github Models"
@@ -162,6 +177,20 @@
     :key (lambda () (auth-source-pass-get 'secret "api/api.github.com"))
     :models '(DeepSeek-R1 gpt-4o-mini))
 
+  (gptel-make-openai "llamacpp-cube"
+    :host "bazzite.local:8080"
+    :protocol "http"
+    :models '( qwen2.5-coder-0.5b qwen2.5-coder-1.5b
+               qwen3-1.7b qwen3-0.6b qwen3-4b gemma-3-1b)
+    :stream t)
+
+  (gptel-make-openai "llamacpp-t14"
+    :host "localhost:8080"
+    :protocol "http"
+    :models '( qwen2.5-coder-0.5b qwen2.5-coder-1.5b
+               qwen3-1.7b qwen3-0.6b qwen3-4b gemma-3-1b)
+    :stream t)
+
   (defvar gptel--gemini
     (gptel-make-gemini "Gemini" :key gptel-api-key :stream t))
 
@@ -170,10 +199,10 @@
       (gptel-make-ollama
           "Ollama"
         :host "192.168.1.11:11434"
-        :models '(qwen3:4b llama3.1:8b qwen3:8b
-                  (llava:7b :description Llava 1.6: Vision capable model
-                   :capabilities (media)
-                   :mime-types ("image/jpeg" "image/png")))
+        :models '( qwen3:4b llama3.1:8b qwen3:8b
+                   (llava:7b :description Llava 1.6: Vision capable model
+                             :capabilities (media)
+                             :mime-types ("image/jpeg" "image/png")))
         :stream t)))
 
   (defvar gptel--gpt4all
@@ -518,8 +547,12 @@ Intended to be placed in `git-commit-setup-hook'."
           ("filesystem"
            :command "mcp-server-filesystem"
            :args (,(expand-file-name "~/dotnix/")))
-          ("memory"
-           :command "mcp-server-memory")
+          ("deepwiki" :url "https://mcp.deepwiki.com/sse")
+          ("memory" :command "mcp-server-memory")
+          ("sequential-thinking"
+           :command "uvx"
+           :args ("--from" "git+https://github.com/arben-adm/mcp-sequential-thinking"
+                  "--with" "portalocker" "mcp-sequential-thinking"))
           ("nixos"
            :command "nix"
            :args ("run" "github:utensils/mcp-nixos" "--")))))

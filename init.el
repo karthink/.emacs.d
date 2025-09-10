@@ -3146,7 +3146,14 @@ normally have their errors suppressed."
   :defer
   :init
   (add-hook 'flymake-mode-hook
-            (poi-register 'flymake-goto-next-error)))
+            (poi-register 'flymake-goto-next-error
+                          'my/flymake-action))
+  :config
+  (defun my/flymake-action ()
+    (interactive)
+    (when (and (fboundp 'eglot-managed-p)
+               (eglot-managed-p))
+      (call-interactively #'eglot-code-actions))))
 
 ;; DONT
 (use-package flymake-diagnostic-at-point
@@ -3382,6 +3389,7 @@ normally have their errors suppressed."
       ("c" "completion" corfu-mode)
       ("a" "autocomp" (lambda () (interactive)
                         (setq-local corfu-auto (not corfu-auto))
+                        (corfu-mode 0) (corfu-mode 1)
                         (message "corfu-auto is now %s" corfu-auto))
        :transient t)
       ;; ("a"
@@ -3833,7 +3841,7 @@ _d_: subtree
 
   (defun my/sp-duplicate-sexp (&optional arg)
     (interactive "p")
-    (insert (string-trim-left
+    (insert (string-trim
              (buffer-substring 
               (save-excursion
                 (backward-sexp)
@@ -3862,8 +3870,8 @@ _d_: subtree
                        ("S" . sp-split-sexp)
                        ("R" . sp-raise-sexp)
                        ("\\" . indent-region)
-                       ("t" . transpose-sexps)
-                       ("e" . eval-sexp-maybe-pp)))
+                       ;; ("e" . eval-sexp-maybe-pp)
+                       ("t" . transpose-sexps)))
         (define-key map (kbd k) f))
       (dolist (n (number-sequence 48 57))
         (define-key map `[,n] 'digit-argument))
@@ -4374,8 +4382,8 @@ ARGS is the raw argument list (STRING &optional TRANS-CASE)."
   :hook ((nov-mode . my/nov-display-setup)
          (nov-mode . er/add-text-mode-expansions))
   :bind (:map nov-mode-map
-         ("u" . my/scroll-down-half)
-         ("d" . my/scroll-up-half))
+              ("u" . my/scroll-down-half)
+              ("d" . my/scroll-up-half))
   :config
   (use-package setup-reading
     :disabled

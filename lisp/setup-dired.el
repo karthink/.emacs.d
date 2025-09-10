@@ -453,27 +453,27 @@ This relies on the external 'fd' executable."
   :bind (:map dired-mode-map
          ("P" . dired-preview-mode)
          :map dired-preview-mode-map
-         ("SPC" . my/dired-scroll-other-window)
-         ("DEL" . my/dired-scroll-other-window-down)
-         ("S-SPC" . my/dired-scroll-other-window-down))
+         ("SPC" . dired-preview-page-down)
+         ("DEL" . dired-preview-page-up)
+         ("S-SPC" . dired-preview-page-up))
   :config
   (setq dired-preview--buffers-threshold 2)
   (setq dired-preview-delay 0.2)
   (setq dired-preview-ignored-extensions-regexp
         "\\.\\(mkv\\|webm\\|mp4\\|mp3\\|ogg\\|m4a\\|flac\\|wav\\|gz\\|zst\\|tar\\|xz\\|rar\\|zip\\|iso\\|epub\\)$"
         dired-preview-max-size (* 1024 1024 10))
+  (cl-defmethod dired-preview--get-buffer :around ((file (head text)))
+    (let ((org-inhibit-startup t)) (cl-call-next-method)))
+  ;; (define-advice dired-preview--clean-up-window
+  ;;     (:after (&optional window) run-mode-hooks)
+  ;;   (run-mode-hooks))
   (cl-defmethod dired-preview--get-buffer :around ((file (head image)))
     (let ((buf (cl-call-next-method)))
       (prog1 buf
         (with-current-buffer buf
-          (setq image-transform-resize image-auto-resize)))))
-  (define-advice dired-preview--display-buffer
-      (:after (buffer) set-scrolling)
-    (setq-local other-window-scroll-buffer buffer))
-  ;; (advice-add 'dired-preview--display-buffer :around
-  ;;             (defun my/dired-preview--display-buffer (origfn buffer)
-  ;;               (let ((display-buffer-base-action))
-  ;;                 (funcall origfn buffer))))
-  )
+          (setq image-transform-resize image-auto-resize))))))
+
+(use-package dired-preview-popup
+  :hook (dired-preview-mode . dired-preview-popup-mode))
 
 (provide 'setup-dired)

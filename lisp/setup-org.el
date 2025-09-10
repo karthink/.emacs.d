@@ -247,6 +247,73 @@
   (add-hook 'org-ctrl-c-ctrl-c-final-hook
             #'my/org-output-next-buffer 99))
 
+;; A completing-read replacement for `org-open-at-point'
+(use-package org
+  :after org
+  :bind ( :map org-mode-map
+          ([remap org-open-at-point] . my/search-occur-org-browse-url))
+  :config
+  (defun my/org-links-in-entry (&optional buffer marker)
+    "Offer links in the current entry and return the selected link."
+    (unless buffer (setq buffer (current-buffer)))
+    (with-current-buffer buffer
+      (org-with-wide-buffer
+       (when marker (goto-char marker))
+       (let ((cnt ?0) end links)
+         (save-excursion
+	   (org-back-to-heading t)
+	   (setq end (save-excursion
+                       (outline-get-next-sibling)
+                       (point)))
+	   (while (re-search-forward org-link-any-re end t)
+             ;; Only consider valid links or links openable via `org-open-at-point'.
+             (when (org-element-type-p
+                    (save-match-data (org-element-context))
+                    '(link comment comment-block node-property keyword))
+	       (push (cons (match-string 0) (match-beginning 0))
+                     links)))
+	   (setq links (org-uniquify (reverse links))))))))
+
+  ;; (or (outline-get-next-sibling) ;forward same level
+  ;;     (progn (outline-next-heading) (point)))
+
+
+  (defun my/search-occur-org-browse-url (&optional arg)
+    "Pick a url in the current entry and open it."
+    (interactive "P")
+    (let (buffer marker)
+      (cond
+       ((derived-mode-p 'org-agenda-mode)
+        (setq marker (or (org-get-at-bol 'org-hd-marker)
+		         (org-get-at-bol 'org-marker))
+              buffer (and marker (marker-buffer marker))))
+       ((derived-mode-p 'org-mode) (setq buffer (current-buffer)))
+       (t (user-error "Not called from Org mode!")))
+      (when-let*
+          ((links (my/org-links-in-entry buffer marker))
+           (completion-extra-properties
+            `( :category org-link
+               :affixation-function
+               ,(lambda (comps)
+                  (with-current-buffer (or buffer (current-buffer))
+                    (cl-loop
+                     for comp in comps
+                     for pos = (cdr (assoc comp links))
+                     for link = (progn (goto-char pos) (org-element-context))
+                     for type = (or (org-element-property :type link) "unknown")
+                     for path = (or (org-element-property :path link) comp)
+                     collect
+                     ( list comp
+                       (concat (propertize type 'face 'shadow)
+                               (propertize " " 'display '(space :align-to 16)))
+                       (concat (propertize " " 'display '(space :align-to (0.6 . text)))
+                               (propertize path 'face 'shadow))))))))
+           (choice (completing-read "URLs in entry: " links)))
+        ;; (org-link-open-from-string choice)
+        (with-current-buffer (or buffer (current-buffer))
+          (goto-char (cdr (assoc choice links)))
+          (org-open-at-point arg))))))
+
 ;; Auto insertion for Org
 (use-package org
   :after (org autoinsert)

@@ -453,9 +453,9 @@ This relies on the external 'fd' executable."
   :bind (:map dired-mode-map
          ("P" . dired-preview-mode)
          :map dired-preview-mode-map
-         ("SPC" . my/dired-scroll-other-window)
-         ("DEL" . my/dired-scroll-other-window-down)
-         ("S-SPC" . my/dired-scroll-other-window-down))
+         ("SPC" . dired-preview-page-down)
+         ("DEL" . dired-preview-page-up)
+         ("S-SPC" . dired-preview-page-up))
   :config
   (setq dired-preview--buffers-threshold 2)
   (setq dired-preview-delay 0.2)
@@ -466,14 +466,9 @@ This relies on the external 'fd' executable."
     (let ((buf (cl-call-next-method)))
       (prog1 buf
         (with-current-buffer buf
-          (setq image-transform-resize image-auto-resize)))))
-  (define-advice dired-preview--display-buffer
-      (:after (buffer) set-scrolling)
-    (setq-local other-window-scroll-buffer buffer))
-  ;; (advice-add 'dired-preview--display-buffer :around
-  ;;             (defun my/dired-preview--display-buffer (origfn buffer)
-  ;;               (let ((display-buffer-base-action))
-  ;;                 (funcall origfn buffer))))
-  )
+          (setq image-transform-resize image-auto-resize))))))
+
+(use-package dired-preview-popup
+  :hook (dired-preview-mode . dired-preview-popup-mode))
 
 (provide 'setup-dired)

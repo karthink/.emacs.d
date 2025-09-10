@@ -147,6 +147,8 @@
 (use-package org-node
   :ensure t
   :bind-keymap (("C-c k" . org-node-global-prefix-map))
+  :bind (:map org-mode-map
+              (("C-c k w" . org-node-refile)))
   :config
   (setq org-mem-do-sync-with-org-id t
         org-mem-watch-dirs '("~/org/" "~/Documents/roam/"))

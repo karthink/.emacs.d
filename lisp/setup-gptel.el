@@ -458,6 +458,40 @@ Do not repeat any of the BEFORE or AFTER code." lang lang lang)
       (unless (equal popper-popup-status 'user-popup)
         (popper-toggle-type)))))
 
+(use-package macher
+  :ensure (:host github :repo "kmontag/macher")
+  :after gptel
+  :defer
+  ;; :hook
+  ;; Add the current file to the gptel context when making macher requests.
+  ;; (macher-before-send
+  ;;  .
+  ;;  (lambda ()
+  ;;    (when-let* ((filename (buffer-file-name))
+  ;;                ((not (file-directory-p filename))))
+  ;;      (gptel-add-file filename))))
+  :config
+  (setf (alist-get "\\*macher:.*\\*" display-buffer-alist
+                   nil nil #'equal)
+        '((display-buffer-in-side-window)
+          (side . right)
+          (slot . 22)
+          (window-width . 84)))
+  (setf (alist-get "\\*macher-patch:.*\\*" display-buffer-alist
+                   nil nil #'equal)
+        '((display-buffer-in-side-window)
+          (side . right)
+          (slot . 23)
+          (window-width . 84)))
+
+  ;; Customize patch display action. The 'macher-context' struct
+  ;; contains data from the current request, including the contents of
+  ;; any files that were edited.
+  ;; (setopt macher-patch-ready-function
+  ;;         (lambda (macher-context)
+  ;;           (ediff-patch-file nil (current-buffer))))
+  (macher-install))
+
 ;;----------------------------------------------------------------
 ;; ** Fake eshell integration (pretty silly)
 ;;----------------------------------------------------------------

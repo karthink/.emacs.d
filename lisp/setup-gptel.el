@@ -536,6 +536,106 @@ Intended to be placed in `git-commit-setup-hook'."
                       (insert resp "\n\n")
                       (magit-generate-changelog))))))))))))
 
+;;----------------------------------------------------------------
+;; ** org export gptel chat buffers
+;;----------------------------------------------------------------
+(use-package gptel
+  :defer
+  :after ox-html
+  :config
+  (defun my/org-html-filter-tool-block (tree backend info)
+    "Rewrite #+begin_tool blocks as <details><summary>...</summary><pre>...</pre></details>."
+    (org-element-map tree 'special-block
+      (lambda (blk)
+        (when (string= (org-element-property :type blk) "tool")
+          (let* ((params (org-element-property :parameters blk))
+                 (summary-blk
+                  (org-element-create
+                   'special-block
+                   '(:type "summary"
+                           :begin nil :end nil :contents-begin nil :contents-end nil
+                           :parameters nil :parent blk)
+                   params))
+                 (body (org-element-interpret-data (org-element-contents blk)))
+                 (code-blk
+                  (org-element-create
+                   'export-block
+                   `(:type "HTML" :parent ,blk
+                           :value ,(format "<pre>%s</pre>"
+                                           (org-html-encode-plain-text (string-trim body))))
+                   nil)))
+            (org-element-put-property blk :type "details")
+            (org-element-set-contents blk (list summary-blk code-blk)))))
+      info)
+    tree)
+
+  (defun my/org-html-highlight-@prefix (text _backend info)
+    "Wrap @words in <span class=\"at-prefix\">…</span> during Org export."
+    (with-temp-buffer
+      (insert text)
+      (goto-char (point-min))
+      (while (re-search-forward "@\\([^[:blank:]]+\\)\\_>" nil t)
+        (replace-match "<span class=\"at-prefix\">@\\1</span>"))
+      ;; (goto-char (point-min))
+      ;; (when-let* ((prompt-prefix
+      ;;              (alist-get 'org-mode gptel-prompt-prefix-alist))
+      ;;             (_ (not (string-empty-p prompt-prefix))))
+      ;;   (while (search-forward prompt-prefix nil t)
+      ;;     (forward-line 0) (insert "<hr>")))
+      (buffer-string))
+    ;; (setq text
+    ;;       (replace-regexp-in-string
+    ;;        "@\\([^[:blank:]]+\\)\\_>"
+    ;;        "<span class=\"at-prefix\">@\\1</span>"
+    ;;        text))
+    )
+
+  (defun my/org-export-gptel-chat
+      (&optional async subtreep visible-only body-only ext-plist)
+    (interactive)
+    (let* ((extension ".html")
+           (file (org-export-output-file-name extension subtreep))
+           (org-export-coding-system org-html-coding-system))
+      (org-export-to-file 'gptel-chat file
+        async subtreep visible-only body-only ext-plist)))
+
+  (org-export-define-derived-backend 'gptel-chat 'html
+    :menu-entry
+    '(?g "Export gptel chat (HTML)"
+         ((?g "As HTML file" my/org-export-gptel-chat)
+          (?o "As HTML file and open"
+              (lambda (a s v b)
+                (if a
+                    (my/org-export-gptel-chat t s v b)
+                  (org-open-file (my/org-export-gptel-chat nil s v b)))))))
+    :filters-alist
+    '((:filter-parse-tree my/org-html-filter-tool-block
+                          my/org-export-ignore-headlines)
+      (:filter-plain-text my/org-html-highlight-@prefix))
+    :options-alist
+    '((:html-doctype "HTML_DOCTYPE" nil "html5")
+      (:html-html5-fancy nil "html5-fancy" t)
+      (:html-head "HTML_HEAD_EXTRA" nil
+                  "<link rel=\"stylesheet\" type=\"text/css\" href=\"https://orgmode.org/worg/style/worg.css\"/>
+<style>
+details {
+  border: 1px solid #cccccc; border-radius: 4px;
+  padding: 0.75em 1em; margin: 1em 0;
+  background: #fafbff; position: relative;
+  transition: box-shadow 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
+details[open] { box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+summary {
+  font-weight: 200; cursor: pointer; outline: none;
+  position: relative; padding-left: 1.4em; }
+span.at-prefix {
+  background: #ede2ff; color: #581997; padding: 0.1em 0.4em;
+  border-radius: 0.25em; font-family: monospace; font-size: 120%; }
+h2 code { font-family: inherit; font-size: inherit; font-weight: inherit; }
+.note { font-size: 0.9em; border-radius: 4px;
+        padding: 0.1em 0.75em; background: #f09fa9a1; }
+</style>"
+                  newline))))
+
 ;;================================================================
 ;; * Tools and MCP
 ;;================================================================

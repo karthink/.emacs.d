@@ -1294,6 +1294,14 @@ See `org-capture-templates' for more information."
   ;; (add-to-list 'org-latex-packages-alist '("" "listings"))
   ;; (add-to-list 'org-latex-packages-alist '("" "color"))
 
+  (defun my/org-export-exclude-tag (exp-plist backend)
+    (prog1 exp-plist
+      (push (format "no%sexport" backend)
+            (plist-get exp-plist :exclude-tags))))
+
+  (add-hook 'org-export-filter-options-functions
+            #'my/org-export-exclude-tag)
+
   (defun my/org-export-ignore-headlines (data backend info)
     "Remove headlines tagged \"ignore\" retaining contents and promoting children.
 Each headline tagged \"ignore\" will be removed retaining its
@@ -1552,6 +1560,7 @@ Return the initialized session, if any."
   :config
   (unless (fboundp 'svgbob-mode)
     (add-to-list 'org-src-lang-modes (cons "svgbob" 'artist))))
+(with-ob-autoload "http" :ensure t :defer)
 (with-ob-autoload "python")
 (with-ob-autoload "shell")
 (with-ob-autoload "scheme")
@@ -1617,6 +1626,29 @@ Return the initialized session, if any."
           (find-file tangle)
           t)))
   (add-hook 'org-open-at-point-functions 'my/org-babel-goto-tangle-file))
+
+(use-package ob-js-json
+  :no-require t
+  :after ob
+  :config
+  ;; From https://isamert.net/2022/01/04/dealing-with-apis-jsons-and-databases-in-org-mode.html
+  (defun org-babel-execute:json (body params)
+    (let ((jq (cdr (assoc :jq params)))
+          (node (cdr (assoc :node params))))
+      (cond
+       (jq (with-temp-buffer
+             (insert body)
+             (call-process-region
+              (point-min) (point-max) "jq" t t nil "-r" jq)
+             (buffer-string)))
+       (node (with-temp-buffer
+               (insert (format "const it = %s;" body))
+               (insert node)
+               (call-process-region
+                (point-min) (point-max) "node" t t nil "-p")
+               (buffer-string))))))
+
+  (defalias 'org-babel-execute:js-json 'org-babel-execute:json))
 
 (use-package org-babel-eval-in-repl
   :disabled
@@ -1787,6 +1819,14 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
     (org-gcal-sync skip-export silent)
     (message "Updated gcal.")
     (setq my/org-gcal--last-sync-time now))))
+
+(use-package oauth2-auto
+  :defer
+  :config
+  (define-advice oauth2-auto--plstore-read
+      (:before-until (username provider) read-from-cache)
+    (gethash (oauth2-auto--compute-id username provider)
+             oauth2-auto--plstore-cache)))
 
 ;;;----------------------------------------------------------------
 ;; ** ORG-REVEAL

@@ -1,9 +1,11 @@
+;; -*- lexical-binding: t; -*-
 (setq fit-window-to-buffer-horizontally t
       fit-frame-to-buffer t)
 
 (setq display-buffer-base-action
       '((display-buffer-reuse-window
          display-buffer-in-previous-window
+         display-buffer-pop-up-window
          display-buffer-use-some-window)
         (some-window . mru)
         (reusable-frames . nil)))
@@ -258,39 +260,19 @@ If buffer-or-name is nil return current buffer's mode."
         ("\\*Backtrace\\*" (display-buffer-in-side-window)
          (window-height . 0.20)
          (side . bottom)
-         (slot . -9)
-         ;; (preserve-size . (nil . t))
-         ;; (window-parameters . (;; (mode-line-format . (:eval (my/helper-window-mode-line-format)))
-         ;;                       ))
-         )
+         (slot . -9))
 
         ("\\*RefTex" (display-buffer-in-side-window)
          (window-height . 0.25)
          (side . bottom)
-         (slot . -9)
-         ;; (preserve-size . (nil . t))
-         ;; (window-parameters . (;; (mode-line-format . (:eval (my/helper-window-mode-line-format)))
-         ;;                       ))
-         )
-
-        ;; ("\\*scratch\\*"
-        ;;  display-buffer-in-side-window
-        ;;  (body-function . select-window)
-        ;;  ;; (window-width 35)
-        ;;  (window-height . (lambda (win) (fit-window-to-buffer win 20 nil 85)))
-        ;;  (side . bottom)
-        ;;  (slot . -8))
+         (slot . -9))
 
         ((lambda (buf act) (member (buffer-mode buf) my/message-modes-list))
          (display-buffer-at-bottom display-buffer-in-side-window)
          (window-height . 0.25)
          (side . bottom)
          (slot . -6)
-         ;; (preserve-size . (nil . t))
-         ;; (window-parameters . ((no-other-window . #'ignore)
-         ;;                       ;; (mode-line-format . (:eval (my/helper-window-mode-line-format)))
-         ;;                       ))
-         )
+         (bump-use-time . t))
 
         ("\\*Messages\\*"
          (display-buffer-at-bottom display-buffer-in-side-window display-buffer-in-direction)
@@ -318,6 +300,7 @@ If buffer-or-name is nil return current buffer's mode."
                             (fit-window-to-buffer win (floor (frame-height) 2.5))))
          (side . bottom)
          (slot . -4)
+         (bump-use-time . t)
          ;; (preserve-size . (nil . t))
          ;; (window-parameters . ((no-other-window . t)
          ;;                       ;; (mode-line-format . (:eval (my/helper-window-mode-line-format)))
@@ -329,6 +312,7 @@ If buffer-or-name is nil return current buffer's mode."
          (side . bottom)
          (slot . -4)
          ;; (preserve-size . (nil . t))
+         (bump-use-time . t)
          (window-parameters . ((no-other-window . t)
                                ;; (mode-line-format . (:eval (my/helper-window-mode-line-format)))
                                )))

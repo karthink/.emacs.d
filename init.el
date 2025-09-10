@@ -1176,7 +1176,7 @@ for details."
   (setq truncate-partial-width-windows t)
   (setq other-window-scroll-default
       (lambda ()
-        (or (get-mru-window nil nil 'not-this-one-dummy)
+        (or (get-mru-window nil t 'not-this-one-dummy)
             (next-window)
             (next-window nil nil 'visible))))
   (defun my/kill-buffer-and-window ()
@@ -1877,7 +1877,8 @@ If region is active, add its contents to the new buffer."
                     (?  "Continue")))))
             (pcase (car pick)
               (?o (org-mode)) (?m (markdown-mode))
-              (?l (lisp-interaction-mode)) (?e (emacs-lisp-mode))))
+              (?l (lisp-interaction-mode)) (?e (emacs-lisp-mode)))
+            (read-only-mode 0))
         (quit nil)))
     (let* ((mode major-mode))
       (rename-buffer (format "*Scratch for %s*" mode) t)))
@@ -2016,7 +2017,7 @@ If no FILE is specified get its path from the kill ring."
           (save-excursion
             (goto-char rb)
             (skip-chars-forward "\n\r\t ")
-            (eq (char-after) 40)))
+            (memq (char-after) '(40 59))))
         (lisp-interaction-mode))
        (t (normal-mode))))))
 

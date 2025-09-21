@@ -4,19 +4,17 @@
   :commands (avy-goto-word-1 avy-goto-char-2 avy-goto-char-timer)
   :config
   (setq avy-timeout-seconds 0.27)
-  (setq avy-keys '(?a ?s ?d ?f ?g ?j ?l ?o
-                   ?v ?b ?n ?, ?/ ?u ?p ?e ?.
-                   ?c ?q ?2 ?3 ?' ;; ?\;
-                   ))
+  (setq avy-keys '( ?f ?d ?s ?a ?g ?q ?e ?r
+                    ?c ?v ?p ?. ?, ;; ?2 ?3 ?9 ?8
+                    ?u ?/ ?b ?n ?i ?o ?' ?l ?j))
   (setq avy-single-candidate-jump nil)
   (setq avy-dispatch-alist '((?m . avy-action-mark)
-                             (?i . avy-action-ispell)
+                             (?$ . avy-action-ispell)
                              (?z . avy-action-zap-to-char)
                              (?  . avy-action-embark)
                              (?= . avy-action-define)
+                             (23 . avy-action-zap-to-char)
                              (67108896 . avy-action-mark-to-char)
-                             (67108925 . avy-action-tuxi)
-                             ;; (?W . avy-action-tuxi)
                              (?h . avy-action-helpful)
                              (?x . avy-action-exchange)
                              
@@ -24,7 +22,6 @@
                              (25 . avy-action-yank-line)
                              
                              (?w . avy-action-easy-kill)
-                             ;; (134217847  . avy-action-easy-copy)
                              (?k . avy-action-kill-stay)
                              (?y . avy-action-yank)
                              (?t . avy-action-teleport)
@@ -107,16 +104,6 @@
       (save-excursion
         (goto-char pt)
         (dictionary-search-dwim))
-      (select-window
-       (cdr (ring-ref avy-ring 0))))
-    t)
-  
-  (defun avy-action-tuxi (pt)
-    (cl-letf (((symbol-function 'keyboard-quit)
-            #'abort-recursive-edit))
-      (save-excursion
-        (goto-char pt)
-        (google-search-at-point))
       (select-window
        (cdr (ring-ref avy-ring 0))))
     t)
@@ -287,8 +274,7 @@ The current window is chosen if WIN is not specified."
     (interactive)
     (with-selected-window (or win
                               (setq win (selected-window)))
-      (let* ((avy-single-candidate-jump t)
-             match shr-buttons ov-buttons all-buttons)
+      (let* ((avy-single-candidate-jump t) match all-buttons)
 
         ;; SHR links
         (save-excursion

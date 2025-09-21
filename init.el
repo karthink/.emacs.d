@@ -272,6 +272,21 @@ Cancel the previous one if present."
                                                                   after-init-time))))
                           (message "[Pre-loaded packages in %.3fs]" elapsed)))))))))
 
+(use-package emacs
+  :init
+  (add-hook 'after-init-hook 'my/terminal-settings)
+  (defun my/terminal-settings ()
+    (interactive)
+    (remove-hook 'after-init-hook 'my/terminal-settings)
+    (unless (or (display-graphic-p) (daemonp))
+      (keymap-global-unset "C-@")       ;conflicts with C-SPC
+      (with-eval-after-load 'smartparens
+        ;; conflicts with focus-in/out events
+        (keymap-set smartparens-mode-map "M-[" nil))
+      (with-eval-after-load 'popper
+        ;; C-` and H-` are not available
+        (keymap-global-set "C-M-^" 'popper-toggle)))))
+
 ;;;################################################################
 ;; * PERSONAL INFO
 ;;;################################################################

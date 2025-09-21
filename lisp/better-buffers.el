@@ -10,6 +10,7 @@
 
 (global-set-key (kbd "C-x k") 'my/kill-current-buffer)
 (define-key ctl-x-x-map "z" 'bury-buffer)
+(define-key ctl-x-x-map "R" 'rename-visited-file)
 (global-set-key (kbd "M-`")
                 (defun my/switch-to-other-buffer (&optional _arg)
                   (interactive)

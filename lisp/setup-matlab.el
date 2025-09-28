@@ -27,6 +27,10 @@
               ("C-h ." . 'my/matlab-shell-help-at-point)
               ("M-s" . nil)
               ("C-c C-z" . 'matlab-show-matlab-shell-buffer))
+  :init
+  ;; Matlab mode loads up no matter what because it adds itself to
+  ;; magic-mode-alist.  Bad.
+  (setf (alist-get 'matlab-is-matlab-file magic-mode-alist nil t) nil)
   :config
   ;; (load-library "matlab-load")
   ;; (matlab-cedet-setup)

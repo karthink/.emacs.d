@@ -490,9 +490,6 @@ Cancel the previous one if present."
 ;; * INTERFACING WITH THE OS
 ;;;######################################################################
 
-(if IS-WINDOWS
-    (setq shell-file-name "C:/cygwin/cygwin.bat"))
-
 (use-package auth-source-pass
   :defer
   :config (auth-source-pass-enable))

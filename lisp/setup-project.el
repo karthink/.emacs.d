@@ -101,10 +101,11 @@ The directory name must be absolute."
 ;; project-specific window configurations. It also adds commands to save and
 ;; restore project windows.
 
+;; Disabled in favor of activities
 (use-package project-x
-  ;; :load-path "plugins/project-x/"
+  :disabled
   :ensure (:host github :protocol ssh
-           :repo "karthink/project-x")
+                 :repo "karthink/project-x")
   :after project
   :config
   (setq project-x-local-identifier '(".project" "Project.toml"))

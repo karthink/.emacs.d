@@ -731,7 +731,7 @@ output instead."
 ;; * VTERM
 
 ;; Vterm is a module, so the build declaration takes a little work.
-(unless IS-GUIX
+(unless (or IS-GUIX IS-WINDOWS)
   (use-package vterm
     :ensure (:files
              ("*.so" "*.el")
@@ -746,10 +746,11 @@ output instead."
     :defer))
 
 (use-package vterm
+  :when (not IS-WINDOWS)
   :bind (:map vterm-mode-map
-         ("C-c C-p" . my/vterm-previous-prompt)
-         ("C-c C-n" . my/vterm-next-prompt)
-         ("M-v" . vterm-copy-mode))
+              ("C-c C-p" . my/vterm-previous-prompt)
+              ("C-c C-n" . my/vterm-next-prompt)
+              ("M-v" . vterm-copy-mode))
   :config
   (add-to-list
    'vterm-eval-cmds
@@ -769,6 +770,7 @@ output instead."
     (my/vterm-next-prompt (- (or arg 1)))))
 
 (use-package vterm
+  :when (not IS-WINDOWS)
   :after project
   :bind (:map project-prefix-map
          ("s" . vterm-project))

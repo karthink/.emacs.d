@@ -7,7 +7,11 @@
   ;; :straight (:local-repo "~/.local/share/git/gptel/")
   :ensure (:host github :protocol ssh :repo "karthink/gptel")
   :commands (gptel gptel-send)
-  :hook ((gptel-pre-response . my/gptel-easy-page))
+  :hook ((gptel-pre-response . my/gptel-easy-page)
+         (gptel-mode . (lambda ()
+                         (setq-local gptel-cache '(message))
+                         (add-hook 'before-save-hook #'my/gptel-assign-filename
+                                   nil 'local))))
   :bind (("C-c C-<return>" . gptel-menu)
          ("C-c <return>" . gptel-send)
          ("C-c j" . gptel-menu)
@@ -45,6 +49,43 @@
            (lambda () (setq mode-line-format
                        (delete scrolling mode-line-format))))))))
 
+  (defun my/gptel-mode-add-prop-line ()
+    "Ensure that this file opens with `gptel-mode' enabled."
+    (save-excursion
+      (let ((enable-local-variables t)) ; Ensure we can modify local variables
+        (if (and (save-excursion (goto-char (point-min)) (looking-at ".*-\\*-")))
+            ;; If there's a -*- line
+            ;; First remove any existing eval, then add the new one
+            (modify-file-local-variable-prop-line 'eval nil 'delete))
+        ;; Always add our eval
+        (add-file-local-variable-prop-line
+         'eval '(and (fboundp 'gptel-mode) (gptel-mode 1))))))
+
+  (defvar my/gptel-chat-directory
+    (file-name-as-directory
+     (file-name-concat (xdg-data-home) "gptel-chat")))
+
+  (defun gptel-resume (chat)
+    "Resume previous gptel chat stored in `my/gptel-chat-directory'."
+    (interactive (list (read-file-name
+                        "Resume chat: " my/gptel-chat-directory nil t)))
+    (find-file chat))
+
+  (defun my/gptel-assign-filename ()
+    (unless (or (buffer-file-name) current-prefix-arg)
+      (make-directory my/gptel-chat-directory t)
+      (my/gptel-mode-add-prop-line)
+      (setq buffer-file-name
+            (file-name-concat
+             my/gptel-chat-directory
+             (concat
+              (format-time-string "%Y%m%d%H%M%2S-")
+              (file-name-sans-extension
+               (replace-regexp-in-string " " "-" (buffer-name)))
+              (pcase major-mode
+                ('org-mode ".org") ('markdown-mode ".md") (_ ".txt")))))
+      (rename-buffer (file-name-nondirectory buffer-file-name) t)))
+
   (defun my/gptel-remove-headings (beg end)
     (when (derived-mode-p 'org-mode)
       (save-excursion
@@ -56,6 +97,7 @@
           (end-of-line)
           (skip-chars-backward " \t\r")
           (insert-and-inherit "*")))))
+  
   (defun my/gptel-latex-preview (beg end)
     (when (derived-mode-p 'org-mode)
       (org-latex-preview--preview-region 'dvisvgm beg end)))
@@ -88,26 +130,67 @@
           (slot . 20)
           (body-function . ,(lambda (win)
                               (select-window win)
-                              (my/easy-page)))))
+                              (my/easy-page))))))
 
-  (cl-pushnew '(:propertize
-                (:eval
-                 (when (local-variable-p 'gptel--system-message)
-                  (concat
-                   "["
-                   (if-let ((n (car-safe (rassoc gptel--system-message gptel-directives))))
-                       (symbol-name n)
-                     (gptel--describe-directive gptel--system-message 12))
-                   "]")))
-                'face 'gptel-rewrite-highlight-face)
-              mode-line-misc-info)
+;; Mode line status indicators
+;; ---------------------------
+(use-package gptel
+  :disabled
+  :config
+  ;; Show model but only when it differs from the global value
+  (cl-pushnew
+   '(:propertize
+     (:eval
+      (when (local-variable-p 'gptel--system-message)
+        (concat
+         "["
+         (if-let* ((n (car-safe (rassoc gptel--system-message gptel-directives))))
+             (gptel--model-name n)
+           (gptel--describe-directive gptel--system-message 12))
+         "]")))
+     'face 'gptel-rewrite-highlight-face)
+   mode-line-misc-info)
   (add-to-list
    'mode-line-misc-info
    '(:eval
      (unless gptel-mode
-      (when (and (local-variable-p 'gptel-model)
-             (not (eq gptel-model (default-value 'gptel-model))))
-       (concat "[" (gptel--model-name gptel-model) "]"))))))
+       (when (and (local-variable-p 'gptel-model)
+                  (not (eq gptel-model (default-value 'gptel-model))))
+         (concat "[" (gptel--model-name gptel-model) "]")))))
+
+  ;; Variable to hold status indicator
+  (defvar-local gptel--mode-line-format " ")
+
+  (defun gptel--mode-line-format (msg &optional face)
+    (setq gptel--mode-line-format
+          (if face (propertize msg 'face face) msg)))
+
+  ;; Update according to current state
+  (defun gptel--mode-line-update (fsm)
+    (let ((buf (plist-get (gptel-fsm-info fsm) :buffer)))
+      (when (buffer-live-p buf)
+        (with-current-buffer buf
+          (pcase (gptel-fsm-state fsm)
+            ('WAIT (gptel--mode-line-format "↑" 'warning))
+            ('TYPE (gptel--mode-line-format "↓" 'success))
+            ('TOOL (gptel--mode-line-format "🔨" 'warning))
+            ('ERRS (gptel--mode-line-format "❌" 'error))
+            (_     (gptel--mode-line-format " ")))))))
+
+  ;; Add to `gptel-send' FSM handlers
+  (dolist (state '(WAIT TYPE TOOL ERRS DONE))
+    (cl-pushnew 'gptel--mode-line-update
+                (alist-get state gptel-send--handlers)))
+
+  ;; ;; Optional: Also add to `gptel-request' FSM handlers
+  ;; ;; (i.e. for all gptel commands, not just `gptel-send')
+  ;; (dolist (state '(WAIT TYPE TOOL ERRS DONE))
+  ;;   (cl-pushnew 'gptel--mode-line-update
+  ;;               (alist-get state gptel-request--handlers)))
+
+  ;; Add indicator to the `mode-line-misc-info'
+  (cl-pushnew '(:eval gptel--mode-line-format) mode-line-misc-info
+              :test #'equal))
 
 ;;---------------------------------------------------------
 ;; * gptel LLM backends
@@ -226,7 +309,9 @@
 (use-package gptel-prompts
   :ensure (:host github :repo "jwiegley/gptel-prompts")
   :after gptel
-  :config (gptel-prompts-update))
+  :config
+  (when (file-directory-p gptel-prompts-directory)
+    (gptel-prompts-update)))
 
 ;;----------------------------------------------------------------
 ;; ** gptel presets

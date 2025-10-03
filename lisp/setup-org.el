@@ -125,7 +125,7 @@
                         (point))
                       (org-element-end (org-element-context))))))
 
-  (defun er/mark-org-code-block ()
+  (define-advice er/mark-org-code-block (:override () inside)
     (let ((case-fold-search t)
           (re "#\\+begin_\\(\\sw+\\)"))
       (unless (looking-at re) (search-backward-regexp re))
@@ -1295,6 +1295,8 @@ See `org-capture-templates' for more information."
       (`(,key . ,template)
        '(("n" "Note" entry (file "~/org/inbox.org")
           "* %? %^G\n:PROPERTIES:\n:CREATED:  %U\n:END:\n%a\n%x\n")
+         ("p" "Webpage" entry (file "~/org/inbox.org")
+          "* TODO %a\n:PROPERTIES: \n:CREATED:  %U \n:ID: %(org-id-uuid) \n:END:\n%i\n%?\n")
          ("t" "Add task" entry (file "~/org/inbox.org")
           "* TODO %?\n:PROPERTIES: \n:CREATED:  %U \n:ID:  %(org-id-uuid) \n:END:\n%a\n%i\n")
          ("m" "Task from email" entry (file "~/org/inbox.org")
@@ -2401,6 +2403,7 @@ Whichever was already active."
   :after org
   :demand t
   :bind ( :map org-agenda-mode-map
+          ("r" . my/org-review-insert-last-and-next-review)
           ("C-c C-r" . my/org-review-insert-last-and-next-review)
           :map org-mode-map
           ("C-c C-r" . my/org-review-insert-last-and-next-review))

@@ -222,7 +222,9 @@
   (gptel-make-anthropic "Claude-thinking"
     :key #'gptel-api-key-from-auth-source
     :stream t
-    :models '(claude-sonnet-4-20250514 claude-3-7-sonnet-20250219)
+    :models '( claude-sonnet-4-20250514
+               claude-3-7-sonnet-20250219
+               claude-haiku-4-5-20251001)
     :request-params '( :thinking (:type "enabled" :budget_tokens 1024)
                        :max_tokens 2048))
 
@@ -302,7 +304,10 @@
         "GPT4All"
       :protocol "http"
       :host "localhost:4891"
-      :models '(mistral-7b-openorca.Q4_0.gguf))))
+      :models '(mistral-7b-openorca.Q4_0.gguf)))
+
+  (setq-default gptel-model 'gemini-flash-latest
+                gptel-backend gptel--gemini))
 
 ;;================================================================
 ;; * Directives and presets
@@ -694,7 +699,8 @@ Intended to be placed in `git-commit-setup-hook'."
     (gptel-with-preset 'commit-summary
       (let ((commit-buffer (current-buffer))) ;commit message buffer
 
-        (when (looking-at-p "[\n[:blank:]]+") ;Heuristic for blank message
+        (when (and (looking-at-p "[\n[:blank:]]+") ;Heuristic for blank message
+                   (or noninteractive (y-or-n-p "Generate commit summary? ")))
           (with-temp-buffer
             (vc-git-command             ;insert diff
              (current-buffer) 1 nil

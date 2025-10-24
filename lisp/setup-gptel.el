@@ -214,6 +214,10 @@
   (defvar gptel--anthropic
     (gptel-make-anthropic "Claude" :key gptel-api-key :stream t))
 
+  (gptel-make-preset 'think
+    :request-params '( :thinking (:type "enabled" :budget_tokens 768)
+                       :max_tokens 2048))
+
   (gptel-make-anthropic "Claude-thinking"
     :key #'gptel-api-key-from-auth-source
     :stream t
@@ -352,12 +356,39 @@
   (gptel-make-preset 'websearch
     :description "Add basic web search tools"
     :pre (lambda () (require 'llm-tools))
-    :tools '(:append "search_web" "read_url" "get_youtube_meta"))
+    :tools '(:append ("search_web" "read_url" "get_youtube_meta"))
+    :system '(:append "\n\nUse the provided tools to search the web for up-to-date information."))
 
+  (gptel-make-preset 'nixos
+    :description "Add NixOS tools (minus darwin)"
+    :pre (lambda () (gptel-mcp-connect '("nixos") 'sync))
+    :system '(:append "\n\nUse the provided NixOS tools to look for up-to-date information and\
+ examine the state of my system")
+    :tools '( :append ("mcp-nixos")
+              :function (lambda (tools)
+                          (cl-delete-if
+                           (lambda (tool)
+                             (string-match-p "darwin" (gptel-tool-name tool)))
+                           (mapcan #'gptel-get-tool tools)))))
   (gptel-make-preset 'files
     :pre (lambda () (require 'llm-tools))
     :description "Add filesystem tools"
-    :tools '("filesystem"))
+    :tools '(:append ("read_file_or_directory" "read_file_lines"
+                      "write_file" "make_directory"
+                      "search_in_files" "replace_in_files")))
+
+  (gptel-make-preset 'files-ro
+    :pre (lambda () (require 'llm-tools))
+    :description "Add read-only filesystem tools"
+    :tools '(:append ("read_file_or_directory"
+                      "read_file_lines"
+                      "search_in_files")))
+
+  (gptel-make-preset 'shell
+    :pre (lambda () (require 'llm-tools))
+    :description "Add Bash as a tool"
+    :tools  '(:append ("execute_bash"))
+    :system '(:append "Use the execute_bash tool to introspect and change the state of the system."))
 
   (gptel-make-preset 'tutor
     :description "Get Claude Sonnet to teach using hints"
@@ -374,6 +405,33 @@
     :model 'claude-sonnet-4-20250514
     :tools nil
     :include-reasoning nil)
+
+  (gptel-make-preset 'json
+    :description "JIT only: use JSON schema following @json cookie"
+    :schema '(:eval (buffer-substring-no-properties
+                     (point) (point-max)))
+    :post (lambda () (delete-region (point) (point-max)))
+    :include-reasoning nil)
+
+  (defun my/gptel-windows-on-frame ()
+    "Return all windows on frame that aren't gptel chat buffers."
+    (delq (and-let* ((current-buf (window-buffer (selected-window)))
+                     ((buffer-local-value 'gptel-mode current-buf)))
+            (selected-window))
+          (window-list)))
+
+  (gptel-make-preset 'visible-buffers
+    :description "Include the full text of all buffers visible in the frame."
+    :context
+    '(:eval (mapcar #'window-buffer (my/gptel-windows-on-frame))))
+
+  (gptel-make-preset 'visible-text
+    :description "Include visible text from all windows in the frame."
+    :context
+    '(:eval (mapcar (lambda (win) ;; Create (<buffer> :bounds ((start . end)))
+                      `(,(window-buffer win)
+                        :bounds ((,(window-start win) . ,(window-end win)))))
+                    (my/gptel-windows-on-frame))))
 
   (gptel-make-preset 'explain
     :description "Deepseek-R1, explains the prompt text"
@@ -830,9 +888,12 @@ enclose them in markdown quotes.
            :command "uvx"
            :args ("--from" "git+https://github.com/arben-adm/mcp-sequential-thinking"
                   "--with" "portalocker" "mcp-sequential-thinking"))
-          ("nixos"
-           :command "nix"
-           :args ("run" "github:utensils/mcp-nixos" "--")))))
+          ("nixos" :command "uvx" :args ("mcp-nixos"))
+          ("brave"
+           :command "mcp-server-brave-search"
+           :args nil
+           :env (:BRAVE_API_KEY ,(auth-source-pass-get
+                                  'secret "api/api.search.brave.com/search"))))))
 
 (provide 'setup-gptel)
 

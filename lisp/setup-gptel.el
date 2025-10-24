@@ -11,7 +11,8 @@
          (gptel-mode . (lambda ()
                          (setq-local gptel-cache '(message))
                          (add-hook 'before-save-hook #'my/gptel-assign-filename
-                                   nil 'local))))
+                                   nil 'local)))
+         (gptel-mode . gptel-highlight-mode))
   :bind (("C-c C-<return>" . gptel-menu)
          ("C-c <return>" . gptel-send)
          ("C-c j" . gptel-menu)
@@ -25,9 +26,7 @@
          ("+" . gptel-add))
   :config
   (auth-source-pass-enable)
-  (setq-default gptel-model 'gpt-4.1-nano
-                gptel-backend gptel--openai
-                gptel-display-buffer-action '(pop-to-buffer-same-window))
+  (setq gptel-display-buffer-action '(pop-to-buffer-same-window))
 
   (defalias 'my/gptel-easy-page
     (let ((map (make-composed-keymap
@@ -97,7 +96,7 @@
           (end-of-line)
           (skip-chars-backward " \t\r")
           (insert-and-inherit "*")))))
-  
+
   (defun my/gptel-latex-preview (beg end)
     (when (derived-mode-p 'org-mode)
       (org-latex-preview--preview-region 'dvisvgm beg end)))
@@ -116,9 +115,11 @@
 
   (setq gptel--system-message (alist-get 'default gptel-directives)
         gptel-default-mode 'org-mode)
-  (setf (alist-get 'org-mode gptel-prompt-prefix-alist) "*Prompt*: "
-        (alist-get 'org-mode gptel-response-prefix-alist) "*Response*:\n"
-        (alist-get 'markdown-mode gptel-prompt-prefix-alist) "#### ")
+  ;; (setf (alist-get 'org-mode gptel-prompt-prefix-alist) "*Prompt*: "
+  ;;       (alist-get 'org-mode gptel-response-prefix-alist) "*Response*:\n"
+  ;;       (alist-get 'markdown-mode gptel-prompt-prefix-alist) "#### ")
+  (setq gptel-prompt-prefix-alist nil
+        gptel-response-prefix-alist nil)
   (with-eval-after-load 'gptel-org
     (setq-default gptel-org-branching-context t))
 

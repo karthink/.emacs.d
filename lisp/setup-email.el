@@ -82,7 +82,7 @@
                    ("b" ("+bills" "-inbox") "Bills")
                    ("H" ("+medical") "Medical")
                    ("I" ("+insurance") "Insurance")
-                   ("X" ("+tax") "Tax")
+                   ("j" ("+jobs") "Jobs")
                    ("p" ("+purchases") "Purchases")))
     (setf (alist-get key notmuch-tagging-keys nil nil #'equal) ops))
   
@@ -337,7 +337,8 @@
          ("C-c C-w" . my/notmuch-kill-web-url)
          :map notmuch-show-mode-map
          ("x" . my/notmuch-browse-externally)
-         ("C-c C-w" . my/notmuch-kill-web-url))
+         ("C-c C-w" . my/notmuch-kill-web-url)
+         :map message-mode-map ("M-n" . nil))
   :config
   (defvar my-notmuch-web-urls-alist
     '(("emacs-orgmode@gnu.org"      . "https://list.orgmode.org/")

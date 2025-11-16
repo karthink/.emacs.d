@@ -1557,6 +1557,18 @@ User buffers are those not starting with *."
   (setq switchy-window-delay 0.75)
   (put 'switchy-window 'repeat-map 'other-window-repeat-map))
 
+(use-package windmove
+  :after window
+  :bind ( :map other-window-repeat-map
+          ("l" . windmove-right)
+          ("k" . windmove-up)
+          ("h" . windmove-left)
+          ("j" . windmove-down))
+  :init
+  (dolist (cmd '( windmove-left windmove-right
+                  windmove-up windmove-down))
+    (put cmd 'repeat-map 'other-window-repeat-map)))
+
 (use-package window
   :unless (fboundp 'switchy-window-minor-mode)
   :bind (("M-o" . my/other-window)

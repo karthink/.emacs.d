@@ -257,7 +257,7 @@ Cancel the previous one if present."
                     (when (string-suffix-p "server" server-name)
                       (let ((after-init-time (current-time)))
                          (dolist (lib '("org" "ob" "ox" "ol" "org-roam"
-                                       "org-capture" "org-agenda" "org-fragtog"
+                                       "org-capture" "org-agenda"
                                        "org-gcal" "latex" "reftex" "cdlatex"
                                        "consult" "helpful" "elisp-mode"
                                        "notmuch" "elfeed" "simple"
@@ -278,14 +278,16 @@ Cancel the previous one if present."
   (defun my/terminal-settings ()
     (interactive)
     (remove-hook 'after-init-hook 'my/terminal-settings)
-    (unless (or (display-graphic-p) (daemonp))
+    (when (controlling-tty-p)
       (keymap-global-unset "C-@")       ;conflicts with C-SPC
+      (setq recenter-redisplay nil)
       (with-eval-after-load 'smartparens
         ;; conflicts with focus-in/out events
         (keymap-set smartparens-mode-map "M-[" nil))
       (with-eval-after-load 'popper
         ;; C-` and H-` are not available
-        (keymap-global-set "C-M-^" 'popper-toggle)))))
+        (keymap-global-set "C-M-^" 'popper-toggle))
+      (use-package kkp :ensure t :init (global-kkp-mode 1)))))
 
 ;;;################################################################
 ;; * PERSONAL INFO

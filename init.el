@@ -241,42 +241,66 @@ Cancel the previous one if present."
 ;; * DAEMON
 ;;;################################################################
 
-;; Hack: When starting a server, silently load all the "heavy" libraries and
-;; goodies I use. There are more elegant approaches, such as incremental
-;; deferring, but this is good enough. A regular (non-daemon) Emacs session
-;; still launches in ~0.3 seconds.
-(when (daemonp)
-  (defvar pulse-flag t)
-  (add-hook
-   'after-init-hook
-   (defun my/load-packages-eagerly ()
-     (add-hook 'server-visit-hook
-               (lambda () (when (and (equal default-directory
-                                       temporary-file-directory)
-                                (equal major-mode 'text-mode)
-                                (fboundp 'markdown-mode))
-                       (markdown-mode))))
-     (run-at-time 1 nil
-                  (lambda () 
-                    (when (fboundp 'pdf-tools-install) (pdf-tools-install t))
-                    (load-library "pulse")
-                    (when (string-suffix-p "server" server-name)
-                      (let ((after-init-time (current-time)))
-                         (dolist (lib '("org" "ob" "ox" "ol" "org-roam"
-                                       "org-capture" "org-agenda"
-                                       "org-gcal" "latex" "reftex" "cdlatex"
-                                       "consult" "helpful" "elisp-mode"
-                                       "notmuch" "elfeed" "simple"
-                                       "expand-region" "embrace"
-                                       "ace-window" "avy" "yasnippet"
-                                       "magit" "modus-themes" "diff-hl"
-                                       "dired" "ibuffer" "pdf-tools"
-                                       "emacs-wm"))
-                          (with-demoted-errors "Error: %S" (load-library lib)))
-                         (with-temp-buffer (org-mode))
-                        (let ((elapsed (float-time (time-subtract (current-time)
-                                                                  after-init-time))))
-                          (message "[Pre-loaded packages in %.3fs]" elapsed)))))))))
+(use-package emacs
+  :if (daemonp)
+  :hook (after-init-hook . my/load-packages-eagerly)
+  :config
+  (defun emenu (cmd &rest args)
+    (interactive (help-fns--describe-function-or-command-prompt 'is-command))
+    (let ((frame (selected-frame)))
+      (unwind-protect
+          (let ((vertico-multiform-mode)
+                (consult-preview-key "M-RET")
+                (vertico-count 15)
+                (echo-keystrokes 0)
+                (display-buffer-overriding-action
+                 `((display-buffer-pop-up-frame
+                    display-buffer-use-some-frame
+                    display-buffer-reuse-window
+                    display-buffer-use-some-window)
+                   ;; (reusable-frames . nil)
+                   ;; (lru-frames . ,(cadr (frame-list-z-order)))
+                   (window-min-height . full-height)
+                   (frame-predicate
+                    . ,(lambda (fr)
+                         (not (string-prefix-p
+                               "dropdown" (frame-parameter fr 'name)))))
+                   (some-window . mru))))
+            (if (commandp cmd) (call-interactively cmd) (funcall cmd args)))
+        (run-at-time 0 nil #'delete-frame frame))))
+  ;; Hack: When starting a server, silently load all the "heavy" libraries and
+  ;; goodies I use. There are more elegant approaches, such as incremental
+  ;; deferring, but this is good enough. A regular (non-daemon) Emacs session
+  ;; still launches in ~0.3 seconds.
+  ;; (defvar pulse-flag t)
+  (defun my/load-packages-eagerly ()
+    (add-hook 'server-visit-hook
+              (lambda () (when (and (equal default-directory
+                                      temporary-file-directory)
+                               (equal major-mode 'text-mode)
+                               (fboundp 'markdown-mode))
+                      (markdown-mode))))
+    (run-at-time 1 nil
+                 (lambda () 
+                   (when (fboundp 'pdf-tools-install) (pdf-tools-install t))
+                   (load-library "pulse")
+                   (when (string-suffix-p "server" server-name)
+                     (let ((after-init-time (current-time)))
+                       (dolist (lib '("org" "ob" "ox" "ol" "org-roam"
+                                      "org-capture" "org-agenda"
+                                      "org-gcal" "latex" "reftex" "cdlatex"
+                                      "consult" "helpful" "elisp-mode"
+                                      "notmuch" "elfeed" "simple"
+                                      "expand-region" "embrace"
+                                      "ace-window" "avy" "yasnippet"
+                                      "magit" "modus-themes" "diff-hl"
+                                      "dired" "ibuffer" "pdf-tools"
+                                      "emacs-wm"))
+                         (with-demoted-errors "Error: %S" (load-library lib)))
+                       (with-temp-buffer (org-mode))
+                       (let ((elapsed (float-time (time-subtract (current-time)
+                                                                 after-init-time))))
+                         (message "[Pre-loaded packages in %.3fs]" elapsed))))))))
 
 (use-package emacs
   :init
@@ -3605,12 +3629,12 @@ _d_: subtree
   (setq pulse-delay 0.01
         pulse-iterations 15)
   :init
-  (add-hook 'server-after-make-frame-hook
-            (defun my/pulse-type ()
-              (when (and (not pulse-flag)
-                         (pulse-available-p))
-                (setq pulse-flag t))))
-  
+  ;; (add-hook 'server-after-make-frame-hook
+  ;;           (defun my/pulse-type ()
+  ;;             (when (and (not pulse-flag)
+  ;;                        (pulse-available-p))
+  ;;               (setq pulse-flag t))))
+
   (with-no-warnings
     (defun my/pulse-line (&optional arg)
       "Pulse line at point"

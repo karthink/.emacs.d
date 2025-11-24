@@ -98,7 +98,8 @@
           (insert-and-inherit "*")))))
 
   (defun my/gptel-latex-preview (beg end)
-    (when (derived-mode-p 'org-mode)
+    (when (and (display-graphic-p)
+               (derived-mode-p 'org-mode))
       (org-latex-preview--preview-region 'dvisvgm beg end)))
   (add-hook 'gptel-post-response-functions #'my/gptel-latex-preview)
   (add-hook 'gptel-post-response-functions #'my/gptel-remove-headings)
@@ -122,6 +123,25 @@
         gptel-response-prefix-alist nil)
   (with-eval-after-load 'gptel-org
     (setq-default gptel-org-branching-context t))
+
+  (defun my/gptel-view-process ()
+    "Switch to the process buffer."
+    (interactive)
+    (let ((entries (map-filter
+                    (lambda (proc state)
+                      (let ((fsm (car state)))
+                        (eq (plist-get (gptel-fsm-info fsm) :buffer)
+                            (current-buffer))))
+                    gptel--request-alist)))
+      (if (not entries)
+          (message "No active gptel requests for buffer %s" (buffer-name))
+        (let ((buf (completing-read
+                    "Visit buffer: "
+                    (mapcar (pcase-lambda (`(,proc-or-buf . ,_))
+                              (buffer-name
+                               (if (bufferp proc-or-buf)
+                                   proc-or-buf (process-buffer proc-or-buf))))))))
+          (pop-to-buffer buf)))))
 
   (add-to-list 'popper-reference-buffers "\\*gptel-log\\*")
   (setf (alist-get "\\*gptel-log\\*" display-buffer-alist nil nil #'equal)
@@ -575,8 +595,8 @@ ex: What is in this buffer? @buffer *scratch*"
 ;;----------------------------------------------------------------
 (use-package gptel-rewrite
   :after gptel
-  :bind (:map gptel-rewrite-actions-map
-         ("C-c C-i" . gptel--rewrite-inline-diff))
+  :bind ( :map gptel-rewrite-actions-map
+          ("C-c C-i" . gptel--rewrite-inline-diff))
   :config
   (add-hook 'poi-functions
             (lambda (arg) (interactive "p")
@@ -621,14 +641,14 @@ Do not repeat any of the BEFORE or AFTER code." lang lang lang)
         nil
         "What is the code AFTER the cursor?"
         ,(format "AFTER\n```\n%s\n```\n"
-          (buffer-substring-no-properties
-           (if (use-region-p) (max (point) (region-end)) (point))
-           (point-max)))
+                 (buffer-substring-no-properties
+                  (if (use-region-p) (max (point) (region-end)) (point))
+                  (point-max)))
         "And what is the code BEFORE the cursor?"
         ,(format "BEFORE\n```%s\n%s\n```\n" lang
-          (buffer-substring-no-properties
-           (point-min)
-           (if (use-region-p) (min (point) (region-beginning)) (point))))
+                 (buffer-substring-no-properties
+                  (point-min)
+                  (if (use-region-p) (min (point) (region-beginning)) (point))))
         ,@(when (use-region-p) "What should I insert at the cursor?")))))
 
 ;;----------------------------------------------------------------

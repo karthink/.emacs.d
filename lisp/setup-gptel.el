@@ -9,7 +9,7 @@
   :commands (gptel gptel-send)
   :hook ((gptel-pre-response . my/gptel-easy-page)
          (gptel-mode . (lambda ()
-                         (setq-local gptel-cache '(message))
+                         (setq-local gptel-cache t)
                          (add-hook 'before-save-hook #'my/gptel-assign-filename
                                    nil 'local)))
          (gptel-mode . gptel-highlight-mode))
@@ -208,6 +208,28 @@
                deepseek-r1-distill-llama-70b gemma-7b-it
                llama-3.3-70b-versatile llama-3.1-8b-instant))
 
+  (let ((meta '( :context-window 128
+                 :capabilities (json tool reasoning))))
+    (gptel-make-openai "zai"
+      :stream t
+      :host "api.z.ai"
+      :endpoint "/api/paas/v4/chat/completions"
+      :key #'gptel-api-key-from-auth-source
+      :models
+      `(( glm-4.6            :input-cost 0.6 :output-cost 2.2
+          :context-window 200
+          :capabilities (json tool reasoning))
+        (glm-4.5             :input-cost 0.6 :output-cost 2.2 ,@meta)
+        (glm-4.5-x           :input-cost 2.2 :output-cost 8.9 ,@meta)
+        (glm-4.5-air         :input-cost 0.2 :output-cost 1.1 ,@meta)
+        (glm-4.5-air-x       :input-cost 1.1 :output-cost 4.5 ,@meta)
+        (glm-4-32b-0414-128k :input-cost 0.1 :output-cost 0.1 ,@meta)
+        ( glm-4.5v           :input-cost 0.6 :output-cost 1.8
+          :capabilities (media)
+          :mime-types ("image/jpeg" "image/png"
+                       "application/pdf" "image/gif"))
+        glm-4.5-flash)))
+
   (gptel-make-xai "xai"
     :stream t
     :key #'gptel-api-key-from-auth-source)
@@ -264,6 +286,18 @@
               deepseek/deepseek-r1-distill-llama-70b:free
               deepseek/deepseek-r1-distill-llama-70b:free))
 
+  (gptel-make-openai "newartisans"
+    :host "home.newartisans.com:18080"
+    :endpoint "/v1/chat/completions"
+    :protocol "http"
+    :stream t
+    :models '( (gpt-oss-20b
+                :capabilities (media tool json)
+                :mime-types ("image/jpeg" "image/png" "image/gif" "image/webp"))
+               Qwen3-30B-A3B-Instruct-2507
+               Qwen3-30B-A3B-Thinking-2507 Qwen3-32B
+               Qwen3-Coder-30B-A3B-Instruct DeepSeek-R1-Distill-Qwen-32B))
+
   (gptel-make-openai "Github Models"
     :host "models.inference.ai.azure.com"
     :endpoint "/chat/completions?api-version=2024-05-01-preview"
@@ -275,7 +309,8 @@
     :host "bazzite.local:8080"
     :protocol "http"
     :models '( qwen2.5-coder-0.5b qwen2.5-coder-1.5b
-               qwen3-1.7b qwen3-0.6b qwen3-4b gemma-3-1b)
+               qwen3-1.7b qwen3-0.6b qwen3-4b gemma-3-1b
+               vibethinker-1.5b)
     :stream t)
 
   (gptel-make-openai "llamacpp-t14"
@@ -290,13 +325,15 @@
 
   (with-eval-after-load 'gptel-ollama
     (defvar gptel--ollama
-      (gptel-make-ollama
-          "Ollama"
-        :host "192.168.1.11:11434"
+      (gptel-make-ollama "Ollama"
+        :host "10.0.0.121:11434"
         :models '( qwen3:4b llama3.1:8b qwen3:8b
-                   (llava:7b :description Llava 1.6: Vision capable model
+                   (llava:7b :description "Llava 1.6: Vision capable model"
                              :capabilities (media)
-                             :mime-types ("image/jpeg" "image/png")))
+                             :mime-types ("image/jpeg" "image/png"))
+                   (gpt-oss:120b
+                    :capabilities (media json tool-use)
+                    :mime-types ("application/pdf" "image/png" "image/jpeg")))
         :stream t)))
 
   (defvar gptel--gpt4all
@@ -444,6 +481,23 @@
     :backend "Deepseek" :model 'deepseek-reasoner :system 'explain :tools nil
     :stream t :temperature nil :max-tokens nil
     :use-context 'system :include-reasoning nil))
+(use-package gptel-anthropic-oauth
+  :after (gptel-anthropic)
+  :config
+  (gptel-make-anthropic-oauth "ClaudeOauth" :stream t)
+
+  (gptel-make-preset 'sonnet
+    :description "MODEL: Sonnet 4.5"
+    :backend "ClaudeOauth"
+    :model 'claude-sonnet-4-20250514
+    :include-reasoning nil)
+
+  (gptel-make-preset 'haiku
+    :description "MODEL: Haiku 4.5"
+    :backend "ClaudeOauth"
+    :model 'claude-haiku-4-5-20251001
+    :include-reasoning nil))
+
 
 ;;================================================================
 ;; * gptel addons and other integration

@@ -4566,6 +4566,39 @@ ARGS is the raw argument list (STRING &optional TRANS-CASE)."
         browser-hist-default-browser 'firefox
         browser-hist-cache-timeout (* 24 60 60)))
 
+;;;---------------------------------------------------------------- 
+;; *** WHISPER
+;;;----------------------------------------------------------------
+(use-package whisper
+  :ensure (:host github :repo "natrys/whisper.el")
+  :bind (("C-c C-SPC"   . whisper-run)
+         ("C-c C-S-SPC" . my/whisper-run-remote))
+  :config
+  (defun my/whisper-run-remote ()
+    "Run whisper transcription via Openai"
+    (interactive)
+    (if (process-live-p whisper--recording-process)
+        (interrupt-process whisper--recording-process)
+      (setq whisper-openai-api-key
+            (auth-source-pass-get 'secret "api/openai.com")
+            whisper-server-mode 'openai)
+      (letrec ((restore
+                (lambda () (remove-hook 'whisper-after-transcription-hook
+                                   restore)
+                  (setq whisper-openai-api-key nil
+                        whisper-server-mode 'local))))
+        (add-hook 'whisper-after-transcription-hook
+                  restore)))
+    (whisper-run))
+  (setq whisper-use-threads 12
+        whisper-install-directory "~/.local/share/git/"
+        whisper--install-path
+        (concat
+         (expand-file-name (file-name-as-directory whisper-install-directory))
+         "whisper.cpp/")
+        whisper-server-mode 'local))
+;; 
+
 ;;----------------------------------------------------------------
 ;; * PROJECTS
 ;;;----------------------------------------------------------------

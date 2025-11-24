@@ -75,6 +75,7 @@
            (dired-goto-file unobtrusive)
            (load-theme my/vertico-grid-mode reverse)
            (my/toggle-theme my/vertico-grid-mode reverse)
+           (org-node-find reverse)
            (org-refile reverse)
            (org-agenda-refile reverse)
            (org-capture-refile reverse)

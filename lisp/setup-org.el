@@ -54,7 +54,7 @@
                 org-catch-invisible-edits 'smart
                 org-use-speed-commands t
                 org-imenu-depth 7
-                org-log-into-drawer t
+                org-log-into-drawer nil
                 org-extend-today-until 3
                 org-default-notes-file "~/org/do.org"
                 org-M-RET-may-split-line '((headline) (default . nil))
@@ -199,10 +199,10 @@
     (advice-remove 'texmathp #'org--math-always-on))
 
   ;; From the Org manual
-  (defun org-summary-todo (n-done n-not-done)
-       "Switch entry to DONE when all subentries are done, to TODO otherwise."
-       (let (org-log-done org-log-states)   ; turn off logging
-         (org-todo (if (= n-not-done 0) "DONE" "TODO"))))
+  ;; (defun org-summary-todo (n-done n-not-done)
+  ;;      "Switch entry to DONE when all subentries are done, to TODO otherwise."
+  ;;      (let (org-log-done org-log-states)   ; turn off logging
+  ;;        (org-todo (if (= n-not-done 0) "DONE" "TODO"))))
 
   ;; Disabling this to try to use cookies with PROJECT.
   ;; (add-hook 'org-after-todo-statistics-hook #'org-summary-todo)
@@ -789,54 +789,6 @@ appropriate.  In tables, insert a new row or end the table."
         org-appear-autolinks nil
         org-appear-autokeywords t))
 
-;; TDOO Disabled while I test org-modern
-(use-package org-bullets
-  :disabled
-  :ensure t
-  :after org
-  :hook (org-mode . org-bullets-mode))
-
-;; TDOO Disabled while I test org-modern
-;; Prettified symbols in org
-(use-package org
-  :disabled
-  :hook (org-mode . my/org-prettify-symbols)
-  :config
-  (setq org-todo-keyword-faces
-        '(;; ("TODO"    :foreground "#6e90c8" :weight bold)
-          ("WAITING" :foreground "red" :weight bold)
-          ("MAYBE"   :foreground "#6e8996" :weight bold)
-          ("PROJECT" :foreground "#088e8e" :weight bold)))
-
-  (defun my/org-prettify-symbols ()
-    (setq prettify-symbols-alist
-          (mapcan (lambda (x) (list x (cons (upcase (car x)) (cdr x))))
-                  '(;; ("#+begin_src" . ?)
-                    (":properties:" . "")
-                    ;; ("#+end_src" . ?)
-                    ("#+begin_src" . ?)
-                    ;; ("#+begin_src" . ?)
-                    ;; ("#+end_src" . ?)
-                    ;; ("#+begin_src" . "")
-                    ("#+end_src" . "―")
-                    ("#+begin_example" . ?)
-                    ("#+end_example" . ?)
-                    ("scheduled:" . ?)
-                    ("deadline:" . ?)
-                    ;; ("#+header:" . ?)
-                    ;; ("#+name:" . ?﮸)
-                    ;; ("#+results:" . ?)
-                    ;; ("#+call:" . ?)
-                    ;; (":properties:" . ?)
-                    ;; (":logbook:" . ?)
-                    (":end:" . "―")
-                    ("#+attr_latex:"    . "🄛")
-                    ("#+attr_html:"     . "🄗")
-                    ("#+attr_org:"      . "⒪")
-                    ("#+begin_quote:"   . "❝")
-                    ("#+end_quote:"     . "❞"))))
-    (prettify-symbols-mode 1)))
-
 (use-package org-modern
   :ensure (:host github
              :repo "minad/org-modern")
@@ -1297,6 +1249,9 @@ See `org-capture-templates' for more information."
           "* %? %^G\n:PROPERTIES:\n:CREATED:  %U\n:END:\n%a\n%x\n")
          ("p" "Webpage" entry (file "~/org/inbox.org")
           "* TODO %a\n:PROPERTIES: \n:CREATED:  %U \n:ID: %(org-id-uuid) \n:END:\n%i\n%?\n")
+         ("pm" "Video" entry (file "~/org/inbox.org")
+          "* %a :@watch:\n:PROPERTIES: \n:CREATED:  %U \n:ID: %(org-id-uuid) \n:END:\n%i\n%?\n"
+          :immediate-finish t)
          ("t" "Add task" entry (file "~/org/inbox.org")
           "* TODO %?\n:PROPERTIES: \n:CREATED:  %U \n:ID:  %(org-id-uuid) \n:END:\n%a\n%i\n")
          ("m" "Task from email" entry (file "~/org/inbox.org")
@@ -1739,6 +1694,36 @@ Return the initialized session, if any."
                '("scheme" . (eval-in-repl-geiser eir-eval-in-geiser)))
   (setq eir-jump-after-eval nil))
 
+(use-package org-glossary
+    :after ox
+    :disabled
+    :ensure (:host github :repo "tecosaur/org-glossary")
+    :config
+    (setq org-glossary-toplevel-only t)
+    (defun org-glossary--expand-print-keyword (backend terms keyword)
+      "Call `org-glossary--expand-print' with paramaters and terms based on KEYWORD.
+BACKEND is passed through unmodified, but TERMS may be modified depending on
+the :consume parameter extracted from KEYWORD."
+      (let ((heading (org-element-lineage keyword '(headline org-data)))
+            (parameters (org-combine-plists
+                         org-glossary-default-print-parameters
+                         (org-glossary--parse-print-keyword-value
+                          (org-element-property :value keyword)))))
+        (while (and heading
+                    (not (eq (org-element-type heading) 'org-data))
+                    (> (org-element-property :level heading)
+                       (plist-get parameters :level)))
+          (setq heading (org-element-lineage heading '(headline org-data))))
+        (org-glossary--expand-print
+         backend
+         (org-glossary--extract-uses-in-region
+          terms
+          (if heading (org-element-property :begin heading) (point-min))
+          (if heading (org-element-property :end heading) (point-max))
+          (plist-get parameters :type)
+          (plist-get parameters :consume))
+         parameters))))
+
 ;;;----------------------------------------------------------------
 ;; ** OX-HUGO
 ;;;----------------------------------------------------------------
@@ -2110,6 +2095,19 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
       (my/olivetti-mode -1)
       (text-scale-decrease 6)
       (text-scale-mode -1)))
+
+  (defvar-keymap my/org-tree-slide--header-keymap
+    :doc "Keymap for actions in the slide header"
+    "SPC" 'org-tree-slide-move-next-tree
+    "n"   'org-tree-slide-move-next-tree
+    "S-SPC" 'org-tree-slide-move-previous-tree
+    "p"     'org-tree-slide-move-previous-tree
+    "<mouse-1>" 'org-tree-slide-move-next-tree
+    "<mouse-3>" 'org-tree-slide-move-previous-tree)
+
+  (define-advice org-tree-slide--set-slide-header (:after (_) set-keymap)
+    (overlay-put org-tree-slide--header-overlay
+                 'keymap my/org-tree-slide--header-keymap))
 
   :bind (("C-c P"      . my/org-presentation-mode)
          :map org-tree-slide-mode-map

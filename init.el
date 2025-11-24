@@ -71,6 +71,7 @@
          ("F" . elpaca-ui-mark-pull))
   :hook (elpaca-log-mode . elpaca-log-update-mode)
   :after popper
+  :config (timeout-debounce! 'elpaca-log--follow 0.15)
   :init
   (add-to-list 'popper-reference-buffers
                'elpaca-log-mode)
@@ -78,11 +79,16 @@
                    display-buffer-alist
                    nil nil #'equal)
         '((display-buffer-at-bottom
-          display-buffer-in-side-window)
-          (side . bottom)
+           display-buffer-in-side-window)
+          (side . below)
           (slot . 49)
           (window-height . 0.4)
-          (body-function . select-window))))
+          (body-function . select-window))
+        (alist-get "\\*elpaca-diff\\*" display-buffer-alist
+                   nil nil #'equal)
+        '((display-buffer-reuse-window
+           display-buffer-in-atom-window)
+          (side . right))))
 
 ;; ;; ** STRAIGHT!
 ;; (defvar bootstrap-version)
@@ -2605,7 +2611,15 @@ current buffer without truncation."
 ;;----------------------------------------------------------------
 (use-package beancount
   :ensure (:host github :repo "beancount/beancount-mode")
-  :defer)
+  :defer
+  :init
+  (add-to-list 'popper-reference-buffers 'bean-query-mode)
+  (setf (alist-get '(major-mode . bean-query-mode)
+                   display-buffer-alist nil nil #'equal)
+        '((display-buffer-below-selected
+           display-buffer-pop-up-window)
+          (window-height . 0.5)
+          (post-command-select-window . t))))
 
 ;;----------------------------------------------------------------
 ;; ** ENVRC

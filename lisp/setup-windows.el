@@ -312,10 +312,7 @@ If buffer-or-name is nil return current buffer's mode."
          (side . bottom)
          (slot . -4)
          ;; (preserve-size . (nil . t))
-         (bump-use-time . t)
-         (window-parameters . ((no-other-window . t)
-                               ;; (mode-line-format . (:eval (my/helper-window-mode-line-format)))
-                               )))
+         (bump-use-time . t))
 
         ("\\*\\(Register Preview\\).*" (display-buffer-in-side-window)
          (window-height . 0.20)       ; See the :hook

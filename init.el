@@ -3425,7 +3425,12 @@ normally have their errors suppressed."
       ("r" "read only" read-only-mode)
       ("n" "line numbers" display-line-numbers-mode)
       ("M-q" "auto fill" auto-fill-mode)
-      ("fc" "fill column" set-fill-column)
+      ("fc"
+       (lambda ()
+         (concat "fill column "
+                 (propertize (format "%d" fill-column)
+                             'face 'font-lock-comment-face)))
+       set-fill-column)
       ("se" (lambda () (if sentence-end-double-space
                     "double spc" "single spc"))
        (lambda () (interactive)
@@ -3853,6 +3858,7 @@ _d_: subtree
           lisp-interaction-mode
           fennel-mode scheme-mode
           ielm-mode markdown-mode
+          eval-expression-minibuffer-setup
           git-commit-mode)
          . smartparens-mode)
   :bind
@@ -3893,6 +3899,7 @@ _d_: subtree
                   (show-paren-mode -1)
                 (show-paren-mode 1))))
   :config
+  (add-to-list 'sp-lisp-modes 'minibuffer-mode)
   (sp-pair "`" nil :actions :rem)
   (sp-local-pair '(markdown-mode julia-mode)
                  "`" "`" :actions '(insert wrap autoskip))
@@ -4007,7 +4014,8 @@ _d_: subtree
     "Open the current file as root."
     (interactive)
     (sudo-find-file (file-truename buffer-file-name)))
-  (setq remote-file-name-inhibit-cache 86400)
+  (setq remote-file-name-inhibit-cache 86400
+        tramp-allow-unsafe-temporary-files t)
   (setq tramp-persistency-file-name
         (dir-concat user-cache-directory "tramp"))
   (setq tramp-verbose 1)
@@ -4923,12 +4931,13 @@ buffer's text scale."
          (pcase-let ((`(,vp ,fp)
                       (cond
                        ((string= (getenv "XDG_SESSION_TYPE") "wayland")
-                        '(120 110))
-                       (t '(95 110)))))
+                        '(1.0 100))
+                       (t '(1.0 100)))))
            (custom-set-faces
-            `(variable-pitch ((t (:family "Merriweather" ;; :height ,vp
-                                  :width semi-expanded))))
-            `(default ((t (:family "Monospace" :foundry "PfEd"
+            `(variable-pitch ((t ( :inherit default
+                                   :family "Merriweather"
+                                   :height ,vp :width semi-expanded))))
+            `(default ((t (:family "Monaspace Neon" ;; :foundry "PfEd"
                            :slant normal :weight normal
                            :height ,fp :width normal)))))))
         (IS-WINDOWS

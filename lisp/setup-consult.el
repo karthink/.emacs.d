@@ -62,7 +62,7 @@
          ("C-h C-m" . consult-minor-mode-menu)
          ("C-c C-j" . consult-outline)
          ("M-s M-j" . consult-outline)
-         ("M-s M-l" . consult-locate)
+         ("M-s M-l" . consult-line-multi)
          ("M-s g"   . consult-ripgrep)
          ("M-s G"   . consult-git-grep)
          ("C-x C-r" . consult-recent-file)

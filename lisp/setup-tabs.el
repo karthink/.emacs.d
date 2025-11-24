@@ -86,7 +86,7 @@
   (timeout-throttle! #'my/tab-bar-name 0.6)
   
   (setq  tab-bar-close-last-tab-choice 'tab-bar-mode-disable
-         tab-bar-show                   nil ;; (when (version< "28.0" emacs-version) 1)
+         tab-bar-show                   1 ;; (when (version< "28.0" emacs-version) 1)
          tab-bar-tab-name-truncated-max 24
          tab-bar-new-tab-choice        "*scratch*"
          tab-bar-tab-name-function #'tab-bar-tab-name-current-with-count)
@@ -129,6 +129,7 @@
 ;; Show a list of the tabs in the echo area when switching tabs. Disabled since
 ;; I've taken to showing the tab-bar instead
 (use-package tab-bar-echo-area
+  :disabled
   :ensure t
   :after tab-bar
   :init

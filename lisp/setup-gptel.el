@@ -238,8 +238,8 @@
     (gptel-make-anthropic "Claude" :key gptel-api-key :stream t))
 
   (gptel-make-preset 'think
-    :request-params '( :thinking (:type "enabled" :budget_tokens 768)
-                       :max_tokens 2048))
+    :request-params '( :thinking (:type "enabled" :budget_tokens 1024)
+                       :max_tokens 4096))
 
   (gptel-make-anthropic "Claude-thinking"
     :key #'gptel-api-key-from-auth-source
@@ -367,43 +367,108 @@
   :after gptel
   :config
   (gptel-make-preset 'default
-    :description "My default settings for gptel"
+    :description "DEFAULT: my settings for gptel"
     :system 'default
     :backend "ChatGPT"
     :model 'gpt-4.1-mini
     :tools nil :temperature nil :stream t
     :include-reasoning 'ignore)
 
-  (gptel-make-preset 'nostream
-    :description "No streaming"
-    :stream nil)
+  ;;-------------------
+  ;; Presets for models
+  ;;-------------------
+  (gptel-make-preset 'gemini
+    :description "MODEL: gemini-pro"
+    :model 'gemini-3-pro-preview
+    :backend "Gemini")
+
+  (gptel-make-preset 'flash
+    :description "MODEL: gemini-flash"
+    :model 'gemini-flash-latest
+    :backend "Gemini")
+
+  (gptel-make-preset 'sonar
+    :description "MODEL: Sonar, follow up with gen, pro, research, or reasoning"
+    :system 'default
+    :backend "Perplexity"
+    :model
+    '(:eval
+      (progn
+        (skip-chars-forward " \t\n")
+        (let ((word (thing-at-point 'symbol)))
+          (cond
+           ((null word) 'sonar)
+           ((string-match-p "gen" word) (kill-word 1) 'sonar)
+           ((string-match-p "pro" word) (kill-word 1) 'sonar-pro)
+           ((string-match-p "research" word) (kill-word 1) 'sonar-deep-research)
+           ((string-match-p "reason" word) (kill-word 1) 'sonar-reasoning-pro)
+           (t 'sonar)))))
+    :stream nil :tools nil :temperature 0.66)
+
+  ;;---------------------------
+  ;; Presets for system prompts
+  ;;---------------------------
+  (gptel-make-preset 'nostream :description "No streaming" :stream nil)
 
   (gptel-make-preset 'prog
-    :description "Claude Sonnet, with context, generates only code"
-    :backend "Claude" :model 'claude-3-7-sonnet-20250219 :system 'programmer
+    :description "PROMPT: Claude Sonnet, with context, generates only code"
+    :backend "Claude" :model 'claude-sonnet-4-5-20250929 :system 'programmer
     :tools nil :stream t :temperature nil :max-tokens nil :use-context 'system
     :include-reasoning nil)
 
-  (gptel-make-preset 'sonar-gen
-    :description "Sonar (non pro) with default instructions"
-    :system 'default
-    :backend "Perplexity"
-    :model 'sonar :stream nil
-    :tools nil :temperature 0.66)
-
   (gptel-make-preset 'cliwhiz
-    :description "Haiku, no context, generates CLI commands" :backend "Claude"
-    :model 'claude-3-5-haiku-20241022 :system 'cliwhiz :tools nil :stream t
+    :description "PROMPT: Haiku, no context, generates CLI commands" :backend "Claude"
+    :model 'claude-haiku-4-5-20251001 :system 'cliwhiz :tools nil :stream t
     :temperature 0.66 :max-tokens nil :use-context 'nil :include-reasoning nil)
 
-  (gptel-make-preset 'websearch
-    :description "Add basic web search tools"
-    :pre (lambda () (require 'llm-tools))
-    :tools '(:append ("search_web" "read_url" "get_youtube_meta"))
+  (gptel-make-preset 'tutor
+    :description "PROMPT: Get Claude Sonnet to teach using hints"
+    :system 'tutor
+    :backend "Claude"
+    :model 'claude-sonnet-4-5-20250929
+    :tools nil :temperature 0.7
+    :max-tokens 600)
+
+  (gptel-make-preset 'explain
+    :description "PROMPT: Claude Sonnet, explain the prompt text"
+    :parents '(think)
+    :backend "Claude" :model 'claude-sonnet-4-5-20250929 :system 'explain
+    :tools nil :stream t :temperature nil :max-tokens nil
+    :use-context 'system :include-reasoning nil)
+
+  ;;-------------------------
+  ;; Presets for adding tools
+  ;;-------------------------
+  (gptel-make-preset 'web
+    :description "TOOLS: Add basic web search tools"
+    :pre (lambda () (require 'gptel-agent-tools))
+    :tools '(:append ("WebSearch" "WebFetch" "YouTube"))
     :system '(:append "\n\nUse the provided tools to search the web for up-to-date information."))
 
+  (gptel-make-preset 'files
+    :pre (lambda () (require 'gptel-agent-tools))
+    :description "TOOLS: Add file read/write"
+    :tools '(:append ("Read" "Glob" "Write" "Edit" "Insert")))
+
+  (gptel-make-preset 'files-ro
+    :pre (lambda () (require 'gptel-agent-tools))
+    :description "TOOLS: Add file read-only"
+    :tools '(:append ("Read" "Glob")))
+
+  (gptel-make-preset 'shell
+    :pre (lambda () (require 'gptel-agent-tools))
+    :description "TOOLS: Add Bash eval"
+    :tools  '(:append ("Bash"))
+    :system '(:append "Use the Bash tool to introspect and change the state of the system."))
+
+  (gptel-make-preset 'eval
+    :pre (lambda () (require 'gptel-agent-tools))
+    :tools  '(:append ("Eval"))
+    :system '(:append "Use the Eval tool to change the state of the running Emacs instance.")
+    :description "TOOLS: Add eval")
+
   (gptel-make-preset 'nixos
-    :description "Add NixOS tools (minus darwin)"
+    :description "TOOLS: Add NixOS MCP (minus darwin)"
     :pre (lambda () (gptel-mcp-connect '("nixos") 'sync))
     :system '(:append "\n\nUse the provided NixOS tools to look for up-to-date information and\
  examine the state of my system")
@@ -413,42 +478,10 @@
                            (lambda (tool)
                              (string-match-p "darwin" (gptel-tool-name tool)))
                            (mapcan #'gptel-get-tool tools)))))
-  (gptel-make-preset 'files
-    :pre (lambda () (require 'llm-tools))
-    :description "Add filesystem tools"
-    :tools '(:append ("read_file_or_directory" "read_file_lines"
-                      "write_file" "make_directory"
-                      "search_in_files" "replace_in_files")))
 
-  (gptel-make-preset 'files-ro
-    :pre (lambda () (require 'llm-tools))
-    :description "Add read-only filesystem tools"
-    :tools '(:append ("read_file_or_directory"
-                      "read_file_lines"
-                      "search_in_files")))
-
-  (gptel-make-preset 'shell
-    :pre (lambda () (require 'llm-tools))
-    :description "Add Bash as a tool"
-    :tools  '(:append ("execute_bash"))
-    :system '(:append "Use the execute_bash tool to introspect and change the state of the system."))
-
-  (gptel-make-preset 'tutor
-    :description "Get Claude Sonnet to teach using hints"
-    :system 'tutor
-    :backend "Claude"
-    :model 'claude-3-7-sonnet-20250219
-    :tools nil :temperature 0.7
-    :max-tokens 600)
-
-  (gptel-make-preset 'pro
-    :description "Sonnet 4, no-holds bared"
-    :system 'default
-    :backend "Claude"
-    :model 'claude-sonnet-4-20250514
-    :tools nil
-    :include-reasoning nil)
-
+  ;;-------------------------------
+  ;; Presets for contextual actions
+  ;;-------------------------------
   (gptel-make-preset 'json
     :description "JIT only: use JSON schema following @json cookie"
     :schema '(:eval (buffer-substring-no-properties
@@ -464,23 +497,18 @@
           (window-list)))
 
   (gptel-make-preset 'visible-buffers
-    :description "Include the full text of all buffers visible in the frame."
+    :description "CONTEXT: Include the full text of all buffers visible in the frame."
     :context
     '(:eval (mapcar #'window-buffer (my/gptel-windows-on-frame))))
 
   (gptel-make-preset 'visible-text
-    :description "Include visible text from all windows in the frame."
+    :description "CONTEXT: Include visible text from all windows in the frame."
     :context
     '(:eval (mapcar (lambda (win) ;; Create (<buffer> :bounds ((start . end)))
                       `(,(window-buffer win)
                         :bounds ((,(window-start win) . ,(window-end win)))))
-                    (my/gptel-windows-on-frame))))
+                    (my/gptel-windows-on-frame)))))
 
-  (gptel-make-preset 'explain
-    :description "Deepseek-R1, explains the prompt text"
-    :backend "Deepseek" :model 'deepseek-reasoner :system 'explain :tools nil
-    :stream t :temperature nil :max-tokens nil
-    :use-context 'system :include-reasoning nil))
 (use-package gptel-anthropic-oauth
   :after (gptel-anthropic)
   :config
@@ -498,6 +526,45 @@
     :model 'claude-haiku-4-5-20251001
     :include-reasoning nil))
 
+(use-package gptel
+  :disabled
+  :defer
+  :config
+  (gptel-make-preset 'buffer
+    :description "JIT only: include a buffer following the @buffer cookie
+
+ex: What is in this buffer? @buffer *scratch*"
+    :post (lambda ()
+            (let ((buf-name (string-trim
+                             (buffer-substring-no-properties
+                              (point) (line-end-position)))))
+              (if (not (buffer-live-p (get-buffer buf-name)))
+                  (message "Buffer \"%s\" not live, ignoring @buffer preset"
+                           buf-name)
+                (delete-region (point) (line-end-position))
+                (insert (format "\nIn buffer `%s`:\n\n```\n" buf-name))
+                (insert-buffer-substring-no-properties buf-name)
+                (insert "\n```\n")))))
+
+  (gptel-make-preset 'file
+    :description "JIT only: include a file following the @file cookie"
+    :post
+    (lambda ()
+      (let ((file-name (string-trim
+                        (buffer-substring-no-properties
+                         (point) (line-end-position)))))
+        (cond
+         ((file-directory-p file-name)
+          (insert (format "\nFiles in directory `%s`:\n\n```\n" file-name))
+          (dolist (f (directory-files-recursively file-name "." t t))
+            (when (file-readable-p f) (insert f "\n")))
+          (insert "```\n"))
+         ((file-readable-p file-name)
+          (insert "\n")
+          (gptel--insert-file-string file-name))
+         (t (message "File \"%s\" not readable, ignoring @file preset"
+                     file-name)))
+        (delete-region (point) (line-end-position))))))
 
 ;;================================================================
 ;; * gptel addons and other integration

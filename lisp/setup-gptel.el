@@ -515,10 +515,11 @@ Do not repeat any of the BEFORE or AFTER code." lang lang lang)
 ;;----------------------------------------------------------------
 (use-package gptel-ask
   :after gptel
-  :bind (:map help-map
-         ("C-q" . gptel-ask)
-         :map embark-url-map
-         ("?" . gptel-kagi-summarize))
+  :autoload gptel-ask-notify
+  :bind ( :map help-map
+          ("C-q" . gptel-ask)
+          :map embark-url-map
+          ("?" . gptel-kagi-summarize))
   :config
   (defvar gptel--kagi
     (gptel-make-kagi
@@ -528,9 +529,11 @@ Do not repeat any of the BEFORE or AFTER code." lang lang lang)
 
   (setf (alist-get "^\\*gptel-ask\\*" display-buffer-alist
                    nil nil #'equal)
-        '((display-buffer-reuse-window display-buffer-in-side-window)
+        `((display-buffer-reuse-window display-buffer-in-side-window)
           (side . right) (slot . 10) (window-width . 0.25)
           (window-parameters (no-delete-other-windows . t))
+          (body-function . ,(lambda (win) (with-selected-window win
+                                       (my/gptel-easy-page))))
           (post-command-select-window . t)
           (bump-use-time . t)))
 
@@ -559,10 +562,12 @@ Do not repeat any of the BEFORE or AFTER code." lang lang lang)
 ;; ** gptel-quick: describe thing at point
 ;;----------------------------------------------------------------
 (use-package gptel-quick
-  :ensure (:host github :protocol ssh
-           :repo "karthink/gptel-quick")
-  :bind (:map embark-general-map
-         ("?" . gptel-quick)))
+  :ensure ( :host github :protocol ssh :repo "karthink/gptel-quick")
+  :bind ( :map embark-general-map ("?" . gptel-quick))
+  :requires gptel
+  :config
+  (setq gptel-quick-model 'gpt-4.1-mini
+        gptel-quick-backend (gptel-get-backend "ChatGPT")))
 
 ;;----------------------------------------------------------------
 ;; ** flymake-gptel

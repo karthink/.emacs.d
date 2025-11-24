@@ -50,6 +50,7 @@
       (goto-char (point-max))
       (ensure-empty-lines 0))))
 
+;;;###autoload
 (defun gptel-ask (&optional arg)
   (interactive "P")
   (let ((gptel-backend (default-value 'gptel-backend))
@@ -62,11 +63,11 @@
                     (use-local-map
                      (define-keymap :parent (current-local-map)
                        "<tab>" #'completion-at-point)))
-                  (read-string
-                   (format "Ask %s: " (gptel-backend-name gptel-backend))
-                   (and (use-region-p)
-                        (buffer-substring-no-properties
-                         (region-beginning) (region-end))))))
+                (read-string
+                 (format "Ask %s: " (gptel-backend-name gptel-backend))
+                 (and (use-region-p)
+                      (buffer-substring-no-properties
+                       (region-beginning) (region-end))))))
              (before-resp
               (lambda () (remove-hook 'gptel-pre-response-hook before-resp)
                 (when (eq (current-buffer) (get-buffer gptel-ask--buffer-name))
@@ -82,6 +83,51 @@
         :transforms gptel-prompt-transform-functions
         :fsm (gptel-make-fsm :handlers gptel-send--handlers)
         :system (default-value 'gptel--system-message)))))
+
+;;;###autoload
+(defun gptel-ask-notify (prompt)
+  (interactive
+   (list (minibuffer-with-setup-hook
+             (lambda () (add-hook 'completion-at-point-functions
+                             #'gptel-preset-capf nil t)
+               (use-local-map
+                (define-keymap :parent (current-local-map)
+                  "<tab>" #'completion-at-point)))
+           (read-string
+            (format "Ask %s: " (gptel-backend-name gptel-backend))))))
+  (gptel--prepare-ask-buffer)
+  (with-current-buffer gptel-ask--buffer-name
+    (insert prompt))
+  (let ((inhibit-message t))
+    (gptel-with-preset 'default
+      (gptel-request prompt
+        :system "Answer directly and in brief.
+If you don't know say you don't know."
+        :transforms gptel-prompt-transform-functions
+        :callback
+        (lambda (resp info)
+          (pcase resp
+            ((pred stringp)
+             (notifications-notify
+              :title "gptel response"
+              :body (string-fill resp 66)
+              :timeout (* 48 (length resp)))
+             (with-current-buffer gptel-ask--buffer-name
+               (insert gptel-response-separator resp "\n\n----")))
+            (`(tool-call . ,args)
+             (cl-loop
+              for (tool-spec arg-values process-tool-result) in args
+              do (if (gptel-tool-async tool-spec)
+                     (apply (gptel-tool-function tool-spec)
+                            process-tool-result arg-values)
+                   (let ((result
+                          (condition-case errdata
+                              (apply (gptel-tool-function tool-spec) arg-values)
+                            (error (mapconcat #'gptel--to-string errdata " ")))))
+                     (funcall process-tool-result result)))))
+            ('nil (notifications-notify
+                   :title "gptel response error!"
+                   :body (prin1-to-string (plist-get info :error))))))))))
 
 (with-eval-after-load 'gptel-transient
   (transient-append-suffix 'gptel-menu '(1 2 "k")

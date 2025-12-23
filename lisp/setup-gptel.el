@@ -301,17 +301,20 @@
     :endpoint "/api/v1/chat/completions"
     :stream t
     :key #'gptel-api-key-from-auth-source
-    :models '(openai/gpt-oss-120b
-              openai/gpt-oss-20b:free
-              deepseek/deepseek-r1-distill-llama-70b:free
-              deepseek/deepseek-r1-distill-llama-70b:free))
+    :models '( openai/gpt-oss-120b openai/gpt-oss-20b:free
+               google/gemini-3-flash-preview
+               deepseek/deepseek-r1-distill-llama-70b:free
+               deepseek/deepseek-r1-distill-llama-70b:free))
 
   (gptel-make-openai "newartisans"
-    :host "home.newartisans.com:18080"
+    :host "vpn.newartisans.com"
     :endpoint "/v1/chat/completions"
-    :protocol "http"
+    :protocol "https"
     :stream t
-    :models '( (gpt-oss-20b
+    :models '( (gpt-oss-120b
+                :capabilities (media tool json)
+                :mime-types ("image/jpeg" "image/png" "image/gif" "image/webp"))
+               (gpt-oss-20b
                 :capabilities (media tool json)
                 :mime-types ("image/jpeg" "image/png" "image/gif" "image/webp"))
                Qwen3-30B-A3B-Instruct-2507
@@ -355,6 +358,8 @@
                     :capabilities (media json tool-use)
                     :mime-types ("application/pdf" "image/png" "image/jpeg")))
         :stream t)))
+
+  (gptel-make-gh-copilot "Copilot" :stream t)
 
   (defvar gptel--gpt4all
     (gptel-make-gpt4all

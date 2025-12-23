@@ -889,12 +889,41 @@ Intended to be placed in `git-commit-setup-hook'."
     ;;        text))
     )
 
+  (defun my/gptel-inject-response-wrappers (backend)
+    "Wrap gptel responses in div elements during HTML export."
+    (when (org-export-derived-backend-p backend 'html)
+      (save-excursion
+        (save-restriction
+          (widen)
+          (goto-char (point-min))
+          ;; Process responses from end to start to preserve positions
+          (let (response-positions match)
+            (while (setq match (text-property-search-forward 'gptel 'response t))
+              (push (cons (prop-match-beginning match)
+                          (prop-match-end match))
+                    response-positions))
+
+            ;; Insert HTML wrappers at response boundaries
+            (dolist (region response-positions)
+              (let ((start (car region))
+                    (end (cdr region)))
+                (goto-char end)
+                (if (save-excursion (skip-chars-backward " \r\t\n")
+                                    (<= (point) start))
+                    (delete-region start end)
+                  (insert "\n@@html:</div>@@\n") ; Insert closing tag
+                  (goto-char start)              ; Insert opening tag
+                  (insert "\n@@html:<div class=\"gptel-response\">@@\n")))))))))
+
   (defun my/org-export-gptel-chat
       (&optional async subtreep visible-only body-only ext-plist)
     (interactive)
     (let* ((extension ".html")
            (file (org-export-output-file-name extension subtreep))
-           (org-export-coding-system org-html-coding-system))
+           (org-export-coding-system org-html-coding-system)
+           (org-export-before-parsing-functions
+            (cons #'my/gptel-inject-response-wrappers
+                  org-export-before-parsing-functions)))
       (org-export-to-file 'gptel-chat file
         async subtreep visible-only body-only ext-plist)))
 
@@ -932,6 +961,16 @@ span.at-prefix {
 h2 code { font-family: inherit; font-size: inherit; font-weight: inherit; }
 .note { font-size: 0.9em; border-radius: 4px;
         padding: 0.1em 0.75em; background: #f09fa9a1; }
+.gptel-response {
+  background: linear-gradient(to right, #f0f7ff 0%, #ffffff 1em);
+  border-left: 4px solid #77aa99;
+  padding: 0.5em 1.0em;
+  margin: 1.5em 0;
+  border-radius: 0 4px 4px 0;
+  box-shadow: 0 1px 1px rgba(25, 118, 210, 0.1);
+}
+.gptel-response > *:first-child { margin-top: 0; }
+.gptel-response > *:last-child { margin-bottom: 0; }
 </style>"
                   newline))))
 

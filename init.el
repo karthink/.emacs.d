@@ -309,6 +309,7 @@ Cancel the previous one if present."
     (interactive)
     (remove-hook 'after-init-hook 'my/terminal-settings)
     (when (controlling-tty-p)
+      (setq pulse-flag nil)
       (keymap-global-unset "C-@")       ;conflicts with C-SPC
       (setq recenter-redisplay nil)
       (with-eval-after-load 'smartparens
@@ -659,6 +660,7 @@ Cancel the previous one if present."
   :hook (after-init . global-so-long-mode))
 
 (use-package iedit
+  :disabled
   :ensure t
   :bind (("C-M-;" . iedit-mode)
          ("M-s n" . my/iedit-1-down)
@@ -2612,19 +2614,21 @@ current buffer without truncation."
   :ensure (ultra-scroll :host github :repo "jdtsmith/ultra-scroll")
   :defer
   :init (setq scroll-conservatively 101 ; important!
-              scroll-margin 0))
+              scroll-margin 0)
+  (ultra-scroll-mode 1))
 
 ;;----------------------------------------------------------------
-;; ** EL-SEARCH MAYBE
+;; ** EL-SEARCH DONT
 ;;----------------------------------------------------------------
 (use-package el-search
+  :disabled
   :ensure t
   :defer
   :config
   (el-search-install-bindings-under-prefix [(meta ?s) ?s]))
 
 ;;----------------------------------------------------------------
-;; ** SHOW-FONT MAYBE
+;; ** SHOW-FONT
 ;;----------------------------------------------------------------
 (use-package show-font
   :ensure (:host github :repo "protesilaos/show-font")
@@ -2733,6 +2737,7 @@ current buffer without truncation."
   :bind-keymap ("C-;" . macrursors-mark-map)
   :bind (("M-n" . macrursors-mark-next-instance-of)
          ("M-p" . macrursors-mark-previous-instance-of)
+         ("C-M-;" . macrursors-mark-all-instances-of)
          :map macrursors-mode-map
          ("C-'" . macrursors-hideshow)
          ("C-;" . nil)
@@ -4964,14 +4969,13 @@ buffer's text scale."
          (pcase-let ((`(,vp ,fp)
                       (cond
                        ((string= (getenv "XDG_SESSION_TYPE") "wayland")
-                        '(1.0 100))
-                       (t '(1.0 100)))))
+                        '(1.10 100))
+                       (t '(1.10 100)))))
            (custom-set-faces
-            `(variable-pitch ((t ( :inherit default
-                                   :family "Merriweather"
+            `(variable-pitch ((t ( :family "Merriweather"
                                    :height ,vp :width semi-expanded))))
             `(default ((t (:family "Monaspace Neon" ;; :foundry "PfEd"
-                           :slant normal :weight normal
+                           :slant normal :weight medium
                            :height ,fp :width normal)))))))
         (IS-WINDOWS
          (custom-set-faces

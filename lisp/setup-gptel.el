@@ -26,7 +26,9 @@
          ("+" . gptel-add))
   :config
   (auth-source-pass-enable)
-  (setq gptel-display-buffer-action '(pop-to-buffer-same-window))
+  (setq gptel-display-buffer-action '(pop-to-buffer-same-window)
+        gptel-highlight-methods (if (controlling-tty-p) '(margin) '(fringe))
+        gptel-track-media t)
 
   (defalias 'my/gptel-easy-page
     (let ((map (make-composed-keymap
@@ -60,9 +62,7 @@
         (add-file-local-variable-prop-line
          'eval '(and (fboundp 'gptel-mode) (gptel-mode 1))))))
 
-  (defvar my/gptel-chat-directory
-    (file-name-as-directory
-     (file-name-concat (xdg-data-home) "gptel-chat")))
+  (defvar my/gptel-chat-directory "~/Documents/roam/gptel/")
 
   (defun gptel-resume (chat)
     "Resume previous gptel chat stored in `my/gptel-chat-directory'."
@@ -456,6 +456,9 @@
     :tools nil :stream t :temperature nil :max-tokens nil
     :use-context 'system :include-reasoning nil)
 
+  (gptel-make-preset 'anki
+    :description "PROMPT: Create anki question in org-anki format"
+    :system 'anki)
   ;;-------------------------
   ;; Presets for adding tools
   ;;-------------------------

@@ -924,11 +924,11 @@ has no effect."
           ("C-M-p" . my/org-agenda-previous-header)
           ([remap org-agenda-open-link] . my/search-occur-org-browse-url))
   :config
-  (setq org-agenda-files '("~/Documents/org/inbox.org"
-                           "~/Documents/org/phone.org"
-                           "~/Documents/org/do.org"
-                           "~/Documents/org/gmail-cal.org"
-                           "~/Documents/org/ucsb-cal.org"))
+  (setopt org-agenda-files '("~/Documents/roam/inbox.org"
+                             "~/Documents/roam/phone.org"
+                             "~/Documents/roam/do.org"
+                             "~/Documents/roam/gmail-cal.org"
+                             "~/Documents/roam/ucsb-cal.org"))
   (setq-default
    org-agenda-span 'day
    org-agenda-restore-windows-after-quit t
@@ -1170,8 +1170,7 @@ has no effect."
             (org-agenda-skip-function
              '(org-agenda-skip-entry-if 'scheduled 'deadline 'timestamp))
             (org-agenda-sorting-strategy '(user-defined-up))
-            (org-agenda-prefix-format "%-11c%5(my/org-todo-age) ")
-            (org-agenda-files '("~/org/do.org"))))
+            (org-agenda-prefix-format "%-11c%5(my/org-todo-age) ")))
 
           ("~" "Maybe tasks" tags "TODO=\"MAYBE\""
            ((org-agenda-overriding-header "Maybe tasks:")
@@ -1211,6 +1210,9 @@ has no effect."
            (let ((inhibit-message t))
              (org-agenda-to-appt t))))))
 
+;; *** ORG-PROTOCOL
+(use-package org-protocol :after org)
+
 ;; *** ORG-CAPTURE
 (use-package org-capture
   :after org
@@ -1237,26 +1239,26 @@ See `org-capture-templates' for more information."
                    ,(concat "* TODO " title)
                    "\n:PROPERTIES:"
                    ,(concat "\n:EXPORT_FILE_NAME: " fname
-                     "\n:EXPORT_HUGO_CUSTOM_FRONT_MATTER: :comments "
-                     (if commentp "true" "false"))
+                            "\n:EXPORT_HUGO_CUSTOM_FRONT_MATTER: :comments "
+                            (if commentp "true" "false"))
                    "\n:END:"
                    "\n%?\n")
                  "")))
 
   (pcase-dolist
       (`(,key . ,template)
-       '(("n" "Note" entry (file "~/org/inbox.org")
+       '(("n" "Note" entry (file "~/Documents/roam/inbox.org")
           "* %? %^G\n:PROPERTIES:\n:CREATED:  %U\n:END:\n%a\n%x\n")
-         ("p" "Webpage" entry (file "~/org/inbox.org")
+         ("p" "Webpage" entry (file "~/Documents/roam/inbox.org")
           "* TODO %a\n:PROPERTIES: \n:CREATED:  %U \n:ID: %(org-id-uuid) \n:END:\n%i\n%?\n")
-         ("pm" "Video" entry (file "~/org/inbox.org")
+         ("pm" "Video" entry (file "~/Documents/roam/inbox.org")
           "* %a :@watch:\n:PROPERTIES: \n:CREATED:  %U \n:ID: %(org-id-uuid) \n:END:\n%i\n%?\n"
           :immediate-finish t)
-         ("t" "Add task" entry (file "~/org/inbox.org")
+         ("t" "Add task" entry (file "~/Documents/roam/inbox.org")
           "* TODO %?\n:PROPERTIES: \n:CREATED:  %U \n:ID:  %(org-id-uuid) \n:END:\n%a\n%i\n")
-         ("m" "Task from email" entry (file "~/org/inbox.org")
+         ("m" "Task from email" entry (file "~/Documents/roam/inbox.org")
           "* TODO %A\n:PROPERTIES:\n:CREATED:  %U\n:END:\n" :immediate-finish t)
-         ("c" "Add calendar entry" entry (file "~/org/gmail-cal.org")
+         ("c" "Add calendar entry" entry (file "~/Documents/roam/gmail-cal.org")
           "* %?\n%^{LOCATION}p\n:%(progn (require 'org-gcal) (symbol-value 'org-gcal-drawer-name)):
 %a\n:END:")
          ("h" "Hugo post")
@@ -1837,10 +1839,10 @@ the :consume parameter extracted from KEYWORD."
         org-gcal-notify-p nil
         org-gcal-file-alist
         `((,my-email-address . ,(concat
-                                 (file-name-as-directory org-directory)
+                                 (file-name-as-directory "~/Documents/roam/")
                                  "gmail-cal.org"))
           (,(car my-alt-email-addresses) . ,(concat
-                                             (file-name-as-directory org-directory)
+                                             (file-name-as-directory "~/Documents/roam/")
                                              "ucsb-cal.org")))
         org-gcal-recurring-events-mode 'top-level)
 

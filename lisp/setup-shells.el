@@ -366,11 +366,23 @@ NUM counts from the end"
                   (with-current-buffer buf
                     (buffer-substring-no-properties (point-min) (point-max))))))
 
-  ;; From https://github.com/LemonBreezes/.doom.d/blob/master/modules/private/eshell/autoload.el
-  (defun eshell/hat (&rest files)
-    "Output FILES with highlighting."
-    (dolist (f files)
-      (eshell-print (my/eshell-file-contents f))))
+  ;; From https://xenodium.com/rinku-cli-link-previews
+  (define-advice eshell/cat (:before-until (&rest args) show-image)
+    (when (and args (seq-every-p
+                     (lambda (arg) (and (stringp arg)
+                                   (file-regular-p arg)
+                                   (image-supported-file-p arg)))
+                     args))
+      (with-temp-buffer
+        (insert "\n")
+        (dolist (path args)
+          (insert-image
+           (create-image
+            (expand-file-name path)
+            (image-type-from-file-name (expand-file-name path))
+            nil :max-width 350))
+          (insert "\n\n"))
+        (buffer-string))))
   
   (defun eshell/view (&optional file)
     (if (or (not file)
@@ -470,31 +482,7 @@ send a notification when the process has exited."
                            :title (format "Process running in '%s' finished!" ,hostname)
                            :urgency (if (string-prefix-p "finished" str) 'normal 'critical)))))))
       (eshell-add-input-to-history cmd)
-      (eshell-reset)))
-  
-  ;; From https://gist.github.com/minad/19df21c3edbd8232f3a7d5430daa103a
-  (defun my/eshell-buffer-contents (buffer)
-    "Return fontified buffer contents for BUFFER."
-    (with-current-buffer buffer
-      (font-lock-ensure (point-min) (point-max))
-      (buffer-string)))
-
-  ;; From https://gist.github.com/minad/19df21c3edbd8232f3a7d5430daa103a
-  (defun my/eshell-file-contents (file)
-    "Return fontified file contents for FILE."
-    (let ((buffer (get-file-buffer file)))
-      (if buffer
-          (my/eshell-buffer-contents buffer)
-        (unwind-protect
-            (my/eshell-buffer-contents
-             (setq buffer
-                   (let ((inhibit-message t)
-                         (non-essential t)
-                         (enable-dir-local-variables nil)
-                         (enable-local-variables (and enable-local-variables :safe)))
-                     (find-file-noselect file))))
-          (when buffer
-            (kill-buffer buffer)))))))
+      (eshell-reset))))
 
 ;; Better region selection for eshell.
 (use-package expand-region

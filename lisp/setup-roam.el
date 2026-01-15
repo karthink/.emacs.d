@@ -1,4 +1,4 @@
-;;; setup-roam
+;;; setup-roam  -*- lexical-binding: t; -*-
 
 ;; (if IS-GUIX
 ;;     (progn (load-library "org-roam-autoloads")
@@ -9,23 +9,21 @@
 (use-package org-roam
       :ensure t
       :init (setq org-roam-v2-ack t)
-      :bind (("C-c n l" . org-roam-buffer-toggle)
-             ("C-c n f" . org-roam-node-find)
-             ("C-c n g" . org-roam-graph)
+      :bind (;; ("C-c n `" . org-roam-buffer-toggle)
+             ;; ("C-c n f" . org-roam-node-find)
+             ;; ("C-c n g" . org-roam-graph)
              ("C-c n i" . org-roam-node-insert)
              ("C-c n c" . org-roam-capture)
              ("C-c n r" . my/org-roam-node-from-cite))
+      :hook ((org-roam-find-file . my/org-roam-capf-setup))
       :config
       (setf (alist-get "^\\*org-roam\\*$" display-buffer-alist
                        nil nil #'equal)
             '((display-buffer-reuse-window
                display-buffer-reuse-mode-window
                display-buffer-below-selected)
-              (window-height . 0.4 
-               ;; (lambda (win)
-               ;;   (fit-window-to-buffer
-               ;;    win 30))
-               )))
+              (window-height . 0.4)
+              (body-function . select-window)))
       (defun my/org-roam-node-latex-preview (&rest _)
         (let ((major-mode 'org-mode))
           (org-latex-preview 'buffer)))
@@ -33,6 +31,29 @@
       (advice-add 'org-roam-node-insert-section :after
                   #'my/org-roam-node-latex-preview)
       
+      (defun org-roam-complete-link-at-point ()
+        "Complete \"roam:\" link at point to an existing Org-roam node."
+        (let (roam-p start end)
+          (when (org-in-regexp "\\[\\[\\(\\(?:roam:\\)?\\)\\([^[:space:]]*\\)" 1)
+            (setq roam-p (not (or (org-in-src-block-p)
+                                  (string-blank-p (match-string 1))))
+                  start (match-beginning 2)
+                  end (match-end 2))
+            (list start end
+                  (org-roam--get-titles)
+                  :exit-function
+                  (lambda (str &rest _)
+                    (delete-char (- 0 (length str)))
+                    (insert (concat (unless roam-p "roam:")
+                                    str))
+                    (if (looking-at-p "]]")
+                        (forward-char 2)
+                      (insert "]]")))))))
+
+      (defun my/org-roam-capf-setup ()
+        (add-hook 'completion-at-point-functions #'org-roam-complete-link-at-point
+                  nil t))
+
       (setq org-roam-directory (file-truename "~/Documents/roam/"))
       (defun org-roam-node-insert-immediate (arg &rest args)
         (interactive "P")
@@ -109,7 +130,6 @@
   (set-keymap-parent embark-org-roam-node-map embark-general-map))
 
 (use-package org-roam-dailies
-  :after org-roam
   :commands org-roam-dailies-goto-today
   :bind-keymap ("C-c n j" . org-roam-dailies-map)
   :config
@@ -146,12 +166,13 @@
 
 (use-package org-node
   :ensure t
-  :bind-keymap (("C-c k" . org-node-global-prefix-map))
+  :bind-keymap (("C-c n" . org-node-global-prefix-map))
   :bind (:map org-mode-map
-              (("C-c k w" . org-node-refile)))
+              (("C-c n w" . org-node-refile)
+               ("C-c n `" . org-roam-buffer-toggle)))
   :config
   (setq org-mem-do-sync-with-org-id t
-        org-mem-watch-dirs '("~/org/" "~/Documents/roam/"))
+        org-mem-watch-dirs '("~/Documents/roam/"))
   (org-mem-updater-mode)
   (org-node-cache-mode)
   (org-node-roam-accelerator-mode)

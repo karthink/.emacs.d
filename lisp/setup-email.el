@@ -61,6 +61,7 @@
                 notmuch-show-indent-content nil)
   (setq notmuch-fcc-dirs '(("contact@" . "sent +sent"))
         notmuch-show-logo nil
+        notmuch-multipart/alternative-discouraged '("multipart/related")
         notmuch-column-control 0.6
         notmuch-message-headers-visible nil
         notmuch-always-prompt-for-sender t
@@ -69,23 +70,6 @@
         '(notmuch-hello-insert-saved-searches
           notmuch-hello-insert-alltags))
 
-  (setq notmuch-search-line-faces
-        '(("flagged"   . (:inherit notmuch-search-flagged-face
-                          :foreground "IndianRed"))
-          ("ucsb"      . (:foreground "MediumPurple"))
-	  ("important" . (:foreground "CornflowerBlue"))
-          ("unread"    . (:inherit notmuch-search-unread-face))))
-
-  (pcase-dolist (`(,key . ,ops)
-                 '(("d" ("+trash" "-inbox") "Delete")
-                   ("m" ("+money") "Money")
-                   ("b" ("+bills" "-inbox") "Bills")
-                   ("H" ("+medical") "Medical")
-                   ("I" ("+insurance") "Insurance")
-                   ("j" ("+jobs") "Jobs")
-                   ("p" ("+purchases") "Purchases")))
-    (setf (alist-get key notmuch-tagging-keys nil nil #'equal) ops))
-  
   ;; Hide patches and diffs in notmuch-show by default. Note: To turn them into
   ;; attachments from inline components you can customize
   ;; `mm-inline-override-types' instead. This method simply toggles their inline

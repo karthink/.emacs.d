@@ -16,6 +16,7 @@
   :bind (("C-c C-<return>" . gptel-menu)
          ("C-c <return>" . gptel-send)
          ("C-c j" . gptel-menu)
+         ("C-c M-j" . gptel)
          ("C-c C-g" . gptel-abort)
          ("C-c SPC" . my/gptel-easy-page)
          :map gptel-mode-map
@@ -307,7 +308,7 @@
                deepseek/deepseek-r1-distill-llama-70b:free))
 
   (gptel-make-openai "newartisans"
-    :host "vpn.newartisans.com"
+    :host "10.7.0.1"               ;Requires wireguard connection to newartisans
     :endpoint "/v1/chat/completions"
     :protocol "https"
     :stream t

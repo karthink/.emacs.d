@@ -14,10 +14,11 @@
          ("U" . eww-up-url)
          ("^" . eww-up-url)
          ("i" . imenu))
-  :hook (eww-after-render . (lambda () (setq line-spacing 0.1)))
+  :hook ((eww-after-render . (lambda () (setq line-spacing 0.1)))
+         (eww-mode . tab-line-mode))
   :config
   (setq eww-browse-url-new-window-is-tab nil
-        eww-auto-rename-buffer t)
+        eww-auto-rename-buffer 'title)
   (use-package setup-reading
     :disabled
     :config

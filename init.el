@@ -4595,14 +4595,17 @@ ARGS is the raw argument list (STRING &optional TRANS-CASE)."
         (add-hook 'whisper-after-transcription-hook
                   restore)))
     (whisper-run))
-  (setq whisper-use-threads 12
-        whisper-install-directory "~/.local/share/git/"
-        whisper--install-path
-        (concat
-         (expand-file-name (file-name-as-directory whisper-install-directory))
-         "whisper.cpp/")
-        whisper-server-mode 'local))
-;; 
+  (setq whisper-model "base.en"
+        whisper-use-threads 14
+        whisper-server-mode 'local)
+  (when IS-GUIX                         ;Whisper managed by NixOS
+    (require 'xdg)
+    (define-advice whisper--find-whispercpp-server
+        (:before-until () whisper-from-system)
+      (executable-find "whisper-server"))
+    ;; NOTE: Ensure models are in $XDG_CACHE_HOME/whisper.cpp/models/
+    (setq whisper-install-whispercpp nil
+          whisper-install-directory (xdg-cache-home))))
 
 ;;----------------------------------------------------------------
 ;; * PROJECTS

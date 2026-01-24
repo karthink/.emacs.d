@@ -179,21 +179,8 @@
 ;; 28 provides =file-name-concat=, but I'm on 27.2 some of the time.
 (use-package emacs
   :config
-  (defun dir-concat (dir file)
-    "join path DIR with filename FILE correctly"
-    (concat (file-name-as-directory dir) file))
-
-  ;; Set directory
-  (setq default-directory
-        (cond ((equal (system-name) "surface")
-               "/cygdrive/c/Users/karth/OneDrive/Documents/")
-              ((equal system-type 'nt)
-               "/cygdrive/c/Users/karth/OneDrive/Documents/")
-              (t "~/")))
-
-  ;; Adds ~/.emacs.d to the load-path
-  (push (dir-concat user-emacs-directory "plugins/") load-path)
-  (push (dir-concat user-emacs-directory "lisp/") load-path)
+  (push (expand-file-name "plugins/" user-emacs-directory) load-path)
+  (push (expand-file-name "lisp/" user-emacs-directory) load-path)
   (defvar user-cache-directory "~/.cache/emacs/"
   "Location where files created by emacs are placed."))
 
@@ -416,7 +403,7 @@ Cancel the previous one if present."
 (use-package cus-edit
   :config
   ;; Get custom-set-variables out of init.el
-  (defvar my/custom-file (dir-concat user-emacs-directory "custom.el"))
+  (defvar my/custom-file (expand-file-name "custom.el" user-emacs-directory))
   (setq custom-file my/custom-file)
 
   (defun my/cus-edit ()
@@ -450,14 +437,14 @@ Cancel the previous one if present."
 (setq auto-save-interval 2400)
 (setq auto-save-timeout 300)
 (setq auto-save-list-file-prefix
-      (dir-concat user-cache-directory "auto-save-list/.saves-"))
+      (expand-file-name "auto-save-list/.saves-" user-cache-directory))
 (setq backup-directory-alist
-      `(("." . ,(dir-concat user-cache-directory "backup")))
-      backup-by-copying t ; Use copies
-      version-control t ; Use version numbers on backups
-      delete-old-versions t ; Automatically delete excess backups
-      kept-new-versions 10 ; Newest versions to keep
-      kept-old-versions 5 ; Old versions to keep
+      `(("." . ,(expand-file-name "backup" user-cache-directory)))
+      backup-by-copying t               ; Use copies
+      version-control t                 ; Use version numbers on backups
+      delete-old-versions t             ; Automatically delete excess backups
+      kept-new-versions 10              ; Newest versions to keep
+      kept-old-versions 5               ; Old versions to keep
       )
 
 ;;;################################################################
@@ -1089,7 +1076,7 @@ for details."
 ;; directories used by consult-dir.
 (use-package recentf
   :config
-  (setq recentf-save-file (dir-concat user-cache-directory "recentf")
+  (setq recentf-save-file (expand-file-name "recentf" user-cache-directory)
         recentf-max-saved-items 200
         recentf-auto-cleanup 300)
   (define-advice recentf-cleanup (:around (fun) silently)
@@ -1104,7 +1091,7 @@ for details."
   :defer 2
   :hook (after-init . savehist-mode)
   :config
-  (setq savehist-file (dir-concat user-cache-directory "savehist"))
+  (setq savehist-file (expand-file-name "savehist" user-cache-directory))
   (setq history-length 1000)
   (setq history-delete-duplicates t)
   (setq savehist-save-minibuffer-history t))
@@ -1124,8 +1111,8 @@ for details."
   ;;       (remove-hook 'after-make-frame-functions 'my/restore-desktop)))
   ;;   (add-hook 'after-make-frame-functions 'my/restore-desktop))
   (setq desktop-auto-save-timeout 300
-        desktop-path `(,(dir-concat user-cache-directory "desktop"))
-        desktop-dirname (dir-concat user-cache-directory "desktop")
+        desktop-path `(,(expand-file-name "desktop" user-cache-directory))
+        desktop-dirname (expand-file-name "desktop" user-cache-directory)
         desktop-base-file-name "desktop"
         desktop-restore-forces-onscreen nil
         desktop-globals-to-clear nil
@@ -1165,7 +1152,7 @@ for details."
   :hook ((prog-mode conf-mode text-mode tex-mode) . undo-fu-session-mode)
   :config
   (setq undo-fu-session-directory
-        (dir-concat user-cache-directory "undo-fu-session/")))
+        (expand-file-name "undo-fu-session/" user-cache-directory)))
 
 ;; * BUFFER MANAGEMENT
 (load (expand-file-name "lisp/better-buffers" user-emacs-directory))
@@ -2711,7 +2698,7 @@ current buffer without truncation."
   :custom ((detached-show-output-on-attach t)
            (detached-terminal-data-command system-type)
            (detached-session-directory
-            (file-name-concat user-cache-directory "sessions"))))
+            (expand-file-name "sessions" user-cache-directory))))
 
 ;;;----------------------------------------------------------------
 ;; ** VISIBLE MARK
@@ -2948,7 +2935,7 @@ current buffer without truncation."
   :diminish 'stokes-mode
   :bind ("<down-mouse-9>" . strokes-do-stroke)
   :config
-  (setq strokes-file (dir-concat user-cache-directory "strokes"))
+  (setq strokes-file (expand-file-name "strokes" user-cache-directory))
   (setq strokes-use-strokes-buffer t))
 
 ;;;----------------------------------------------------------------
@@ -3350,8 +3337,8 @@ normally have their errors suppressed."
   :bind (("<f8>"  . toggle-modes)
          ("C-c b" . toggle-modes))
   :custom
-  (transient-levels-file (dir-concat user-cache-directory "transient/levels.el"))
-  (transient-values-file (dir-concat user-cache-directory "transient/values.el"))
+  (transient-levels-file (expand-file-name "transient/levels.el" user-cache-directory))
+  (transient-values-file (expand-file-name "transient/values.el" user-cache-directory))
   :config
   (defun mode-cycle (mode1 mode2)
     "Cycle between mode1, mode2 and neither enabled."
@@ -3372,9 +3359,9 @@ normally have their errors suppressed."
   (transient-bind-q-to-quit)
   ;; (setq transient-display-buffer-action
   ;;       '(display-buffer-below-selected (dedicated . t) (inhibit-same-window . t)))
-  (setq transient-history-file (dir-concat user-cache-directory "transient/history.el")
-        transient-levels-file (dir-concat user-cache-directory "transient/levels.el")
-        transient-values-file (dir-concat user-cache-directory "transient/values.el")
+  (setq transient-history-file (expand-file-name "transient/history.el" user-cache-directory)
+        transient-levels-file (expand-file-name "transient/levels.el" user-cache-directory)
+        transient-values-file (expand-file-name "transient/values.el" user-cache-directory)
         transient-show-popup t)
   (transient-define-prefix toggle-modes ()
     "Turn on and off various frequently used modes."
@@ -3840,8 +3827,8 @@ _d_: subtree
   :diminish
   :hook ((prog-mode text-mode) . abbrev-mode)
   :config
-  ;; (setq abbrev-file-name (expand-file-name (dir-concat user-cache-directory "abbvev-defs")))
-  (setq abbrev-file-name (dir-concat user-emacs-directory "abbrev_defs"))
+  ;; (setq abbrev-file-name (expand-file-name "abbvev-defs" user-cache-directory))
+  (setq abbrev-file-name (expand-file-name "abbrev_defs" user-emacs-directory))
   (if (file-exists-p abbrev-file-name)
       (quietly-read-abbrev-file)))
 
@@ -4022,7 +4009,7 @@ _d_: subtree
   (setq remote-file-name-inhibit-cache 86400
         tramp-allow-unsafe-temporary-files t)
   (setq tramp-persistency-file-name
-        (dir-concat user-cache-directory "tramp"))
+        (expand-file-name "tramp" user-cache-directory))
   (setq tramp-verbose 1)
   (setq remote-file-name-inhibit-locks t
         remote-file-name-inhibit-auto-save-visited t
@@ -4056,7 +4043,7 @@ _d_: subtree
 ;;----------------------------------------------------------------
 (use-package bookmark
   :config
-  (setq bookmark-default-file (dir-concat user-cache-directory "bookmarks")))
+  (setq bookmark-default-file (expand-file-name "bookmarks" user-cache-directory)))
 
 ;;----------------------------------------------------------------
 ;; * COMPLETION
@@ -4250,7 +4237,7 @@ ARGS is the raw argument list (STRING &optional TRANS-CASE)."
   :after ivy
   :config
   (setq ivy-youtube-history-file
-        (dir-concat user-cache-directory "ivy-youtube-history"))
+        (expand-file-name "ivy-youtube-history" user-cache-directory))
   (setq ivy-youtube-key my-ivy-youtube-key
         ivy-youtube-play-at (expand-file-name
                              "~/.local/bin/i3cmds/umpv")))
@@ -4487,7 +4474,7 @@ ARGS is the raw argument list (STRING &optional TRANS-CASE)."
     :hook (nov-post-html-render . my/reader-center-images))
   
   (setq nov-text-width 72
-        nov-save-place-file (dir-concat user-cache-directory "nov-places"))
+        nov-save-place-file (expand-file-name "nov-places" user-cache-directory))
   ;; Pinched from https://tecosaur.github.io/emacs-config/config.html
   (defun my/nov-display-setup ()
     (face-remap-add-relative 'variable-pitch
@@ -5251,23 +5238,23 @@ buffer's text scale."
 (use-package url
   :defer
   :config
-  (setq url-configuration-directory (dir-concat user-cache-directory "url/"))
+  (setq url-configuration-directory (expand-file-name "url/" user-cache-directory))
   (setq url-automatic-caching t))
 
 (use-package request
   :defer
   :config
-  (setq request-storage-directory (dir-concat user-cache-directory "request/")))
+  (setq request-storage-directory (expand-file-name "request/" user-cache-directory)))
 
 (use-package semantic
   :defer
   :config
-  (setq semanticdb-default-save-directory (dir-concat user-cache-directory "semanticdb/")))
+  (setq semanticdb-default-save-directory (expand-file-name "semanticdb/" user-cache-directory)))
 
 (use-package srecode
   :defer
   :config
-  (setq srecode-map-save-file (dir-concat user-cache-directory "srecode-map.el")))
+  (setq srecode-map-save-file (expand-file-name "srecode-map.el" user-cache-directory)))
 
 ;; * LOCAL-VARIABLES
 

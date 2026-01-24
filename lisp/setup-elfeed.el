@@ -27,7 +27,7 @@
   ;; (setq elfeed-feeds nil)
   
   (setq-default elfeed-db-directory
-                (dir-concat user-cache-directory "elfeed")
+                (expand-file-name "elfeed" user-cache-directory)
                 ;; (concat "~/Desktop/elfeed-"
                 ;;         (format-time-string "%Y-%m-%d-%H%M"))
                 elfeed-save-multiple-enclosures-without-asking t

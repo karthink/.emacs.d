@@ -4,8 +4,8 @@
 (setq user-emacs-directory "~/.emacs.d.orig")
 (defun dir-concat (dir file) (concat (file-name-as-directory dir)
 				     file))
-(push (dir-concat user-emacs-directory "plugins/") load-path)
-(push (dir-concat user-emacs-directory "lisp/") load-path)
+(push (expand-file-name "plugins/" user-emacs-directory) load-path)
+(push (expand-file-name "lisp/" user-emacs-directory) load-path)
 
 (add-to-list 'load-path "~/.emacs.d/lisp/")
 (add-to-list 'load-path "~/.emacs.d/plugins/")
@@ -126,7 +126,7 @@ kill region instead"
 
 ;; History
 (when (require 'savehist nil t)
-  (setq savehist-file (dir-concat user-cache-directory "savehist")
+  (setq savehist-file (expand-file-name "savehist" user-cache-directory)
 	history-length 10000
 	history-delete-duplicates nil
 	savehist-save-minibuffer-history t)

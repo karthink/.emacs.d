@@ -1830,7 +1830,7 @@ the :consume parameter extracted from KEYWORD."
   :config
   (setq plstore-encrypt-to user-full-name)
   ;; (setq plstore-cache-passphrase-for-symmetric-encryption t)
-  (setq org-gcal-dir (dir-concat user-cache-directory "org-gcal/"))
+  (setq org-gcal-dir (expand-file-name "org-gcal/" user-cache-directory))
   ;; (add-hook 'org-capture-after-finalize-hook (lambda () (org-gcal-sync)))
   (setq org-gcal-client-id my-org-gcal-client-id
         org-gcal-client-secret my-org-gcal-client-secret

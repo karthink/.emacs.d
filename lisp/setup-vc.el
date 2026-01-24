@@ -304,7 +304,7 @@ project, as defined by `vc-root-dir'."
   (auth-source-pass-enable)
   (setq forge-bug-reference-remote-files nil
         forge-database-file
-        (dir-concat user-cache-directory "forge-database.sqlite")
+        (expand-file-name "forge-database.sqlite" user-cache-directory)
         forge-owned-accounts '(("karthink"))))
 
 (use-package orgit-forge :ensure t :defer)

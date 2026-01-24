@@ -42,7 +42,7 @@ The directory name must be absolute."
       (car project))
     
     :config
-    (setq project-list-file (dir-concat user-cache-directory "projects"))
+    (setq project-list-file (expand-file-name "projects" user-cache-directory))
 
     ;; (when (executable-find "fd")
     ;;   (defun my/project-files-in-directory (dir)
@@ -85,7 +85,7 @@ The directory name must be absolute."
              (dir (completing-read "REMOVE project from list: " projects nil t)))
         (setq project--list (delete (assoc dir projects) projects))))
 
-    (setq project-window-list-file (dir-concat user-cache-directory "project-window-list")
+    (setq project-window-list-file (expand-file-name "project-window-list" user-cache-directory)
           project-vc-merge-submodules nil)
 
     :bind-keymap ("H-p" . project-prefix-map)
@@ -109,7 +109,7 @@ The directory name must be absolute."
   :after project
   :config
   (setq project-x-local-identifier '(".project" "Project.toml"))
-  (setq project-x-window-list-file (dir-concat user-cache-directory "project-window-list")
+  (setq project-x-window-list-file (expand-file-name "project-window-list" user-cache-directory)
         project-x-save-interval nil)
   (project-x-mode 1))
 

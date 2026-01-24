@@ -159,7 +159,7 @@ Filenames are always matched by eshell."
           ;; eshell-input-filter-functions '(eshell-expand-history-references)
           eshell-hist-ignoredups t
           eshell-destroy-buffer-when-process-dies t
-          eshell-directory-name (dir-concat user-cache-directory "eshell/")
+          eshell-directory-name (expand-file-name "eshell/" user-cache-directory)
           eshell-history-file-name (concat (file-name-as-directory
                                             eshell-directory-name)
                                            "history")

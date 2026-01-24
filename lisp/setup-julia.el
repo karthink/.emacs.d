@@ -81,7 +81,7 @@
     (cdr project))
   ;; Workaround until LanguageServer.jl is fixed
   (setq eglot-jl-language-server-project
-        (dir-concat user-cache-directory "eglot-jl-project")))
+        (expand-file-name "eglot-jl-project" user-cache-directory)))
 
 ;;;----------------------------------------------------------------
 ;; ** ESS

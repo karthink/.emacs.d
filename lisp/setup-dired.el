@@ -277,7 +277,7 @@ This relies on the external 'fd' executable."
   :commands image-dired
   :config
   (setq image-dired-dir
-        (dir-concat user-cache-directory "image-dired/")))
+        (expand-file-name "image-dired/" user-cache-directory)))
 
 (use-package gnus-dired
   :bind (:map dired-mode-map

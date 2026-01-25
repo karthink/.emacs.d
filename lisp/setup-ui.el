@@ -24,6 +24,9 @@
 (setq dnd-indicate-insertion-point t
       dnd-scroll-margin 4)
 
+;; Underline looks a bit better when drawn lower
+(setq x-underline-at-descent-line t)
+
 ;; Scrolling
 (setq scroll-margin 0
       scroll-preserve-screen-position t
@@ -60,31 +63,13 @@
 
 (tooltip-mode 1)
 ;; native linux tooltips are all right
-(when IS-LINUX
-  (setq x-gtk-use-system-tooltips nil))
+(when IS-LINUX (setq x-gtk-use-system-tooltips nil))
 
-;; Window splitting
-;; Set horizontal splits as the default
-;; #+begin_src emacs-lisp
-;; (setq split-width-threshold 120
-;;       split-height-threshold 80)
-;; #+end_src
-;; or favor vertical splits over horizontal ones?
 (setq split-width-threshold 140
       split-height-threshold 80)
 
-;;; ;;;###package pos-tip
-;;; (setq pos-tip-internal-border-width 6
-;;;       pos-tip-border-width 1)
-;;; ;; Better fontification of number literals in code
-
-;;; (use-package! highlight-numbers
-;;;   :hook ((prog-mode conf-mode) . highlight-numbers-mode)
-;;;   :config (setq highlight-numbers-generic-regexp "\\_<[[:digit:]]+\\(?:\\.[0-9]*\\)?\\_>"))
-
-;;; ;;;###package hide-mode-line-mode
-;;; (add-hook! '(completion-list-mode-hook Man-mode-hook)
-;;;            #'hide-mode-line-mode)
+(setq display-line-numbers-width-start t
+      display-line-numbers-type t)
 
 (provide 'setup-ui)
 ;; setup-ui ends here

@@ -194,7 +194,10 @@ project, as defined by `vc-root-dir'."
   :init
   (setq diff-hl-draw-borders t)
   (setq-default diff-hl-inline-popup--height 4)
-  (dolist (mode-hook my/addons-enabled-modes)
+  (dolist (mode-hook
+           ( list 'prog-mode-hook 'conf-unix-mode-hook
+             'conf-windows-mode-hook 'conf-javaprop-mode-hook
+             'tex-mode-hook 'text-mode-hook 'message-mode-hook))
     (add-hook mode-hook #'diff-hl-mode))
   (remove-hook 'text-mode-hook #'diff-hl-mode)
   :bind

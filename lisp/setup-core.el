@@ -1,5 +1,8 @@
 ;;; Optimizations  -*- lexical-binding: t; -*-
 
+;; Optimizations to make Emacs more responsive. These are mostly copied from
+;; Doom Emacs.
+
 ;; A helper to keep track of start-up time:
 (eval-when-compile (require 'cl-lib))
 (let ((emacs-start-time (current-time)))
@@ -8,8 +11,6 @@
               (let ((elapsed (float-time (time-subtract (current-time) emacs-start-time))))
                 (message "[Emacs initialized in %.3fs]" elapsed)))))
 
-;;; (defconst EMACS26+ (> emacs-major-version 25))
-;;; (defconst EMACS27+ (> emacs-major-version 26))
 (defconst IS-MAC     (eq system-type 'darwin))
 (defconst IS-LINUX   (eq system-type 'gnu/linux))
 (defconst IS-WINDOWS (memq system-type '(cygwin windows-nt ms-dos)))
@@ -58,45 +59,35 @@
 ;; (when IS-LINUX (when (fboundp 'pgtk-use-im-context)
 ;;                  (pgtk-use-im-context nil)))
 
-;; File-name-handler optimization
-;; ;; This is consulted on every `require', `load' and various path/io functions.
-;; ;; You get a minor speed up by nooping this.
-;; (setq file-name-handler-alist nil)
-;;
-;; (defvar my/initial-file-name-handler-alist file-name-handler-alist)
-;; (defun my/restore-file-name-handler-alist-h ()
-;;   (setq file-name-handler-alist my/initial-file-name-handler-alist))
-
-;; (add-hook 'emacs-startup-hook #'my/restore-file-name-handler-alist-h)
-
-;; ;; Garbage collector optimization
-;; (defvar my/gc-cons-threshold 33554432  ;32mb
-;;   "The default value to use for `gc-cons-threshold'. If you experience freezing,
-;; decrease this. If you experience stuttering, increase this.")
-;; 
-;; (defun my/defer-garbage-collection-h ()
-;;   "Defer garbage collection. Meant to be added to
-;; `minibuffer-setup-hook'."
-;;   (setq gc-cons-threshold most-positive-fixnum))
-
-;; (defun my/restore-garbage-collection-h ()
-;;   "Restore garbage collection threshold. Meant to be added to
-;; `minibuffer-exit-hook'."
-;;   ;; Defer it so that commands launched immediately after will enjoy the
-;;   ;; benefits.
-;;   (run-at-time
-;;    1 nil (lambda () (setq gc-cons-threshold my/gc-cons-threshold))))
-
-;; (add-hook 'minibuffer-setup-hook #'my/defer-garbage-collection-h)
-;; (add-hook 'minibuffer-exit-hook #'my/restore-garbage-collection-h)
-
-;; ;; Not restoring these to their defaults will cause stuttering/freezes.
-;; (add-hook 'emacs-startup-hook #'my/restore-garbage-collection-h)
-
 ;; ;; When Emacs loses focus seems like a great time to do some garbage collection
 ;; ;; all sneaky breeky like, so we can return a fresh(er) Emacs.
 ;; (add-hook 'focus-out-hook #'garbage-collect)
 
+(condition-case-unless-debug nil
+    (use-package gcmh
+      :defer 2
+      :ensure t
+      :diminish
+      ;; :hook (after-init . gcmh-mode)
+      :config
+      (defun gcmh-register-idle-gc ()
+        "Register a timer to run `gcmh-idle-garbage-collect'.
+Cancel the previous one if present."
+        (unless (eq this-command 'self-insert-command)
+          (let ((idle-t (if (eq gcmh-idle-delay 'auto)
+		            (* gcmh-auto-idle-delay-factor gcmh-last-gc-time)
+		          gcmh-idle-delay)))
+            (if (timerp gcmh-idle-timer)
+                (timer-set-time gcmh-idle-timer idle-t)
+              (setf gcmh-idle-timer
+	            (run-with-timer idle-t nil #'gcmh-idle-garbage-collect))))))
+      (setq gcmh-idle-delay 'auto       ; default is 15s
+            gcmh-high-cons-threshold (* 32 1024 1024)
+            gcmh-verbose nil
+            gc-cons-percentage 0.2)
+      (gcmh-mode 1))
+  (error (setq gc-cons-threshold (* 16 1024 1024)
+               gc-cons-percentage 0.2)))
 
 (provide 'setup-core)
 ;; setup-core.el ends here

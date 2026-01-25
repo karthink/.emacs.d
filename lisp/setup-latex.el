@@ -348,6 +348,10 @@ but mark is only pushed if region isn't active."
   :commands turn-on-reftex
   :hook ((latex-mode LaTeX-mode) . turn-on-reftex)
   :config
+  (setf (alist-get "\\*RefTex" display-buffer-alist nil t #'equal)
+        '((display-buffer-in-side-window)
+          (window-height . 0.25)
+          (side . bottom) (slot . -9)))
   (setq reftex-default-bibliography '("~/Documents/roam/biblio.bib"))
   (setq reftex-insert-label-flags '("sf" "sfte"))
   (setq reftex-plug-into-AUCTeX t)
@@ -497,5 +501,11 @@ but mark is only pushed if region isn't active."
                   nil t nil)))
     (push cmd cdlatex-command-alist))
   (cdlatex-reset-mode))
+
+(use-package ink
+  :disabled
+  :load-path "plugins/ink/"
+  :after latex
+  :commands (ink-make-figure ink-edit-figure))
 
 (provide 'setup-latex)

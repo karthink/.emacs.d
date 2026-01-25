@@ -136,6 +136,19 @@
                                 (define-key matlab-shell-mode-map (kbd "C-h .")
                                   'my/matlab-shell-help-at-point))))
   :config
+  (setf (alist-get "\\*Matlab Help\\*" display-buffer-alist nil t #'equal)
+        '((display-buffer-reuse-window
+           display-buffer-in-side-window
+           display-buffer-in-direction)
+          (body-function . select-window)
+          ;; (direction . bottom)
+          ;; (window-height . (lambda (win) (fit-window-to-buffer win 25 14)))
+          (window-width . 86)
+          (direction . right)
+          (side . right)
+          (slot . 2)
+          (window-parameters . ((split-window . #'ignore)))))
+
   (defun my/matlab-shell-company-settings ()
     (make-local-variable 'company-backends)
     (setq-local company-idle-delay 0.3)

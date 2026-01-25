@@ -509,7 +509,7 @@ send a notification when the process has exited."
   :bind (("H-<return>" . eshell)
          ("H-!" . eshell-here))
   :config
-  (advice-add 'eshell-life-is-too-much :after #'delete-window-if-not-single)
+  (advice-add 'eshell-life-is-too-much :after #'my/delete-window-if-not-single)
   (advice-add 'eshell-mark-output :after #'activate-mark)
   ;; From http://howardism.org/Technical/Emacs/eshell-fun.html
   (defun eshell-here ()

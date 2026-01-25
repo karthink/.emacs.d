@@ -4,9 +4,6 @@
 ;;----------------------------------------------------------------------
 
 ;; (flyspell-mode)
-
-(save-place-mode 1)
-(setq save-place-file (expand-file-name "places" user-cache-directory))
 (setq-default fill-column 80)
 (setq vc-follow-symlinks t)
 (setq scroll-error-top-bottom t)

@@ -237,7 +237,16 @@
       :endpoint "/api/paas/v4/chat/completions"
       :key #'gptel-api-key-from-auth-source
       :models
-      `(( glm-4.6            :input-cost 0.6 :output-cost 2.2
+      `(( glm-4.7            :input-cost 0.6 :output-cost 2.2
+          :context-window 200
+          :capabilities (json tool reasoning))
+        ( glm-4.7-flashx     :input-cost 0.6 :output-cost 2.2
+          :context-window 200
+          :capabilities (json tool reasoning))
+        ( glm-4.7-flash       :input-cost 0.6 :output-cost 2.2
+          :context-window 200
+          :capabilities (json tool reasoning))
+        ( glm-4.6            :input-cost 0.6 :output-cost 2.2
           :context-window 200
           :capabilities (json tool reasoning))
         (glm-4.5             :input-cost 0.6 :output-cost 2.2 ,@meta)
@@ -468,6 +477,7 @@
   ;;-------------------------
   ;; Presets for adding tools
   ;;-------------------------
+
   (gptel-make-preset 'web
     :description "TOOLS: Add basic web search tools"
     :pre (lambda () (require 'gptel-agent-tools))

@@ -14,7 +14,8 @@
       load-prefer-newer t)
 
 (unless (or (daemonp) noninteractive)
-  (let ((orig-handlers (default-toplevel-value 'file-name-handler-alist)))
+  (let ((orig-handlers (default-toplevel-value 'file-name-handler-alist))
+        (orig-suffixes (default-toplevel-value 'load-suffixes)))
     (set-default-toplevel-value
      'file-name-handler-alist
      (if (eval-when-compile
@@ -23,6 +24,7 @@
        (list (rassq 'jka-compr-handler orig-handlers))))
     (set-default-toplevel-value 'file-name-handler-alist
                                 file-name-handler-alist)
+    (set-default-toplevel-value 'load-suffixes '(".elc" ".el"))
     ;; Reset after startup
     (add-hook 'emacs-startup-hook
               (lambda ()
@@ -30,7 +32,8 @@
                  'file-name-handler-alist
                  ;; Merge instead of overwrite to preserve any changes made
                  ;; since startup.
-                 (delete-dups (append file-name-handler-alist orig-handlers))))
+                 (delete-dups (append file-name-handler-alist orig-handlers)))
+                (set-default-toplevel-value 'load-suffixes orig-suffixes))
               101))
   (setq-default inhibit-redisplay t
                 inhibit-message t)
@@ -61,7 +64,7 @@
 
 (setq frame-inhibit-implied-resize t)
 (setq auto-mode-case-fold nil)
-(setq jka-compr-verbose nil)
+(setq jka-compr-verbose init-file-debug)
 (setq bidi-inhibit-bpa t)
 
 ;; NOTE: High memory usage, watch out

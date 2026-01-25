@@ -16,7 +16,6 @@
    ("M-s g" . nil)
    ("," . dired-up-directory)
    ("." . dired-find-file)
-   ("e" . ora-ediff-files)
    ("M-s f" . nil))
   :config
   (put 'dired-find-alternate-file 'disabled nil)
@@ -191,29 +190,7 @@ This relies on the external 'fd' executable."
   (setq wdired-allow-to-change-permissions t)
   (setq wdired-create-parent-directories t))
 
-;;;###autoload
-(defun ora-ediff-files ()
-  (interactive)
-  (let ((files (dired-get-marked-files))
-        (wnd (current-window-configuration)))
-    (if (<= (length files) 2)
-        (let ((file1 (car files))
-              (file2 (if (cdr files)
-                         (cadr files)
-                       (read-file-name
-                        "file: "
-                        (dired-dwim-target-directory)))))
-          (if (file-newer-than-file-p file1 file2)
-              (ediff-files file2 file1)
-            (ediff-files file1 file2))
-          (add-hook 'ediff-after-quit-hook-internal
-                    (lambda ()
-                      (setq ediff-after-quit-hook-internal nil)
-                      (set-window-configuration wnd))))
-      (error "no more than 2 files should be marked"))))
-
 (use-package dired-subtree
-  ;; :disabled
   :ensure t
   :after dired
   :config
@@ -228,51 +205,6 @@ This relies on the external 'fd' executable."
               ("<S-iso-lefttab>" . dired-subtree-remove)
               ("," . my/dired-subtree-up)))
 
-(use-package peep-dired
-  :disabled
-  :load-path "plugins/peep-dired/"
-  :bind
-  (:map  dired-mode-map
-   ("P" . peep-dired))
-  :hook ((peep-dired-display-file . auto-revert-mode)
-         (peep-dired-display-file . peep-dired-fit-image))
-  :config
-  ;; (add-hook 'peep-dired-hook 'evil-normalize-keymaps)
-  (defun peep-dired-fit-image ()
-    (when (derived-mode-p 'image-mode)
-      (image-transform-fit-both)))
-  (ignore-errors
-    (setq peep-dired-display-action-alist
-          '(display-buffer-in-direction
-            (direction . below)
-            (window-height . (lambda (win) (fit-window-to-buffer
-                                       win
-                                       (floor (* 0.6 (frame-height))))))
-            (window-parameters . ((dedicated . t))))))
-  (general-def
-    :states '(normal visual)
-    :keymaps 'peep-dired-mode-map
-    :prefix "SPC"
-    "SPC" 'peep-dired-scroll-page-down
-    "S-SPC" 'peep-dired-scroll-page-up)
-  (general-def
-    :states '(normal visual)
-    :keymaps 'peep-dired-mode-map
-    "<backspace>" 'peep-dired-scroll-page-up
-    "j" 'peep-dired-next-file
-    "k" 'peep-dired-prev-file)
-  ;; (evil-define-key 'normal peep-dired-mode-map (kbd "<SPC>") 'peep-dired-scroll-page-down
-  ;;   (kbd "C-<SPC>") 'peep-dired-scroll-page-up
-  ;;   (kbd "<backspace>") 'peep-dired-scroll-page-up
-  ;;   (kbd "j") 'peep-dired-next-file
-  ;;   (kbd "k") 'peep-dired-prev-file)
-(setq peep-dired-cleanup-on-disable t)
-(setq peep-dired-cleanup-eagerly nil)
-(setq peep-dired-enable-on-directories nil)
-(setq peep-dired-ignored-extensions
-      '("mkv" "iso" "mp4" "djvu" "one" "mat"
-        "fig" "nb" "slx" "slxc" "r2016b" "onetoc2")))
-
 (use-package image-dired
   :commands image-dired
   :config
@@ -283,54 +215,6 @@ This relies on the external 'fd' executable."
   :bind (:map dired-mode-map
          ("C-c C-a" . gnus-dired-attach))
   :after dired)
-
-(use-package dired-sidebar
-  :after dired
-  :disabled
-  :commands (dired-sidebar-toggle-sidebar)
-  :bind
-  (("C-x D" . list-directory)
-   ("C-x C-d" . dired-sidebar-toggle-sidebar))
-  
-  (:keymaps 'space-menu-map
-   :wk-full-keys nil
-   :prefix "f"
-    "t" '(dired-sidebar-toggle-sidebar :wk "Dired tree"))
-
-  (:keymaps 'dired-sidebar-mode-map
-   :states  '(normal)
-   "gO"     'dired-sidebar-find-file-alt
-   "RET"    'dired-sidebar-find-file)
-
-  (:keymaps 'dired-sidebar-mode-map
-   "-" nil)
-  :init
-  (add-hook 'dired-sidebar-mode-hook
-            (lambda ()
-              (unless (file-remote-p default-directory)
-                (auto-revert-mode))))
-  :config
-  (push 'rotate-windows dired-sidebar-toggle-hidden-commands)
-
-  (setq dired-sidebar-subtree-line-prefix "__")
-  (setq dired-sidebar-theme 'ascii)
-  (setq dired-sidebar-use-term-integration t)
-  (setq dired-sidebar-use-custom-font t))
-
-(use-package ibuffer-sidebar
-  :disabled
-  :commands +ibuffer-sidebar-toggle
-  :bind
-  ("C-x C-d" . +ibuffer-sidebar-toggle)
-  :config
-  ;; (setq ibuffer-sidebar-use-custom-font t)
-  ;; (setq ibuffer-sidebar-face `(:family "Helvetica" :height 140))
-  (defun +ibuffer-sidebar-toggle ()
-    "Toggle both `dired-sidebar' and `ibuffer-sidebar'."
-    (interactive)
-    (when (featurep 'ibuffer)
-      (ibuffer-sidebar-toggle-sidebar))
-    (dired-sidebar-toggle-sidebar)))
 
 ;; Disabled while testing dirvish
 (use-package dired-rsync
@@ -437,8 +321,9 @@ This relies on the external 'fd' executable."
    ))
 
 (use-package dired-delight
+  :disabled
   :ensure (:host github :protocol ssh
-           :repo "karthink/dired-delight")
+                 :repo "karthink/dired-delight")
   ;; :straight (:local-repo "~/.local/share/git/dired-delight/")
   :bind (:map dired-mode-map
          ("@" . dired-delight)

@@ -146,7 +146,7 @@ environments."
   (defun LaTeX-forward-environment (&optional N do-push-mark)
     "Move to the \\end of the next \\begin, 
 or to the \\end of the current environment
-(whichever comes first) N times.
+ (whichever comes first) N times.
 
 Never goes into deeper environments.
 
@@ -173,7 +173,7 @@ but mark is only pushed if region isn't active."
   (defun LaTeX-backward-environment (&optional N do-push-mark)
     "Move to the \\begin of the next \\end,
 or to the \\begin of the current environment
-(whichever comes first) N times.
+ (whichever comes first) N times.
 
 Never goes into deeper environments.
 
@@ -193,6 +193,94 @@ but mark is only pushed if region isn't active."
       map))
   (put 'TeX-next-error 'repeat-map 'my/TeX-error-map)
   (put 'TeX-previous-error 'repeat-map 'my/TeX-error-map))
+
+(use-package latex
+  :after (latex expand-region)
+  :config
+  (add-hook 'LaTeX-mode-hook 'er/set-latex-mode-expansions 90)
+  (defun er/mark-latex-text-sentence ()
+    (unless (texmathp) (er/mark-text-sentence)))
+  (defun er/mark-latex-text-paragraph ()
+    (unless (texmathp) (er/mark-text-paragraph)))
+  (defun er/mark-LaTeX-inside-math ()
+    "Mark text inside LaTeX math delimiters. See `er/mark-LaTeX-math'
+for details."
+    (when (texmathp)
+      (let* ((string (car texmathp-why))
+             (pos (cdr texmathp-why))
+             (reason (assoc string texmathp-tex-commands1))
+             (type (cadr reason)))
+        (cond
+         ((eq type 'sw-toggle) ;; $ and $$
+          (goto-char pos)
+          (set-mark (1+ (point)))
+          (forward-sexp 1)
+          (backward-char 1)
+          (exchange-point-and-mark))
+         ((or (eq type 'sw-on)
+              (equal string "Org mode embedded math")) ;; \( and \[
+          (re-search-forward texmathp-onoff-regexp)
+          (backward-char 2)
+          (set-mark (+ pos 2))
+          (exchange-point-and-mark))
+         (t (error (format "Unknown reason to be in math mode: %s" type)))))))
+  ;; ;; FIXME
+  ;; (defun er/mark-latex-macro ()
+  ;;   (interactive)
+  ;;   (when (texmathp)
+  ;;     (when (> (point) (mark))
+  ;;       (exchange-point-and-mark))
+  ;;     (when (looking-back "\\\\[a-zA-Z_]+\\*?{?" (line-beginning-position))
+  ;;       (set-mark (save-excursion
+  ;;                   (goto-char (match-beginning 0))
+  ;;                   (point)))
+  ;;       (exchange-point-and-mark))))
+  (defun er/mark-latex-inside-pairs ()
+    (if (texmathp)
+        (cl-destructuring-bind (beg . end)
+            (my/find-bounds-of-regexps " *[{([|<]"
+                                       " *[]})|>]")
+          (when-let ((n (length (match-string-no-properties 0))))
+            (set-mark (save-excursion
+                        (goto-char beg)
+                        (forward-char n)
+                        (skip-chars-forward er--space-str)
+                        (point)))
+            (goto-char end)
+            (backward-char n)
+            (if (looking-back "\\\\right\\\\*\\|\\\\" (- (point) 7))
+                (backward-char (length (match-string-no-properties 0)))))
+          (skip-chars-backward er--space-str)
+          (exchange-point-and-mark))
+      (er/mark-inside-pairs)))
+  (defun er/mark-latex-outside-pairs ()
+    (if (texmathp)
+        (cl-destructuring-bind (beg . end)
+            (my/find-bounds-of-regexps " *[{([|<]"
+                                       " *[]})|>]")
+          (set-mark (save-excursion
+                      (goto-char beg)
+                      ;; (forward-char 1)
+                      (if (looking-back "\\\\left\\\\*\\|\\\\" (- (point) 6))
+                          (backward-char (length (match-string-no-properties 0))))
+                      (skip-chars-forward er--space-str)
+                      (point)))
+          (goto-char end)
+          (skip-chars-backward er--space-str)
+          ;; (backward-char 1)
+          (exchange-point-and-mark))
+      (er/mark-outside-pairs)))
+  ;; TODO: Replace with setq-mode-local
+  (defun er/set-latex-mode-expansions ()
+    (make-variable-buffer-local 'er/try-expand-list)
+    (setq er/try-expand-list
+          '(er/mark-word er/mark-symbol er/mark-symbol-with-prefix
+                         er/mark-next-accessor  er/mark-inside-quotes er/mark-outside-quotes
+                         er/mark-LaTeX-inside-math
+                         er/mark-latex-inside-pairs er/mark-latex-outside-pairs
+                         er/mark-comment er/mark-url er/mark-email ;er/mark-defun
+                         er/mark-latex-text-sentence er/mark-latex-text-paragraph))
+    (er/add-latex-mode-expansions)))
 
 (use-package tex-fold
   :after latex
@@ -501,6 +589,31 @@ but mark is only pushed if region isn't active."
                   nil t nil)))
     (push cmd cdlatex-command-alist))
   (cdlatex-reset-mode))
+
+;;;----------------------------------------------------------------
+;; ** Org Integration for RefTeX
+;;;----------------------------------------------------------------
+(use-package consult-reftex
+  :disabled
+  :after (org latex reftex)
+  :bind (:map org-mode-map
+         ("C-c )" . 'consult-reftex-insert-reference)))
+
+(use-package reftex-xref
+  :ensure (:host github :repo "karthink/reftex-xref")
+  :after (org latex)
+  :hook ((org-mode . reftex-xref-activate)
+         (org-mode . reftex-eldoc-activate)))
+
+;;;----------------------------------------------------------------
+;; ** ORG-AUCTEX
+;;;----------------------------------------------------------------
+(use-package org-auctex
+  :disabled
+  :load-path "plugins/org-auctex"
+  :commands org-auctex-mode
+  :after org
+  :defer)
 
 (use-package ink
   :disabled

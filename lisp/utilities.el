@@ -3,129 +3,149 @@
 ;;----------------------------------------------------------------------
 ;; PRINT ASCII TABLE
 ;;----------------------------------------------------------------------
-;;;###autoload
 (defun ascii-table ()
   "Display basic ASCII table (0 thru 127)"
   (interactive)
   (pop-to-buffer "*ASCII*")
   (erase-buffer)
-  (save-excursion (let ((i -1))
-                    (insert "ASCII characters 0 thru 127.\n\n")
-                    (insert " Hex  Dec  Char|  Hex  Dec  Char|  Hex  Dec  Char|  Hex  Dec  Char\n")
-                    (while (< i 31)
-                      (insert (format "%4x %4d %4s | %4x %4d %4s | %4x %4d %4s | %4x %4d %4s\n"
-                                      (setq i (+ 1  i)) i (single-key-description i)
-                                      (setq i (+ 32 i)) i (single-key-description i)
-                                      (setq i (+ 32 i)) i (single-key-description i)
-                                      (setq i (+ 32 i)) i (single-key-description i)))
-                      (setq i (- i 96)))))
+  (save-excursion
+    (let ((i -1))
+      (insert "ASCII characters 0 thru 127.\n\n")
+      (insert " Hex  Dec  Char|  Hex  Dec  Char|  Hex  Dec  Char|  Hex  Dec  Char\n")
+      (while (< i 31)
+        (insert (format "%4x %4d %4s | %4x %4d %4s | %4x %4d %4s | %4x %4d %4s\n"
+                        (setq i (+ 1  i)) i (single-key-description i)
+                        (setq i (+ 32 i)) i (single-key-description i)
+                        (setq i (+ 32 i)) i (single-key-description i)
+                        (setq i (+ 32 i)) i (single-key-description i)))
+        (setq i (- i 96)))))
   (special-mode))
 
-;; SVG screenshots
-;;----------------------------------------------------------------------
-(defun screenshot-svg ()
-  "Save a screenshot of the current frame as an SVG image.
-Puts the filename in the kill ring and displays it using an
-X-sink (Executable dragon-drag-and-drop if available)."
-  (interactive)
-  (let ((filename (concat (file-name-as-directory
-                           (concat (getenv "HOME") "/Pictures/screenshots"))
-                          (format "%s_%sx%s_emacs.svg"
-                                  (format-time-string "%Y-%m-%d-%H%M%S")
-                                  (frame-pixel-width)
-                                  (frame-pixel-height))))
-        (data (x-export-frames nil 'svg)))
-    (with-temp-file filename
-      (insert data))
-    (kill-new filename)
-    (if (executable-find "dragon-drag-and-drop")
-        (start-process "drag_screenshot_svg" "drag_screenshot_svg"
-                       "dragon-drag-and-drop" filename)
-      (message "Could not find dragon-drag-and-drop"))
-    (message filename)))
+;;----------------------------------------------------------------
+;; ** QRENCODE
+;;----------------------------------------------------------------
+(use-package qrencode :ensure t :defer)
 
-(global-set-key (kbd "<M-print>") #'screenshot-svg)
 
-;;----------------------------------------------------------------------
-;; TIMEOUT: GENERIC DEBOUNCE & THROTTLE
-;;----------------------------------------------------------------------
-(defun timeout--throttle-advice (&optional timeout)
-  "Return a function that throttles its argument function.
+;;----------------------------------------------------------------
+;; ** TEMPORARY BUFFERS and INDIRECT EDITING
+;;----------------------------------------------------------------
+(use-package scratch
+  :ensure t
+  :config
+  (defun my/scratch-buffer-setup ()
+    "Add contents to `scratch' buffer and name it accordingly.
+If region is active, add its contents to the new buffer."
+    (unless (derived-mode-p
+             'text-mode 'prog-mode 'conf-mode 'tex-mode)
+      (condition-case nil
+          (let ((pick
+                 (read-multiple-choice
+                  "Switch major mode?"
+                  '((?o "org") (?m "markdown")
+                    (?l "lisp-interaction") (?e "elisp")
+                    (?  "Continue")))))
+            (pcase (car pick)
+              (?o (org-mode)) (?m (markdown-mode))
+              (?l (lisp-interaction-mode)) (?e (emacs-lisp-mode)))
+            (read-only-mode 0))
+        (quit nil)))
+    (let* ((mode major-mode))
+      (rename-buffer (format "*Scratch for %s*" mode) t)))
+  (setf (alist-get "\\*Scratch for" display-buffer-alist nil nil #'equal)
+        '((display-buffer-same-window)))
+  :hook (scratch-create-buffer . my/scratch-buffer-setup)
+  :bind ("C-c s" . scratch))
 
-THROTTLE defaults to 1.0 seconds. This is intended for use as
-function advice."
-  (let ((throttle-timer)
-        (timeout (or timeout 1.0))
-        (result))
-    (lambda (orig-fn &rest args)
-      "Throttle calls to this function."
-      (if (timerp throttle-timer)
-          result
-        (prog1
-            (setq result (apply orig-fn args))
-          (setq throttle-timer
-                (run-with-timer
-                 timeout nil
-                 (lambda ()
-                   (cancel-timer throttle-timer)
-                   (setq throttle-timer nil)))))))))
+(use-package edit-indirect
+  :ensure t
+  :bind ( :map mode-specific-map
+          ("'" . my/edit-indirect-region)
+          :map edit-indirect-mode-map
+          ("C-c C-c" . nil))
+  :config
+  (setq edit-indirect-guess-mode-function
+        'my/edit-indirect-guess-mode-function)
+  (defun my/edit-indirect-region (rb re disp)
+    (interactive (list (region-beginning) (region-end) t))
+    (edit-indirect-region rb re disp))
+  (defun my/edit-indirect-guess-mode-function (parent rb re)
+    "Heuristic to set major mode when using edit-indirect"
+    (let ((pmode (buffer-local-value 'major-mode parent)))
+      (cond
+       ((with-current-buffer parent
+          (save-excursion
+            (goto-char rb)
+            (skip-chars-forward "\n\r\t ")
+            (memq (char-after) '(40 59))))
+        (lisp-interaction-mode))
+       ((provided-mode-derived-p pmode 'message-mode) (org-mode))
+       (t (normal-mode))))))
 
-(defun timeout--debounce-advice (&optional delay default)
-  "Return a function that debounces its argument function.
+;;----------------------------------------------------------------
+;; ** STICKER
+;;----------------------------------------------------------------
+(use-package emacs
+  :bind ("C-c p" . sticker)
+  :config
+  (defvar sticker-list nil)
 
-DELAY defaults to 0.50 seconds.  DEFAULT is the immediate return
-value of the function when called.
+  (defun sticker-next (&optional arg)
+    (interactive "p")
+    (let ((func (if (< arg 0)
+                    'previous-single-char-property-change
+                  'next-single-char-property-change)))
+      (dotimes (_ (abs arg))
+        (goto-char (funcall func (point) 'sticker))
+        (forward-line 0))))
 
-This is intended for use as function advice."
-  (let ((debounce-timer nil)
-        (delay (or delay 0.50)))
-    (lambda (orig-fn &rest args)
-      "Debounce calls to this function."
-      (if (timerp debounce-timer)
-          (timer-set-idle-time debounce-timer delay)
-        (prog1 default
-          (setq debounce-timer
-                (run-with-idle-timer
-                 delay nil
-                 (lambda (buf)
-                   (cancel-timer debounce-timer)
-                   (setq debounce-timer nil)
-                   (with-current-buffer buf
-                     (apply orig-fn args)))
-                 (current-buffer))))))))
+  (add-hook 'poi-functions #'sticker-next)
 
-;;;###autoload
-(defun timeout-debounce! (func &optional delay default)
-  "Debounce FUNC by DELAY seconds.
+  (defun sticker (&optional arg label)
+    (interactive "P")
+    (cl-flet ((store-sticker (beg end)
+                (or (assoc (buffer-substring beg end) sticker-list)
+                    (push (list (buffer-substring beg end)) sticker-list))
+                (deactivate-mark)
+                (message "Sticker stored"))
+              (new-sticker (l &optional o)
+                (unless o
+                  (setq o (make-overlay (line-beginning-position)
+                                        (line-end-position))))
+                (overlay-put o 'evaporate t)
+                (overlay-put o 'sticker l)
+                (overlay-put
+                 o 'after-string
+                 (concat " " (if (get-text-property 0 'face l)
+                                 l
+                               (propertize l 'face '(:inverse-video t)))))
+                (push o (alist-get l sticker-list nil nil #'equal)))
+              (read-label ()
+                (let ((minibuffer-allow-text-properties t))
+                  (completing-read "Attach sticker: " sticker-list))))
+      (if (use-region-p)
+          (store-sticker (region-beginning) (region-end))
+        (if-let* ((exist-ov (cdr-safe (get-char-property-and-overlay (point) 'sticker))))
+            (if arg
+                (new-sticker (read-label) exist-ov)
+              (let* ((old-l (overlay-get exist-ov 'sticker))
+                     (matches (assoc old-l sticker-list)))
+                (delq exist-ov matches)
+                (when (= (length matches) 1)
+                  (setq sticker-list (delete matches sticker-list)))
+                (delete-overlay exist-ov)))
+          (new-sticker (or label (read-label))))))))
 
-This advises FUNC, when called (interactively or from code), to
-run after DELAY seconds. If FUNC is called again within this time,
-the timer is reset.
+;;;----------------------------------------------------------------
+;; ** STROKES
+;;;----------------------------------------------------------------
+(use-package strokes
+  :diminish 'stokes-mode
+  :bind ("<down-mouse-9>" . strokes-do-stroke)
+  :config
+  (setq strokes-file (expand-file-name "strokes" user-cache-directory))
+  (setq strokes-use-strokes-buffer t))
 
-DELAY defaults to 0.5 seconds. Using a delay of 0 resets the
-function.
-
-DEFAULT is the immediate return value of the function when called."
-  (if (and delay (= delay 0))
-      (advice-remove func 'debounce)
-    (advice-add func :around (timeout--debounce-advice delay default)
-                '((name . debounce)
-                  (depth . -99)))))
-
-;;;###autoload
-(defun timeout-throttle! (func &optional throttle)
-  "Throttle FUNC by THROTTLE seconds.
-
-This advises FUNC so that it can run no more than once every
-THROTTLE seconds.
-
-THROTTLE defaults to 1.0 seconds. Using a throttle of 0 resets the
-function."
-  (if (= throttle 0)
-      (advice-remove func 'throttle)
-    (advice-add func :around (timeout--throttle-advice throttle)
-                '((name . throttle)
-                  (depth . -98)))))
 
 
 (provide 'utilities)

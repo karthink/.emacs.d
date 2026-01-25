@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 (use-package diff-mode
   :defer
   :bind (:map diff-mode-map
@@ -34,5 +35,19 @@ fully before starting comparison."
   (defun my/ediff-restore-wconf-h ()
     (when (window-configuration-p my/ediff-saved-wconf)
       (set-window-configuration my/ediff-saved-wconf))))
+
+(use-package inline-diff
+  :disabled
+  :ensure (:repo "https://code.tecosaur.net/tec/inline-diff.git")
+  :bind ( :map inline-diff-overlay-map
+          ("M-a" . nil)
+          ("M-k" . nil)
+          ("SPC" . inline-diff-apply)
+          ("DEL" . inline-diff-reject)
+          :map inline-diff-repeat-map
+          ("M-a" . nil)
+          ("M-k" . nil)
+          ("SPC" . inline-diff-apply)
+          ("DEL" . inline-diff-reject)))
 
 (provide 'setup-diff)

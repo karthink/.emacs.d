@@ -111,4 +111,47 @@
   (define-key ess-julia-mode-map (kbd "`") 'my/ess-julia-cdlatex-symbol)
   (define-key inferior-ess-julia-mode-map (kbd "`") 'my/ess-julia-cdlatex-symbol))
 
+;; ESS DONT
+;; Disabled in favor of julia-snail
+(use-package ess
+  :disabled
+  :ensure t
+  :after ob-julia
+  :config
+  (use-package ess-julia))
+
+;;;----------------------------------------------------------------
+;; ** OB-JULIA
+;;;----------------------------------------------------------------
+(use-package ob-julia
+  :ensure (:host github :repo "nico202/ob-julia"
+                 :files ("*.el" "julia")
+                 :remotes ("fork" :host github :repo "karthink/ob-julia"
+                           :branch "main" :protocol ssh))
+  :after (ob org)
+  :autoload (org-babel-execute:julia org-babel-expand-body:julia
+                                     org-babel-prep-session:julia)
+  :hook (org-babel-julia-after-async-execute . my/org-redisplay-babel-result)
+  :init
+  ;; (setq ob-julia-insert-latex-environment-advice nil)
+  (add-to-list 'org-structure-template-alist '("j" . "src julia"))
+  :config
+  (when (featurep 'julia-snail) (require 'ob-julia-snail))
+  (setq org-babel-default-header-args:julia
+        '((:session . nil)
+          (:async   . "yes")))
+  (setq org-babel-julia-backend 'julia-snail)
+  (when (featurep 'ess)
+    (setq ess-eval-visibly 'nowait)
+    (defun org-babel-julia-initiate-session (&optional session params)
+      "Create or switch to an ESS Julia session.
+
+Return the initialized session, if any."
+      (unless (string= session "none")
+        (let ((session (or session "*julia*")))
+          (if (org-babel-comint-buffer-livep session)
+              session
+            (save-window-excursion
+              (org-babel-prep-session:julia session params))))))))
+
 (provide 'setup-julia)

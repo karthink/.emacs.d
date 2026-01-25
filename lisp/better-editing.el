@@ -7,8 +7,9 @@
 (setq-default fill-column 80)
 (setq vc-follow-symlinks t)
 (setq scroll-error-top-bottom t)
-(setq mark-even-if-inactive t)
+(setq tab-always-indent 'complete)
 (setq kill-whole-line t)
+(setq select-enable-clipboard t)
 ;; (and (require 'use-package nil t)
 ;;      (use-package visual-fill-column-mode
 ;;        ;; :straight t
@@ -39,8 +40,8 @@
   (global-set-key (kbd "M-u") 'upcase-dwim)
   (global-set-key (kbd "M-l") 'downcase-dwim)
   (global-set-key (kbd "M-c") 'capitalize-dwim)
-  
-  ;; Change case with impunity 
+
+  ;; Change case with impunity
   (put 'downcase-region 'disabled nil)
   (put 'upcase-region 'disabled nil))
 
@@ -91,10 +92,317 @@
 (setq save-interprogram-paste-before-kill t)
 
 (use-package cua-rect
+  :disabled
   :bind ("C-x SPC" . cua-rectangle-mark-mode))
+
+(use-package repeat
+  :if (version< "28.0" emacs-version)
+  :bind ("H-z" . repeat)
+  :hook (after-init . my/repeat-mode)
+  :config
+  (setq repeat-keep-prefix t
+        repeat-echo-function #'repeat-echo-mode-line
+        repeat-echo-mode-line-string
+        (propertize "[R]" 'face 'mode-line-emphasis))
+  (defun my/repeat-mode ()
+    (let ((inhibit-message t)
+          (message-log-max nil))
+      (repeat-mode))))
+
+(use-package paren
+  :defer 2
+  :config
+  (show-paren-mode 1)
+  (setq show-paren-delay 0.1
+        show-paren-highlight-openparen t
+        show-paren-when-point-inside-paren t))
+
+(use-package imenu
+  :hook (imenu-after-jump . my/imenu-show-entry)
+  :bind ("M-s i" . imenu)
+  :config
+  (setq imenu-use-markers t
+        imenu-auto-rescan t
+        imenu-max-item-length 100
+        imenu-use-popup-menu nil
+        imenu-eager-completion-buffer t
+        imenu-space-replacement " "
+        imenu-level-separator "/")
+
+  (declare-function org-at-heading-p "org")
+  (declare-function org-show-entry "org")
+  (declare-function org-reveal "org")
+  (declare-function outline-show-entry "outline")
+
+  (defun my/imenu-show-entry ()
+    "Reveal index at point after successful `imenu' execution.
+To be used with `imenu-after-jump-hook' or equivalent."
+    (cond
+     ((and (eq major-mode 'org-mode)
+           (org-at-heading-p))
+      (org-show-entry)
+      (org-reveal t))
+     ((bound-and-true-p prot-outline-minor-mode)
+      (outline-show-entry)))))
+
+(use-package replace
+  :defer
+  :bind ( :map occur-mode-map
+          ("C-x C-q" . occur-edit-mode)
+          :map query-replace-map
+          ("p" . 'backup)))
+
+(use-package re-builder
+  :bind (("C-M-5" . re-builder)
+         ("C-M-%" . re-builder)
+         :map reb-mode-map
+         ("C-c C-k" . reb-quit)
+         ("RET" . reb-replace-regexp)
+         :map reb-lisp-mode-map
+         ("RET" . reb-replace-regexp))
+  :config
+  ;; reb-fix modifies reb-update-overlays to restrict matches to region
+  (use-package reb-fix)
+  (defvar my/re-builder-positions nil
+    "Store point and region bounds before calling re-builder")
+  (advice-add 're-builder
+              :before
+              (defun my/re-builder-save-state (&rest _)
+                "Save into `my/re-builder-positions' the point and region
+positions before calling `re-builder'."
+                (setq my/re-builder-positions
+                      (cons (point)
+                            (when (region-active-p)
+                              (list (region-beginning)
+                                    (region-end)))))))
+  (defun reb-replace-regexp (&optional delimited)
+    "Run `query-replace-regexp' with the contents of re-builder. With
+non-nil optional argument DELIMITED, only replace matches
+surrounded by word boundaries."
+    (interactive "P")
+    (reb-update-regexp)
+    (let* ((re (reb-target-value 'reb-regexp))
+           (replacement (query-replace-read-to
+                         re
+                         (concat "Query replace"
+                                 (if current-prefix-arg
+                                     (if (eq current-prefix-arg '-) " backward" " word")
+                                   "")
+                                 " regexp"
+                                 (if (with-selected-window reb-target-window
+                                       (region-active-p)) " in region" ""))
+                         t))
+           (pnt (car my/re-builder-positions))
+           (beg (cadr my/re-builder-positions))
+           (end (caddr my/re-builder-positions)))
+      (with-selected-window reb-target-window
+        (goto-char pnt)
+        (setq my/re-builder-positions nil)
+        (reb-quit)
+        (query-replace-regexp re replacement delimited beg end)))))
+
+(use-package emacs
+  :no-require t
+  :bind (("C-c SPC" . my/easy-page))
+  :config
+  (defvar-keymap my-pager-map
+    :doc "Keymap with paging commands"
+    "SPC" 'scroll-up-command
+    "C-l" 'recenter-top-bottom
+    "C-M-v" 'scroll-other-window
+    "C-M-S-v" 'scroll-other-window-down
+    "d" (lambda ()
+          (interactive)
+          (pixel-scroll-precision-interpolate
+           (- (floor (window-text-height nil t) 2))
+           nil 1))
+
+    "u" (lambda ()
+          (interactive)
+          (pixel-scroll-precision-interpolate
+           (floor (window-text-height nil t) 2)
+           nil 1))
+    "M-o" (if (fboundp 'switchy-window-minor-mode)
+              'switchy-window 'my/other-window)
+    "S-SPC" 'scroll-down-command)
+  (let ((scrolling (propertize  "SCRL" 'face '(:inherit highlight)))
+        ml-buffer)
+    (defalias 'my/easy-page
+      (lambda ()
+        (interactive)
+        (when (eq (window-buffer (selected-window))
+                  (current-buffer))
+          (setq ml-buffer (current-buffer))
+          (add-to-list 'mode-line-format scrolling)
+          (set-transient-map
+           my-pager-map t
+           (lambda () (with-current-buffer ml-buffer
+                   (setq mode-line-format
+                         (delete scrolling mode-line-format))))))))))
+
+;;;----------------------------------------------------------------
+;; ** DABBREV
+;;;----------------------------------------------------------------
+
+(use-package dabbrev
+  :commands (dabbrev-expand dabbrev-completion)
+  :config
+  (setq dabbrev-abbrev-char-regexp "\\sw\\|\\s_")
+  (setq dabbrev-abbrev-skip-leading-regexp "\\$\\|\\*\\|/\\|=")
+  (setq dabbrev-backward-only nil)
+  (setq dabbrev-case-distinction nil)
+  (setq dabbrev-case-fold-search t)
+  (setq dabbrev-case-replace nil)
+  (setq dabbrev-check-other-buffers t)
+  (setq dabbrev-eliminate-newlines nil)
+  (setq dabbrev-upcase-means-case-search t))
+
+;;;----------------------------------------------------------------
+;; ** HIPPIE-EXPAND
+;;;----------------------------------------------------------------
+;; Supercharge the way hippie-expand behaves, expand as little as
+;; possible
+(use-package hippie-exp
+  :bind (([remap dabbrev-expand] . hippie-expand))
+  :preface
+  (setq hippie-expand-try-functions-list
+        '(try-expand-dabbrev-visible
+          try-expand-dabbrev
+          try-expand-dabbrev-all-buffers
+          try-complete-file-name-partially
+          try-complete-file-name
+          try-expand-all-abbrevs
+          try-expand-list
+          try-expand-line
+          try-expand-whole-kill
+          try-expand-dabbrev-from-kill
+          try-complete-lisp-symbol-partially
+          try-complete-lisp-symbol))
+  :config
+  ;; From https://code.tecosaur.net/tec/emacs-config/commit/1e6e64991e
+  (defun my/he-subst-suffix-overlap (ins rem)
+    "The longest suffix of the string INS that is a prefix of REM.
+This is intended to be used when INS is a newly inserted string and REM is the
+remainder of the line, to allow for handling potentially duplicated content."
+    (let ((len (min (length ins) (length rem))))
+      (while (and (> len 0)
+                  (not (eq t (compare-strings ins (- len) nil rem 0 len))))
+        (setq len (1- len)))
+      len))
+
+  (define-advice he-substitute-string (:filter-args (args) suffix-strip)
+    "Filter ARG list for `he-substitute-string', truncating duplicated suffix.
+ARGS is the raw argument list (STRING &optional TRANS-CASE)."
+    (pcase-let* ((`(,ins &optional ,trans-case) args)
+                 (rem (save-excursion
+                        (goto-char (marker-position he-string-end))
+                        (buffer-substring-no-properties
+                         (point) (line-end-position))))
+                 (ov (my/he-subst-suffix-overlap ins rem)))
+      (when (>= ov 0)
+        (setq ins (substring ins 0 (- (length ins) ov))))
+      (list ins trans-case))))
+
+;;----------------------------------------------------------------
+;; ** GREP
+;;----------------------------------------------------------------
+(use-package grep
+  :hook ((grep-mode . toggle-truncate-lines)))
+
+;;----------------------------------------------------------------
+;; * COMPILATION
+;;----------------------------------------------------------------
+(use-package compile
+  :defer t
+  :hook (compilation-filter . ansi-color-compilation-filter)
+  :bind (("M-#" . compile)
+         :map mode-specific-map
+         ("c" . compile))
+  :config
+  (setq compilation-always-kill t
+        compilation-ask-about-save nil
+        compilation-scroll-output 'first-error))
+
 ;;----------------------------------------------------------------------
 ;; KEYBINDINGS
 ;;----------------------------------------------------------------------
+
+;; Hyper bindings for emacs. Why use a pinky when you can use a thumb?
+(use-package emacs
+  :when IS-LINUX
+  :bind-keymap (("H-r" . ctl-x-r-map)
+                ("H-4" . ctl-x-4-map)
+                ("H-5" . ctl-x-5-map))
+  :bind (("M-ESC ESC" . nil)
+         ("H-x" . H-x)
+         ("H-c" . H-c)
+         ("H-z" . repeat)
+         ("H-=" . text-scale-increase)
+         ("H--" . text-scale-decrease)
+         ("H-M--" . shrink-window-if-larger-than-buffer)
+         ("H-h" . mark-whole-buffer)
+         ("H-M-x" . eval-defun)
+         ("C-H-x" . eval-defun)
+         ("H-s" . isearch-forward)
+         ("H-r" . isearch-backward)
+         ("H-q" . kill-buffer-and-window)
+         ("C-M-4" . other-window-prefix)
+         ("C-M-1" . same-window-prefix)
+         ("C-M-5" . other-frame-prefix)
+         ("C-M-6" . other-tab-prefix)
+         ("H-v"   . scroll-other-window)
+         ("H-V" . scroll-other-window-down)
+         ("H-+" . balance-windows-area)
+         ("H-0" . my/delete-window-or-delete-frame)
+         ("H-1" . delete-other-windows)
+         ("H-2" . my/split-window-below)
+         ("H-3" . my/split-window-right)
+         ("H-k" . my/kill-current-buffer)
+         ("H-q" . kill-buffer-and-window)
+         ;; (global-set-key (kbd "<f7>") '+make-frame-floating-with-current-buffer)
+         :map isearch-mode-map
+         ("H-s" . isearch-repeat-forward)
+         ("H-r" . isearch-repeat-backward)
+         ;; :map ctl-x-map
+         ;; ("H-s" . save-buffer)
+         ;; ("H-e" . eval-last-sexp)
+         ;; ("H-c" . save-buffers-kill-terminal)
+         ;; ("H-f" . find-file)
+         ;; ("H-q" . read-only-mode)
+         )
+  :config
+  (defun hyperify-prefix-key (key)
+    (let* ((convert-function
+            (lambda (event)
+              (vector
+               (if (memq 'hyper (event-modifiers event))
+                   (event-apply-modifier (event-basic-type event) 'control 26 "C-")
+                 event))))
+           (first-key-sequence (vconcat key (funcall convert-function (read-event))))
+           (command (or (let ((minor-cmd (lookup-key (current-minor-mode-maps) first-key-sequence)))
+                          (unless (equal minor-cmd 1) minor-cmd))
+                        (let ((local-cmd (lookup-key (current-local-map) first-key-sequence)))
+                          (unless (equal local-cmd 1) local-cmd))
+                        (lookup-key (current-global-map) first-key-sequence))))
+      (catch 'finished
+        (while t
+          (cond ((commandp command)
+                 (call-interactively command)
+                 (throw 'finished t))
+                ((keymapp command)
+                 (setq command (lookup-key command (funcall convert-function (read-event)))))
+                (t (error "ABORT")))))))
+
+  (defun H-x ()
+    (interactive)
+    (hyperify-prefix-key [24]))
+
+  (defun H-c ()
+    (interactive)
+    (hyperify-prefix-key [3])))
+
+(global-set-key (kbd "M-r") ctl-x-r-map)
+(define-key ctl-x-r-map "a" 'append-to-register)
 
 (global-set-key (kbd "M-=") 'count-words)
 
@@ -105,7 +413,7 @@
 (global-set-key "\C-x\M-t" 'transpose-sentences)
 
 ;;; Autocompletion is power.
-;; (global-set-key (kbd "C-;") 'complete-symbol) 
+;; (global-set-key (kbd "C-;") 'complete-symbol)
 
 ;; Cycle spacing: just-one-space to no-space to original-spacing
 (setq cycle-spacing-actions
@@ -168,7 +476,7 @@
                               (backward-sentence)
                               (kill-sentence)))
 
-;; Key to kill word backwards OR kill region 
+;; Key to kill word backwards OR kill region
 (global-set-key (kbd "C-w") 'backward-kill-word-or-region)
 (global-set-key (kbd "C-S-w") 'kill-region)
 (global-set-key (kbd "M-W") 'copy-region-as-kill)
@@ -192,16 +500,6 @@
 (defalias 'qrr 'query-replace-regexp)
 ;; (global-set-key (kbd "H-%") 'replace-string)
 ;; (global-set-key (kbd "H-M-%") 'replace-regexp)
-(global-set-key (kbd "C-x / s") 'replace-regexp)
-(global-set-key (kbd "C-x / q") 'query-replace-regexp)
-(global-set-key (kbd "C-x / r") 'query-replace)
-(global-set-key (kbd "C-x / d") 'delete-matching-lines)
-(global-set-key (kbd "C-x / o") 'occur)
-(global-set-key (kbd "C-x / /") 'isearch-forward-regexp)
-;; Multiple search and replace
-(global-set-key (kbd "C-x / Q") 'batch-replace-strings)
-;; Replace in whole buffer
-(global-set-key (kbd "C-x / W") 'replace-in-buffer)
 
 ;; Adding text to and from elsewhere
 (global-unset-key (kbd "C-x i"))
@@ -218,12 +516,6 @@
 
 ;; Easily comment and uncomment region
 (global-set-key (kbd "C-c ;") 'comment-region)
-
-;; Hippie-expand for better autocompletion
-(global-set-key (kbd "M-/") 'hippie-expand)
-
-;; Keybindings for occur inside isearch
-;; (define-key isearch-mode-map (kbd "C-o") 'isearch-occur)
 
 (global-set-key [M-up] 'move-text-up)
 (global-set-key [M-down] 'move-text-down)
@@ -334,7 +626,7 @@ go up/down the list instead."
         (progn (dotimes (_ arg)
                  (goto-char (region-end))
                  (yank))
-               (exchange-point-and-mark)) 
+               (exchange-point-and-mark))
       (save-excursion
         (dotimes (_ arg)
           (open-previous-line 1)
@@ -344,9 +636,9 @@ go up/down the list instead."
 ;; (defun duplicate-line-many-once (&optional arg)
 ;;   "Duplicate it. With prefix ARG, duplicate ARG lines following the current one. This function is deprecated. Use duplicate-line with a selected region instead"
 ;;   (interactive "p")
-;;   (save-excursion 
+;;   (save-excursion
 ;;     (let ((beg (line-beginning-position))
-;;           (end 
+;;           (end
 ;;            (progn (forward-line (1- arg)) (line-end-position))))
 ;;       (copy-region-as-kill beg end)
 ;;       (end-of-line) (newline)
@@ -369,7 +661,7 @@ go up/down the list instead."
 ;;; behave like vi's O command
 (defun open-previous-line (arg)
   "Open a new line before the current one.
- 
+
   See also `newline-and-indent'."
   (interactive "p")
   (beginning-of-line)
@@ -386,10 +678,10 @@ go up/down the list instead."
   (if (char-table-p translation-table-for-input)
       (setq char (or (aref translation-table-for-input char) char)))
   (save-excursion (message (char-to-string char))
-                  (copy-region-as-kill (point) 
+                  (copy-region-as-kill (point)
                                        (progn
-                                         (search-forward 
-                                          (char-to-string char) 
+                                         (search-forward
+                                          (char-to-string char)
                                           nil nil arg)
                                          (point)))))
 
@@ -480,6 +772,9 @@ go up/down the list instead."
                          #'pop-to-buffer))
                 (funcall pgm))))
 
+(setq set-mark-command-repeat-pop t
+      mark-even-if-inactive t)
+
 ;;----------------------------------------------------------------------
 ;; MOVE-LINE-REGION
 ;;----------------------------------------------------------------------
@@ -530,52 +825,6 @@ go up/down the list instead."
   (interactive "*p")
   (move-text-internal (- arg)))
 
-
-;;----------------------------------------------------------------------
-;; Multiple search and replace
-;;----------------------------------------------------------------------
-
-;;;###autoload
-(defun batch-replace-strings (replacement-alist)
-  "Prompt user for pairs of strings to search/replace, then do so in the current buffer"
-  (interactive (list (batch-replace-strings-prompt)))
-  (dolist (pair replacement-alist)
-    (save-excursion
-      (replace-string (car pair) (cdr pair) nil (region-beginning) (region-end)))))
-
-;;;###autoload
-(defun batch-replace-strings-prompt ()
-  "prompt for string pairs and return as an association list"
-  (let (from-string
-        ret-alist)
-    (while (not (string-equal "" (setq from-string (read-string "String to search (RET to stop): "))))
-      (setq ret-alist
-            (cons (cons from-string (read-string (format "Replace %s with: " from-string)))
-                  ret-alist)))
-    ret-alist))
-
-;;----------------------------------------------------------------------
-;; Replace text in whole buffer 
-;;----------------------------------------------------------------------
-
-;; The suggested OLD text is either the current region, or the next
-;;  word (as mark-word would select it). The suggested text for the
-;;  replacement is the same as the OLD text.
-
-;;;###autoload
-(defun replace-in-buffer ()
-  (interactive)
-  (save-excursion
-    (if (equal mark-active nil) (mark-word))
-    (setq curr-word (buffer-substring-no-properties (mark) (point)))
-    (setq old-string (read-string "OLD string:\n" curr-word))
-    (setq new-string (read-string "NEW string:\n" old-string))
-    (query-replace old-string new-string nil (point-min) (point-max))
-    )
-  )
-;;----------------------------------------------------------------------
-
-;;;###autoload
 (defun store-register-dwim (arg register)
   "Store what I mean in a register.
 With an active region, store or append (with \\[universal-argument]) the
@@ -596,7 +845,6 @@ store the frame configuration. Otherwise, store the point."
    ((numberp arg) (number-to-register arg register))
    (t (point-to-register register arg))))
 
-;;;###autoload
 (defun use-register-dwim (register &optional arg)
   "Do what I mean with a register.
 For a window configuration, restore it. For a number or text, insert it.

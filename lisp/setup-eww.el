@@ -1,9 +1,15 @@
+;; -*- lexical-binding: t; -*-
+
 ;; Adapted from Protesilaos Stavrou's dotfiles: https://protesilaos.com/dotemacs
 
 (declare-function bookmark-make-record-default "bookmark" (&optional no-file no-context posn))
 (declare-function bookmark-prop-get "bookmark" (bookmark prop))
 (declare-function bookmark-default-handler "bookmark" (bmk))
 (declare-function bookmark-get-bookmark-record "bookmark" (bmk))
+
+;;----------------------------------------------------------------
+;; ** EWW
+;;----------------------------------------------------------------
 
 (use-package eww
   :bind (("M-s W" . eww-search-words)
@@ -86,6 +92,26 @@ type returned by `prot-eww--bookmark-make-record'."
     "Set appropriate `bookmark-make-record-function'.
 Intended for use with `eww-mode-hook'."
     (setq-local bookmark-make-record-function #'prot-eww--bookmark-make-record)))
+
+;;;----------------------------------------------------------------
+;; ** YEETUBE
+;;----------------------------------------------------------------
+;; Simple Youtube search from Emacs
+(use-package yeetube
+  :ensure t
+  :bind ( :map yeetube-mode-map
+          ("w" . yeetube-copy-url)
+          ("m" . yeetube-play)
+          ("s" . yeetube-search)
+          ("p" . previous-line)
+          ("x" . yeetube-browse-url)
+          ("r" . nil) ("a" . nil)
+          ("v" . nil) ("C-q" . nil) ("V" . nil)
+          ("Q" . yeetube-mpv-change-video-quality))
+  :hook ((yeetube-mode . hl-line-mode))
+  :config
+  (setq yeetube-play-function #'browse-url-mpv))
+
 
 (provide 'setup-eww)
 

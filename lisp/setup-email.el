@@ -55,7 +55,9 @@
          ("S-SPC" . notmuch-tree-scroll-message-window-back))
   :hook ((notmuch-message-mode . turn-off-auto-fill)
          (notmuch-search-mode . (lambda () (setq line-spacing 0.15)))
-         (notmuch-mua-send . notmuch-mua-attachment-check))
+         (notmuch-mua-send . notmuch-mua-attachment-check)
+         ;; (notmuch-tree-mode . notmuch-tree-outline-mode)
+         )
   :config
   (setq-default notmuch-search-oldest-first nil
                 notmuch-show-indent-content nil)
@@ -419,5 +421,35 @@ Uses entries in `my-notmuch-web-urls-alist'."
                    :title org-ql-view-title)
           :strings strings)))))
 
+(use-package ol-notmuch
+  :after (notmuch org))
+
+;;;----------------------------------------------------------------
+;; ** ORG-MIME
+;;;----------------------------------------------------------------
+;; Compose HTML emails in org-mode.
+(use-package org-mime
+  :ensure t
+  :after (notmuch org)
+  :defer
+  :config
+  (setq org-mime-export-options '( :with-latex dvipng
+                                   :section-numbers nil
+                                   :with-author nil
+                                   :with-toc nil))
+  (setq org-mime-org-html-with-latex-default 'dvipng)
+
+  ;; (add-hook 'message-send-hook 'org-mime-confirm-when-no-multipart)
+  ;; (setq org-mime-export-ascii 'latin1)
+  (setq org-mime-export-ascii 'utf-8)
+  (add-hook 'org-mime-html-hook
+            (lambda ()
+              (org-mime-change-element-style
+               "pre" (format "color: %s; background-color: %s; padding: 0.5em;"
+                             "#E6E1DC" "#232323"))))
+  (add-hook 'org-mime-html-hook
+            (lambda ()
+              (org-mime-change-element-style
+               "blockquote" "border-left: 2px solid gray; padding-left: 4px;"))))
 
 (provide 'setup-email)

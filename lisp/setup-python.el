@@ -2,10 +2,28 @@
 
 (use-package python-mode
   :defer
+  :hook ((python-mode . my/python-eglot-server-configuration))
   :config
   (when (executable-find "ipython3")
     (setq python-shell-interpreter "ipython3"
-          python-shell-interpreter-args "--simple-prompt --classic")))
+          python-shell-interpreter-args "--simple-prompt --classic"))
+  (defun my/python-eglot-server-configuration ()
+    (let ((conf (bound-and-true-p eglot-workspace-configuration)))
+      (setq eglot-workspace-configuration
+            (plist-put conf
+                       :basedpyright '(:typeCheckingMode "recommended")))
+      (setq eglot-workspace-configuration
+            (plist-put conf
+                       :basedpyright.analysis
+                       '(:diagnosticSeverityOverrides
+                         (:reportUnusedCallResult "none")
+                         :inlayHints (:callArgumentNames :json-false))))))
+  (with-eval-after-load 'eglot
+    (setf (alist-get '(python-mode python-ts-mode) eglot-server-programs
+                     nil t #'equal)
+          ;; '("ty" "server")
+          ;; '("basedpyright-langserver" "--stdio")
+          '("rass" "--" "ty" "server" "--" "ruff" "server"))))
 
 (use-package python-mls
   :ensure t
@@ -71,7 +89,7 @@
     ;;                :branch "hidden-visibility"
     ;;                :files ("*.el" "*.so")
     ;;                :pre-build (compile "make"))
-    
+
     ;; (zmq :host github
     ;;      :repo "nnicandro/emacs-zmq"
     ;;      :fork (:host github
@@ -83,7 +101,7 @@
     :init
     (and (boundp 'native-comp-jit-compilation-deny-list)
          (add-to-list 'native-comp-jit-compilation-deny-list "zmq"))
-    (use-package jupyter 
+    (use-package jupyter
       :straight t
       :bind (:map jupyter-repl-interaction-mode-map
                   ("M-i"   . nil)
@@ -151,7 +169,7 @@ Use the `company-doc-buffer' to insert the results."
 ;;;----------------------------------------------------------------
 ;; *** CONDA SUPPORT
 ;;;----------------------------------------------------------------
-(unless IS-GUIX 
+(unless IS-GUIX
   (use-package conda
     :commands conda-env-activate
     :hook (eshell-first-time-mode . conda-env-initialize-eshell)

@@ -310,7 +310,6 @@ This relies on the external 'fd' executable."
               (unless (file-remote-p default-directory)
                 (auto-revert-mode))))
   :config
-  (push 'toggle-window-split dired-sidebar-toggle-hidden-commands)
   (push 'rotate-windows dired-sidebar-toggle-hidden-commands)
 
   (setq dired-sidebar-subtree-line-prefix "__")

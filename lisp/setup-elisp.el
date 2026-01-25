@@ -20,7 +20,7 @@
 
 ;;; Commentary:
 
-;; 
+;;
 
 ;;; Code:
 
@@ -33,14 +33,14 @@
     "Pre-insert a threading macro for easy chaining"
     (insert "(thread-first )")
     (backward-char 1))
-  
+
   (defun eval-sexp-maybe-pp (&optional arg)
     (interactive "P")
     (if arg
         (let ((current-prefix-arg '4))
           (call-interactively #'pp-eval-last-sexp))
       (call-interactively #'eval-last-sexp)))
-  
+
   (defun my/pp-eval-expression (&optional insert-p)
     "Call `pp-eval-expression' on EXPR. With prefix-arg INSERT-P,
 call `eval-expression' instead and insert the result into the
@@ -50,7 +50,7 @@ current buffer without truncation."
         (let ((current-prefix-arg current-prefix-arg))
           (call-interactively #'eval-expression))
       (call-interactively #'pp-eval-expression)))
-  
+
   (advice-add 'pp-display-expression :after
               (defun my/pp-handle-output-buffer (&rest args)
                 (when-let* ((win (get-buffer-window (nth 1 args)))
@@ -58,12 +58,114 @@ current buffer without truncation."
                   (select-window win)
                   (view-mode 1)))))
 
+;;----------------------------------------------------------------
+;; *** INSPECTOR
+;;----------------------------------------------------------------
+(use-package inspector
+  :ensure (:host github :repo "mmontone/emacs-inspector")
+  :hook (inspector-mode . toggle-truncate-lines)
+  :bind (("M-I" . inspector-inspect-expression)
+         :map lisp-mode-shared-map
+         ("C-c C-i" . inspector-inspect-last-sexp)
+         :map edebug-mode-map
+         ("<remap> <inspector-inspect-expression>" .
+          inspector-inspect-edebug-expression)
+         :map embark-expression-map
+         ("I" . inspector-inspect-expression)
+         :map embark-variable-map
+         ("I" . inspector-inspect-expression)
+         :map embark-defun-map
+         ("I" . inspector-inspect-defun))
+  :config
+  (use-package popper :defer
+    :config (add-to-list 'popper-reference-buffers 'inspector-mode))
+  (setf (alist-get '(major-mode . inspector-mode)
+                   display-buffer-alist
+                   nil nil #'equal)
+        `((display-buffer-in-side-window)
+          (window-height . ,(lambda (win)
+                              (fit-window-to-buffer win
+                               (floor (frame-height) 2.5))))
+          (side . bottom)
+          (slot . -4)
+          (body-function . ,#'select-window))))
+
 (use-package macrostep
   :ensure t
   :bind (:map emacs-lisp-mode-map
               ("C-c C-m" . macrostep-expand)
               :map lisp-interaction-mode-map
               ("C-c C-m" . macrostep-expand)))
+
+(use-package profiler
+  :bind ("C-<f9>" . my/run-profiler)
+  :config
+  (defun my/run-profiler ()
+    (interactive)
+    (if (and (fboundp 'profiler-running-p)
+             (profiler-running-p))
+        (prog1 (profiler-stop)
+          (profiler-report))
+      (profiler-reset)
+      (profiler-start 'cpu)
+      (message "CPU Profiler started."))))
+
+(use-package edebug
+  :defer
+  :after eldoc
+  :bind (:map edebug-mode-map
+              ("A" . my/elisp-add-to-watch))
+  :config
+  (setq debugger-stack-frame-as-list t)
+  (defun my/elisp-add-to-watch (&optional region-start region-end)
+    "Add the current variable to the *EDebug* window"
+    (interactive "r")
+    (let ((statement
+           (if (and region-start region-end (use-region-p))
+               (buffer-substring region-start region-end)
+             (symbol-name (eldoc-current-symbol)))))
+      (edebug-visit-eval-list)
+      (goto-char (point-max))
+      (newline)
+      (insert statement)
+      (edebug-update-eval-list)
+      (edebug-where)))
+
+  ;; From jdtsmith: https://gist.github.com/jdtsmith/1fbcacfe677d74bbe510aec80ac0050c
+;;;; Power debugging
+  (defun my/reraise-error (func &rest args)
+    "Call function FUNC with ARGS and re-raise any error which occurs.
+Useful for debugging post-command hooks and filter functions, which
+normally have their errors suppressed."
+    (condition-case err
+        (apply func args)
+      ((debug error) (signal (car err) (cdr err)))))
+
+  (defun toggle-debug-on-hidden-errors (func)
+    "Toggle hidden error debugging for function FUNC."
+    (interactive "a")
+    (cond
+     ((advice-member-p #'my/reraise-error func)
+      (advice-remove func #'my/reraise-error)
+      (message "Debug on hidden errors disabled for %s" func))
+     (t
+      (advice-add func :around #'my/reraise-error)
+      (message "Debug on hidden errors enabled for %s" func)))))
+
+(use-package bytecomp
+  :hook ((after-save . auto-byte-recompile))
+  :init
+  ;; Byte-compile elisp files immediately after saving them if .elc exists:
+  (defun auto-byte-recompile ()
+    "If the current buffer is in `emacs-lisp-mode' and there
+  already exists an `.elc' file corresponding to the current
+  buffer file, then recompile the file."
+    (interactive)
+    (when (and (eq major-mode 'emacs-lisp-mode)
+               (not ;; (string= user-init-file (buffer-file-name))
+                (string-match-p "init\\.el$" (buffer-file-name)))
+               (file-exists-p (byte-compile-dest-file buffer-file-name)))
+      (byte-recompile-file buffer-file-name))))
 
 (use-package elisp-mode
   :disabled
@@ -251,6 +353,25 @@ current buffer without truncation."
   :ensure (:host gitlab :repo "andreyorst/isayt.el" :protocol https)
   :hook ((lisp-mode emacs-lisp-mode lisp-interaction-mode) . isayt-mode))
 
+(use-package el-search
+  :disabled
+  :ensure t
+  :defer
+  :config
+  (el-search-install-bindings-under-prefix [(meta ?s) ?s]))
+
+(use-package package-lint :ensure t :defer)
+
+(use-package package-lint-flymake
+  :ensure t
+  :defer
+  :after flymake
+  :config
+  (add-hook 'emacs-lisp-mode-hook
+            (lambda ()
+              (add-hook 'flymake-diagnostic-functions
+                        #'package-lint-flymake
+                        nil :local))))
 
 (provide 'setup-elisp)
 ;;; setup-elisp.el ends here

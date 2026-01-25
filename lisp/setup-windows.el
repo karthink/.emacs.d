@@ -312,9 +312,11 @@ If buffer-or-name is nil return current buffer's mode."
   :bind (("C-x q" . my/kill-buffer-and-window)
          ("ESC M-v" . scroll-other-window-down)
          ("<f9>" . my/make-frame-floating-with-current-buffer)
+         ("M-`" . my/switch-to-other-buffer)
          ("C-x C-p" . my/previous-buffer)
          ("C-x C-n" . my/next-buffer)
          ("C-x n g" . set-goal-column)
+         ("C-x C-1" . my/monocle-mode)         
          ([remap split-window-below] . my/split-window-below)
          ([remap split-window-right] . my/split-window-right)
          ([remap delete-window] . my/delete-window-or-delete-frame)
@@ -479,6 +481,37 @@ User buffers are those not starting with *."
    (lambda (_ cmd) (put cmd 'repeat-map 'my/buffer-cycle-map))
    my/buffer-cycle-map)
 
+  (defvar my/window-configuration nil
+    "Current window configuration.
+Intended for use by `my/monocle-mode.")
+
+  (define-minor-mode my/monocle-mode
+    "Toggle between multiple windows and single window.
+This is the equivalent of maximising a window.  Tiling window
+managers such as DWM, BSPWM refer to this state as 'monocle'."
+    :lighter " [M]"
+    :global nil
+    (let ((win my/window-configuration))
+      (if (one-window-p)
+          (when win
+            (set-window-configuration win))
+        (setq my/window-configuration (current-window-configuration))
+        (when (window-parameter nil 'window-slot)
+          (let ((buf (current-buffer)))
+            (other-window 1)
+            (switch-to-buffer buf)))
+        (delete-other-windows))))
+
+  (defun other-window-prefix-maybe ()
+    (interactive)
+    (other-window-prefix)
+    (setq unread-command-events (list last-command-event))
+    (when-let ((seqs (read-key-sequence "[other-window]: "))
+               (cmd (key-binding seqs)))
+      (setq this-command cmd)
+      (call-interactively cmd)))
+  (keymap-set ctl-x-4-map "<t>" #'other-window-prefix-maybe)
+  
   ;; quit-window behavior is completely broken
   ;; Fix by adding winner-mode style behavior to quit-window
   (defun my/better-quit-window-save (window)

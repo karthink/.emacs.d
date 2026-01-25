@@ -192,6 +192,7 @@
   (add-to-list 'org-structure-template-alist '("ma" . "src matlab"))
   (add-to-list 'org-structure-template-alist '("el" . "src emacs-lisp"))
   (add-to-list 'org-structure-template-alist '("sh" . "src sh"))
+  (add-to-list 'org-structure-template-alist '("py" . "src python :results output"))
 
   (defun my/org-cdlatex-settings ()
     (define-key org-cdlatex-mode-map (kbd "$") 'cdlatex-dollar)
@@ -617,12 +618,12 @@ appropriate.  In tables, insert a new row or end the table."
    (progn (plist-put org-format-latex-options :background "Transparent")
           (plist-put org-format-latex-options :scale 1.0)
           (plist-put org-format-latex-options :zoom
-                     (- (/ (face-attribute 'default :height) 100.0) 0.025)))
+                     (+ (/ (face-attribute 'default :height) 100.0) 0.15)))
 
    org-latex-preview-appearance-options
    (progn (plist-put org-latex-preview-appearance-options :scale 1.0)
           (plist-put org-latex-preview-appearance-options :zoom
-                     (- (/ (face-attribute 'default :height) 100.0) 0.025)))
+                     (+ (/ (face-attribute 'default :height) 100.0) 0.15)))
 
    org-latex-preview-persist-expiry 30
    org-latex-preview-numbered nil
@@ -738,7 +739,7 @@ appropriate.  In tables, insert a new row or end the table."
 
 ;; code for centering LaTeX previews -- a terrible idea
 (use-package org-latex-preview
-  ;; :disabled
+  :disabled
   :after org-latex-preview
   :config
   (defun my/org-latex-preview-uncenter (ov)
@@ -856,6 +857,7 @@ appropriate.  In tables, insert a new row or end the table."
                    (lambda (l) (remove 'org-block l)))))))
 
 (use-package org-src-context
+  :disabled
   :defer
   :ensure (:host github
              :repo "karthink/org-src-context")
@@ -1434,8 +1436,8 @@ parent."
     (eq 'beamer (and (plist-get info :back-end)
                      (org-export-backend-name (plist-get info :back-end)))))
 
-  (add-to-list 'org-export-conditional-features
-               '(org-beamer-backend-p . beamer) t)
+  ;; (add-to-list 'org-export-conditional-features
+  ;;              '(org-beamer-backend-p . beamer) t)
   :config
   (setq org-beamer-theme "metropolis"
         org-beamer-frame-level 2))
@@ -1506,7 +1508,8 @@ parent."
        org-cite-insert-processor 'citar
        org-cite-follow-processor 'citar
        org-cite-activate-processor 'citar
-       org-cite-global-bibliography citar-bibliography))))
+       org-cite-global-bibliography nil ;; citar-bibliography
+       ))))
 
 ;;;----------------------------------------------------------------------
 ;; ** ORG-DOWNLOAD DONT
@@ -1537,37 +1540,6 @@ parent."
                ,(intern (concat "org-babel-" library "-initiate-session")))
     ,@forms))
 
-(use-package ob-julia
-  :ensure (:host github :repo "nico202/ob-julia"
-           :files ("*.el" "julia")
-           :remotes ("fork" :host github :repo "karthink/ob-julia"
-                     :branch "main" :protocol ssh))
-  :after (ob org)
-  :autoload (org-babel-execute:julia org-babel-expand-body:julia
-                                     org-babel-prep-session:julia)
-  :hook (org-babel-julia-after-async-execute . my/org-redisplay-babel-result)
-  :init
-  ;; (setq ob-julia-insert-latex-environment-advice nil)
-  (add-to-list 'org-structure-template-alist '("j" . "src julia"))
-  :config
-  (when (featurep 'julia-snail) (require 'ob-julia-snail))
-  (setq org-babel-default-header-args:julia
-        '((:session . nil)
-          (:async   . "yes")))
-  (setq org-babel-julia-backend 'julia-snail)
-  (when (featurep 'ess)
-    (setq ess-eval-visibly 'nowait)
-    (defun org-babel-julia-initiate-session (&optional session params)
-      "Create or switch to an ESS Julia session.
-
-Return the initialized session, if any."
-      (unless (string= session "none")
-        (let ((session (or session "*julia*")))
-          (if (org-babel-comint-buffer-livep session)
-              session
-            (save-window-excursion
-              (org-babel-prep-session:julia session params))))))))
-
 (with-ob-autoload "octave"
   :config
   (use-package ob-octave-fix :after ob-octave))
@@ -1588,15 +1560,6 @@ Return the initialized session, if any."
 (with-ob-autoload "scheme")
 (with-ob-autoload "ditaa")
 (with-ob-autoload "emacs-lisp")
-
-;; ESS DONT
-;; Disabled in favor of julia-snail
-(use-package ess
-  :disabled
-  :ensure t
-  :after ob-julia
-  :config
-  (use-package ess-julia))
 
 (use-package org-tempo
   :after org
@@ -1697,8 +1660,8 @@ Return the initialized session, if any."
   (setq eir-jump-after-eval nil))
 
 (use-package org-glossary
-    :after ox
     :disabled
+    :after ox
     :ensure (:host github :repo "tecosaur/org-glossary")
     :config
     (setq org-glossary-toplevel-only t)
@@ -1725,98 +1688,6 @@ the :consume parameter extracted from KEYWORD."
           (plist-get parameters :type)
           (plist-get parameters :consume))
          parameters))))
-
-;;;----------------------------------------------------------------
-;; ** OX-HUGO
-;;;----------------------------------------------------------------
-(use-package ox-hugo
-  :ensure t
-  :defer
-  :config
-  (advice-add 'org-blackfriday--update-ltximg-path
-              :around
-              (lambda (orig-fn html-string)
-                (if (plist-get org-html-latex-image-options :inline)
-                    html-string
-                  (funcall orig-fn html-string)))
-              '((name . inline-image-workaround)))
-  (use-package org-glossary
-    :ensure (:host github :repo "tecosaur/org-glossary")
-    :config
-    (setq org-glossary-toplevel-only nil)
-    (org-glossary-set-export-spec 'hugo t
-      :use "<a class=\"org-gls\" href=\"#gls-%K\">%t</a>"
-      :definition "<a name=\"gls-%K\">%t</a>"
-      :definition-structure "%d\n\\colon{} %v [%n uses]\n")
-    (org-glossary-set-export-spec 'hugo 'glossary
-      :heading "*** Glossary")
-    (defun org-glossary--expand-print-keyword (backend terms keyword)
-      "Call `org-glossary--expand-print' with paramaters and terms based on KEYWORD.
-BACKEND is passed through unmodified, but TERMS may be modified depending on
-the :consume parameter extracted from KEYWORD."
-      (let ((heading (org-element-lineage keyword '(headline org-data)))
-            (parameters (org-combine-plists
-                         org-glossary-default-print-parameters
-                         (org-glossary--parse-print-keyword-value
-                          (org-element-property :value keyword)))))
-        (while (and heading
-                    (not (eq (org-element-type heading) 'org-data))
-                    (> (org-element-property :level heading)
-                       (plist-get parameters :level)))
-          (setq heading (org-element-lineage heading '(headline org-data))))
-        (org-glossary--expand-print
-         backend
-         (org-glossary--extract-uses-in-region
-          terms
-          (if heading (org-element-property :begin heading) (point-min))
-          (if heading (org-element-property :end heading) (point-max))
-          (plist-get parameters :type)
-          (plist-get parameters :consume))
-         parameters))))
-  (setq org-hugo-section "blog")
-  (add-to-list 'org-hugo-special-block-type-properties
-               '("sidenote" . (:trim-pre t :trim-post t)))
-  (setq org-hugo-paired-shortcodes "%sidenote")
-  (define-minor-mode my/org-hugo-mode
-    "Helper mode for org-hugo previews."
-    :keymap (make-sparse-keymap)
-    :init-value nil)
-  (defun my/org-hugo-preview (&optional arg)
-    (interactive "P")
-    (pcase-let* ((sec nil)
-                 (`(,sec . ,title)
-                 (save-excursion
-                   (org-previous-visible-heading 1)
-                   (let ((title (org-element-property
-                                 :EXPORT_FILE_NAME
-                                 (org-element-at-point))))
-                     (while (and (not sec) (org-up-heading-safe))
-                       (setq sec (org-element-property
-                                  :EXPORT_HUGO_SECTION
-                                  (org-element-at-point))
-                             title (or title
-                                       (org-element-property
-                                        :EXPORT_FILE_NAME
-                                        (org-element-at-point)))))
-                     (cons sec title)))))
-      (if-let ((_ title)
-               (url (concat
-                     "http://localhost:1313/"
-                     (if sec (downcase sec) "software")
-                     "/" title)))
-          (progn (save-buffer)
-                 (unless (bound-and-true-p org-hugo-auto-export-mode)
-                   (org-hugo-export-wim-to-md))
-                 (if arg
-                     (progn (other-window 1) (eww url) (other-window -1))
-                   (browse-url url)))
-        (message "No preview url found.")))))
-
-;;;----------------------------------------------------------------
-;; ** OL-NOTMUCH
-;;;----------------------------------------------------------------
-(use-package ol-notmuch
-  :after (notmuch org))
 
 ;;;----------------------------------------------------------------
 ;; ** ORG-GCAL
@@ -1852,25 +1723,25 @@ the :consume parameter extracted from KEYWORD."
   (defvar my/org-gcal--last-sync-time 0
     "Last time `org-gcal-sync' was run.")
   (defun my/org-gcal-sync-maybe (&optional skip-export silent)
-  "Import events from calendars if more than 30 minutes have
+    "Import events from calendars if more than 30 minutes have
  passed since last import.
 Export the ones to the calendar if unless
 SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
-  (interactive)
-  (if-let ((now (float-time (current-time)))
-           (sync-p (or (< (- now my/org-gcal--last-sync-time)
-                          43200)
-                       ;; (seq-some (lambda (cal-file-pair)
-                       ;;             (< (- now
-                       ;;                   (float-time (file-attribute-modification-time
-                       ;;                                (file-attributes (cdr cal-file-pair)))))
-                       ;;                1800))
-                       ;;    org-gcal-file-alist)
-                       )))
-      (message "Did not check for calendar updates. `M-x org-gcal-sync' to force check.")
-    (org-gcal-sync skip-export silent)
-    (message "Updated gcal.")
-    (setq my/org-gcal--last-sync-time now))))
+    (interactive)
+    (if-let ((now (float-time (current-time)))
+             (sync-p (or (< (- now my/org-gcal--last-sync-time)
+                            43200)
+                         ;; (seq-some (lambda (cal-file-pair)
+                         ;;             (< (- now
+                         ;;                   (float-time (file-attribute-modification-time
+                         ;;                                (file-attributes (cdr cal-file-pair)))))
+                         ;;                1800))
+                         ;;    org-gcal-file-alist)
+                         )))
+        (message "Did not check for calendar updates. `M-x org-gcal-sync' to force check.")
+      (org-gcal-sync skip-export silent)
+      (message "Updated gcal.")
+      (setq my/org-gcal--last-sync-time now))))
 
 (use-package oauth2-auto
   :defer
@@ -1881,44 +1752,6 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
              oauth2-auto--plstore-cache)))
 
 ;;;----------------------------------------------------------------
-;; ** ORG-REVEAL
-;;;----------------------------------------------------------------
-(use-package org-re-reveal
-  ;; :disabled
-  :ensure t
-  :after ox
-  :commands (org-re-reveal-export-to-html
-             org-re-reveal-export-to-html-and-browse)
-  :config
-  (setq org-re-reveal-subtree-with-title-slide t)
-  (pcase-dolist (`(,key ,expansion)
-                 '(("col" "col") ("row" "row")
-                   ("card" "card") ("cell" "cell")))
-    (setf (alist-get key org-structure-template-alist
-                     nil nil #'equal)
-          expansion))
-  (pcase-dolist (`(,key ,expansion) '(("rh" "reveal_html")
-                                      ("R" "reveal")
-                                      ("ar" "attr_reveal")))
-    (setf (alist-get key org-tempo-keywords-alist
-                     nil nil #'equal)
-          expansion))
-  (use-package org-re-reveal-ref
-    :disabled
-    :init (setq org-ref-default-bibliography '("~/Documents/research/control_systems.bib"))))
-
-(use-package org-re-reveal-citeproc
-  :ensure t
-  :after org-re-reveal)
-
-(use-package ox-reveal
-  :disabled
-  :ensure t
-  :init
-  (setq org-reveal-root "file:///home/karthik/.local/share/git/reveal.js")
-  (setq org-reveal-hlevel 2))
-
-;;;----------------------------------------------------------------
 ;; ** +INKSCAPE-FIGURES+ DONT
 ;;;----------------------------------------------------------------
 (use-package inkscape-figures
@@ -1927,226 +1760,6 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
   :bind (:map org-mode-map
               ("C-c i" . #'+inkscape-figures-create-at-point-org)
               ("C-c e" . #'+inkscape-figures-edit)))
-
-;;;----------------------------------------------------------------
-;; ** ORG-REF DONT
-;;;----------------------------------------------------------------
-(use-package org-ref
-  :disabled
-  :defer
-  :config
-  ;; (setq reftex-default-bibliography '("~/Dropbox/bibliography/references.bib"))
-  (setq org-latex-pdf-process
-        '("pdflatex -interaction nonstopmode -output-directory %o %f"
-        "bibtex %b"
-        "pdflatex -interaction nonstopmode -output-directory %o %f"
-        "pdflatex -interaction nonstopmode -output-directory %o %f")
-        )
-  (setq org-latex-pdf-process
-        (list "latexmk -shell-escape -bibtex -f -pdf %f"))
-  (setq org-ref-completion-library 'org-ref-ivy-cite)
-  (setq org-ref-bibliography-notes nil
-        org-ref-default-bibliography reftex-default-bibliography
-        org-ref-pdf-directory "~/Documents/research/lit/"))
-
-;;;----------------------------------------------------------------
-;; ** MY ORG PROJECTS
-;;;----------------------------------------------------------------
-(use-package ox-publish
-  :defer
-  :config
-  (setq org-publish-project-alist
-        '(
-          ("dai-wiki"
-           :base-directory "~/Documents/abode/dai/"
-           :base-extension "org"
-           :publishing-directory "~/Documents/abode/dai"
-           :remote-directory "root@abode.karthinks.com:/var/www/abode/dai"
-           :recursive t
-           :publishing-function org-html-publish-to-html
-           :headline-levels 4             ; Just the default for this project.
-           :auto-preamble t
-           :completion-function (list my/org-publish-rsync)
-           )
-          ("dai" :components ("dai-wiki"))
-          ("cyclostationarity"
-           :base-directory "~/Dropbox/KarthikBassam/Cyclostationarity"
-           :base-extension "org"
-           :publishing-directory "~/Dropbox/KarthikBassam/Cyclostationarity"
-           :remote-directory "root@abode.karthinks.com:/var/www/abode/cyclostationarity"
-           :recursive t
-           :publishing-function org-html-publish-to-html
-           :headline-levels 4
-           :auto-preamble t
-           :completion-function (list my/org-publish-rsync-html-and-figures-only)
-           )
-          ("abode"
-           :base-directory "~/Documents/abode/"
-           :base-extension "org"
-           :publishing-directory "~/Documents/abode"
-           :remote-directory "root@abode.karthinks.com:/var/www/abode"
-           :recursive t
-           :publishing-function org-html-publish-to-html
-           :headline-levels 4
-           :auto-preamblle t
-           :completion-function (list my/org-publish-rsync)
-           )
-          ("sicm"
-           :base-directory "~/Documents/courses/sicm/"
-           :base-extension "org"
-           :publishing-directory "~/Documents/abode/sicm"
-           :remote-directory "root@abode.karthinks.com:/var/www/abode/sicm"
-           :recursive t
-           :publishing-function org-html-publish-to-html
-           :headline-level 5
-           :auto-preamble t
-           :completion-function (list my/org-publish-rsync-html-and-figures-only))
-          )
-        )
-
-  (defun my/org-publish-rsync (project-plist)
-    "Sync output of org project to a remote server using RSYNC.
-
- All files and folders except for ORG files will be synced."
-    (if (executable-find "rsync")
-        (let* ((basedir (expand-file-name
-                         (file-name-as-directory
-                          (plist-get project-plist :publishing-directory))))
-               (destdir (plist-get project-plist :remote-directory)))
-          (start-process "rsync-project-abode" "*project-abode-output*"
-                         "rsync" "-a" "-v" "--exclude=*.org" "--delete"
-                         basedir destdir))
-
-      (display-warning 'org-publish
-                       "Could not find RSYNC in PATH. Project not uploaded to server."
-                       :warning)))
-
-  (defun my/org-publish-rsync-html-and-figures-only (project-plist)
-    "Sync output of org project to a remote server using RSYNC.
-
- All files and folders except for ORG files will be synced."
-    (if (executable-find "rsync")
-        (let* ((basedir (expand-file-name
-                         (file-name-as-directory
-                          (plist-get project-plist :publishing-directory))))
-               (destdir (plist-get project-plist :remote-directory)))
-          (message "Running rsync: %s → %s" basedir destdir)
-          (start-process "rsync-project-html-and-figures" "*project-rsync-html-output*"
-                         "rsync" "-a" "-v"
-                         "--include=*.png"
-                         "--include=*.html"
-                         "--include=/figures/***"
-                         "--exclude=*"
-                         "--delete"
-                         basedir destdir))
-
-      (display-warning 'org-publish
-                       "Could not find RSYNC in PATH. Project not uploaded to server."
-                       :warning))))
-
-;;;----------------------------------------------------------------
-;; ** ORG-TREE-SLIDE
-;;;----------------------------------------------------------------
-;; Presentations from within org-mode.
-(use-package org-tree-slide
-  :ensure t
-  :after org
-  :commands my/org-presentation-mode
-  ;; :hook (org-tree-slide-after-narrow . my/org-tree-slide-enlarge-latex-preview)
-  :config
-  (setq org-tree-slide-never-touch-face nil
-        org-tree-slide-skip-outline-level 8
-        org-tree-slide-heading-emphasis nil
-        org-tree-slide-cursor-init nil
-        org-tree-slide-slide-in-effect nil
-        org-tree-slide-activate-message
-        (propertize "ORG PRESENTATION STARTED" 'face 'success)
-        org-tree-slide-deactivate-message
-        (propertize "ORG PRESENTATION STOPPED" 'face 'error))
-
-  ;; (defun my/org-tree-slide-enlarge-latex-preview ()
-  ;;   (dolist (ov (overlays-in (point-min) (point-max)))
-  ;;     (if (eq (overlay-get ov 'org-overlay-type)
-  ;;             'org-latex-overlay)
-  ;;         (overlay-put
-  ;;          ov 'display
-  ;;          (cons 'image
-  ;;                (plist-put
-  ;;                 (cdr (overlay-get ov 'display))
-  ;;                 :scale (+ 1.0 (* 0.2 text-scale-mode-amount))))))))
-
-  (defvar olivetti-style)
-  (define-minor-mode my/org-presentation-mode
-    "Parameters for plain text presentations with `org-mode'."
-    :init-value nil
-    :global nil
-    (if my/org-presentation-mode
-        (progn
-          (unless (eq major-mode 'org-mode)
-            (user-error "Not in an Org buffer"))
-          (setq-local org-hide-emphasis-markers t)
-          (org-tree-slide-mode 1)
-          (setq olivetti-style nil)
-          (setq line-spacing 0.12)
-          ;; (setq olivetti-margin-width 14)
-          ;; (setq olivetti-body-width 0.7)
-          (text-scale-increase 6)
-          (my/olivetti-mode 1))
-      (org-tree-slide-mode -1)
-      ;; (kill-local-variable 'org-hide-emphasis-markers)
-      (my/olivetti-mode -1)
-      (text-scale-decrease 6)
-      (text-scale-mode -1)))
-
-  (defvar-keymap my/org-tree-slide--header-keymap
-    :doc "Keymap for actions in the slide header"
-    "SPC" 'org-tree-slide-move-next-tree
-    "n"   'org-tree-slide-move-next-tree
-    "S-SPC" 'org-tree-slide-move-previous-tree
-    "p"     'org-tree-slide-move-previous-tree
-    "<mouse-1>" 'org-tree-slide-move-next-tree
-    "<mouse-3>" 'org-tree-slide-move-previous-tree)
-
-  (define-advice org-tree-slide--set-slide-header (:after (_) set-keymap)
-    (overlay-put org-tree-slide--header-overlay
-                 'keymap my/org-tree-slide--header-keymap))
-
-  :bind (("C-c P"      . my/org-presentation-mode)
-         :map org-tree-slide-mode-map
-         ("<next>" . org-tree-slide-move-next-tree)
-         ("<prior>" . org-tree-slide-move-previous-tree)
-         ("<home>" . 'org-tree-slide-display-header-toggle)
-         ("<C-down>"  . org-tree-slide-display-header-toggle)
-         ("<C-right>" . org-tree-slide-move-next-tree)
-         ("<C-left>"  . org-tree-slide-move-previous-tree)))
-
-;;;----------------------------------------------------------------
-;; ** ORG-MIME
-;;;----------------------------------------------------------------
-;; Compose HTML emails in org-mode.
-(use-package org-mime
-  :ensure t
-  :after (notmuch org)
-  :defer
-  :config
-  (setq org-mime-export-options '(:with-latex dvipng
-                                  :section-numbers nil
-                                  :with-author nil
-                                  :with-toc nil))
-  (setq org-mime-org-html-with-latex-default 'dvipng)
-
-  ;; (add-hook 'message-send-hook 'org-mime-confirm-when-no-multipart)
-  ;; (setq org-mime-export-ascii 'latin1)
-  (setq org-mime-export-ascii 'utf-8)
-  (add-hook 'org-mime-html-hook
-          (lambda ()
-            (org-mime-change-element-style
-             "pre" (format "color: %s; background-color: %s; padding: 0.5em;"
-                           "#E6E1DC" "#232323"))))
-  (add-hook 'org-mime-html-hook
-          (lambda ()
-            (org-mime-change-element-style
-             "blockquote" "border-left: 2px solid gray; padding-left: 4px;"))))
 
 ;;;----------------------------------------------------------------
 ;; ** ORG-LINK-CUSTOMIZE
@@ -2209,55 +1822,6 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
       (error "Cannot create link to this customize page"))))
 
 ;;;----------------------------------------------------------------
-;; ** ORG-NOTER
-;;;----------------------------------------------------------------
-(use-package org-noter
-  :ensure t
-  :bind (:map org-noter-notes-mode-map
-         ("C-c ." . my/org-noter-associate-this-entry))
-  :config
-  (setq org-noter-always-create-frame nil
-        org-noter-kill-frame-at-session-end nil
-        org-noter-doc-split-fraction '(0.4 . 0.5)
-        org-noter-hide-other nil
-        org-noter-disable-narrowing t
-        org-noter-use-indirect-buffer nil
-        ;; This is buggy
-        org-noter-prefer-root-as-file-level nil)
-
-  (remove-hook 'org-noter--show-arrow-hook
-               #'org-noter-pdf--show-arrow)
-
-  (defun my/org-noter-associate-this-entry (&optional arg)
-    "Associate the current Org entry with the current org-noter location.
-
-With prefix arg, use a precise location."
-    (interactive "P")
-    (org-noter--with-valid-session
-     (let* ((precise-info (if arg (org-noter--get-precise-info) 'interactive))
-            (location (org-noter--doc-approx-location precise-info)))
-       (org-entry-put nil org-noter-property-note-location
-                      (org-noter--pretty-print-location location)))))
-
-  (defun my/org-noter--stay (orig-fn)
-    "After a sync action, stay in the doc or notes window.
-
-Whichever was already active."
-    (let ((win (selected-window))
-          (inhibit-redisplay t))
-      (funcall orig-fn)
-      (unless (eq (selected-window) win)
-        (select-window (org-noter--get-notes-window)))))
-
-  (dolist (sym '(org-noter-sync-next-note
-                 org-noter-sync-prev-note
-                 org-noter-sync-current-note
-                 org-noter-sync-next-page-or-chapter
-                 org-noter-sync-prev-page-or-chapter
-                 org-noter-sync-current-page-or-chapter))
-    (advice-add sym :around #'my/org-noter--stay)))
-
-;;;----------------------------------------------------------------
 ;; ** ORG-ALERT
 ;;;----------------------------------------------------------------
 (use-package org-alert
@@ -2270,19 +1834,6 @@ Whichever was already active."
 ;;;----------------------------------------------------------------
 ;; ** ORG-XOURNALPP
 ;;;----------------------------------------------------------------
-(use-package org-xournalpp
-  :disabled
-  :ensure (:host gitlab
-           :repo "vherrmann/org-xournalpp"
-           :files ("*.el" "resources"))
-  :after org
-  :commands org-xournalpp-insert-new-image
-  :config
-  (setq org-xournalpp-export-dir "figures/"
-        org-xournalpp-export-overwrite? t
-        org-xournalpp-path-default "figures/sketch"
-        org-xournalpp-image-type 'png))
-
 (use-package org-xopp
   :ensure (:host github :repo "mahmoodsh36/org-xopp")
   :after org
@@ -2335,31 +1886,6 @@ Whichever was already active."
 ;; ** TOC-ORG
 ;;;----------------------------------------------------------------
 (use-package toc-org :ensure t :defer)
-
-;;;----------------------------------------------------------------
-;; ** Integration for RefTeX
-;;;----------------------------------------------------------------
-(use-package consult-reftex
-  :disabled
-  :after (org latex reftex)
-  :bind (:map org-mode-map
-         ("C-c )" . 'consult-reftex-insert-reference)))
-
-(use-package reftex-xref
-  :ensure (:host github :repo "karthink/reftex-xref")
-  :after (org latex)
-  :hook ((org-mode . reftex-xref-activate)
-         (org-mode . reftex-eldoc-activate)))
-
-;;;----------------------------------------------------------------
-;; ** ORG-AUCTEX
-;;;----------------------------------------------------------------
-(use-package org-auctex
-  :disabled
-  :load-path "plugins/org-auctex"
-  :commands org-auctex-mode
-  :after org
-  :defer)
 
 ;;;----------------------------------------------------------------
 ;; ** ORGLINK

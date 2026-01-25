@@ -28,21 +28,21 @@
       map))
   ;; (define-prefix-command help-apropos-command help-apropos-map)
   (defun my/describe-symbol-at-point (&optional arg)
-  "Get help (documentation) for the symbol at point.
+    "Get help (documentation) for the symbol at point.
 
 With a prefix argument, switch to the *Help* window.  If that is
 already focused, switch to the most recently used window
 instead."
-  (interactive "P")
-  (let ((symbol (symbol-at-point)))
-    (when symbol
-      (describe-symbol symbol)))
-  (when arg
-    (let ((help (get-buffer-window "*Help*")))
-      (when help
-        (if (not (eq (selected-window) help))
-            (select-window help)
-          (select-window (get-mru-window)))))))
+    (interactive "P")
+    (let ((symbol (symbol-at-point)))
+      (when symbol
+        (describe-symbol symbol)))
+    (when arg
+      (let ((help (get-buffer-window "*Help*")))
+        (when help
+          (if (not (eq (selected-window) help))
+              (select-window help)
+            (select-window (get-mru-window)))))))
   (unbind-key "C-h C-h"))
 
 (use-package find-func
@@ -84,56 +84,16 @@ instead."
   :defer t
   :custom (Man-notify-method 'aggressive))
 
-;;;----------------------------------------------------------------
-;; *** GOOGLE ANSWERS
-;;;----------------------------------------------------------------
-;; Query Google's knowledge graph. This is the answer that shows up before the
-;; first result in Google searches. For this purpose we use tuxi, an external
-;; tool that queries Google.
-(use-package emacs
-  :disabled
+
+;;----------------------------------------------------------------
+;; ** ELDOC
+;;----------------------------------------------------------------
+(use-package eldoc
+  :hook (ielm-mode . eldoc-mode)
   :config
-  (defvar google-search-history nil
-    "List of queries to google-search-string.")
-  (defun google-search-string (search-string)
-    "Read SEARCH-STRING from the minibuffer and call the shell
-command tuxi on it."
-    (interactive (list (read-string "Google: " nil
-                                    google-search-history
-                                    (thing-at-point 'sexp))))
-    (unless (executable-find "tuxi")
-      (user-error "Cannot find shell command: tuxi"))
-    (let ((search-output (string-trim-right
-                          (shell-command-to-string
-                           (concat
-                            "tuxi -r "
-                            (shell-quote-argument search-string))))))
-      (with-current-buffer (get-buffer-create "*Tuxi Output*")
-        (goto-char (point-max))
-        (unless (bobp) (insert "\n\n* * *\n"))
-        (insert (capitalize search-string) ":\n\n")
-        (push-mark)
-        (insert search-output)
-        (let ((lines (count-lines (or (mark) (point-min)) (point-max))))
-          (if (<= lines 1)
-              (message search-output)
-            (let ((win (display-buffer (current-buffer))))
-              (set-window-start win (mark))
-              (set-window-parameter win 'window-height (min lines 10))
-              (goto-address-mode 1)))))))
-  (defun google-search-at-point (&optional beg end)
-    "Call the shell command tuxi on the symbol at point. With an
-active region use it instead."
-    (interactive "r")
-    (if-let ((search-string (if (use-region-p)
-                                (buffer-substring-no-properties beg end)
-                              (thing-at-point 'symbol))))
-        (google-search-string search-string)
-      ;; (message "No symbol to search for at point!")
-      (call-interactively #'google-search-string)))
-  :bind (:map help-map
-              ("g" . google-search-string)
-              ("C-=" . google-search-at-point)))
+  (setq eldoc-documentation-strategy
+        'eldoc-documentation-compose-eagerly
+        eldoc-echo-area-prefer-doc-buffer t))
 
 ;;;----------------------------------------------------------------
 ;; *** DICTIONARY
@@ -144,8 +104,8 @@ active region use it instead."
   :commands (sdcv-search-input)
   :bind (("C-x M-=" . sdcv-search-input)
          :map sdcv-mode-map
-              ("M-n" . sdcv-next-dictionary)
-              ("M-p" . sdcv-previous-dictionary)))
+         ("M-n" . sdcv-next-dictionary)
+         ("M-p" . sdcv-previous-dictionary)))
 
 (use-package dictionary
   ;; :straight (:type built-in)
@@ -168,7 +128,7 @@ argument, query for word to search."
         (if (thing-at-point 'word)
             (dictionary-lookup-definition)
           (dictionary-search-dwim '(4))))))
-  
+
   (defvar my/dictionary-log-file
     (concat user-cache-directory "dictionary-log")
     "File that tracks looked up words.")
@@ -179,7 +139,7 @@ argument, query for word to search."
                   (write-region (concat word "\n") nil
                                 my/dictionary-log-file
                                 'append))))
-  
+
   :bind (("C-M-=" . dictionary-search-dwim)
          :map help-map
          ("=" . dictionary-search-dwim)

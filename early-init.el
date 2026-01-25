@@ -83,6 +83,10 @@
 (advice-add #'display-startup-screen :override #'ignore)
 (fset #'display-startup-echo-area-message #'ignore)
 
+(when (version< "31" emacs-version)
+  (setq load-path-filter-function
+        #'load-path-filter-cache-directory-files))
+
 ;; * NATIVE-COMP
 
 ;; - Move eln files to a cache dir

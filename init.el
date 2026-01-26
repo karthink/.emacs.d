@@ -301,7 +301,9 @@
 (load (expand-file-name "lisp/setup-corfu" user-emacs-directory))
 (use-package company :ensure t :bind
   ( :map company-active-map
-    ("C-w" . nil)
+    ("C-n" . nil) ("C-p" . nil) ("C-w" . nil)
+    ("M-p" . company-select-previous-or-abort)
+    ("M-n" . company-select-next-or-abort)
     ("M-." . company-show-location)))
 
 (use-package markdown-mode :ensure t :defer)

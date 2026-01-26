@@ -25,8 +25,7 @@
          ("v" . org-link-preview))
 
   :diminish org-cdlatex-mode
-  :hook ((org-mode . turn-on-org-cdlatex)
-         (org-cdlatex-mode . my/org-cdlatex-settings)
+  :hook ((org-mode . my/org-cdlatex-mode)
          (org-mode . er/add-latex-in-org-mode-expansions))
   :config
   ;; General preferences
@@ -194,10 +193,11 @@
   (add-to-list 'org-structure-template-alist '("sh" . "src sh"))
   (add-to-list 'org-structure-template-alist '("py" . "src python :results output"))
 
-  (defun my/org-cdlatex-settings ()
-    (define-key org-cdlatex-mode-map (kbd "$") 'cdlatex-dollar)
-    ;; (ad-unadvise #'texmathp)
-    (advice-remove 'texmathp #'org--math-always-on))
+  (defun my/org-cdlatex-mode (&optional arg)
+    (when (fboundp 'texmathp)
+      (org-cdlatex-mode (or arg 1))
+      (define-key org-cdlatex-mode-map (kbd "$") 'cdlatex-dollar)
+      (advice-remove 'texmathp #'org--math-p)))
 
   ;; From the Org manual
   ;; (defun org-summary-todo (n-done n-not-done)

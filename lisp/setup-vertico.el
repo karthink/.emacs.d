@@ -107,7 +107,7 @@
    (defun my/vertico-multiform-unobtrusive ()
      "Toggle between vertico-unobtrusive and vertico-reverse."
      (interactive)
-     (vertico-multiform-vertical 'vertico-reverse-mode)))
+     (vertico-multiform--toggle-mode 'vertico-reverse-mode)))
 
 (use-package vertico-unobtrusive
   :after vertico-flat)

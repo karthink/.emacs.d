@@ -159,6 +159,7 @@
           (put cmd 'repeat-map 'org-roam-dailies-repeat-map))))))
 
 (use-package org-roam-ui
+  :disabled
   :ensure t
   :defer
   :config

@@ -188,6 +188,7 @@ When the number of characters in a buffer exceeds this threshold,
 
 ;; Consult with orderless
 (use-package consult
+  :disabled
   :after orderless
   :defer
   :config

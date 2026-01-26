@@ -1503,6 +1503,7 @@ parent."
             (html csl)
             (t basic)))
     (use-package citar
+      :defer
       :config
       (setq
        org-cite-insert-processor 'citar

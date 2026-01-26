@@ -7,114 +7,112 @@
 ;;   (elpaca org-roam-ui))
 
 (use-package org-roam
-      :ensure t
-      :init (setq org-roam-v2-ack t)
-      :bind (;; ("C-c n `" . org-roam-buffer-toggle)
-             ;; ("C-c n f" . org-roam-node-find)
-             ;; ("C-c n g" . org-roam-graph)
-             ("C-c n i" . org-roam-node-insert)
-             ("C-c n c" . org-roam-capture)
-             ("C-c n r" . my/org-roam-node-from-cite))
-      :hook ((org-roam-find-file . my/org-roam-capf-setup))
-      :config
-      (setf (alist-get "^\\*org-roam\\*$" display-buffer-alist
-                       nil nil #'equal)
-            '((display-buffer-reuse-window
-               display-buffer-reuse-mode-window
-               display-buffer-below-selected)
-              (window-height . 0.4)
-              (body-function . select-window)))
-      (defun my/org-roam-node-latex-preview (&rest _)
-        (let ((major-mode 'org-mode))
-          (org-latex-preview 'buffer)))
+  :ensure t
+  :init (setq org-roam-v2-ack t)
+  :bind (;; ("C-c n `" . org-roam-buffer-toggle)
+         ;; ("C-c n f" . org-roam-node-find)
+         ;; ("C-c n g" . org-roam-graph)
+         ;; ("C-c n i" . org-roam-node-insert)
+         ;; ("C-c n c" . org-roam-capture)
+         ("C-c n r" . my/org-roam-node-from-cite))
+  :hook ((org-roam-find-file . my/org-roam-capf-setup))
+  :config
+  (setf (alist-get "^\\*org-roam\\*$" display-buffer-alist
+                   nil nil #'equal)
+        '((display-buffer-reuse-window
+           display-buffer-reuse-mode-window
+           display-buffer-below-selected)
+          (window-height . 0.4)
+          (body-function . select-window)))
+  (defun my/org-roam-node-latex-preview (&rest _)
+    (let ((major-mode 'org-mode))
+      (org-latex-preview 'buffer)))
 
-      (advice-add 'org-roam-node-insert-section :after
-                  #'my/org-roam-node-latex-preview)
+  (advice-add 'org-roam-node-insert-section :after
+              #'my/org-roam-node-latex-preview)
       
-      (defun org-roam-complete-link-at-point ()
-        "Complete \"roam:\" link at point to an existing Org-roam node."
-        (let (roam-p start end)
-          (when (org-in-regexp "\\[\\[\\(\\(?:roam:\\)?\\)\\([^[:space:]]*\\)" 1)
-            (setq roam-p (not (or (org-in-src-block-p)
-                                  (string-blank-p (match-string 1))))
-                  start (match-beginning 2)
-                  end (match-end 2))
-            (list start end
-                  (org-roam--get-titles)
-                  :exit-function
-                  (lambda (str &rest _)
-                    (delete-char (- 0 (length str)))
-                    (insert (concat (unless roam-p "roam:")
-                                    str))
-                    (if (looking-at-p "]]")
-                        (forward-char 2)
-                      (insert "]]")))))))
+  (defun org-roam-complete-link-at-point ()
+    "Complete \"roam:\" link at point to an existing Org-roam node."
+    (let (roam-p start end)
+      (when (org-in-regexp "\\[\\[\\(\\(?:roam:\\)?\\)\\([^[:space:]]*\\)" 1)
+        (setq roam-p (not (or (org-in-src-block-p)
+                              (string-blank-p (match-string 1))))
+              start (match-beginning 2)
+              end (match-end 2))
+        (list start end
+              (org-roam--get-titles)
+              :exit-function
+              (lambda (str &rest _)
+                (delete-char (- 0 (length str)))
+                (insert (concat (unless roam-p "roam:")
+                                str))
+                (if (looking-at-p "]]")
+                    (forward-char 2)
+                  (insert "]]")))))))
 
-      (defun my/org-roam-capf-setup ()
-        (add-hook 'completion-at-point-functions #'org-roam-complete-link-at-point
-                  nil t))
+  (defun my/org-roam-capf-setup ()
+    (add-hook 'completion-at-point-functions #'org-roam-complete-link-at-point
+              nil t))
 
-      (setq org-roam-directory (file-truename "~/Documents/roam/"))
-      (defun org-roam-node-insert-immediate (arg &rest args)
-        (interactive "P")
-        (let ((args (cons arg args))
-              (org-roam-capture-templates
-               (list (append (car org-roam-capture-templates)
-                             '(:immediate-finish t)))))
-          (apply #'org-roam-node-insert args)))
+  (setq org-roam-directory (file-truename "~/Documents/roam/"))
+  (defun org-roam-node-insert-immediate (arg &rest args)
+    (interactive "P")
+    (let ((args (cons arg args))
+          (org-roam-capture-templates
+           (list (append (car org-roam-capture-templates)
+                         '(:immediate-finish t)))))
+      (apply #'org-roam-node-insert args)))
       
-      ;; (("d" "default" plain "%?" :target
-      ;; (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n")
-      ;; :unnarrowed t))
-      (setq org-roam-capture-templates
-            '(("d" "default" plain "%?"
-               :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
-                                  "#+title: ${title}\n")
-               :immediate-finish t
-               :unnarrowed t)
-              ("r" "reference" plain "%?"
-               :if-new
-               (file+head "reference/${title}.org" "#+title: ${title}\n")
-               :immediate-finish t
-               :unnarrowed t)))
+  ;; (("d" "default" plain "%?" :target
+  ;; (file+head "%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n")
+  ;; :unnarrowed t))
+  (setq org-roam-capture-templates
+        '(("d" "default" plain "%?"
+           :if-new (file+head "%<%Y%m%d%H%M%S>-${slug}.org"
+                              "#+title: ${title}\n")
+           :immediate-finish t
+           :unnarrowed t)
+          ("r" "reference" plain "%?"
+           :if-new
+           (file+head "reference/${title}.org" "#+title: ${title}\n")
+           :immediate-finish t
+           :unnarrowed t)))
       
-      (cl-defmethod org-roam-node-type ((node org-roam-node))
-        "Return the TYPE of NODE."
-        (condition-case nil
-            (file-name-nondirectory
-             (directory-file-name
-              (file-name-directory
-               (file-relative-name (org-roam-node-file node) org-roam-directory))))
-          (error "roam")))
+  (cl-defmethod org-roam-node-type ((node org-roam-node))
+    "Return the TYPE of NODE."
+    (condition-case nil
+        (file-name-nondirectory
+         (directory-file-name
+          (file-name-directory
+           (file-relative-name (org-roam-node-file node) org-roam-directory))))
+      (error "roam")))
       
-      (setq org-roam-node-display-template
-            (concat "${type:10}" "${title:*} "
-                    (propertize "${tags:30}" 'face 'org-tag)))
+  (setq org-roam-node-display-template
+        (concat "${type:10}" "${title:*} "
+                (propertize "${tags:30}" 'face 'org-tag)))
       
-      (defun my/org-roam-node-from-cite (keys-entries)
-        "Create node from cite entry."
-        (interactive (list
-                      (let ((citar-bibliography (concat
-                                                 (file-name-as-directory org-roam-directory)
-                                                 "biblio.bib")))
-                        (citar-select-refs :multiple nil))))
-        (let ((title (apply #'citar-format--entry "${author} :: ${title}" keys-entries)))
-          (org-roam-capture- :templates
-                             '(("r" "reference" plain "%?" :if-new
-                                (file+head "reference/${citekey}.org"
-                                           ":PROPERTIES:
+  (defun my/org-roam-node-from-cite (keys-entries)
+    "Create node from cite entry."
+    (interactive (list
+                  (let ((citar-bibliography (concat
+                                             (file-name-as-directory org-roam-directory)
+                                             "biblio.bib")))
+                    (citar-select-refs :multiple nil))))
+    (let ((title (apply #'citar-format--entry "${author} :: ${title}" keys-entries)))
+      (org-roam-capture- :templates
+                         '(("r" "reference" plain "%?" :if-new
+                            (file+head "reference/${citekey}.org"
+                                       ":PROPERTIES:
 :ROAM_REFS: [cite:@${citekey}]
 :END:
 #+title: ${title}\n")
-                                :immediate-finish t
-                                :unnarrowed t))
-                             :info (list :citekey (car keys-entries))
-                             :node (org-roam-node-create :title title)
-                             :props '(:finalize find-file))))
+                            :immediate-finish t
+                            :unnarrowed t))
+                         :info (list :citekey (car keys-entries))
+                         :node (org-roam-node-create :title title)
+                         :props '(:finalize find-file))))
 
-      (org-roam-db-autosync-enable))
-;; If using org-roam-protocol
-;; (require 'org-roam-protocol)
+  (org-roam-db-autosync-enable))
 
 (use-package org-roam
   :after (org-roam embark)
@@ -170,7 +168,8 @@
   :bind-keymap (("C-c n" . org-node-global-prefix-map))
   :bind (:map org-mode-map
               (("C-c n w" . org-node-refile)
-               ("C-c n `" . org-roam-buffer-toggle)))
+               ("C-c n `" . org-roam-buffer-toggle)
+               ("C-c n i" . org-node-insert-link*)))
   :config
   (setq org-mem-do-sync-with-org-id t
         org-mem-watch-dirs '("~/Documents/roam/"))

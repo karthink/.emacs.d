@@ -345,7 +345,6 @@ ARGS is the raw argument list (STRING &optional TRANS-CASE)."
          ("C-H-x" . eval-defun)
          ("H-s" . isearch-forward)
          ("H-r" . isearch-backward)
-         ("H-q" . kill-buffer-and-window)
          ("C-M-4" . other-window-prefix)
          ("C-M-1" . same-window-prefix)
          ("C-M-5" . other-frame-prefix)
@@ -358,8 +357,7 @@ ARGS is the raw argument list (STRING &optional TRANS-CASE)."
          ("H-2" . my/split-window-below)
          ("H-3" . my/split-window-right)
          ("H-k" . my/kill-current-buffer)
-         ("H-q" . kill-buffer-and-window)
-         ;; (global-set-key (kbd "<f7>") '+make-frame-floating-with-current-buffer)
+         ("H-q" . my/kill-buffer-and-window)
          :map isearch-mode-map
          ("H-s" . isearch-repeat-forward)
          ("H-r" . isearch-repeat-backward)
@@ -400,6 +398,22 @@ ARGS is the raw argument list (STRING &optional TRANS-CASE)."
   (defun H-c ()
     (interactive)
     (hyperify-prefix-key [3])))
+
+(use-package emacs
+  :when IS-MAC
+  :bind-keymap (("s-t" . tab-prefix-map)
+                ("s-4" . ctl-x-4-map)
+                ("s-5" . ctl-x-5-map))
+  :bind (("C-M-4" . other-window-prefix)
+         ("C-M-1" . same-window-prefix)
+         ("C-M-5" . other-frame-prefix)
+         ("C-M-6" . other-tab-prefix)
+         ("s-0" . my/delete-window-or-delete-frame)
+         ("s-1" . delete-other-windows)
+         ("s-2" . my/split-window-below)
+         ("s-3" . my/split-window-right)
+         ("s-k" . my/kill-current-buffer)
+         ("s-q" . my/kill-buffer-and-window)))
 
 (global-set-key (kbd "M-r") ctl-x-r-map)
 (define-key ctl-x-r-map "a" 'append-to-register)

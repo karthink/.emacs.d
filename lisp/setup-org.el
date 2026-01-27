@@ -454,6 +454,10 @@ appropriate.  In tables, insert a new row or end the table."
        ;;                   (point))))))
        ;;  (org-latex-preview))
 
+       ((and-let* ((cat (get-char-property (point) 'category))
+                   ((eq cat 'bug-reference))))
+        (bug-reference-push-button (point)))
+
        ((org-at-heading-p)
         ;; Heading: Move to position after entry content.
         ;; NOTE: This is probably the most interesting feature of this function.

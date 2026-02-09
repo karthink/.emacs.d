@@ -7,7 +7,8 @@
 ;;   (elpaca org-roam-ui))
 
 (use-package org-roam
-  :ensure t
+  :disabled
+  ;; :ensure t
   :init (setq org-roam-v2-ack t)
   :bind (;; ("C-c n `" . org-roam-buffer-toggle)
          ;; ("C-c n f" . org-roam-node-find)
@@ -115,6 +116,7 @@
   (org-roam-db-autosync-enable))
 
 (use-package org-roam
+  :disabled
   :after (org-roam embark)
   :config
   (add-to-list 'embark-keymap-alist
@@ -128,6 +130,7 @@
   (set-keymap-parent embark-org-roam-node-map embark-general-map))
 
 (use-package org-roam-dailies
+  :disabled
   :commands org-roam-dailies-goto-today
   :bind-keymap ("C-c n j" . org-roam-dailies-map)
   :config
@@ -163,22 +166,60 @@
   :config
   (setq org-roam-ui-sync-theme t))
 
+(use-package org-mem
+  :defer
+  :config
+  (setq org-mem-do-sync-with-org-id t
+        org-mem-watch-dirs '("~/Documents/roam/"))
+  (org-mem-updater-mode))
+
 (use-package org-node
   :ensure t
   :bind-keymap (("C-c n" . org-node-global-prefix-map))
   :bind (:map org-mode-map
               (("C-c n w" . org-node-refile)
-               ("C-c n `" . org-roam-buffer-toggle)
+               ("C-c n b" . org-node-context-dwim)
+               ("C-c n q" . org-node-set-tags-here)
                ("C-c n i" . org-node-insert-link*)))
   :config
-  (setq org-mem-do-sync-with-org-id t
-        org-mem-watch-dirs '("~/Documents/roam/"))
-  (org-mem-updater-mode)
+  (org-node-complete-at-point-mode)
   (org-node-cache-mode)
-  (org-node-roam-accelerator-mode)
-  (setq org-node-creation-fn #'org-node-new-via-roam-capture)
+  ;; (setf org-node-creation-fn #'org-node-new-file)
+  ;; (setf (alist-get "l" org-capture-templates
+  ;;                  nil nil #'equal)
+  ;;       '("Quick stub ID node"
+  ;;         plain (function org-node-capture-target) nil
+  ;;         :immediate-finish t))
+
   (setq org-node-file-slug-fn #'org-node-slugify-like-roam-default)
   (setq org-node-file-timestamp-format "%Y%m%d%H%M%S-")
+  (setf (alist-get "^\\*Backlinks\\*$" display-buffer-alist
+                   nil nil #'equal)
+        '((display-buffer-reuse-window
+           display-buffer-reuse-mode-window
+           display-buffer-below-selected)
+          (window-height . 0.4)
+          (body-function . select-window)))
+
+  (define-advice org-node-context--insert-backlink-sections
+      (:override (links) no-sort)
+    "Insert a section displaying a preview of LINK."
+    (dolist (link links)
+      (when-let* ((id (org-mem-link-nearby-id link)))
+        (let* ((node (org-mem-entry-by-id id))
+               (breadcrumbs (if-let* ((olp (org-mem-olpath-with-file-title node)))
+                                (string-join olp " > ")
+                              "Top")))
+          (magit-insert-section (org-node-context link)
+            (magit-insert-heading
+              (format "%s (%s)"
+                      (propertize (org-mem-title node)
+                                  'face
+                                  'org-node-context-origin-title)
+                      (propertize breadcrumbs 'face 'org-node-parent)))
+            (insert (org-node-context--get-preview node link))
+            (insert "\n"))))))
+
   (defun my/org-agenda-files-update (&rest _)
     (setq org-agenda-files
           (cl-loop

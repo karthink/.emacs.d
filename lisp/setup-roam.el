@@ -201,25 +201,6 @@
           (window-height . 0.4)
           (body-function . select-window)))
 
-  (define-advice org-node-context--insert-backlink-sections
-      (:override (links) no-sort)
-    "Insert a section displaying a preview of LINK."
-    (dolist (link links)
-      (when-let* ((id (org-mem-link-nearby-id link)))
-        (let* ((node (org-mem-entry-by-id id))
-               (breadcrumbs (if-let* ((olp (org-mem-olpath-with-file-title node)))
-                                (string-join olp " > ")
-                              "Top")))
-          (magit-insert-section (org-node-context link)
-            (magit-insert-heading
-              (format "%s (%s)"
-                      (propertize (org-mem-title node)
-                                  'face
-                                  'org-node-context-origin-title)
-                      (propertize breadcrumbs 'face 'org-node-parent)))
-            (insert (org-node-context--get-preview node link))
-            (insert "\n"))))))
-
   (defun my/org-agenda-files-update (&rest _)
     (setq org-agenda-files
           (cl-loop

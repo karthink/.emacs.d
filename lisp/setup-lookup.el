@@ -30,19 +30,13 @@
   (defun my/describe-symbol-at-point (&optional arg)
     "Get help (documentation) for the symbol at point.
 
-With a prefix argument, switch to the *Help* window.  If that is
-already focused, switch to the most recently used window
-instead."
+ARG does nothing yet."
     (interactive "P")
-    (let ((symbol (symbol-at-point)))
-      (when symbol
+    (let ((thing (thing-at-point 'filename)))
+      (when-let* ((symbol (intern-soft thing)))
         (describe-symbol symbol)))
-    (when arg
-      (let ((help (get-buffer-window "*Help*")))
-        (when help
-          (if (not (eq (selected-window) help))
-              (select-window help)
-            (select-window (get-mru-window)))))))
+    (unless (get-buffer-window (help-buffer))
+      (display-local-help nil t)))
   (unbind-key "C-h C-h"))
 
 (use-package find-func

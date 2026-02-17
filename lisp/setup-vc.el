@@ -301,9 +301,9 @@ project, as defined by `vc-root-dir'."
 (use-package forge
   :ensure t
   :defer
-  :hook ((forge-post-mode . jinx-mode))
   :config
   (remove-hook 'forge-post-mode-hook 'turn-on-flyspell)
+  (add-hook 'forge-post-mode-hook #'jinx-mode)
   (auth-source-pass-enable)
   (setq forge-bug-reference-remote-files nil
         forge-database-file

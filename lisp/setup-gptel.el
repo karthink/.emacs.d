@@ -29,7 +29,8 @@
   (auth-source-pass-enable)
   (setq gptel-display-buffer-action '(pop-to-buffer-same-window)
         gptel-highlight-methods (if (controlling-tty-p) '(margin) '(fringe))
-        gptel-track-media t)
+        gptel-track-media t
+        gptel-expert-commands t)
 
   (defalias 'my/gptel-easy-page
     (let ((map (make-composed-keymap
@@ -234,7 +235,7 @@
     (gptel-make-openai "zai"
       :stream t
       :host "api.z.ai"
-      :endpoint "/api/paas/v4/chat/completions"
+      :endpoint "/api/coding/paas/v4/chat/completions"
       :key #'gptel-api-key-from-auth-source
       :models
       `(( glm-4.7            :input-cost 0.6 :output-cost 2.2

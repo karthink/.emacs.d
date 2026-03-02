@@ -271,6 +271,7 @@
 
 (load (expand-file-name "lisp/setup-gptel" user-emacs-directory))
 
+(load (expand-file-name "lisp/setup-proc" user-emacs-directory))
 (load (expand-file-name "lisp/setup-share" user-emacs-directory))
 (load (expand-file-name "lisp/setup-wallabag" user-emacs-directory))
 (load (expand-file-name "lisp/setup-erc" user-emacs-directory))

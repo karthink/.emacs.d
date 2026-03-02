@@ -171,7 +171,11 @@
   :config
   (setq org-mem-do-sync-with-org-id t
         org-mem-watch-dirs '("~/Documents/roam/"))
-  (org-mem-updater-mode))
+  (org-mem-updater-mode)
+  (define-advice org-mem--finalize-full-scan
+      (:around (orig-fn parse-results) shoosh)
+    (let ((inhibit-message t))
+      (funcall orig-fn parse-results))))
 
 (use-package org-node
   :ensure t

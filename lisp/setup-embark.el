@@ -57,6 +57,8 @@
          :map embark-region-map
          ("U"        . pastebin-buffer)
          ("M-U"      . 0x0-dwim)
+         :map embark-expression-map
+         ("d"        . down-list)
          :map embark-url-map
          ("z"        . qrencode-string)
          ("B"        . eww)
@@ -88,6 +90,7 @@
                     result)
               (when (= (mod col num-cols) 0) (push "\n" result) (setq col 0))))))))
 
+  (cl-pushnew 'down-list embark-repeat-actions)
   (setq embark-keymap-prompter-key "'")
   (setq embark-cycle-key "SPC")
   (setq embark-quit-after-action

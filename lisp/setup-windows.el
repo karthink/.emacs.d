@@ -747,8 +747,8 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
 
   (use-package embark
     :defer
-    :bind (:map embark-buffer-map
-                ("_" . embark-popper-toggle))
+    :bind ( :map embark-buffer-map
+            ("_" . embark-popper-toggle-type))
     :config
     (defun embark-popper-toggle (buf)
       "Toggle popup status."

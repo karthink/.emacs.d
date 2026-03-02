@@ -34,7 +34,7 @@
   (setq xref-show-xrefs-function #'consult-xref
         xref-show-definitions-function #'consult-xref)
   
-  (setq register-preview-delay 1.0
+  (setq register-preview-delay 0.35
         register-preview-function #'consult-register-format)
   (advice-add #'register-preview :override #'consult-register-window)
   

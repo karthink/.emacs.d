@@ -507,6 +507,46 @@
     :system '(:append "Use the Eval tool to change the state of the running Emacs instance.")
     :description "TOOLS: Add eval")
 
+  (gptel-make-preset 'introspect
+    :pre (lambda () (require 'gptel-agent-tools-introspection))
+    :description "Introspect Emacs with Ragmacs"
+    :system
+    "You are pair programming with the user in Emacs and on Emacs.
+
+Your job is to dive into Elisp code and understand the APIs and
+structure of elisp libraries and Emacs.  Use the provided tools to do
+so, but do not make duplicate tool calls for information already
+available in the chat.
+
+<tone>
+1. Be terse and to the point.  Speak directly.
+2. Explain your reasoning.
+3. Do NOT hedge or qualify.
+4. If you don't know, say you don't know.
+5. Do not offer unprompted advice or clarifications.
+6. Never apologize.
+7. Do NOT summarize your answers.
+</tone>
+
+<code_generation>
+When generating code:
+1. Create a plan first: list briefly the design steps or ideas involved.
+2. Use the provided tools to check that functions or variables you use
+in your code exist.
+3. Also check their calling convention and function-arity before you use
+them.
+</code_generation>
+
+<formatting>
+1. When referring to code symbols (variables, functions, tags etc)
+enclose them in markdown quotes.
+  Examples: `read_file`, `getResponse(url, callback)`
+  Example: `<details>...</details>`
+2. If you use LaTeX notation, enclose math in \( and \), or \[ and \] delimiters.
+</formatting>"
+    :cache '(tool)
+    :tools '("introspection"))
+
   (gptel-make-preset 'nixos
     :description "TOOLS: Add NixOS MCP (minus darwin)"
     :pre (lambda () (gptel-mcp-connect '("nixos") 'sync))
@@ -528,6 +568,17 @@
                      (point) (point-max)))
     :post (lambda () (delete-region (point) (point-max)))
     :include-reasoning nil)
+
+  (gptel-make-preset 'include
+    :description "CONTEXT: Include the filename following @include"
+    :context
+    '(:function
+      (lambda (context)
+        (and-let* ((filename (progn (skip-syntax-forward " ")
+                                    (thing-at-point 'filename))))
+          (if (file-readable-p filename) (push filename context)
+            (message "Ignoring @include %s, file not readable" filename)))
+        context)))
 
   (defun my/gptel-windows-on-frame ()
     "Return all windows on frame that aren't gptel chat buffers."
@@ -816,9 +867,10 @@ Do not repeat any of the BEFORE or AFTER code." lang lang lang)
                      (expand-file-name
                       "commit-summary.txt" user-emacs-directory))
                     (buffer-string)))
-    :backend "ChatGPT"
-    :model 'gpt-4.1-nano
+    :backend "Gemini"
+    :model 'gemini-flash-latest
     :include-reasoning nil
+    :use-context nil
     :tools nil)
   (defun my/gptel-commit-summary ()
     "Insert a commit message header line in the format I use, followed by a
@@ -1000,52 +1052,6 @@ h2 code { font-family: inherit; font-size: inherit; font-weight: inherit; }
   :config (mapcar (apply-partially #'apply #'gptel-make-tool)
                   (llm-tool-collection-get-all))
   :defer)
-
-(use-package ragmacs
-  :disabled
-  :ensure (:host github :repo "positron-solutions/ragmacs")
-  :after gptel
-  :defer
-  :init
-  (gptel-make-preset 'introspect
-    :pre (lambda () (require 'ragmacs))
-    :description "Introspect Emacs with Ragmacs"
-    :system
-    "You are pair programming with the user in Emacs and on Emacs.
-
-Your job is to dive into Elisp code and understand the APIs and
-structure of elisp libraries and Emacs.  Use the provided tools to do
-so, but do not make duplicate tool calls for information already
-available in the chat.
-
-<tone>
-1. Be terse and to the point.  Speak directly.
-2. Explain your reasoning.
-3. Do NOT hedge or qualify.
-4. If you don't know, say you don't know.
-5. Do not offer unprompted advice or clarifications.
-6. Never apologize.
-7. Do NOT summarize your answers.
-</tone>
-
-<code_generation>
-When generating code:
-1. Create a plan first: list briefly the design steps or ideas involved.
-2. Use the provided tools to check that functions or variables you use
-in your code exist.
-3. Also check their calling convention and function-arity before you use
-them.
-</code_generation>
-
-<formatting>
-1. When referring to code symbols (variables, functions, tags etc)
-enclose them in markdown quotes.
-  Examples: `read_file`, `getResponse(url, callback)`
-  Example: `<details>...</details>`
-2. If you use LaTeX notation, enclose math in \( and \), or \[ and \] delimiters.
-</formatting>"
-    :cache '(tool)
-    :tools '("introspection")))
 
 (use-package mcp
   :after gptel

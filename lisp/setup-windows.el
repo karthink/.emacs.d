@@ -462,6 +462,7 @@ User buffers are those not starting with *."
     (let ((map (make-sparse-keymap)))
       (define-key map (kbd "n") #'my/next-buffer)
       (define-key map (kbd "p") #'my/previous-buffer)
+      (define-key map (kbd "`") #'my/switch-to-other-buffer)
       (define-key map (kbd "b")
                   (defun my/switch-buffer ()
                     "Switch to consult-buffer"
@@ -750,9 +751,13 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
     :bind ( :map embark-buffer-map
             ("_" . embark-popper-toggle-type))
     :config
-    (defun embark-popper-toggle (buf)
+    (defun embark-popper-toggle-type (buf)
       "Toggle popup status."
-      (popper-toggle-type buf)))
+      (popper-toggle-type buf)
+      (run-at-time
+       0 nil
+       (lambda () (when-let* ((win (get-buffer-window buf)))
+               (select-window win))))))
 
   (use-package popper-echo
     :defer 3
@@ -870,16 +875,33 @@ display names.")
                   (activities-activity-name act))
                 (selected-frame)))))
 
-  (setq popper-display-function
-        (defun my/popper-select-below (buffer &optional _alist)
-          (funcall (if (> (frame-width) 170)
-                       ;; #'display-buffer-in-direction
-                       #'popper-select-popup-at-bottom
-                     #'display-buffer-at-bottom)
-                   buffer
-                   `((window-height . ,popper-window-height)
-                     (direction . below)
-                     (body-function . ,#'select-window))))))
+  (defun my/popper-select-below (buffer &optional _alist)
+    (funcall (if (> (frame-width) 170)
+                 ;; #'display-buffer-in-direction
+                 #'popper-select-popup-at-bottom
+               #'display-buffer-at-bottom)
+             buffer
+             `((window-height . ,popper-window-height)
+               (direction . below)
+               (body-function . ,#'select-window))))
+
+  (defun my/popper-display-at-bottom-double (buf &optional _alist)
+    "Display BUF in two side-by-side windows at the bottom of the frame.
+The windows are created as an atomic unit and use `follow-mode' to
+display continuous content across both."
+    (let* ((inhibit-redisplay t)
+           (win (display-buffer-at-bottom
+                 buf `((side . below)
+                       (body-function . ,#'select-window)
+                       (window-height . ,popper-window-height)))))
+      (display-buffer-in-atom-window
+       buf `((side . right) (window . ,win)))
+      (with-selected-window win
+        (unless (bound-and-true-p follow-mode)
+          (follow-mode 1)))
+      win))
+
+  (setq popper-display-function #'my/popper-display-at-bottom-double))
 
 (eval-after-load 'org
   (progn 

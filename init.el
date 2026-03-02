@@ -530,7 +530,11 @@
                                       (if debug-on-quit "" "un"))))
       ("g" "diff-hl" (lambda (&optional arg) (interactive "P")
                          (if (null arg) (diff-hl-mode 'toggle)
-                           (let ((ref (read-string "Reference revision for diff-hl: ")))
+                           (let ((ref
+                                  (vc-read-revision
+                                   (format-prompt "Reference revision for diff-hl" "master")
+                                   (list buffer-file-name))))
+                             (when (string-blank-p ref) (setq ref "master"))
                              (setq-local diff-hl-reference-revision ref)
                              (diff-hl-mode) (diff-hl-update)
                              (message "Showing changes against %s" ref))))

@@ -304,6 +304,10 @@ project, as defined by `vc-root-dir'."
   :config
   (remove-hook 'forge-post-mode-hook 'turn-on-flyspell)
   (add-hook 'forge-post-mode-hook #'jinx-mode)
+  ;; FIXME `forge-bug-reference-setup' should do this but doesn't
+  (add-hook 'forge-post-mode-hook
+            (lambda () (add-hook 'completion-at-point-functions
+                            #'forge-topic-completion-at-point nil t)))
   (auth-source-pass-enable)
   (setq forge-bug-reference-remote-files nil
         forge-database-file

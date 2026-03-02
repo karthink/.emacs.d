@@ -88,7 +88,7 @@
 ;;;; JINX
 ;;----------------------------------------------------------------
 (cond
- (IS-GUIX (elpaca jinx))
+ (IS-GUIX (require 'jinx-autoloads))
  (IS-MAC)
  (t
   (use-package jinx

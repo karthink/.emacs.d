@@ -279,6 +279,7 @@
 (load (expand-file-name "lisp/setup-eww" user-emacs-directory))
 
 (load (expand-file-name "lisp/setup-latex" user-emacs-directory))
+(load (expand-file-name "lisp/setup-writing" user-emacs-directory))
 (use-package writer :commands writer-settings)
 (load (expand-file-name "lisp/setup-cite" user-emacs-directory))
 

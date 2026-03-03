@@ -889,16 +889,27 @@ display names.")
     "Display BUF in two side-by-side windows at the bottom of the frame.
 The windows are created as an atomic unit and use `follow-mode' to
 display continuous content across both."
-    (let* ((inhibit-redisplay t)
-           (win (display-buffer-at-bottom
-                 buf `((side . below)
-                       (body-function . ,#'select-window)
-                       (window-height . ,popper-window-height)))))
-      (display-buffer-in-atom-window
-       buf `((side . right) (window . ,win)))
-      (with-selected-window win
-        (unless (bound-and-true-p follow-mode)
-          (follow-mode 1)))
+    (let* ((inhibit-redisplay t) (win))
+      (if (< (frame-width) 200)
+          (progn
+            (setq win
+                  (display-buffer-at-bottom
+                   buf `((side . below)
+                         (body-function . ,#'select-window)
+                         (window-height . 0.40))))
+            (with-selected-window win
+              (when (bound-and-true-p follow-mode)
+                (follow-mode -1))))
+        (setq win
+              (display-buffer-at-bottom
+               buf `((side . below)
+                     (body-function . ,#'select-window)
+                     (window-height . ,popper-window-height))))
+        (display-buffer-in-atom-window
+         buf `((side . right) (window . ,win)))
+        (with-selected-window win
+          (unless (bound-and-true-p follow-mode)
+            (follow-mode 1))))
       win))
 
   (setq popper-display-function #'my/popper-display-at-bottom-double))

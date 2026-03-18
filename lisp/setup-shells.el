@@ -244,10 +244,10 @@ Filenames are always matched by eshell."
   (add-hook 'eshell-parse-argument-hook #'my/eshell-syntax-buffer-redirect))
 
 ;; ** Eshell history management
-(defvar ISATUIN (executable-find "atuin")
+(defvar IS-ATUIN (executable-find "atuin")
   "Whether atuin is available for shell/eshell history.")
 (use-package eshell
-  :if (not ISATUIN)
+  :if (not IS-ATUIN)
   :hook ((eshell-mode . my/eshell-hist-use-global-history)
          (eshell-pre-command . eshell-save-some-history)
          (eshell-pre-command . my/eshell-history-remove-duplicates))
@@ -318,7 +318,7 @@ Surrounding spaces are ignored when comparing."
                 'my/eshell-previous-matching-input))))
 
 (use-package eshell-atuin
-  :when ISATUIN
+  :when IS-ATUIN
   :ensure (:host github :repo "SqrtMinusOne/eshell-atuin")
   :after eshell
   :hook (eshell-first-time-mode . my/bind-eshell-atuin)
@@ -657,6 +657,7 @@ output instead."
 
 ;; Disabled while I test eat
 (use-package coterm
+  :disabled
   :ensure t
   :defer)
 
@@ -719,7 +720,7 @@ output instead."
 ;; * VTERM
 
 ;; Vterm is a module, so the build declaration takes a little work.
-(unless (or IS-GUIX IS-WINDOWS)
+(when (and IS-LINUX (not IS-GUIX))
   (use-package vterm
     :ensure (:files
              ("*.so" "*.el")
@@ -734,7 +735,7 @@ output instead."
     :defer))
 
 (use-package vterm
-  :when (not IS-WINDOWS)
+  :when IS-LINUX
   :bind (:map vterm-mode-map
               ("C-c C-p" . my/vterm-previous-prompt)
               ("C-c C-n" . my/vterm-next-prompt)
@@ -758,7 +759,7 @@ output instead."
     (my/vterm-next-prompt (- (or arg 1)))))
 
 (use-package vterm
-  :when (not IS-WINDOWS)
+  :when IS-LINUX
   :after project
   :bind (:map project-prefix-map
          ("s" . vterm-project))

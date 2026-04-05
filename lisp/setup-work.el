@@ -94,6 +94,44 @@ ssh://lyapunov.c.googlers.com//usr/local/google/home/%s/Documents -auto"
                   (let ((recentf-list google-recentf-list))
                     (funcall orig-fn)))))
 
+(use-package compilation-history
+  :ensure (:host github :repo "djgoku/compilation-history")
+  :bind ( :map mode-specific-map
+          ("c" . compilation-history-view)
+          :map compilation-history-view-mode-map
+          ("RET"   . sidle-show)
+          ("M-RET" . compilation-history-view-open)
+          ("M-n"   . sidle-next)
+          ("M-p"   . sidle-prev)
+          ("SPC"   . sidle-scroll-up-command)
+          ("S-SPC" . sidle-scroll-down-command)
+          ("DEL"   . sidle-scroll-down-command)
+          ("M-s u" . sidle-browse-url)
+          ("q"     . sidle-quit)
+          ("i"     . sidle-imenu)
+          ("TAB"   . sidle-push-button))
+  :config
+  (require 'sidle)
+  (sidle-register-backend 'compilation-history
+    :list-mode 'compilation-history-view-mode
+    :entry-condition '(derived-mode . compilation-mode)
+    :quit-entry 'delete-window
+    :quit-list 'compilation-history-view-quit
+    :next 'next-line
+    :prev 'previous-line
+    :show (lambda () (interactive)
+            (if-let* ((win (compilation-history-view-open)))
+                (sidle-display-buffer (window-buffer win)))))
+  (setq compilation-history-view-split-direction 'vertical)
+  (setf (alist-get '(derived-mode . compilation-history-view-mode)
+                   display-buffer-alist nil t #'equal)
+        '(( display-buffer-at-bottom
+            display-buffer-in-direction
+            display-buffer-reuse-window
+            display-buffer-use-some-window)
+          (direction . below)
+          (window-height . 0.45)
+          (post-command-select-window . t))))
 
 ;;; Org mode setup
 (use-package org-node

@@ -36,7 +36,10 @@
               ("C-," . nil)
               ("C-; C-4" . 'flyspell-auto-correct-previous-word)
               ;; ("C-; n" . 'flyspell-goto-next-error)
-              ))
+              )
+  :init (add-hook 'flyspell-mode-hook
+                  (poi-register 'flyspell-goto-next-error
+                                'flyspell-auto-correct-word)))
 
 ;;----------------------------------------------------------------
 ;;;; SPELL-FU DONT
@@ -87,8 +90,8 @@
 ;;----------------------------------------------------------------
 ;;;; JINX
 ;;----------------------------------------------------------------
+(when IS-GUIX (require 'jinx-autoloads))
 (cond
- (IS-GUIX (require 'jinx-autoloads))
  (IS-MAC)
  (t
   (use-package jinx

@@ -101,6 +101,7 @@ Whichever was already active."
   :defer
   :config
   (setq shr-image-animate nil
+        shr-discard-aria-hidden t
         shr-use-colors nil
         shr-width 78)
   (defun my/shr-image-extra (_spec alt &rest _)

@@ -255,6 +255,7 @@
 
 (load (expand-file-name "lisp/setup-coding" user-emacs-directory))
 (load (expand-file-name "lisp/setup-vc" user-emacs-directory))
+(load (expand-file-name "lisp/setup-forge" user-emacs-directory))
 (load (expand-file-name "lisp/setup-diff" user-emacs-directory))
 (load (expand-file-name "lisp/setup-project" user-emacs-directory))
 (load (expand-file-name "lisp/setup-elisp" user-emacs-directory))
@@ -273,6 +274,7 @@
 
 (load (expand-file-name "lisp/setup-proc" user-emacs-directory))
 (load (expand-file-name "lisp/setup-share" user-emacs-directory))
+(load (expand-file-name "lisp/setup-reading" user-emacs-directory))
 (load (expand-file-name "lisp/setup-wallabag" user-emacs-directory))
 (load (expand-file-name "lisp/setup-erc" user-emacs-directory))
 (load (expand-file-name "lisp/setup-email" user-emacs-directory))

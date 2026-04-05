@@ -1,5 +1,36 @@
 ;; -*- lexical-binding: t; -*-
 
+;;; Cloudtop sync
+(use-package cloudtop
+  :no-require t
+  :bind ( :map mode-specific-map
+          ("S" . #'lyapunov-sync))
+  :config
+  (defun lyapunov-sync ()
+    (interactive)
+    (when IS-LINUX (user-error "Sync must be called from gMac"))
+    (call-interactively 'save-some-buffers)
+    (let* ((default-directory (getenv "HOME"))
+           (compilation-buffer-name-function (lambda (_) "*unison*"))
+           (display-buffer-base-action '((display-buffer-no-window)))
+           (cbuf
+            (compile
+             (format
+              "unison Documents \
+ssh://lyapunov.c.googlers.com//usr/local/google/home/%s/Documents -auto"
+              (getenv "USER"))
+             t)))
+      (pop-to-buffer
+       cbuf '( (display-buffer-in-side-window)
+               (side . bottom)
+               (window-height . 0.25)
+               (body-function . select-window)))
+      (with-current-buffer cbuf
+        (use-local-map
+         (make-composed-keymap (define-keymap "q" 'quit-window)
+                               (current-local-map)))))))
+
+;;; google utilities setup
 (use-package google
   :when IS-LINUX
   :config
@@ -7,6 +38,7 @@
   (prodfs-enable-automatic-start)
   (prodfs-enable-file-handler))
 
+;;; Org mode setup
 (use-package org-node
   :defer t
   :defines work/org-mode-setup

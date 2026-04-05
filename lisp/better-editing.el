@@ -317,7 +317,7 @@ ARGS is the raw argument list (STRING &optional TRANS-CASE)."
   :hook (compilation-filter . ansi-color-compilation-filter)
   :bind (("M-#" . compile)
          :map mode-specific-map
-         ("c" . compile))
+         ("x" . compile))
   :config
   (setq compilation-always-kill t
         compilation-ask-about-save nil

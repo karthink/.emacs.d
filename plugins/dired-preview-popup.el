@@ -62,7 +62,7 @@
         (setq xpos margin))             ;Else on left side
       (setq ypos margin))               ;Center vertically
     
-    `((display-buffer-use-some-frame display-buffer-in-child-frame)
+    `((display-buffer-in-child-frame display-buffer-use-some-frame)
       (body-function . ,(lambda (w)
                           (let* ((fr (window-frame w)))
                             (when-let* ((parent (frame-parent fr)))

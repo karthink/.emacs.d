@@ -849,7 +849,7 @@ display names.")
                     (setq b (get-buffer b))
                     (and (popper-popup-p b)
                          (or (not popper-group-function)
-                             (memq (get-buffer "*Messages*")
+                             (memq b
                                    (mapcar #'cdr
                                            (alist-get (funcall popper-group-function)
                                                       popper-buried-popup-alist
@@ -912,7 +912,7 @@ display continuous content across both."
             (follow-mode 1))))
       win))
 
-  (setq popper-display-function #'my/popper-display-at-bottom-double))
+  (setq popper-display-function #'my/popper-select-below))
 
 (eval-after-load 'org
   (progn 

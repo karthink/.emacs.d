@@ -32,6 +32,7 @@ Can be overridden per-backend using the `:display-action' property.")
 (defvar sidle-pixel-scroll nil
   "Whether sidle scrolling should use `pixel-scroll-precision-interpolate'.")
 
+;;;###autoload
 (defun sidle-register-backend (name &rest props)
   "Register a list-and-entry backend under NAME.
 
@@ -121,18 +122,19 @@ ACTION is an optional standard display action to merge/override."
       (dotimes (_ (or arg 1)) (call-interactively fn)))
     (sidle-show)))
 
-(defun sidle-quit ()
+(defun sidle-quit (&optional all)
   "Quit the current sidle context.
-If the entry window is visible, quits it.  Otherwise quits the list."
-  (interactive)
+
+If the entry window is visible, quits it.  Otherwise quits the list.  If
+prefix arg ALL is supplied, quits both."
+  (interactive "P")
   (let ((props (sidle--current-backend)))
-    (cond
-     ((sidle-with-entry-window
-        (when-let* ((quit-entry (plist-get props :quit-entry)))
-          (call-interactively quit-entry)
-          t)))
-     ((when-let* ((quit-list (plist-get props :quit-list)))
-        (call-interactively quit-list))))))
+    (unless (and (sidle-with-entry-window
+                   (when-let* ((quit-entry (plist-get props :quit-entry)))
+                     (call-interactively quit-entry)))
+                 (not all))
+      (when-let* ((quit-list (plist-get props :quit-list)))
+        (call-interactively quit-list)))))
 
 (defun sidle-scroll-up-command ()
   "Scroll the entry window up, or move to the next item at the end."
@@ -141,13 +143,10 @@ If the entry window is visible, quits it.  Otherwise quits the list."
     (unless
         (sidle-with-entry-window
           (if sidle-pixel-scroll
-              (progn
-                (pixel-scroll-precision-interpolate
-                 (- (* (default-line-height) next-screen-context-lines)
-                    (window-text-height nil t))
-                 nil 1)
-                (when (fboundp 'my/pulse-momentary-line)
-                  (my/pulse-momentary-line)))
+              (pixel-scroll-precision-interpolate
+               (- (* (default-line-height) next-screen-context-lines)
+                  (window-text-height nil t))
+               nil 1)
             (condition-case-unless-debug nil
                 (scroll-up-command)
               (error (run-at-time 0 nil #'sidle-next 1)))))
@@ -159,13 +158,10 @@ If the entry window is visible, quits it.  Otherwise quits the list."
   (let ((scroll-error-top-bottom nil))
     (sidle-with-entry-window
       (if sidle-pixel-scroll
-          (progn
-            (pixel-scroll-precision-interpolate
-             (- (window-text-height nil t)
-                (* (default-line-height) next-screen-context-lines))
-             nil 1)
-            (when (fboundp 'my/pulse-momentary-line)
-              (my/pulse-momentary-line)))
+          (pixel-scroll-precision-interpolate
+           (- (window-text-height nil t)
+              (* (default-line-height) next-screen-context-lines))
+           nil 1)
         (condition-case-unless-debug nil
             (scroll-down-command)
           (error (run-at-time 0 nil #'sidle-prev 1)))))))

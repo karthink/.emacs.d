@@ -968,6 +968,14 @@ has no effect."
   (add-hook 'org-agenda-after-show-hook
             (lambda () (recenter (floor (window-height) 6))))
 
+  (define-advice org-agenda-show-and-scroll-up
+      (:filter-args (args) negate)
+    (list (not (car args))))
+
+  (define-advice org-agenda-show
+      (:filter-args (args) negate)
+    (list (not (car args))))
+
   (advice-add 'org-agenda-do-tree-to-indirect-buffer :after
               (defun my/org-agenda-collapse-indirect-buffer-tree (arg)
                 (with-current-buffer org-last-indirect-buffer
@@ -1014,8 +1022,8 @@ has no effect."
          ((< days 1)   "today")
          ((< days 7)   (format "%dd" days))
          ((< days 30)  (format "%.1fw" (/ days 7.0)))
-         ((< days 358) (format "%.1fM" (/ days 30.0)))
-         (t            (format "%.1fY" (/ days 365.0))))
+         ((< days 358) (format "%.1fm" (/ days 30.0)))
+         (t            (format "%.1fy" (/ days 365.0))))
       ""))
 
   (defun my/org-compare-todo-age (a b)
@@ -1033,6 +1041,8 @@ has no effect."
            (a-prop (org-review-last-review-prop ma))
            (b-prop (org-review-last-review-prop mb)))
       (cond
+       ((member (org-get-category ma) '("Inbox")) 1)
+       ((member (org-get-category mb) '("Inbox")) 1)
        ((and a-prop b-prop)
         (if (time-less-p (org-review-toreview-p ma) (org-review-toreview-p mb))
             1 -1))
@@ -1114,7 +1124,7 @@ has no effect."
                       (org-agenda-prefix-format
                        "  %-10:c%-2(or (org-entry-get nil \"REVIEWS\") \" \")")
                       (org-overriding-columns-format
-                       "%9CATEGORY %52ITEM(Task) %LAST_REVIEW %NEXT_REVIEW")))))
+                       "%8TODO %9CATEGORY %52ITEM(Task) %LAST_REVIEW %NEXT_REVIEW")))))
 
           ("r" "Review" alltodo ""
            ((org-agenda-overriding-header "Tasks to review")
@@ -1128,7 +1138,7 @@ has no effect."
             (org-agenda-prefix-format
              "  %-10:c%-5(my/org-todo-age) %3(or (org-entry-get nil \"REVIEWS\") \" \") ")
             (org-overriding-columns-format
-             "%9CATEGORY %52ITEM(Task) %LAST_REVIEW %NEXT_REVIEW")))
+             "%8TODO %9CATEGORY %52ITEM(Task) %LAST_REVIEW %NEXT_REVIEW")))
 
           ("u" "Never reviewed" alltodo ""
            ((org-agenda-skip-function
@@ -1170,13 +1180,6 @@ has no effect."
             (org-agenda-skip-function '(org-agenda-skip-entry-if 'notscheduled))
             (org-agenda-sorting-strategy '(category-up))
             (org-agenda-prefix-format "%-11c%s ")))
-
-          ("u" "Unscheduled tasks" tags "TODO<>\"\"&TODO<>{DONE\\|CANCELED\\|NOTE\\|PROJECT\\|DEFERRED\\|MAYBE}"
-           ((org-agenda-overriding-header "Unscheduled tasks: ")
-            (org-agenda-skip-function
-             '(org-agenda-skip-entry-if 'scheduled 'deadline 'timestamp))
-            (org-agenda-sorting-strategy '(user-defined-up))
-            (org-agenda-prefix-format "%-11c%5(my/org-todo-age) ")))
 
           ("~" "Maybe tasks" tags "TODO=\"MAYBE\""
            ((org-agenda-overriding-header "Maybe tasks:")

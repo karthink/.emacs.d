@@ -36,7 +36,64 @@ ssh://lyapunov.c.googlers.com//usr/local/google/home/%s/Documents -auto"
   :config
   (require 'prodfs)
   (prodfs-enable-automatic-start)
-  (prodfs-enable-file-handler))
+  (prodfs-enable-file-handler)
+
+  (recentf-mode 0)
+  (google-recentf-mode 1)
+
+  (require 'compilation-colorization)
+  (remove-hook 'compilation-filter-hook 'ansi-color-compilation-filter)
+
+  (setq vc-fig-mode-line 'plain)
+  (setf (alist-get "^fig-process(.*?):" display-buffer-alist nil nil #'equal)
+        '((display-buffer-in-side-window display-buffer-in-direction)
+          (side . right)
+          (direction . right)
+          (slot . 20)
+          (window-width . 60)
+          (body-function . select-window)
+          (window-parameters . ((split-window . #'ignore)))))
+  (setf (alist-get '(major-mode . fig-status-mode) display-buffer-alist nil nil #'equal)
+        '((display-buffer-below-selected)
+          (window-height . 0.35)
+          (body-function . select-window))))
+
+(use-package cs
+  :defer
+  :config
+  (define-advice cs-inner (:override (arguments) force-name)
+    (setq cs-source-buffer (buffer-name))
+    (compilation-start
+     (format "%s %s" cs-program arguments)
+     #'cs-mode #'compilation--default-buffer-name)))
+
+(use-package google3-mode
+  :config (google3-mode 1)
+  :bind ( :map google3-mode-map
+          ([remap async-shell-command] . google3-async-shell-command)
+          ([remap compile] . google-compile)))
+
+(use-package google3-eglot
+  :config
+  (setq google3-eglot-compose 'completion-preview)
+  (google3-eglot-setup))
+
+;;; Integrations with google utilities
+(use-package consult
+  :when IS-LINUX
+  :after google
+  :config
+  (define-advice consult-recent-file (:around (orig-fn) google-recentf)
+    (unless google-recentf-mode (google-recentf-mode))
+    (let ((recentf-list google-recentf-list))
+      (funcall orig-fn)))
+
+  (plist-put consult-source-recent-file :enabled (lambda () google-recentf-mode))
+  (add-function :around (plist-get consult-source-recent-file :items)
+                (lambda (orig-fn)
+                  (let ((recentf-list google-recentf-list))
+                    (funcall orig-fn)))))
+
 
 ;;; Org mode setup
 (use-package org-node

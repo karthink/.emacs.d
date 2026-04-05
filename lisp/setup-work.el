@@ -9,12 +9,13 @@
 
 (use-package org-node
   :defer t
+  :defines work/org-mode-setup
   :config
   (require 'org-node)
-  (defvar waymo/abbreviations nil)
+  (defvar work/abbreviations nil)
 
   ;; TODO: thing-at-pt might be too slow, get the symbol directly with skip-chars?
-  (defun waymo/update-abbreviations ()
+  (defun work/update-abbreviations ()
     (if-let* ((entry (gethash "Waymo Terms and Concepts"
                               org-node--candidate<>entry))
               (id (org-mem-entry-id entry)))
@@ -42,28 +43,28 @@
                      (goto-char (match-beginning 4))
                      (when-let* ((word (thing-at-point 'symbol))
                                  (_ (string-match "[A-Z]+" word)))
-                       (setf (alist-get word waymo/abbreviations
+                       (setf (alist-get word work/abbreviations
                                         nil nil #'string-equal)
                              (progn (forward-symbol 1)
                                     (skip-syntax-forward ".-")
                                     (buffer-substring-no-properties
                                      (point) (line-end-position)))))))))))
           (let ((inhibit-message t))
-            (message "Updated waymo/abbreviations")))
+            (message "Updated work/abbreviations")))
       (user-error "Abbreviations Update: could not find entry \"Waymo Terms and Concepts\"!")))
 
-  (defun waymo/find-abbreviations (callback)
-    (when waymo/abbreviations
+  (defun work/find-abbreviations (callback)
+    (when work/abbreviations
       (when-let* ((word (thing-at-point 'symbol))
                   (_ (string-match-p "[A-Z]+" word))
-                  (abbr (assoc word waymo/abbreviations)))
+                  (abbr (assoc word work/abbreviations)))
         (funcall callback (concat (car abbr) ": " (cdr abbr))))))
 
-  (defun waymo/org-mode-setup ()
+  (defun work/org-mode-setup ()
     (add-hook 'eldoc-documentation-functions
-              'waymo/find-abbreviations nil t)
+              'work/find-abbreviations nil t)
     (bug-reference-mode 1)
-    (unless waymo/abbreviations (waymo/update-abbreviations))
+    (unless work/abbreviations (work/update-abbreviations))
     (eldoc-mode 1)))
 
 (use-package org
@@ -84,4 +85,4 @@
 
   (org-link-set-parameters "https" :preview #'my/org-https-preview-handler))
 
-(provide 'setup-waymo)
+(provide 'setup-work)

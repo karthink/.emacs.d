@@ -283,12 +283,20 @@ project, as defined by `vc-root-dir'."
           '((stashes . hide)
             ([file unstaged status] . hide)))))
 
+(use-package log-edit
+  :bind ( :map log-edit-mode-map
+          ("M-s" . nil)
+          ("M-r" . nil)
+          ("M-s s" . log-edit-comment-search-forward)
+          ("M-s r" . log-edit-comment-search-backward)))
+
 (use-package git-commit
   :after magit
   :hook (git-commit-setup . my/git-commit-fill)
   :config
   (setq git-commit-summary-max-length 54
-        git-commit-use-local-message-ring t)
+        git-commit-use-local-message-ring t
+        git-commit-major-mode 'log-edit-mode)
   (defun my/git-commit-fill () (setq fill-column 66)))
 
 ;; Misc git functions

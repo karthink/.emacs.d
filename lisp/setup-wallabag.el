@@ -1,23 +1,10 @@
 ;; -*- lexical-binding: t; -*-
 
 (use-package wombag
-  ;; :straight (:local-repo "~/.local/share/git/wombag/")
   :ensure (:host github :protocol ssh
-           :repo "karthink/wombag")
+                 :repo "karthink/wombag")
   :commands (wombag wombag-add-entry)
   :hook ((wombag-pre-html-render . my/wombag-display-settings))
-  ;; :bind (
-  ;;        ;; :map wombag-show-mode-map
-  ;; ;;        ("SPC" . scroll-up-command)
-  ;; ;;        ("DEL" . scroll-down-command)
-  ;; ;;        ("S-SPC" . scroll-down-command)
-  ;; ;;        ("<" . beginning-of-buffer)
-  ;; ;;        (">" . end-of-buffer)
-  ;;        ;; :map wombag-search-mode-map
-  ;; ;;        ("u" . wombag-unmark-at-point)
-  ;; ;;        ("G" . wombag-request-new-entries)
-  ;; ;;        ("+" . wombag-add-tags)
-  ;;        )
   :init
   (use-package elfeed
     :bind (:map elfeed-search-mode-map
@@ -34,33 +21,10 @@
       (dolist (entry (ensure-list entries))
         (wombag-add-entry (elfeed-entry-link entry) ""))))
   :config
-  (use-package setup-reading
-    :after wombag-search
-    :bind (:map wombag-search-mode-map
-           ("RET" . my/reader-show)
-           ("M-n" . my/reader-next)
-           ("M-p" . my/reader-prev)
-           ("q" . my/reader-quit-window)
-           ("<" . my/reader-top)
-           (">" . my/reader-bottom)
-           ("SPC" . my/reader-scroll-up-command)
-           ("S-SPC" . my/reader-scroll-down-command)
-           ("DEL" . my/reader-scroll-down-command)
-           ("M-s i" . my/reader-imenu)
-           ("i" . my/reader-imenu)
-           ("<tab>" . my/reader-push-button)
-           ("M-RET" . wombag-search-show-entry)
-           ("E" . my/switch-to-elfeed)
-           ("M-s u" . my/reader-browse-url))
-    ;; :config
-    ;; (add-hook 'wombag-post-html-render-hook #'my/reader-center-images 'append)
-    :init
-    (defsubst wombag-url (url)
-      (wombag-add-entry url "")))
   (use-package wombag-show
     :bind (:map wombag-show-mode-map
-           ("d" . my/scroll-up-half)
-           ("u" . my/scroll-down-half))
+                ("d" . my/scroll-up-half)
+                ("u" . my/scroll-down-half))
     :config
     (add-hook 'wombag-show-mode-hook
               (lambda () (let ((pulse-flag))
@@ -75,28 +39,13 @@
           (elfeed)
         (message "Elfeed not available."))))
   
-  (defun wombag-search-alt-view (&optional lines)
-    "Returns a function to scroll forward or back in the Elfeed
-  search results, displaying entries without switching to them"
-    (lambda (times)
-      (interactive "p")
-      (forward-line (* times (or lines 0)))
-      (recenter)
-      (let ((wombag-show-entry-switch #'my/reader-display-buffer))
-        (call-interactively #'wombag-view))
-      (when-let ((win (get-buffer-window "*wombag-search*")))
-        (select-window win)
-        (setq-local other-window-scroll-buffer
-                    (get-buffer "*wombag-entry*")))))
-  
-  
   (defun my/wombag-display-settings ()
     (when (require 'visual-fill-column nil t)
-                    (setq-local visual-fill-column-center-text t
-                                visual-fill-column-width (+ shr-width 6))
-                    (setq-local shr-max-image-proportion 0.9)
-                    (visual-line-mode 1)
-                    (visual-fill-column-mode 1))
+      (setq-local visual-fill-column-center-text t
+                  visual-fill-column-width (+ shr-width 6))
+      (setq-local shr-max-image-proportion 0.9)
+      (visual-line-mode 1)
+      (visual-fill-column-mode 1))
     ;; (shr-heading-setup-imenu)
     (setq-local line-spacing 0.08))
   (setq wombag-search-filter "#30 !&")
@@ -111,5 +60,39 @@
   ;; (run-with-timer 0 3540 'wallabag-request-token) 
   ;; (setq wombag-db-file (expand-file-name "test-wallabag.sqlite" "~/Desktop/"))
   (setq wombag-db-file (expand-file-name "wallabag.sqlite" user-cache-directory)))
+
+(use-package sidle
+  :after wombag-search
+  :bind ( :map wombag-search-mode-map
+          ("M-RET" . wombag-search-show-entry)
+          ("RET"   . sidle-show)
+          ("n"     . next-line)
+          ("p"     . previous-line)
+          ("q"     . sidle-quit)
+          ("M-n"   . sidle-next)
+          ("M-p"   . sidle-prev)
+          ("SPC"   . sidle-scroll-up-command)
+          ("S-SPC" . sidle-scroll-down-command)
+          ("DEL"   . sidle-scroll-down-command)
+          ("<"     . sidle-top)
+          (">"     . sidle-bottom)
+          ("M-s i" . sidle-imenu)
+          ("i"     . sidle-imenu)
+          ("M-s u" . sidle-browse-url)
+          ("TAB"   . sidle-push-button)
+          ("<tab>" . sidle-push-button))
+  :config
+  (setq wombag-show-entry-switch #'sidle-display-buffer)
+  (sidle-register-backend 'wombag
+    :list-mode 'wombag-search-mode
+    :entry-condition '(or "*wombag-entry*"
+                          "*elfeed-entry*"
+                          (derived-mode . elfeed-show-mode)
+                          (derived-mode . eww-mode))
+    :show #'wombag-search-show-entry
+    :next #'next-line
+    :prev #'previous-line
+    :quit-list #'wombag-search-quit-window
+    :quit-entry #'wombag-show-quit-window))
 
 (provide 'setup-wallabag)

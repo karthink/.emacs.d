@@ -36,60 +36,62 @@
                 elfeed-search-date-format '("%Y-%m-%d" 10 :left) ;;'("%b %d" 6 :left)
                 ;; elfeed-show-entry-switch #'elfeed-display-buffer
                 elfeed-search-title-min-width 45)
-  
-;;----------------------------------------------------------------------
-;;*** Helper functions
-;;----------------------------------------------------------------------
 
-  (eval-when-compile
-    (defmacro elfeed-with-open-entry (&rest body)
-      "Execute BODY with a visible elfeed entry buffer as current."
-      (declare (indent defun))
-      `(when-let ((win
-                   (or (get-buffer-window "*elfeed-entry*")
-                    (seq-some (lambda (w)
-                               (and (memq
-                                     (buffer-mode (window-buffer w))
-                                     '(elfeed-show-mode eww-mode))
-                                w))
-                     (window-list)))))
-        (with-selected-window win
-         ,@body))))
-  
-  (defun my/elfeed-search-browse-url (&optional arg)
-    (interactive "P")
-    (elfeed-with-open-entry
-     (my/search-occur-browse-url arg)))
+  ;; Elfeed navigation is managed by sidle
+  (use-package sidle
+    :demand
+    :bind (:map elfeed-search-mode-map
+                ("RET"   . sidle-show)
+                ("M-n"   . sidle-next)
+                ("M-p"   . sidle-prev)
+                ("q"     . sidle-quit)
+                ("SPC"   . sidle-scroll-up-command)
+                ("S-SPC" . sidle-scroll-down-command)
+                ("DEL"   . sidle-scroll-down-command)
+                ("M-s i" . sidle-imenu)
+                ("i"     . sidle-imenu)
+                ("TAB"   . sidle-push-button)
+                ("<tab>" . sidle-push-button)
+                ("M-s u" . sidle-browse-url)
+                ("<"     . sidle-top)
+                (">"     . sidle-bottom)
+                ([remap elfeed-search-quit-window] . sidle-quit)
+                ("M-RET"   . elfeed-search-show-entry)
+                ("w"       . elfeed-search-yank)
+                ("C-<tab>" . my/elfeed-quick-switch-filter)
+                ("B"       . elfeed-search-eww-open)
+                ("x"       . elfeed-search-browse-url)
+                :map elfeed-show-mode-map
+                ("SPC"   . elfeed-scroll-up-command)
+                ("S-SPC" . elfeed-scroll-down-command)
+                ("w"     . elfeed-show-yank)
+                ("B"     . elfeed-show-eww-open)
+                ("x"     . elfeed-search-browse-url)
+                ("D"     . elfeed-show-save-enclosure)
+                ("d"     . my/scroll-up-half)
+                ("u"     . my/scroll-down-half)
+                ([remap elfeed-kill-buffer] . my/elfeed-show-quit-window))
+    :config
+    (sidle-register-backend 'elfeed
+      :list-mode 'elfeed-search-mode
+      :entry-condition '(or "*elfeed-entry*"
+                            "*wombag-entry*"
+                            (derived-mode . elfeed-show-mode)
+                            (derived-mode . eww-mode))
+      :show (lambda () (interactive)
+              (let ((elfeed-search-remain-on-entry t))
+                (call-interactively #'elfeed-search-show-entry)))
+      :next #'next-line
+      :prev #'previous-line
+      :quit-list #'elfeed-search-quit-window
+      :quit-entry #'(lambda () (interactive) (quit-window t)))
+    :init (setq elfeed-show-entry-switch #'sidle-display-buffer))
 
-  (defun my/elfeed-search-push-button ()
-    (interactive)
-    (elfeed-with-open-entry
-     (my/avy-link-hint win)))
-  
+  ;;----------------------------------------------------------------------
+  ;;*** Helper functions
+  ;;----------------------------------------------------------------------
+
   (timeout-debounce! 'elfeed-search--live-update 0.24)
-  (defun elfeed-search-show-entry-pre (&optional lines) 
-  "Returns a function to scroll forward or back in the Elfeed
-  search results, displaying entries without switching to them."
-    (lambda (times) 
-      (interactive "p")
-      (forward-line (* times (or lines 0)))
-      (recenter)
-      (let ((elfeed-show-entry-switch #'my/reader-display-buffer))
-        (call-interactively #'elfeed-search-show-entry))
-      (when-let ((win (get-buffer-window "*elfeed-search*")))
-        (select-window win)
-        (setq-local other-window-scroll-buffer
-                    (get-buffer "*elfeed-entry*")))
-      (unless elfeed-search-remain-on-entry (forward-line -1))))
-
-  (keymap-set elfeed-search-mode-map
-              "M-RET" 'elfeed-search-show-entry)
-  (keymap-set elfeed-search-mode-map
-              "RET" (elfeed-search-show-entry-pre))
-  (keymap-set elfeed-search-mode-map
-              "M-n" (elfeed-search-show-entry-pre 1))
-  (keymap-set elfeed-search-mode-map
-              "M-p" (elfeed-search-show-entry-pre -1))
   
   ;; TODO: This code causes Elfeed to hang(?)
   ;; ;; Idempotent version so consolidated queues don't get reprocessed into the
@@ -121,11 +123,6 @@
   ;;       ;; (elfeed-log 'info "queue-out: %S" queue-out)
   ;;       (nreverse queue-out)))
 
-  (defun my/elfeed-search-imenu ()
-    (interactive)
-    (elfeed-with-open-entry
-      (consult-imenu)))
-  
   (defun elfeed-search-eww-open (&optional use-generic-p)
     "Visit the current entry in your browser using `eww'."
     (interactive "P")
@@ -140,7 +137,7 @@
       (cl-loop for entry in entries
                do (elfeed-untag entry 'unread)
                when (elfeed-entry-link entry)
-               do (elfeed-with-open-entry 
+               do (sidle-with-entry-window
                     (if use-generic-p
                         (browse-url-generic it)
                       (browse-url it)
@@ -150,14 +147,6 @@
         (mapc #'elfeed-search-update-entry entries)
         (unless (or elfeed-search-remain-on-entry (use-region-p))
           (forward-line)))))
-  
-  ;; (defun my/elfeed-search-quit-window ()
-  ;;   (interactive)
-  ;;   (or (elfeed-with-open-entry
-  ;;         (pcase (buffer-mode (current-buffer))
-  ;;           ('elfeed-show-mode (kill-buffer-and-window) t)
-  ;;           ('eww-mode (quit-window) t)))
-  ;;       (call-interactively #'elfeed-search-quit-window)))
   
   (defun my/elfeed-show-quit-window ()
     (interactive)
@@ -183,29 +172,6 @@
           (scroll-down-command arg)
         (error (elfeed-show-prev)))))
   
-  (defun my/elfeed-search-scroll-up-command (&optional arg)
-    (interactive "^P")
-   (if-let ((show-win (seq-some
-                       (lambda (w)
-                         (let* ((bm (buffer-mode (window-buffer w))))
-                           (and (memq bm '(elfeed-show-mode eww-mode)) w)))
-                       (window-list))))
-       (with-selected-window show-win
-         (elfeed-scroll-up-command arg))
-      (funcall (elfeed-search-show-entry-pre 1) 1)))
-
-  (defun my/elfeed-search-scroll-down-command (&optional arg)
-    (interactive "^P")
-   (if-let ((show-win (seq-some
-                       (lambda (w)
-                         (let* ((bm (buffer-mode (window-buffer w))))
-                           (and (memq bm '(elfeed-show-mode eww-mode)) w)))
-                       (window-list)))
-             (_ (window-live-p show-win)))
-       (with-selected-window show-win
-         (elfeed-scroll-down-command arg))
-      (funcall (elfeed-search-show-entry-pre -1) 1)))
-
   (defun elfeed-search-tag-as (mytag)
     "Returns a function that tags an elfeed entry or selection as
 MYTAG"
@@ -494,55 +460,14 @@ With prefix-arg REFRESH-TAGS, refresh the cached completion metadata."
 
   (defun my/elfeed-zoom-image ()
     (interactive)
-    (elfeed-with-open-entry
+    (sidle-with-entry-window
       (save-excursion
         (goto-char (window-start))
         (when (text-property-search-forward 'image-url)
           (forward-char -1)
           (shr-zoom-image)))))
   (define-key elfeed-search-mode-map (kbd "z") #'my/elfeed-zoom-image)
-  (define-key elfeed-show-mode-map (kbd "z") #'my/elfeed-zoom-image)
-  ;;----------------------------------------------------------------------
-  ;; Faces
-  ;;----------------------------------------------------------------------
-  ;; (defface elfeed-entry-read-later
-  ;;   '((t :foreground "#b48ead"))
-  ;;   "Marks a 'read-later' Elfeed entry.")
-  ;; (push '(later elfeed-entry-read-later)
-  ;;       elfeed-search-face-alist)
-  (use-package setup-reading
-    :demand
-    :bind (:map elfeed-search-mode-map
-           ("RET" . my/reader-show)
-           ("M-n" . my/reader-next)
-           ("M-p" . my/reader-prev)
-           ("q" . my/reader-quit-window)
-           ("SPC" . my/reader-scroll-up-command)
-           ("S-SPC" . my/reader-scroll-down-command)
-           ("DEL" . my/reader-scroll-down-command)
-           ("M-s i" . my/reader-imenu)
-           ("i" . my/reader-imenu)
-           ("<tab>" . my/reader-push-button)
-           ("M-s u" . my/reader-browse-url)
-           ("<" . my/reader-top)
-           (">" . my/reader-bottom)
-           :map elfeed-show-mode-map
-           ("SPC" . elfeed-scroll-up-command)
-           ("S-SPC" . elfeed-scroll-down-command)
-           ("w" . elfeed-show-yank)
-           ("B" . elfeed-show-eww-open)
-           ("x" . elfeed-search-browse-url)
-           ("D" . elfeed-show-save-enclosure)
-           ("d" . my/scroll-up-half)
-           ("u" . my/scroll-down-half)
-           ([remap elfeed-kill-buffer] . my/elfeed-show-quit-window)
-           :map elfeed-search-mode-map
-           ([remap elfeed-search-quit-window] . my/reader-quit-window)
-           ("M-RET" . elfeed-search-show-entry)
-           ("w" . elfeed-search-yank)
-           ("C-<tab>" . my/elfeed-quick-switch-filter)
-           ("B" . elfeed-search-eww-open)
-           ("x" . elfeed-search-browse-url))))
+  (define-key elfeed-show-mode-map (kbd "z") #'my/elfeed-zoom-image))
 
 ;; ** UTILITIES
 ;; 
@@ -762,11 +687,9 @@ preferring the preferred type."
               (message "Started download: %s" title)))
         (message "Not youtube url(s), cancelling download."))))
 
-  (use-package setup-reading
-    :config
-    (advice-add 'elfeed-show-entry :override
-                (defun my/elfeed-show-entry (entry)
-                  "Display ENTRY in the current buffer.
+  (advice-add 'elfeed-show-entry :override
+              (defun my/elfeed-show-entry (entry)
+                "Display ENTRY in the current buffer.
 
 This is an enhanced version of the default `elfeed-show-entry' that
 
@@ -776,30 +699,29 @@ This is an enhanced version of the default `elfeed-show-entry' that
 - adjusts the presentation through tweaking line spacing and face
   sizes, centers the text if possible, and
 - enables imenu support."
-                  (let ((buff (get-buffer-create (elfeed-show--buffer-name entry))))
-                    (prog1
-                        (funcall elfeed-show-entry-switch buff)
-                      (with-current-buffer buff
-                        (elfeed-show-mode)
-                        (setq elfeed-show-entry entry)
-                        (setq-local shr-max-image-proportion
-                                    (/ (+ shr-width 0.0) (window-width)))
-                        (elfeed-show-refresh)
-                        (dolist (f '(message-header-name
-                                     message-header-subject
-                                     elfeed-tube-chapter-face))
-                          (face-remap-add-relative f :height 1.1))
-                        (setq-local line-spacing 0.12)
-                        (when (require 'visual-fill-column nil t)
-                          (setq-local visual-fill-column-center-text t
-                                      visual-fill-column-width (+ shr-width 6))
-                          (visual-line-mode 1)
-                          (when (featurep 'iscroll) (iscroll-mode 1))
-                          (visual-fill-column-mode 1))
-                        ;; (my/reader-center-images) ;I've advised shr-put-image instead
-                        (setq-local
-                         imenu-prev-index-position-function #'elfeed-tube-prev-heading
-                         imenu-extract-index-name-function #'elfeed-tube--line-at-point)))))))
+                (let ((buff (get-buffer-create (elfeed-show--buffer-name entry))))
+                  (prog1 (funcall elfeed-show-entry-switch buff)
+                    (with-current-buffer buff
+                      (elfeed-show-mode)
+                      (setq elfeed-show-entry entry)
+                      (setq-local shr-max-image-proportion
+                                  (/ (+ shr-width 0.0) (window-width)))
+                      (elfeed-show-refresh)
+                      (dolist (f '(message-header-name
+                                   message-header-subject
+                                   elfeed-tube-chapter-face))
+                        (face-remap-add-relative f :height 1.1))
+                      (setq-local line-spacing 0.12)
+                      (when (require 'visual-fill-column nil t)
+                        (setq-local visual-fill-column-center-text t
+                                    visual-fill-column-width (+ shr-width 6))
+                        (visual-line-mode 1)
+                        (when (featurep 'iscroll) (iscroll-mode 1))
+                        (visual-fill-column-mode 1))
+                      ;; (my/reader-center-images) ;I've advised shr-put-image instead
+                      (setq-local
+                       imenu-prev-index-position-function #'elfeed-tube-prev-heading
+                       imenu-extract-index-name-function #'elfeed-tube--line-at-point))))))
   
   (advice-add 'elfeed-tube-next-heading :after
               (defun my/elfeed-jump-recenter (&rest _)

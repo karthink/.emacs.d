@@ -134,11 +134,56 @@ ssh://lyapunov.c.googlers.com//usr/local/google/home/%s/Documents -auto"
           (post-command-select-window . t))))
 
 ;;; Org mode setup
+(use-package org-capture
+  :defer t
+  :config
+  (setf (alist-get "w"  org-capture-templates nil t #'equal) '("work"))
+  (setf (alist-get "wt" org-capture-templates nil t #'equal)
+        '("Work Task" entry (file "waymo/waymo-inbox.org")
+          "* TODO %?\n:PROPERTIES: \n:CREATED:  %U \n:ID:  %(org-id-uuid)\
+ \n:END:\n%a\n%i\n"))
+  (setf (alist-get "wn" org-capture-templates nil t #'equal)
+        '("Work Note" entry (file "waymo/waymo-inbox.org")
+          "* %? %^G\n:PROPERTIES:\n:CREATED:  %U\n:END:\n%a\n%x\n")))
+
+(use-package org-agenda
+  :defer t
+  :config
+  (dolist (f (list "waymo/waymo-inbox.org" "waymo/waymo.org"))
+    (cl-pushnew (file-name-concat org-directory f)
+                org-agenda-files :test #'string=)))
+
 (use-package org-node
   :defer t
   :defines work/org-mode-setup
   :config
   (require 'org-node)
+
+  ;; Work-specific templates
+  (require 'org-capture)
+  (setf (alist-get "wf" org-capture-templates nil t #'equal)
+        '("Work File"
+          plain (function (lambda () (let ((org-node-file-directory-ask
+                                       (file-name-concat org-directory "waymo")))
+                                  (funcall #'org-node-capture-target))))
+          nil :immediate-finish t :jump-to-captured t))
+
+  ;; TODO: Better templates for meetings
+  (setf (alist-get "wm" org-capture-templates nil t #'equal)
+        '("Work Meeting (1-on-1)"
+          plain (function (lambda () (let ((org-node-file-directory-ask
+                                       (file-name-concat org-directory "waymo")))
+                                  (funcall #'org-node-capture-target))))
+          nil :immediate-finish t :jump-to-captured t))
+
+  (setf (alist-get "wM" org-capture-templates nil t #'equal)
+        '("Work Meeting (group)"
+          plain (function (lambda () (let ((org-node-file-directory-ask
+                                       (file-name-concat org-directory "waymo")))
+                                  (funcall #'org-node-capture-target))))
+          nil :immediate-finish t :jump-to-captured t))
+
+  ;; Abbreviation tooltips via Eldoc
   (defvar work/abbreviations nil)
 
   ;; TODO: thing-at-pt might be too slow, get the symbol directly with skip-chars?

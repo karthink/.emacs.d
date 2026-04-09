@@ -586,6 +586,7 @@ appropriate.  In tables, insert a new row or end the table."
 
   (setq org-todo-keyword-faces
         '(;; ("TODO"    :foreground "#6e90c8" :weight bold)
+          ("NOTE" :foreground "#757575" :weight semibold)
           ("WAIT" :foreground "red" :weight semibold)
           ("MAYBE"   :foreground "#6e8996" :weight bold)
           ("PROJECT" :foreground "#088e8e" :weight bold)
@@ -1229,6 +1230,8 @@ has no effect."
   :commands (org-capture make-orgcapture-frame)
   :hook (;; (org-capture-prepare-finalize . org-id-get-create)
          (org-capture-after-finalize   . org-capture-after-delete-frame))
+  :custom
+  (org-directory "~/Documents/roam/")
   :config
   (defun org-capture-after-delete-frame ()
     "If this is a dedicated org-capture frame, delete it after"
@@ -1256,20 +1259,22 @@ See `org-capture-templates' for more information."
 
   (pcase-dolist
       (`(,key . ,template)
-       '(("n" "Note" entry (file "~/Documents/roam/inbox.org")
+       '(("n" "Note" entry (file "inbox.org")
           "* %? %^G\n:PROPERTIES:\n:CREATED:  %U\n:END:\n%a\n%x\n")
-         ("p" "Webpage" entry (file "~/Documents/roam/inbox.org")
+         ("p" "Webpage" entry (file "inbox.org")
           "* TODO %a\n:PROPERTIES: \n:CREATED:  %U \n:ID: %(org-id-uuid) \n:END:\n%i\n%?\n")
-         ("pm" "Video" entry (file "~/Documents/roam/inbox.org")
+         ("pm" "Video" entry (file "inbox.org")
           "* %a :@watch:\n:PROPERTIES: \n:CREATED:  %U \n:ID: %(org-id-uuid) \n:END:\n%i\n%?\n"
           :immediate-finish t)
-         ("t" "Add task" entry (file "~/Documents/roam/inbox.org")
+         ("t" "Task" entry (file "inbox.org")
           "* TODO %?\n:PROPERTIES: \n:CREATED:  %U \n:ID:  %(org-id-uuid) \n:END:\n%a\n%i\n")
-         ("m" "Task from email" entry (file "~/Documents/roam/inbox.org")
+         ("m" "Task from email" entry (file "inbox.org")
           "* TODO %A\n:PROPERTIES:\n:CREATED:  %U\n:END:\n" :immediate-finish t)
-         ("c" "Add calendar entry" entry (file "~/Documents/roam/gmail-cal.org")
+         ("c" "Add calendar entry" entry (file "gmail-cal.org")
           "* %?\n%^{LOCATION}p\n:%(progn (require 'org-gcal) (symbol-value 'org-gcal-drawer-name)):
 %a\n:END:")
+         ("j" "Journal" plain (file+olp+datetree "journal.org") nil
+          :empty-lines-before 1 :unnarrowed t)
          ("h" "Hugo post")
          ("hb" "Hugo Blog section"
           entry

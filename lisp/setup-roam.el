@@ -189,12 +189,13 @@
   (org-node-complete-at-point-mode)
   (org-node-cache-mode)
   ;; (setf org-node-creation-fn #'org-node-new-file)
-  ;; (setf (alist-get "l" org-capture-templates
-  ;;                  nil nil #'equal)
-  ;;       '("Quick stub ID node"
-  ;;         plain (function org-node-capture-target) nil
-  ;;         :immediate-finish t))
+  (setf org-node-creation-fn #'org-capture)
+  (setf (alist-get "f" org-capture-templates nil t #'equal)
+        '("Org node file"
+          plain (function org-node-capture-target) nil
+          :immediate-finish t :jump-to-captured t))
 
+  (setq org-node-stay-in-source-buffer t)
   (setq org-node-file-slug-fn #'org-node-slugify-like-roam-default)
   (setq org-node-file-timestamp-format "%Y%m%d%H%M%S-")
   (setf (alist-get "^\\*Backlinks\\*$" display-buffer-alist
@@ -212,7 +213,7 @@
            unless (string-search "archive" file)
            when (seq-find (lambda (entry)
                             (or (org-mem-entry-active-timestamps entry)
-                                ;; (org-mem-entry-todo-state entry)
+                                (org-mem-entry-todo-state entry)
                                 (org-mem-entry-scheduled entry)
                                 (org-mem-entry-deadline entry)))
                           (org-mem-entries-in file))

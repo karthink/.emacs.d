@@ -172,7 +172,7 @@
     (remove-hook 'after-init-hook 'my/terminal-settings)
     (when (or (controlling-tty-p) force)
       (setq pulse-flag nil)
-      (keymap-global-unset "C-@")       ;conflicts with C-SPC
+      ;; (keymap-global-unset "C-@")       ;conflicts with C-SPC
       (keymap-global-unset "M-[")
       (setq recenter-redisplay nil)
       (with-eval-after-load 'smartparens

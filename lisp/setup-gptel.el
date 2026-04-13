@@ -88,7 +88,8 @@
       (rename-buffer (file-name-nondirectory buffer-file-name) t)))
 
   (defun my/gptel-remove-headings (beg end)
-    (when (derived-mode-p 'org-mode)
+    (when (and (derived-mode-p 'org-mode)
+               gptel-org-branching-context)
       (save-excursion
         (goto-char beg)
         (while (re-search-forward org-heading-regexp end t)
@@ -142,7 +143,8 @@
                     (mapcar (pcase-lambda (`(,proc-or-buf . ,_))
                               (buffer-name
                                (if (bufferp proc-or-buf)
-                                   proc-or-buf (process-buffer proc-or-buf))))))))
+                                   proc-or-buf (process-buffer proc-or-buf))))
+                            entries))))
           (pop-to-buffer buf)))))
 
   (add-to-list 'popper-reference-buffers "\\*gptel-log\\*")
@@ -221,6 +223,9 @@
 (use-package gptel
   :after gptel
   :config
+  (gptel-make-openai "ChatGPT"
+    :stream t
+    :key #'gptel-api-key-from-auth-source)
   (gptel-make-openai "Groq"
     :host "api.groq.com"
     :endpoint "/openai/v1/chat/completions"
@@ -290,16 +295,7 @@
                 codellama/CodeLlama-13b-Instruct-hf
                 codellama/CodeLlama-34b-Instruct-hf)))
 
-  (gptel-make-openai "Deepseek"
-    :host "api.deepseek.com"
-    :models '((deepseek-reasoner
-               :capabilities (tool reasoning)
-               :context-window 64 :input-cost 0.55 :output-cost 2.19)
-              (deepseek-chat
-               :capabilities (tool)
-               :context-window 64
-               :input-cost 0.27
-               :output-cost 1.1))
+  (gptel-make-deepseek "Deepseek"
     :key #'gptel-api-key-from-auth-source
     :stream t)
 
@@ -570,14 +566,18 @@ enclose them in markdown quotes.
     :include-reasoning nil)
 
   (gptel-make-preset 'include
-    :description "CONTEXT: Include the filename following @include"
+    :description "CONTEXT: Include the filename or buffer following @include"
     :context
     '(:function
       (lambda (context)
         (and-let* ((filename (progn (skip-syntax-forward " ")
-                                    (thing-at-point 'filename))))
-          (if (file-readable-p filename) (push filename context)
-            (message "Ignoring @include %s, file not readable" filename)))
+                                    (if (eq (char-after) ?\")
+                                        (read (current-buffer))
+                                      (thing-at-point 'filename)))))
+          (cond
+           ((file-readable-p filename) (push filename context))
+           ((buffer-live-p (get-buffer filename)) (push (get-buffer filename) context))
+           (t (message "Ignoring @include %s, file not readable" filename))))
         context)))
 
   (defun my/gptel-windows-on-frame ()
@@ -695,11 +695,25 @@ ex: What is in this buffer? @buffer *scratch*"
      'gptel--rewrite-dispatch-actions '(?i "inline-diff")
      'append))
 
-  (setf (alist-get 'infill gptel-directives) #'my/gptel-code-infill)
-  (defun my/gptel-code-infill ()
+  (defun my/gptel-code-infill (&optional margin)
     "Fill in code at point based on buffer context.  Note: Sends the whole buffer."
-    (let ((lang (gptel--strip-mode-suffix major-mode)))
-      `(,(format "You are a %s programmer and assistant in a code buffer in a text editor.
+    (lambda ()
+      (let* ((lang (gptel--strip-mode-suffix major-mode))
+             (start (if (use-region-p) (min (point) (region-beginning)) (point)))
+             (end (if (use-region-p) (max (point) (region-end)) (point)))
+             (before-start (if margin
+                               (save-excursion (goto-char start)
+                                               (forward-line (- margin))
+                                               (point))
+                             (point-min)))
+             (after-end (if margin
+                            (save-excursion (goto-char end)
+                                            (forward-line margin)
+                                            (point))
+                          (point-max))))
+        (nconc
+         (list
+          (format "You are a %s programmer and assistant in a code buffer in a text editor.
 
 Follow my instructions and generate %s code to be inserted at the cursor.
 For context, I will provide you with the code BEFORE and AFTER the cursor.
@@ -709,18 +723,16 @@ Generate %s code and only code without any explanations or markdown code fences.
 You may include code comments.
 
 Do not repeat any of the BEFORE or AFTER code." lang lang lang)
-        nil
-        "What is the code AFTER the cursor?"
-        ,(format "AFTER\n```\n%s\n```\n"
-                 (buffer-substring-no-properties
-                  (if (use-region-p) (max (point) (region-end)) (point))
-                  (point-max)))
-        "And what is the code BEFORE the cursor?"
-        ,(format "BEFORE\n```%s\n%s\n```\n" lang
-                 (buffer-substring-no-properties
-                  (point-min)
-                  (if (use-region-p) (min (point) (region-beginning)) (point))))
-        ,@(when (use-region-p) "What should I insert at the cursor?")))))
+          nil
+          "What is the code AFTER the cursor?"
+          (format "AFTER\n```\n%s\n```\n"
+                  (buffer-substring-no-properties end after-end))
+          "And what is the code BEFORE the cursor?"
+          (format "BEFORE\n```%s\n%s\n```\n" lang
+                  (buffer-substring-no-properties before-start start)))
+         (when (use-region-p) (list "What should I insert at the cursor?"))))))
+  (setf (alist-get 'infill-buffer gptel-directives) (my/gptel-code-infill))
+  (setf (alist-get 'infill-50 gptel-directives) (my/gptel-code-infill 50)))
 
 ;;----------------------------------------------------------------
 ;; ** gptel-ask: persistent side-buffer for one-off queries
@@ -742,7 +754,7 @@ Do not repeat any of the BEFORE or AFTER code." lang lang lang)
   (setf (alist-get "^\\*gptel-ask\\*" display-buffer-alist
                    nil nil #'equal)
         `((display-buffer-reuse-window display-buffer-in-side-window)
-          (side . right) (slot . 10) (window-width . 0.25)
+          (side . right) (slot . 10) (window-width . 0.33)
           (window-parameters (no-delete-other-windows . t))
           (body-function . ,(lambda (win) (with-selected-window win
                                        (my/gptel-easy-page))))
@@ -867,10 +879,9 @@ Do not repeat any of the BEFORE or AFTER code." lang lang lang)
                      (expand-file-name
                       "commit-summary.txt" user-emacs-directory))
                     (buffer-string)))
-    :backend "Gemini"
-    :model 'gemini-flash-latest
+    :backend "ChatGPT"
+    :model 'gpt-4.1-nano
     :include-reasoning nil
-    :use-context nil
     :tools nil)
   (defun my/gptel-commit-summary ()
     "Insert a commit message header line in the format I use, followed by a
@@ -912,28 +923,42 @@ Intended to be placed in `git-commit-setup-hook'."
   :after ox-html
   :config
   (defun my/org-html-filter-tool-block (tree backend info)
-    "Rewrite #+begin_tool blocks as <details><summary>...</summary><pre>...</pre></details>."
+    "Rewrite #+begin_tool and #+begin_reasoning blocks as HTML details."
     (org-element-map tree 'special-block
       (lambda (blk)
-        (when (string= (org-element-property :type blk) "tool")
-          (let* ((params (org-element-property :parameters blk))
-                 (summary-blk
-                  (org-element-create
-                   'special-block
-                   '(:type "summary"
-                           :begin nil :end nil :contents-begin nil :contents-end nil
-                           :parameters nil :parent blk)
-                   params))
-                 (body (org-element-interpret-data (org-element-contents blk)))
-                 (code-blk
-                  (org-element-create
-                   'export-block
-                   `(:type "HTML" :parent ,blk
-                           :value ,(format "<pre>%s</pre>"
-                                           (org-html-encode-plain-text (string-trim body))))
-                   nil)))
-            (org-element-put-property blk :type "details")
-            (org-element-set-contents blk (list summary-blk code-blk)))))
+        (let ((type (org-element-property :type blk)))
+          (cond
+           ;; Handle tool blocks
+           ((string= type "tool")
+            (let* ((params (org-element-property :parameters blk))
+                   (summary-blk
+                    (org-element-create
+                     'special-block
+                     '(:type "summary"
+                             :begin nil :end nil :contents-begin nil :contents-end nil
+                             :parameters nil :parent blk)
+                     params))
+                   (body (org-element-interpret-data (org-element-contents blk)))
+                   (code-blk
+                    (org-element-create
+                     'export-block
+                     `(:type "HTML" :parent ,blk
+                             :value ,(format "<pre>%s</pre>"
+                                             (org-html-encode-plain-text (string-trim body))))
+                     nil)))
+              (org-element-put-property blk :type "details")
+              (org-element-set-contents blk (list summary-blk code-blk))))
+           ;; Handle reasoning blocks
+           ((string= type "reasoning")
+            (let* ((body (org-element-interpret-data (org-element-contents blk)))
+                   (div-blk
+                    (org-element-create
+                     'export-block
+                     `(:type "HTML" :parent ,blk
+                             :value ,(format "<div class=\"reasoning\"><pre>%s</pre></div>"
+                                             (org-html-encode-plain-text (string-trim body))))
+                     nil)))
+              (org-element-set-contents blk div-blk))))))
       info)
     tree)
 
@@ -1030,6 +1055,14 @@ span.at-prefix {
 h2 code { font-family: inherit; font-size: inherit; font-weight: inherit; }
 .note { font-size: 0.9em; border-radius: 4px;
         padding: 0.1em 0.75em; background: #f09fa9a1; }
+.reasoning {
+  border: 1px solid #e0d4f7; border-radius: 4px;
+  padding: 0.75em 1em; margin: 1em 0;
+  background: #f8f6ff; }
+.reasoning pre {
+  background: transparent; border: none; padding: 0; margin: 0;
+  font-family: monospace; font-size: 0.95em; line-height: 1.5;
+  color: #555; white-space: pre-wrap; word-wrap: break-word; }
 .gptel-response {
   background: linear-gradient(to right, #f0f7ff 0%, #ffffff 1em);
   border-left: 4px solid #77aa99;
@@ -1084,7 +1117,30 @@ h2 code { font-family: inherit; font-size: inherit; font-weight: inherit; }
   :after gptel
   :ensure ( :host github :repo "karthink/gptel-agent" :protocol ssh
             :files (:defaults "agents"))
-  :defer)
+  :defer t
+  :config
+  (setq gptel-agent-preset
+        '(:backend "Gemini" :model gemini-flash-lite-latest))
+
+  (defvar my/gptel-agent-edit-confirm-cache nil)
+
+  (defun my/gptel-agent-edit-or-insert-confirm (path &rest _args)
+    "Don't ask for confirmation if path is git-controlled.
+Edit freely."
+    (not
+     (with-memoization (alist-get path my/gptel-agent-edit-confirm-cache
+                                  nil nil #'equal)
+       (and (file-readable-p path)
+            ;; TODO Also check if path is part of current project
+            (locate-dominating-file path ".git")
+            (eql (call-process "git" nil nil nil
+                               "ls-files" "--error-unmatch" path)
+                 0)))))
+
+  (setf (gptel-tool-confirm (gptel-get-tool "Edit"))
+        #'my/gptel-agent-edit-or-insert-confirm
+        (gptel-tool-confirm (gptel-get-tool "Insert"))
+        #'my/gptel-agent-edit-or-insert-confirm))
 
 (provide 'setup-gptel)
 

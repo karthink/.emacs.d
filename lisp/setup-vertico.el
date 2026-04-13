@@ -70,6 +70,7 @@
            (t flat)))
    (setq vertico-multiform-commands
          '((my/consult-mark)
+           (gptel-preset)
            (jinx-correct reverse)
            (tab-bookmark-open reverse)
            (dired-goto-file unobtrusive)

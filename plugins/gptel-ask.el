@@ -81,7 +81,8 @@
         :position (with-current-buffer gptel-ask--buffer-name (point-max))
         :stream gptel-stream
         :transforms gptel-prompt-transform-functions
-        :fsm (gptel-make-fsm :handlers gptel-send--handlers)
+        :fsm (gptel-make-fsm :table gptel-send--transitions
+                             :handlers gptel-send--handlers)
         :system (default-value 'gptel--system-message)))))
 
 ;;;###autoload

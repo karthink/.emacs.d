@@ -1042,8 +1042,8 @@ has no effect."
            (a-prop (org-review-last-review-prop ma))
            (b-prop (org-review-last-review-prop mb)))
       (cond
-       ((member (org-get-category ma) '("Inbox")) 1)
-       ((member (org-get-category mb) '("Inbox")) 1)
+       ((string= (org-get-category ma) "Inbox") 1)
+       ((string= (org-get-category mb) "Inbox") -1)
        ((and a-prop b-prop)
         (if (time-less-p (org-review-toreview-p ma) (org-review-toreview-p mb))
             1 -1))

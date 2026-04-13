@@ -58,6 +58,41 @@
           (scroll-other-window-down num)
         (error (dired-previous-line 1))))))
 
+(use-package sidle
+  :after dired
+  :bind ( :map dired-mode-map
+          ("M-RET" . sidle-show)
+          ("SPC" . sidle-scroll-up-command)
+          ("S-SPC" . sidle-scroll-down-command)
+          ("DEL" . sidle-scroll-down-command)
+          ("q" . sidle-quit)
+          ("M-n" . sidle-next)
+          ("M-p" . sidle-prev)
+          ("M-<" . sidle-top)
+          ("M->" . sidle-bottom))
+  :config
+  (defvar-local dired--sidle nil)
+  (sidle-register-backend 'dired
+    :list-mode 'dired-mode
+    :entry-condition
+    (lambda (buf)
+      (and-let* ((win (get-buffer-window buf))
+                 ((window-live-p win)))
+        (buffer-local-value 'dired--sidle buf)))
+    :show (lambda () (interactive)
+            (let ((buf (dired--find-file #'find-file-noselect
+                                         (dired-get-file-for-visit))))
+              (sidle-display-buffer buf))
+            (setq-local dired--sidle t))
+    :display-action '((display-buffer-in-previous-window
+                       display-buffer-reuse-mode-window
+                       display-buffer-use-some-window)
+                      (some-window . mru))
+    :next #'dired-next-line
+    :prev #'dired-previous-line
+    :quit-list #'quit-window
+    :quit-entry #'quit-window))
+
 (use-package dired
   :if (>= emacs-major-version 28)
   :defer

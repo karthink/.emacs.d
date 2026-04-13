@@ -5,6 +5,7 @@
                  :repo "karthink/wombag")
   :commands (wombag wombag-add-entry)
   :hook ((wombag-pre-html-render . my/wombag-display-settings))
+  :bind (:map wombag-search-mode-map ("E" . my/switch-to-elfeed))
   :init
   (use-package elfeed
     :bind (:map elfeed-search-mode-map

@@ -79,6 +79,47 @@ When no VC root is available, use standard `switch-to-buffer'."
          :map ibuffer-mode-map
          ("M-o" . nil)))
 
+(use-package sidle
+  :after ibuffer
+  :bind ( :map ibuffer-mode-map
+          ("RET" . sidle-show)
+          ("SPC" . sidle-scroll-up-command)
+          ("S-SPC" . sidle-scroll-down-command)
+          ("DEL" . sidle-scroll-down-command)
+          ("q" . sidle-quit)
+          ("M-n" . sidle-next)
+          ("M-p" . sidle-prev)
+          ("<" . sidle-top)
+          (">" . sidle-bottom))
+  :config
+  (defvar-local ibuffer--sidle nil)
+
+  (sidle-register-backend 'ibuffer
+    :list-mode 'ibuffer-mode
+    :entry-condition
+    (lambda (buf)
+      (and-let* ((win (get-buffer-window buf))
+                 ((window-live-p win)))
+        (buffer-local-value 'ibuffer--sidle buf)))
+    :show (lambda () (interactive)
+            (let ((buf (ibuffer-current-buffer t)))
+              (sidle-display-buffer buf))
+            (setq-local ibuffer--sidle t))
+    :display-action '((display-buffer-in-previous-window
+                       display-buffer-reuse-mode-window
+                       display-buffer-use-some-window)
+                      (some-window . mru))
+    :next #'ibuffer-forward-line
+    :prev #'ibuffer-backward-line
+    :quit-list
+    (lambda () (interactive)
+      (cl-loop
+       for (buf . _) in (ibuffer-current-state-list)
+       do (with-current-buffer buf
+            (kill-local-variable 'ibuffer--sidle)))
+      (quit-window))
+    :quit-entry #'quit-window))
+
 (use-package ibuffer-project
   :ensure t
   :after (ibuffer project)

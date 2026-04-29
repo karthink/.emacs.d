@@ -108,6 +108,7 @@ When no VC root is available, use standard `switch-to-buffer'."
     :display-action '((display-buffer-in-previous-window
                        display-buffer-reuse-mode-window
                        display-buffer-use-some-window)
+                      (inhibit-same-window . t)
                       (some-window . mru))
     :next #'ibuffer-forward-line
     :prev #'ibuffer-backward-line

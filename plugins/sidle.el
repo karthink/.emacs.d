@@ -24,6 +24,7 @@ Elements are of the form (NAME . PROPS).")
 (defvar sidle-display-buffer-action
   (lambda (_) `((display-buffer-reuse-window display-buffer-in-direction)
            (direction . ,(if (> (window-width) 130) 'right 'above))
+           (inhibit-same-window . t)
            (window-height . 0.72)
            (window-width . 0.64)))
   "Default display action for entry buffers.

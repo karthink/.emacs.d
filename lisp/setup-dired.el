@@ -87,6 +87,7 @@
     :display-action '((display-buffer-in-previous-window
                        display-buffer-reuse-mode-window
                        display-buffer-use-some-window)
+                      (inhibit-same-window . t)
                       (some-window . mru))
     :next #'dired-next-line
     :prev #'dired-previous-line

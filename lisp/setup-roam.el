@@ -178,6 +178,7 @@
       (funcall orig-fn parse-results))))
 
 (use-package org-node
+  :after org
   :ensure t
   :bind-keymap (("C-c n" . org-node-global-prefix-map))
   :bind (:map org-mode-map
@@ -213,7 +214,8 @@
            unless (string-search "archive" file)
            when (seq-find (lambda (entry)
                             (or (org-mem-entry-active-timestamps entry)
-                                (org-mem-entry-todo-state entry)
+                                (and-let* ((state (org-mem-entry-todo-state entry)))
+                                  (not (member state '("DONE" "NOTE" "LINK"))))
                                 (org-mem-entry-scheduled entry)
                                 (org-mem-entry-deadline entry)))
                           (org-mem-entries-in file))

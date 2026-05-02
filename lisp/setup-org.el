@@ -101,7 +101,7 @@
   (defun my/org-beginning-of-defun (&optional arg)
     ";TODO: "
     (interactive "p")
-    (if (not (texmathp))
+    (if (not (and (fboundp 'texmathp) (texmathp)))
         (org-backward-element)
       (let ((lx (save-mark-and-excursion
                   (LaTeX-backward-environment arg)
@@ -114,7 +114,7 @@
   (defun my/org-end-of-defun (&optional arg)
     ";TODO: "
     (interactive "p")
-    (if (not (texmathp))
+    (if (not (and (fboundp 'texmathp) (texmathp)))
         (if (not (org-at-heading-p))
             (org-forward-element)
           (org-forward-element)
@@ -542,7 +542,7 @@ appropriate.  In tables, insert a new row or end the table."
    org-hidden-keywords nil
    org-hide-emphasis-markers nil
    org-hide-leading-stars t
-   org-startup-folded t
+   org-startup-folded 'nofold
    org-startup-indented nil
    org-startup-with-inline-images nil
    org-startup-with-latex-preview nil
@@ -587,6 +587,7 @@ appropriate.  In tables, insert a new row or end the table."
   (setq org-todo-keyword-faces
         '(;; ("TODO"    :foreground "#6e90c8" :weight bold)
           ("NOTE" :foreground "#757575" :weight semibold)
+          ("FAIL" :inherit error)
           ("WAIT" :foreground "red" :weight semibold)
           ("MAYBE"   :foreground "#6e8996" :weight bold)
           ("PROJECT" :foreground "#088e8e" :weight bold)
@@ -1045,8 +1046,14 @@ has no effect."
        ((string= (org-get-category ma) "Inbox") 1)
        ((string= (org-get-category mb) "Inbox") -1)
        ((and a-prop b-prop)
-        (if (time-less-p (org-review-toreview-p ma) (org-review-toreview-p mb))
-            1 -1))
+        (let ((a-times (my/org-review-count ma))
+              (b-times (my/org-review-count mb)))
+          (cond
+           ((and a-times b-times) (if (>= a-times b-times) 1 -1))
+           (a-times 1)
+           (b-times -1)
+           (t (if (time-less-p (org-review-toreview-p ma) (org-review-toreview-p mb))
+                  1 -1)))))
        ((and (null a-prop) (null b-prop)) (my/org-compare-todo-age a b))
        (t (if a-prop -1 1)))))
 
@@ -1989,11 +1996,15 @@ the full date reader."
                           (1+ (string-to-number reviews))))
         (org-entry-put where "REVIEWS" "0"))))
 
+  (defun my/org-review-count (&optional epom)
+    (and-let* ((r (org-entry-get (or epom (point)) "REVIEWS")))
+      (string-to-number r)))
+
   (defun my/org-reviewed-today ()
     (interactive)
     (when (or (ignore-errors
                 (and-let* ((state (org-get-todo-state)))
-                     (not (member state '("NOTE" "LINK")))))
+                  (not (member state '("NOTE" "LINK")))))
               (save-excursion
                 (goto-char (point-min))
                 (looking-at "^\\(DRAFT\\|TODO\\|TASK\\|HABIT\\) ")))

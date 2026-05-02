@@ -69,7 +69,8 @@
           ("M-n" . sidle-next)
           ("M-p" . sidle-prev)
           ("M-<" . sidle-top)
-          ("M->" . sidle-bottom))
+          ("M->" . sidle-bottom)
+          ("M-s i" . sidle-imenu))
   :config
   (defvar-local dired--sidle nil)
   (sidle-register-backend 'dired
@@ -84,8 +85,8 @@
                                          (dired-get-file-for-visit))))
               (sidle-display-buffer buf))
             (setq-local dired--sidle t))
-    :display-action '((display-buffer-in-previous-window
-                       display-buffer-reuse-mode-window
+    :display-action '((display-buffer-reuse-mode-window
+                       display-buffer-in-previous-window
                        display-buffer-use-some-window)
                       (inhibit-same-window . t)
                       (some-window . mru))

@@ -320,6 +320,7 @@ If buffer-or-name is nil return current buffer's mode."
          ([remap split-window-below] . my/split-window-below)
          ([remap split-window-right] . my/split-window-right)
          ([remap delete-window] . my/delete-window-or-delete-frame)
+         ([remap delete-other-windows] . my/delete-other-windows)
          :map window-prefix-map
          ("1" . my/window-toggle-dedicated))
   :config
@@ -330,6 +331,20 @@ If buffer-or-name is nil return current buffer's mode."
           (or (get-mru-window nil t 'not-this-one-dummy)
               (next-window)
               (next-window nil nil 'visible))))
+
+  (defun my/delete-other-windows ()
+    "Toggle between multiple windows and single window.
+This is the equivalent of maximising a window."
+    (interactive)
+    (if (one-window-p)
+        (cond
+         ((bound-and-true-p tab-bar-mode) (tab-bar-history-back))
+         ((bound-and-true-p winner-mode)  (winner-undo)))
+      (when (window-parameter nil 'window-slot)
+        (let ((buf (current-buffer)))
+          (other-window 1)
+          (switch-to-buffer buf)))
+      (delete-other-windows)))
 
   (defun my/split-window-right (&optional size)
     "Split the selected window into two windows, one above the other.
@@ -435,7 +450,9 @@ window manager to present the frame in a floating state."
           (my/next-buffer)
           (setq prefix-arg current-prefix-arg))
       (dotimes (or (abs (prefix-numeric-value arg)) 1)
-        (my/switch-buffer-1 #'next-buffer))))
+        (if tab-line-mode
+            (tab-line-switch-to-next-tab)
+          (my/switch-buffer-1 #'next-buffer)))))
 
   (defun my/previous-buffer (&optional arg)
     "Switch to the previous non-popup buffer."
@@ -446,7 +463,9 @@ window manager to present the frame in a floating state."
           (my/previous-buffer)
           (setq prefix-arg current-prefix-arg))
       (dotimes (or (abs (prefix-numeric-value arg)) 1)
-        (my/switch-buffer-1 #'previous-buffer))))
+        (if tab-line-mode
+            (tab-line-switch-to-prev-tab)
+          (my/switch-buffer-1 #'previous-buffer)))))
 
   (defun my/switch-buffer-1 (switch)
     "Switch to the next user buffer in cyclic order.
@@ -642,6 +661,7 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
          ("h" . windmove-left)
          ("j" . windmove-down))
   :init
+  (setq windmove-wrap-around t)
   (dolist (cmd '( windmove-left windmove-right
                   windmove-up windmove-down))
     (put cmd 'repeat-map 'other-window-repeat-map)))
@@ -847,7 +867,9 @@ display names.")
       (let ((pred (lambda (b)
                     (if (consp b) (setq b (car b)))
                     (setq b (get-buffer b))
-                    (and (popper-popup-p b)
+                    (and (or (memq (buffer-local-value 'popper-popup-status b)
+                                   '(popup user-popup))
+                             (popper-popup-p b))
                          (or (not popper-group-function)
                              (memq b
                                    (mapcar #'cdr

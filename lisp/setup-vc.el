@@ -274,14 +274,7 @@ project, as defined by `vc-root-dir'."
   ;;   (define-key keymap (kbd "C-TAB") nil)
   ;;   (define-key keymap (kbd "C-<tab>") nil))
   (setq magit-diff-refine-hunk t)
-  (setq magit-tramp-pipe-stty-settings 'pty)
-  (use-package magit-section
-    :bind (:map magit-section-mode-map
-           ("," . magit-section-up))
-    :config
-    (setq magit-section-initial-visibility-alist
-          '((stashes . hide)
-            ([file unstaged status] . hide)))))
+  (setq magit-tramp-pipe-stty-settings 'pty))
 
 (use-package log-edit
   :bind ( :map log-edit-mode-map

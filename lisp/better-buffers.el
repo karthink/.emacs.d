@@ -96,12 +96,4 @@ the buffer works like a pager."
          next-screen-context-lines)
       2))))
 
-;;;----------------------------------------------------------------
-;; * VIEW-MODE
-;;----------------------------------------------------------------
-(use-package emacs
-  :config
-  (setq view-read-only t))
-
 (provide 'better-buffers)
-

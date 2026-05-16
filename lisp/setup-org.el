@@ -393,6 +393,43 @@
                  (end-of-line)       (insert "}\n")))
       _)))
 
+(use-package org
+  :after org
+  :bind ( :map org-mode-map
+          ("C-c C-y" . my/org-transform-yank))
+  :config
+  (defun my/org-transform-yank (from)
+    "Yank after converting to Org mode, adjusted to the current heading level."
+    (interactive (list
+                  (completing-read
+                   "Yank after converting from: "
+                   '(markdown html latex prog)
+                   nil nil nil nil "markdown")))
+    (kill-new
+     (if (equal from "prog")
+         (concat
+          (and (> (point) (save-excursion
+                            (forward-line 0)
+                            (skip-chars-forward "\r\n\t ")
+                            (point)))
+               "\n")
+          "#+begin_src\n" (org-escape-code-in-string
+                           (current-kill 0))
+          "\n#+end_src")
+       (unless (executable-find "pandoc")
+         (user-error "This command requires pandoc!"))
+       (with-temp-buffer
+         (insert (current-kill 0))
+         (call-process-region
+          nil nil "pandoc" 'delete (list (current-buffer) nil)
+          nil "-f" from "-t" "org" "--metadata=CUSTOM_ID:")
+         (repunctuate-sentences 'auto (point-min) (point-max))
+         (buffer-string)))
+     'replace)
+    (if (org-kill-is-subtree-p)
+        (org-paste-subtree)
+      (yank))))
+
 (use-package org-id
   :after org
   :config
@@ -1280,8 +1317,6 @@ See `org-capture-templates' for more information."
          ("c" "Add calendar entry" entry (file "gmail-cal.org")
           "* %?\n%^{LOCATION}p\n:%(progn (require 'org-gcal) (symbol-value 'org-gcal-drawer-name)):
 %a\n:END:")
-         ("j" "Journal" plain (file+olp+datetree "journal.org") nil
-          :empty-lines-before 1 :unnarrowed t)
          ("h" "Hugo post")
          ("hb" "Hugo Blog section"
           entry
@@ -1714,6 +1749,7 @@ the :consume parameter extracted from KEYWORD."
 ;;;----------------------------------------------------------------
 ;; Disabled since org-gcal is broken for me right now.
 (use-package org-gcal
+  :disabled
   :ensure t
   :after org
   :commands (org-gcal-sync org-gcal-fetch my/org-gcal-sync-maybe)
@@ -1855,6 +1891,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
 ;; ** ORG-XOURNALPP
 ;;;----------------------------------------------------------------
 (use-package org-xopp
+  :disabled
   :ensure (:host github :repo "mahmoodsh36/org-xopp")
   :after org
   :config

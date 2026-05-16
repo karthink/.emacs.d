@@ -53,10 +53,14 @@
                 (memq this-command my-corfu-minibuffer-exclude-commands)
                 (memq (current-local-map)
                       my-corfu-minibuffer-exclude-modes))
-      ;; (setq-local corfu-auto nil) ;; Enable/disable auto completion
-      (setq-local corfu-echo-delay nil ;; Disable automatic echo and popup
-                  corfu-popupinfo-delay nil)
-      (corfu-mode 1)))
+      (if (and (not (display-graphic-p))
+               (fboundp 'consult-completion-in-region))
+          (setq-local completion-in-region-function
+                      #'consult-completion-in-region)
+        ;; (setq-local corfu-auto nil) ;; Enable/disable auto completion
+        (setq-local corfu-echo-delay nil ;; Disable automatic echo and popup
+                    corfu-popupinfo-delay nil)
+        (corfu-mode 1))))
 
   (use-package consult
     :bind ( :map corfu-map

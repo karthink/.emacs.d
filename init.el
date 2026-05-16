@@ -556,6 +556,14 @@
       ("p" "smartparens" smartparens-mode
        :if (lambda () (fboundp 'smartparens-mode)))]]))
 
+(use-package magit-section
+    :bind (:map magit-section-mode-map
+           ("," . magit-section-up))
+    :config
+    (setq magit-section-initial-visibility-alist
+          '((stashes . hide)
+            ([file unstaged status] . hide))))
+
 ;;;################################################################
 ;; ** TRAMP
 ;;;################################################################

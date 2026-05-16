@@ -319,6 +319,23 @@ ARGS is the raw argument list (STRING &optional TRANS-CASE)."
          :map mode-specific-map
          ("x" . compile))
   :config
+  (defun my/read-command-from-buffer ()
+    (interactive)
+    (let* ((result
+            (read-string-from-buffer nil (minibuffer-contents))))
+      (when (minibufferp)
+        (delete-minibuffer-contents)
+        (insert result))))
+  (define-advice read-shell-command (:around (fn &rest args) edit-in-buffer)
+    (let ((minibuffer-local-shell-command-map
+           (make-composed-keymap
+            (define-keymap "C-c C-e" 'my/read-command-from-buffer)
+            minibuffer-local-shell-command-map)))
+      (minibuffer-with-setup-hook
+          (lambda () (goto-char (minibuffer-prompt-end))
+            (push-mark) (goto-char (point-max))
+            (activate-mark))
+        (apply fn args))))
   (setq compilation-always-kill t
         compilation-ask-about-save nil
         compilation-scroll-output 'first-error))

@@ -450,7 +450,7 @@ window manager to present the frame in a floating state."
           (my/next-buffer)
           (setq prefix-arg current-prefix-arg))
       (dotimes (or (abs (prefix-numeric-value arg)) 1)
-        (if tab-line-mode
+        (if (bound-and-true-p tab-line-mode)
             (tab-line-switch-to-next-tab)
           (my/switch-buffer-1 #'next-buffer)))))
 
@@ -463,7 +463,7 @@ window manager to present the frame in a floating state."
           (my/previous-buffer)
           (setq prefix-arg current-prefix-arg))
       (dotimes (or (abs (prefix-numeric-value arg)) 1)
-        (if tab-line-mode
+        (if (bound-and-true-p tab-line-mode)
             (tab-line-switch-to-prev-tab)
           (my/switch-buffer-1 #'previous-buffer)))))
 

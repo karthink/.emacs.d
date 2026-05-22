@@ -562,9 +562,7 @@ ARGS is the raw argument list (STRING &optional TRANS-CASE)."
 (define-key global-map [remap exchange-point-and-mark]
             'my/exchange-point-and-mark)
 (define-key global-map (kbd "C-@")
-            (lambda () (interactive)
-              (if (display-graphic-p)
-                  (activate-mark) (call-interactively #'set-mark-command))))
+            (lambda () (interactive) (activate-mark)))
 
 ;;----------------------------------------------------------------------
 

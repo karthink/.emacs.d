@@ -311,9 +311,11 @@
     ("M-n" . company-select-next-or-abort)
     ("M-." . company-show-location)))
 
-(use-package markdown-mode :ensure t :defer)
-(use-package ffmpeg-crop :load-path "plugins/ffmpeg-crop/"
-  :commands (ffmpeg-crop ffmpeg-crop-dired))
+(use-package markdown-mode :ensure t :defer
+  :config
+  (add-hook 'markdown-mode-hook
+            (lambda () (modify-syntax-entry ?_ "_"))))
+
 
 ;;;################################################################
 ;; * TODO Extra modes to move
@@ -500,7 +502,7 @@
                      (not sentence-end-double-space))))
       ("i" "ispell" jinx-mode :if (lambda () (fboundp 'jinx-mode)))
       ;; ("V" "view mode" view-mode)
-      ("<tab>" "outline" outline-minor-mode
+      ("TAB" "outline" outline-minor-mode
        :if (lambda () (not (derived-mode-p 'outline-mode))))]
 
      ["Highlight"

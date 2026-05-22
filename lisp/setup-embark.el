@@ -465,5 +465,24 @@ highlighting."
           (wombag-add-entry url "")
         (message "Could not initialize Wallabag"))))
 
+;; Embark integration for Org mode
+(use-package embark-org
+  :after (org embark)
+  :config
+  (define-advice embark-org-copy-as-markdown (:override (start end) gfm)
+    (require 'ox)
+    (let ((sym))
+      (cond
+       ((require 'ox-gfm nil t) (setq sym 'gfm))
+       ((require 'ox-md)  (setq sym 'md)))
+      (kill-new
+       (let ((org-export-with-toc)
+             (org-md-toplevel-hlevel 4)
+             (org-export-with-sub-superscripts nil))
+         (string-trim
+          (org-export-string-as (buffer-substring-no-properties start end)
+                                sym t)))))
+    (deactivate-mark)))
+
 (provide 'setup-embark)
 ;; setup-embark.el ends here

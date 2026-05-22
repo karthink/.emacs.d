@@ -624,7 +624,7 @@ appropriate.  In tables, insert a new row or end the table."
   (setq org-todo-keyword-faces
         '(;; ("TODO"    :foreground "#6e90c8" :weight bold)
           ("NOTE" :foreground "#757575" :weight semibold)
-          ("FAIL" :inherit error)
+          ("FAIL" :inherit shadow)
           ("WAIT" :foreground "red" :weight semibold)
           ("MAYBE"   :foreground "#6e8996" :weight bold)
           ("PROJECT" :foreground "#088e8e" :weight bold)
@@ -1583,6 +1583,8 @@ parent."
   (setq org-download-image-attr-list
         '("#+attr_html: :width 40% :align center"
           "#+attr_latex: :width \\textwidth")))
+
+(use-package ox-gfm :ensure t :after ox :defer t)
 
 ;;;----------------------------------------------------------------
 ;; ** ORG-BABEL

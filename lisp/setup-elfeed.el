@@ -344,112 +344,6 @@ ENQUEUE-P) add to mpv's playlist."
   (define-key elfeed-search-mode-map (kbd "f") (my/elfeed-search-by-day 'prev))
   (define-key elfeed-search-mode-map (kbd "`") 'my/elfeed-random-date)
   
-  (defvar my/elfeed-db-all-tags nil)
-  
-  (defvar elfeed-search-filter-map
-    (let ((map (copy-keymap minibuffer-local-map)))
-      (define-key map (kbd "TAB") 'minibuffer-complete)
-      map))
-  
-  (defun elfeed-search-live-filter (&optional refresh-tags)
-    "Filter the elfeed-search buffer as the filter is written.
-
-With prefix-arg REFRESH-TAGS, refresh the cached completion metadata."
-    (interactive "P")
-    (unwind-protect
-        (let* ((elfeed-search-filter-active :live)
-               (completions (mapcan (lambda (tag) (list (concat "+" (symbol-name tag))
-                                                   (concat "-" (symbol-name tag))))
-                                    (if (or refresh-tags (not my/elfeed-db-all-tags))
-                                        (elfeed-db-get-all-tags)
-                                      my/elfeed-db-all-tags)))
-               (completion-styles '(basic partial-completion))
-               (minibuffer-completion-table
-                (completion-table-dynamic
-                 (lambda (string)
-                   (cond
-	            ((string-match "\\(^\\|.* (?\\)\\([^ ]*\\)$" string)
-                     (mapcar (lambda (compl)
-			       (concat (match-string-no-properties 1 string) compl))
-		             (all-completions (match-string-no-properties 2 string)
-					      completions)))
-	            (t (list string)))))))
-          (setq elfeed-search-filter
-                (read-from-minibuffer "Filter: " elfeed-search-filter elfeed-search-filter-map)))
-      (elfeed-search-update :force)))
-  (with-eval-after-load 'corfu
-    (add-to-list 'my-corfu-minibuffer-exclude-modes
-                 elfeed-search-filter-map))
-
-  ;; Add tag-completion to the tag/untag commands in elfeed-search
-  (defun elfeed-search-tag-all (tag)
-    "Apply TAG to all selected entries."
-    (interactive (let* ((completions (if (not my/elfeed-db-all-tags)
-                                         (elfeed-db-get-all-tags)
-                                       my/elfeed-db-all-tags))
-                        (minibuffer-completion-table completions))
-                   (list (intern (read-from-minibuffer
-                                  "Tag: " nil elfeed-search-filter-map)))))
-    (let ((entries (elfeed-search-selected)))
-      (elfeed-tag entries tag)
-      (mapc #'elfeed-search-update-entry entries)
-      (unless (or elfeed-search-remain-on-entry (use-region-p))
-        (forward-line))))
-  
-  (defun elfeed-search-untag-all (tag)
-    "Remove TAG from all selected entries."
-    (interactive (let* ((completions
-                         (cl-reduce 
-                          (lambda (t1 e2) (cl-union t1 (elfeed-entry-tags e2)))
-                          (elfeed-search-selected) :initial-value nil))
-                        (minibuffer-completion-table completions))
-                   (list (intern (read-from-minibuffer
-                                  "Tag: " nil elfeed-search-filter-map)))))
-    (let ((entries (elfeed-search-selected)))
-      (elfeed-untag entries tag)
-      (mapc #'elfeed-search-update-entry entries)
-      (unless (or elfeed-search-remain-on-entry (use-region-p))
-        (forward-line))))
-  
-  (advice-add
-   'elfeed-search-parse-filter :filter-return
-   (defun my/elfeed-search-parse-filter-whitespace (parsed)
-     (prog1 parsed
-       (dolist (field '(:feeds :not-feeds))
-         (cl-callf (lambda (feed-list)
-                     (mapcar (lambda (feed) (replace-regexp-in-string "-" " " feed))
-                             feed-list))
-             (plist-get parsed field))))))
-  
-  (defun my/elfeed-search-make-feed-filter (filter-char)
-    "Narrow elfeed search to the current feed or its inverse."
-    (lambda (&optional reset)
-      (interactive "P")
-      (if reset
-          (let ((filter (split-string elfeed-search-filter)))
-            (setq elfeed-search-filter
-                  (string-join (cl-delete-if
-                                (lambda (s) (eq (aref s 0) filter-char))
-                                filter)
-                               " ")))
-        (when-let ((fc (concat " " (make-string 1 filter-char)))
-                   (feed-titles
-                    (cl-delete-duplicates
-                     (mapcar
-                      (lambda (e)
-                        (elfeed-feed-title
-                         (elfeed-entry-feed e)))
-                      (elfeed-search-selected)))))
-          (setq elfeed-search-filter
-                (concat elfeed-search-filter fc
-                        (mapconcat (lambda (title)
-                                     (replace-regexp-in-string " " "-" title))
-                                   feed-titles fc)))))
-      (elfeed-search-update :force)))
-  
-  (define-key elfeed-search-mode-map (kbd "~") (my/elfeed-search-make-feed-filter ?~))
-  (define-key elfeed-search-mode-map (kbd "=") (my/elfeed-search-make-feed-filter ?=))
-    
   (defun my/elfeed-quick-switch-filter ()
     (interactive)
     (bookmark-jump
@@ -650,7 +544,7 @@ preferring the preferred type."
         elfeed-tube-captions-languages
         '("en" "english" "en-IN" "english (auto generated)")
         elfeed-tube-thumbnail-size 'medium)
-  (setq elfeed-log-level 'debug)
+  (setq elfeed-log-level 'info)
   (elfeed-tube-setup)
   (defun my/elfeed-tube-download (entries)
     (interactive
@@ -727,6 +621,48 @@ This is an enhanced version of the default `elfeed-show-entry' that
               (defun my/elfeed-jump-recenter (&rest _)
                 (recenter)))
   
+  (defun my/elfeed-entry-fetch (entries &optional force)
+    "Fetch and display web content for ENTRIES.
+
+Can be YouTube URLs or text entries"
+    (interactive (list (ensure-list (elfeed-tube--get-entries))
+                       current-prefix-arg))
+    (cl-loop
+     for entry in entries
+     if (elfeed-tube--youtube-p entry)
+     collect entry into youtube-entries
+     else collect entry into web-entries end
+     finally do
+     (when youtube-entries (elfeed-tube-fetch youtube-entries force))
+     (when web-entries
+       (cl-flet ((insert-link-content (-entry -content)
+                   "Insert -CONTENT into -ENTRY buffer if it is open."
+                   (when-let* ((buf (car-safe
+                                     (match-buffers
+                                      (and '(derived-mode . elfeed-show-mode)
+                                           (lambda (buf) (eq (buffer-local-value 'elfeed-show-entry buf)
+                                                        -entry)))))))
+                     (with-current-buffer buf
+                       (let ((inhibit-read-only t))
+                         (save-excursion
+                           (when-let* ((pos (text-property-any (point-min) (point-max)
+                                                               'elfeed-link-content t)))
+                             (delete-region pos (point-max)))
+                           (goto-char (point-max))
+                           (insert (propertize "\n" 'elfeed-link-content t))
+                           (elfeed-insert-html
+                            -content (elfeed-compute-base (elfeed-entry-link -entry)))))))))
+         (dolist (web-entry web-entries)
+           (if (and (not force) (elfeed-meta web-entry :link-content))
+               (insert-link-content web-entry (elfeed-deref (elfeed-meta web-entry :link-content)))
+             (elfeed-curl-retrieve
+              (elfeed-entry-link web-entry)
+              (lambda (success)
+                (let ((content (buffer-string)))
+                  (setf (elfeed-meta web-entry :link-content)
+                        (elfeed-ref content))
+                  (insert-link-content web-entry content))))))))))
+
   (use-package embark
     :defer
     :config
@@ -740,14 +676,14 @@ This is an enhanced version of the default `elfeed-show-entry' that
            ("F" . my/embark-tube-fetch)))
   
   :bind (:map elfeed-show-mode-map
-         ("F" . elfeed-tube-fetch)
+         ("F" . my/elfeed-entry-fetch)
          ([remap save-buffer] . elfeed-tube-save)
          ("C-c C-f" . elfeed-tube-mpv-follow-mode)
          ("C-c C-w" . elfeed-tube-mpv-where)
          ("C-c C-n" . elfeed-tube-next-heading)
          ("C-c C-p" . elfeed-tube-prev-heading)
          :map elfeed-search-mode-map
-         ("F" . elfeed-tube-fetch)
+         ("F" . my/elfeed-entry-fetch)
          ("D" . my/elfeed-tube-download)
          ([remap save-buffer] . elfeed-tube-save)))
 
@@ -776,57 +712,6 @@ And set `elfeed-prune-enabled' to true, then call `elfeed-prune'."
        (string-match-p title (elfeed-feed-title feed)))
      '("Feed title to be removed"
        "Other feed"))))
-
-;; ** +AUTOTAGGING SETUP+
-
-;; Currently disabled: More Elfeed taggers
-(use-package elfeed-custom
-  :disabled
-  :config
-  (progn 
-    ;; Mark all YouTube entries
-    (add-hook 'elfeed-new-entry-hook
-              (elfeed-make-tagger :feed-url "youtube\\.com"
-                                  :add '(video youtube)))
-    ;; Avoiding tagging old entries as unread:
-
-    ;; Entries older than 2 weeks are marked as read
-    (add-hook 'elfeed-new-entry-hook
-              (elfeed-make-tagger :before "2 weeks ago"
-                                  :remove 'unread))
-
-    ;; Or building your own subset feeds:
-    (add-hook 'elfeed-new-entry-hook
-              (elfeed-make-tagger :feed-url "example\\.com"
-                                  :entry-title '(not "something interesting")
-                                  :add 'junk
-                                  :remove 'unread))))
-;;; Use `M-x elfeed-apply-hooks-now' to apply elfeed-new-entry-hook to all
-;;; existing entries. Otherwise hooks will only apply to new entries on
-;;; discovery.
-;;; ----------------------------------------------------------------------
- ;;
-;;; (defun elfeed-search-eww-open (&optional use-generic-p)
-;;;   "open with eww"
-;;;   (interactive "P")
-;;;   (let ((entries (elfeed-search-selected)))
-;;;     (cl-loop for entry in entries
-;;;              do (elfeed-untag entry 'unread)
-;;;              when (elfeed-entry-link entry)
-;;;              do (eww-browse-url it t))
-;;;     (mapc #'elfeed-search-update-entry entries)
-;;;     (unless (use-region-p) (forward-line))))
- ;;
-;;; For quick tagging
-;;; (defvar my-feeds nil)
-;;; (let ((tags '("always" "rare" "sometimes" "junk"))
-;;;       history)
-;;;   (dolist (feed elfeed-feeds)
-;;;     (let ((choices (completing-read-multiple (format "%s: " feed) tags nil nil nil)))
-;;;       (add-to-list 'my-feeds (append (list feed) (mapcar 'make-symbol choices)))
-;;;       (setq tags (delete-dups (append choices tags)))
-;;;       )
-;;;     ))
 
 (provide 'setup-elfeed)
 ;; setup-elfeed.el ends here

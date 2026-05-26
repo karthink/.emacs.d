@@ -955,6 +955,28 @@ has no effect."
 
   (advice-add #'org-agenda-finalize :before #'my/org-agenda-mark-habits))
 
+;; *** ORG-COLVIEW
+(use-package org-colview
+  :after (org-colview)
+  :config
+  (setq org-columns-default-format-for-agenda
+        "%7CATEGORY %4TODO %40ITEM %5SCHEDULED %5LAST_REVIEW %5NEXT_REVIEW")
+  (setq org-columns-modify-value-for-display-function
+        #'my/org-colview-display-relative-timestamp)
+  (defun my/org-colview-display-relative-timestamp (coltitle value)
+    (when (and (member coltitle '("SCHEDULED" "NEXT_REVIEW" "LAST_REVIEW"))
+               (not (string-empty-p value)))
+      (let* ((days (1+ (time-to-number-of-days
+                        (time-subtract
+                         (org-time-string-to-time value) nil))))
+             (absdays (abs days)))
+        (cond
+         ((< absdays 1)   "today")
+         ((< absdays 7)   (format "%dd" days))
+         ((< absdays 30)  (format "%.1fw" (/ days 7.0)))
+         ((< absdays 358) (format "%.1fm" (/ days 30.0)))
+         (t               (format "%.1fy" (/ days 365.0))))))))
+
 ;; *** ORG-AGENDA
 (use-package org-agenda
   :after (org org-review)
@@ -1968,12 +1990,13 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
          ("o s" . org-ql-search)
          ("o v" . org-ql-view)
          ("o l" . org-ql-open-link)
-         ("o f" . org-ql-find-in-agenda)
+         ("o F" . org-ql-find-in-agenda)
          :map org-agenda-mode-map
          ("C-c o w" . org-ql-refile)
          :map org-mode-map
          ("C-c o w" . org-ql-refile)
          ("C-c o f" . org-ql-find)
+         ("C-c o F" . org-ql-find-in-agenda)
          ("C-c o /" . org-ql-sparse-tree))
   :config
   (use-package org-ql-view

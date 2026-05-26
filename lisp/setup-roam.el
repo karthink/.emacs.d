@@ -179,6 +179,7 @@
 
 (use-package org-node
   :after org
+  :demand t
   :ensure t
   :bind-keymap (("C-c n" . org-node-global-prefix-map))
   :bind (:map org-mode-map
@@ -187,6 +188,26 @@
                ("C-c n q" . org-node-set-tags-here)
                ("C-c n i" . org-node-insert-link*)))
   :config
+  (define-advice org-node-complete-at-point (:override () bracketed)
+    "Expand word at point to a known node title, and linkify.
+Designed for `completion-at-point-functions'."
+    (when-let* ((bounds (bounds-of-thing-at-point 'word)))
+      (and (eq (char-before (car bounds)) ?\[)
+           (eq (char-before (1- (car bounds))) ?\[)
+           (not (org-in-src-block-p))
+           (not (save-match-data (org-in-regexp org-link-any-re)))
+           (list (car bounds)
+                 (cdr bounds)
+                 org-node--title<>affixations
+                 :exclusive 'no
+                 :exit-function
+                 (lambda (text _)
+                   (when-let* ((id (gethash text org-mem--title<>id)))
+                     (atomic-change-group
+                       (delete-char (- (+ (length text) 2)))
+                       (insert (org-link-make-string (concat "id:" id) text)))
+                     (run-hooks 'org-node-insert-link-hook)))))))
+
   (org-node-complete-at-point-mode)
   (org-node-cache-mode)
   ;; (setf org-node-creation-fn #'org-node-new-file)

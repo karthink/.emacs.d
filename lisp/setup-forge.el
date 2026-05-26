@@ -24,7 +24,22 @@
 
 (use-package orgit-forge :ensure t :defer)
 
-(use-package pr-review :ensure t :defer)
+(use-package pr-review
+  :ensure t
+  :bind ( :map forge-pullreq-section-map
+          ("M-RET" . my/pr-review-at-point))
+  :config
+  (defun my/pr-review-at-point ()
+    (interactive)
+    (if-let* ((url (pr-review--find-url-in-buffer)))
+        (pr-review url current-prefix-arg))
+    (message "No PR URL found at point"))
+
+  (define-advice pr-review--find-url-in-buffer
+      (:after-until () magit-buffer)
+    (and-let* ((_ (featurep 'forge))
+               (target (forge--browse-target)))
+      (if (stringp target) target (forge-get-url target)))))
 
 (use-package git-link
   :ensure t

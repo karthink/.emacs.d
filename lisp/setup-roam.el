@@ -178,7 +178,7 @@
       (funcall orig-fn parse-results))))
 
 (use-package org-node
-  :after org
+  :after org-capture
   :demand t
   :ensure t
   :bind-keymap (("C-c n" . org-node-global-prefix-map))

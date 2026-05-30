@@ -43,7 +43,10 @@
 ;; into a gif.
 (use-package keycast
   :ensure t
-  :defer
+  :hook ((keycast-tab-bar-mode
+          keycast-mode-line-mode
+          keycast-log-mode) .
+          'my/keycast-with-embark-and-avy)
   :config
   (setq keycast-separator-width 1)
   (dolist (input '(self-insert-command
@@ -53,8 +56,22 @@
                    keycast-substitute-alist)
         '("[mouse]" t))
 
+  (defun my/keycast-with-embark-and-avy ()
+    (cond
+     ((or keycast-mode-line-mode keycast-tab-bar-mode keycast-log-mode)
+      (advice-add 'embark-keymap-prompter :filter-return #'store-action-key+cmd)
+      ;; (advice-add 'avy-goto-char-timer :filter-return #'store-action-key+cmd)
+      (advice-add 'avy-handler-default :before #'keycast-capture-avy-dispatch)
+      (dolist (cmd '(embark-act embark-become))
+        (advice-add cmd :before #'force-keycast-update)))
+     (t (advice-remove 'embark-keymap-prompter #'store-action-key+cmd)
+        (advice-remove 'avy-handler-default #'keycast-capture-avy-dispatch)
+        (dolist (cmd '(embark-act embark-become))
+          (advice-remove cmd #'force-keycast-update)))))
+
   (defun store-action-key+cmd (cmd)
-    (setq keycast--this-command-keys (this-single-command-keys)
+    (setq this-command cmd
+          keycast--this-command-keys (this-single-command-keys)
           keycast--this-command cmd)
     cmd)
 
@@ -67,15 +84,7 @@
         (setq keycast--this-command-keys (make-vector 1 char)
               keycast--this-command (cdr cmd))))
   
-  (advice-add 'embark-keymap-prompter :filter-return #'store-action-key+cmd)
-  ;; (advice-add 'avy-goto-char-timer :filter-return #'store-action-key+cmd)
-  (advice-add 'avy-handler-default :before #'keycast-capture-avy-dispatch)
-
-  (defun force-keycast-update (&rest _)
-    (force-mode-line-update t))
-
-  (dolist (cmd '(embark-act embark-become))
-    (advice-add cmd :before #'force-keycast-update)))
+  (defun force-keycast-update (&rest _) (keycast--update)))
 
 ;; Using a screen recorder instead. gif-screencast misses keystrokes.
 (use-package gif-screencast

@@ -17,10 +17,13 @@
          ;; ("C-c SPC"  . embark-act)
          ("M-*"      . embark-act-all)
          ("S-<return>"  . embark-dwim)
-         ("C-h b"   . embark-bindings)
-         ("C-h C-b" . describe-bindings)
          :map embark-general-map
          ("M-SPC"     . embark-select)
+         :map help-map
+         ("SPC"      . my/embark-on-last-message)
+         ("b"        . embark-bindings)
+         ("B"        . embark-bindings-at-point)
+         ("C-b"      . describe-bindings)
          :map minibuffer-local-completion-map
          ;; ("s-o"      . embark-act)
          ("C-c C-o"  . embark-export)
@@ -128,6 +131,14 @@
                                (and mode-line-format
                                 (setq-local mode-line-format nil)))))))
   (setf (alist-get 'kill-buffer embark-pre-action-hooks) nil)
+
+  ;; Act on last message (inspired by oantolin)
+  (defun my/embark-on-last-message (&optional arg)
+    (interactive "P")
+    (with-current-buffer (get-buffer "*Messages*")
+      (goto-char (point-max))
+      (backward-char 1)
+      (embark-act arg)))
 
   ;; Selection
   (defun my/embark-select ()

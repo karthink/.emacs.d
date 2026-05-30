@@ -591,6 +591,14 @@
          ("M-s c" . embrace-change)
          ("M-s d" . embrace-delete)))
 
+(use-package string-inflection
+  :ensure t
+  :after embark
+  :bind ( :map embark-identifier-map
+          ("_" . string-inflection-toggle))
+  :config
+  (cl-pushnew 'string-inflection-toggle embark-repeat-actions))
+
 ;;;; wrap-region
 (use-package wrap-region
   :ensure t

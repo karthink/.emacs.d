@@ -144,7 +144,7 @@ If buffer-or-name is nil return current buffer's mode."
            (side . top)
            (slot . -2)
            (preserve-size . (nil . t))
-           (window-parameters . ((mode-line-format . nil))))
+           (window-parameters . ((mode-line-format . none))))
 
           ("\\*Buffer List\\*" (display-buffer-in-side-window)
            (side . top)
@@ -283,7 +283,15 @@ If buffer-or-name is nil return current buffer's mode."
            (direction . below)
            (side . right)
            (slot . 2)
-           (window-parameters . ((split-window . #'ignore))))
+           (window-parameters . ((split-window . ignore))))
+
+          ((derived-mode . calendar-mode)
+           (display-buffer-reuse-mode-window
+            display-buffer-below-selected
+            display-buffer-in-direction)
+           (direction . below)
+           (window-height . fit-window-to-buffer)
+           (window-parameters . ((split-window . ignore))))
 
           ("^\\*eldoc.*\\*$"
            (display-buffer-reuse-window

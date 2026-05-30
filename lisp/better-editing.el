@@ -329,7 +329,9 @@ ARGS is the raw argument list (STRING &optional TRANS-CASE)."
   (define-advice read-shell-command (:around (fn &rest args) edit-in-buffer)
     (let ((minibuffer-local-shell-command-map
            (make-composed-keymap
-            (define-keymap "C-c C-e" 'my/read-command-from-buffer)
+            (define-keymap
+              "C-c C-e" #'my/read-command-from-buffer
+              "<remap> <display-local-help>" #'man)
             minibuffer-local-shell-command-map)))
       (minibuffer-with-setup-hook
           (lambda () (goto-char (minibuffer-prompt-end))

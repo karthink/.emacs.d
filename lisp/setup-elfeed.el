@@ -35,6 +35,7 @@
                 elfeed-search-filter "#50 +unread "
                 elfeed-search-date-format '("%Y-%m-%d" 10 :left) ;;'("%b %d" 6 :left)
                 ;; elfeed-show-entry-switch #'elfeed-display-buffer
+                elfeed-search-resize-delay nil ;No auto resizing
                 elfeed-search-title-min-width 45)
 
   ;; Elfeed navigation is managed by sidle
@@ -91,8 +92,6 @@
   ;;*** Helper functions
   ;;----------------------------------------------------------------------
 
-  (timeout-debounce! 'elfeed-search--live-update 0.24)
-  
   ;; TODO: This code causes Elfeed to hang(?)
   ;; ;; Idempotent version so consolidated queues don't get reprocessed into the
   ;; ;; wrong shape

@@ -1,15 +1,82 @@
 ;; -*- lexical-binding: t; -*-
 
 (use-package vc
-  :defer
+  :bind ( :map vc-prefix-map
+          ("="   . my/vc-diff)
+          ("C-=" . my/vc-ediff)
+          ("M-=" . my/vc-ediff)
+          ("~"   . my/vc-revision-other-window))
   :config
   (setq vc-follow-symlinks t)
   (setq vc-find-revision-no-save t)
+  (defun my/read-backup-file-name (file)
+    (if-let* ((backup-files (file-backup-file-names file)))
+        (completing-read "Backup version: " backup-files nil t)
+      (user-error "No backup files available for file %s" (buffer-file-name))))
 
-  (use-package log-view
-    :config
-    (defun my/vc-print-log (&optional arg)
-      "Like `vc-print-log' but for a custom fileset.
+  (defun my/vc-diff (&optional arg)
+    "Compare current buffer with its file, or file with backup or revision.
+With prefix ARG, compare the file with a selected backup when the file
+is not under version control."
+    (interactive "P")
+    (if (buffer-modified-p)
+        (diff-buffer-with-file (current-buffer))
+      (condition-case errdata (call-interactively #'vc-diff)
+        (error
+         (if (string-match-p "not under version control" (cadr errdata))
+             (if arg
+                 (diff (my/read-backup-file-name (buffer-file-name))
+                       (buffer-file-name))
+               (diff-backup (buffer-file-name)))
+           (apply #'signal errdata))))))
+
+  (defun my/vc-ediff (&optional arg)
+    "Run Ediff on the current buffer, file, or backup.
+With prefix ARG, compare the file with a selected backup when the file
+is not under version control."
+    (interactive "P")
+    (if (buffer-modified-p)
+        (call-interactively #'ediff-current-file)
+      (condition-case errdata (call-interactively #'vc-ediff)
+        (error
+         (if (string-match-p "not under version control" (cadr errdata))
+             (if arg
+                 (ediff-files (my/read-backup-file-name (buffer-file-name))
+                              (buffer-file-name))
+               (ediff-backup (buffer-file-name)))
+           (apply #'signal errdata))))))
+
+  (defun my/vc-revision-other-window (&optional arg)
+    "Visit the current file's past revision or backup in another window.
+With prefix ARG, visit a selected backup when the file is not under
+version control."
+    (interactive "P")
+    (condition-case errdata (call-interactively #'vc-revision-other-window)
+      (error
+       (if (string-match-p "not under version control" (cadr errdata))
+           (if arg
+               (find-file-other-window (my/read-backup-file-name (buffer-file-name)))
+             (if-let* ((backup (file-newest-backup (buffer-file-name))))
+                 (find-file-other-window backup)
+               (user-error "No backup files available for %s" (buffer-file-name))))
+         (apply #'signal errdata))))))
+
+(use-package log-view
+  :bind (("C-x v C-l" . my/vc-print-log)
+         :map log-view-mode-map
+         ("<tab>" . log-view-toggle-entry-display)
+         ("<return>" . log-view-find-revision)
+         ;; ("c" . my/log-view-create-patch)
+         ;; ("w" . my/log-view-extract-commit)
+         ("s" . vc-log-search)
+         ("O" . vc-log-outgoing)
+         ("I" . vc-log-incoming)
+         ("F" . vc-update)
+         ("+" . vc-update)
+         ("P" . vc-push))
+  :config
+  (defun my/vc-print-log (&optional arg)
+    "Like `vc-print-log' but for a custom fileset.
 
 With optional prefix ARG (\\[universal-argument]), query for a
 number to limit the log to.  Then prompt the user for matching
@@ -23,101 +90,41 @@ A single prefix arg still provides for a limit to the log.
 
 If a double prefix ARG is passed, prompt for a limit and produce
 a log that covers all files in the present directory."
-      (interactive "P")
-      (let* ((lim (if arg
-                      (read-number "Limit log to N entries: " 5)
-                    20))
-             (dir default-directory)
-             (dotless directory-files-no-dot-files-regexp)
-             (files (directory-files dir nil dotless t))
-             (crm-separator " ")
-             (set (cond
-                   ((equal arg '(16))
-                    files)
-                   ((eq major-mode 'dired-mode)
-                    (dired-get-marked-files t nil))
-                   (t
-                    (completing-read-multiple
-                     "Select files in current dir: " files nil t))))
-             (backend (vc-backend set)))
-        (vc-print-log-internal backend set nil nil lim 'with-diff)))
+    (interactive "P")
+    (let* ((lim (if arg
+                    (read-number "Limit log to N entries: " 5)
+                  20))
+           (dir default-directory)
+           (dotless directory-files-no-dot-files-regexp)
+           (files (directory-files dir nil dotless t))
+           (crm-separator " ")
+           (set (cond
+                 ((equal arg '(16))
+                  files)
+                 ((eq major-mode 'dired-mode)
+                  (dired-get-marked-files t nil))
+                 (t
+                  (completing-read-multiple
+                   "Select files in current dir: " files nil t))))
+           (backend (vc-backend set)))
+      (vc-print-log-internal backend set nil nil lim 'with-diff)))
 
-    (defun my/vc-git-expanded-log-entry (revision)
-      "Expand git commit message for REVISION."
-      (with-temp-buffer
-        (apply 'vc-git-command t nil nil (list "log" revision "--stat" "-1" "--"))
-        (goto-char (point-min))
-        (unless (eobp)
-          (while (re-search-forward "^" nil t)
-            (replace-match "  ")
-            (forward-line))
-          (concat "\n" (buffer-string)))))
+  (defun my/vc-git-expanded-log-entry (revision)
+    "Expand git commit message for REVISION."
+    (with-temp-buffer
+      (apply 'vc-git-command t nil nil (list "log" revision "--stat" "-1" "--"))
+      (goto-char (point-min))
+      (unless (eobp)
+        (while (re-search-forward "^" nil t)
+          (replace-match "  ")
+          (forward-line))
+        (concat "\n" (buffer-string)))))
 
-    (add-hook 'vc-git-log-view-mode-hook
-              (defun my/vc-git-expand-function ()
-                "Set `log-view-expanded-log-entry-function' for `vc-git'"
-                (setq-local log-view-expanded-log-entry-function
-                            #'my/vc-git-expanded-log-entry)))
-
-    ;; (defun my/log-view-extract-commit ()
-    ;;   "Kill commit from around point in `vc-print-log'."
-    ;;   (interactive)
-    ;;   (let ((commit (cadr (log-view-current-entry (point) t))))
-    ;;     (kill-new (format "%s" commit))
-    ;;     (message "Copied: %s" commit)))
-
-    ;; (defvar my/vc-shell-output "*vc-shell-output*"
-    ;;   "Name of buffer for VC-related shell output.")
-
-    ;; (defun my/log-view-create-patch ()
-    ;;   "Create patch for commit at point in `log-view'."
-    ;;   (interactive)
-    ;;   (let* ((commit (cadr (log-view-current-entry (point) t)))
-    ;;          (vc-dir (or (vc-root-dir) default-directory))
-    ;;          (dirs (list "~/" "~/Desktop/" vc-dir))
-    ;;          (out-dir ;; (read-directory-name "Output directory: ")
-    ;;           (completing-read "Output directory: " dirs))
-    ;;         (buf (get-buffer-create my/vc-shell-output)))
-    ;;     (shell-command
-    ;;      (format "git format-patch -1 %s -o %s" commit out-dir) buf)
-    ;;     (message "Prepared patch for `%s' and sent it to %s"
-    ;;              (propertize commit 'face 'bold)
-    ;;              (propertize out-dir 'face 'success))))
-
-    ;; From https://protesilaos.com/codelog/2021-07-24-emacs-misc-custom-commands/
-    (defun my/diff-buffer-dwim (&optional arg)
-  "Diff buffer with its file's last saved state, or run `vc-diff'.
-With optional prefix ARG (\\[universal-argument]) enable
-highlighting of word-wise changes (local to the current buffer)."
-  (interactive "P")
-  (let ((buf))
-    (if (buffer-modified-p)
-        (progn
-          (diff-buffer-with-file (current-buffer))
-          (setq buf "*Diff*"))
-      (vc-diff)
-      (setq buf "*vc-diff*"))
-    (when arg
-      (with-current-buffer (get-buffer buf)
-        (unless diff-refine
-          (setq-local diff-refine 'font-lock))))))
-
-    ;; :bind-keymap ("H-v" . vc-prefix-map)
-    :bind (("C-x v C-l" . my/vc-print-log)
-           :map vc-prefix-map
-           ("=" . my/diff-buffer-dwim)
-           ("C-=" . vc-ediff)
-           :map log-view-mode-map
-           ("<tab>" . log-view-toggle-entry-display)
-           ("<return>" . log-view-find-revision)
-           ;; ("c" . my/log-view-create-patch)
-           ;; ("w" . my/log-view-extract-commit)
-           ("s" . vc-log-search)
-           ("O" . vc-log-outgoing)
-           ("I" . vc-log-incoming)
-           ("F" . vc-update)
-           ("+" . vc-update)
-           ("P" . vc-push))))
+  (add-hook 'vc-git-log-view-mode-hook
+            (defun my/vc-git-expand-function ()
+              "Set `log-view-expanded-log-entry-function' for `vc-git'"
+              (setq-local log-view-expanded-log-entry-function
+                          #'my/vc-git-expanded-log-entry))))
 
 (use-package vc-dir
   :after vc

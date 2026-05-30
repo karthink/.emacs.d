@@ -91,9 +91,7 @@
   (defun avy-action-helpful (pt)
     (save-excursion
       (goto-char pt)
-      ;; (helpful-at-point)
-      (my/describe-symbol-at-point)
-      )
+      (call-interactively #'display-local-help))
     (select-window
      (cdr (ring-ref avy-ring 0)))
     t)

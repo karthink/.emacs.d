@@ -5,7 +5,6 @@
   :bind-keymap ("C-h a" . help-apropos-map)
   :bind (("C-h A" . info-apropos)
          ("C-h C-a" . customize-apropos)
-         ("C-h ." . my/describe-symbol-at-point)
          ("C-h C-f". describe-face)
          ("C-h C-k" . describe-keymap))
   :config
@@ -27,16 +26,13 @@
       (define-key map (kbd "i") #'info-apropos)
       map))
   ;; (define-prefix-command help-apropos-command help-apropos-map)
-  (defun my/describe-symbol-at-point (&optional arg)
-    "Get help (documentation) for the symbol at point.
-
-ARG does nothing yet."
-    (interactive "P")
+  (define-advice display-local-help
+      (:before-until (&rest _) describe-thing)
     (let ((thing (thing-at-point 'filename)))
       (when-let* ((symbol (intern-soft thing)))
-        (describe-symbol symbol)))
-    (unless (get-buffer-window (help-buffer))
-      (display-local-help nil t)))
+        (describe-symbol symbol)
+        t)))
+
   (unbind-key "C-h C-h"))
 
 (use-package find-func

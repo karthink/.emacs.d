@@ -7,6 +7,8 @@
 (use-package forge
   :ensure t
   :defer
+  :bind ( :map forge-pullreq-section-map
+          ("M-RET" . my/pr-review-at-point))
   :config
   (remove-hook 'forge-post-mode-hook 'turn-on-flyspell)
   (add-hook 'forge-post-mode-hook #'jinx-mode)
@@ -18,7 +20,13 @@
   (setq forge-bug-reference-remote-files nil
         forge-database-file
         (expand-file-name "forge-database.sqlite" user-cache-directory)
-        forge-owned-accounts '(("karthink"))))
+        forge-owned-accounts '(("karthink")))
+  (defun my/pr-review-at-point ()
+    (interactive)
+    (require 'pr-review)
+    (if-let* ((url (pr-review--find-url-in-buffer)))
+        (pr-review url current-prefix-arg))
+    (message "No PR URL found at point")))
 
 (use-package orgit :ensure t :defer)
 
@@ -26,15 +34,8 @@
 
 (use-package pr-review
   :ensure t
-  :bind ( :map forge-pullreq-section-map
-          ("M-RET" . my/pr-review-at-point))
+  :defer
   :config
-  (defun my/pr-review-at-point ()
-    (interactive)
-    (if-let* ((url (pr-review--find-url-in-buffer)))
-        (pr-review url current-prefix-arg))
-    (message "No PR URL found at point"))
-
   (define-advice pr-review--find-url-in-buffer
       (:after-until () magit-buffer)
     (and-let* ((_ (featurep 'forge))

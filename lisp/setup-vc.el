@@ -3,6 +3,7 @@
 (use-package vc
   :bind ( :map vc-prefix-map
           ("="   . my/vc-diff)
+          ("e"   . my/vc-ediff)
           ("C-=" . my/vc-ediff)
           ("M-=" . my/vc-ediff)
           ("~"   . my/vc-revision-other-window))

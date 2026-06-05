@@ -94,7 +94,7 @@ The directory name must be absolute."
            ("C-x p DEL" . my/project-remove-project)
            ;; ("M-s p" . my/project-switch-project)
            ;; ("M-s f" . my/project-find-file-vc-or-dir)
-           ("M-s L" . find-library)))
+           ))
 
 ;; The [[https://github.com/karthink/project-x][project-x]] package adds support
 ;; for "local" projects, as well as facilities for periodically saving

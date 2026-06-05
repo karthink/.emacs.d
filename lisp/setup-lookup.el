@@ -36,7 +36,11 @@
   (unbind-key "C-h C-h"))
 
 (use-package find-func
-  :bind (("C-h M-." . find-function-on-key)))
+  :bind ( :map help-map
+          ("M-k" . find-function-on-key)
+          ("M-." . find-function)
+          ("M-l" . find-library)
+          ("C-l" . find-library)))
 
 ;; MAYBE
 (use-package info-colors

@@ -1102,8 +1102,8 @@ has no effect."
            (a-prop (org-review-last-review-prop ma))
            (b-prop (org-review-last-review-prop mb)))
       (cond
-       ((string= (org-get-category ma) "Inbox") 1)
-       ((string= (org-get-category mb) "Inbox") -1)
+       ((string-match-p "Inbox" (org-get-category ma)) 1)
+       ((string-match-p "Inbox" (org-get-category mb)) -1)
        ((and a-prop b-prop)
         (let ((a-times (my/org-review-count ma))
               (b-times (my/org-review-count mb)))

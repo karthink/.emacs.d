@@ -489,6 +489,7 @@ highlighting."
       (kill-new
        (let ((org-export-with-toc)
              (org-md-toplevel-hlevel 4)
+             (org-export-with-broken-links t)
              (org-export-with-sub-superscripts nil))
          (string-trim
           (org-export-string-as (buffer-substring-no-properties start end)

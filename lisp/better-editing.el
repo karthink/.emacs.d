@@ -497,7 +497,9 @@ ARGS is the raw argument list (STRING &optional TRANS-CASE)."
 (define-key text-mode-map "\M-(" 'insert-parentheses-sentence)
 
 ;; Key to duplicate line
-(global-set-key (kbd "C-S-d") 'duplicate-line)
+(global-set-key (kbd "C-S-d") 'duplicate-dwim)
+(setq duplicate-line-final-position -1
+      duplicate-region-final-position -1)
 (global-set-key (kbd "C-S-y") 'copy-from-above-command)
 
 ;; Key to kill-whole-line
@@ -643,40 +645,6 @@ go up/down the list instead."
 ;;   (if (bolp)
 ;;       (back-to-indentation)
 ;;     (beginning-of-line)))
-
-
-;;;###autoload
-(defun duplicate-line (&optional arg)
-  "Duplicate it. With prefix ARG, duplicate ARG lines following the current one."
-  (interactive "p")
-  (cl-destructuring-bind (beg . end) (if (region-active-p)
-                                      (cons (region-beginning)
-                                            (region-end))
-                                    (cons (line-beginning-position)
-                                          (line-end-position)))
-    (copy-region-as-kill beg end)
-    (if (region-active-p)
-        (progn (dotimes (_ arg)
-                 (goto-char (region-end))
-                 (yank))
-               (exchange-point-and-mark))
-      (save-excursion
-        (dotimes (_ arg)
-          (open-previous-line 1)
-          (yank)
-          (indent-according-to-mode))))))
-
-;; (defun duplicate-line-many-once (&optional arg)
-;;   "Duplicate it. With prefix ARG, duplicate ARG lines following the current one. This function is deprecated. Use duplicate-line with a selected region instead"
-;;   (interactive "p")
-;;   (save-excursion
-;;     (let ((beg (line-beginning-position))
-;;           (end
-;;            (progn (forward-line (1- arg)) (line-end-position))))
-;;       (copy-region-as-kill beg end)
-;;       (end-of-line) (newline)
-;;       (yank)))
-;;   (next-line arg))
 
 ;;; behave like vi's o command
 ;;;###autoload

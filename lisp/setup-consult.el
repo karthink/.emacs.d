@@ -57,14 +57,13 @@
   :bind (("C-x b"   . consult-buffer)
          ("C-x H-r" . consult-recent-file)
          ("C-x M-:" . consult-complex-command)
-         ("M-s M-o" . consult-multi-occur)
          ("M-X" . consult-mode-command)
          ("C-h C-m" . consult-minor-mode-menu)
          ("C-c C-j" . consult-outline)
          ("M-s M-j" . consult-outline)
-         ("M-s M-l" . consult-line-multi)
+         ("M-s L" . consult-line-multi)
          ("M-s g"   . consult-ripgrep)
-         ("M-s G"   . consult-git-grep)
+         ("M-s M-g"   . consult-git-grep)
          ("C-x C-r" . consult-recent-file)
          ("s-b" . consult-buffer)
          ("M-g j" . consult-compile-error)
@@ -216,7 +215,7 @@ When the number of characters in a buffer exceeds this threshold,
 (use-package consult
   :defer
   :when (executable-find "rga")
-  :bind (("M-s M-g" . consult-ripgrep-all))
+  :bind (("M-s G" . consult-ripgrep-all))
   :config
   (defun consult-ripgrep-all (&optional dir initial)
     (interactive "P")

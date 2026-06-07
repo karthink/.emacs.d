@@ -452,11 +452,15 @@ window manager to present the frame in a floating state."
   (defun my/next-buffer (&optional arg)
     "Switch to the next non-popup buffer."
     (interactive "P")
-    (if-let (((equal arg '(4)))
-             (win (other-window-for-scrolling)))
-        (with-selected-window win
-          (my/next-buffer)
-          (setq prefix-arg current-prefix-arg))
+    (if-let* (((equal arg '(4)))
+              (win (other-window-for-scrolling)))
+        (progn
+          (when (window-dedicated-p win)
+            (setq win (get-mru-window nil nil t)))
+          (unless win (user-error "No suitable windows for switching"))
+          (with-selected-window win
+            (my/next-buffer)
+            (setq prefix-arg current-prefix-arg)))
       (dotimes (or (abs (prefix-numeric-value arg)) 1)
         (if (bound-and-true-p tab-line-mode)
             (tab-line-switch-to-next-tab)
@@ -465,11 +469,15 @@ window manager to present the frame in a floating state."
   (defun my/previous-buffer (&optional arg)
     "Switch to the previous non-popup buffer."
     (interactive "P")
-    (if-let (((equal arg '(4)))
-             (win (other-window-for-scrolling)))
-        (with-selected-window win
-          (my/previous-buffer)
-          (setq prefix-arg current-prefix-arg))
+    (if-let* (((equal arg '(4)))
+              (win (other-window-for-scrolling)))
+        (progn
+          (when (window-dedicated-p win)
+            (setq win (get-mru-window nil nil t)))
+          (unless win (user-error "No suitable windows for switching"))
+          (with-selected-window win
+            (my/previous-buffer)
+            (setq prefix-arg current-prefix-arg)))
       (dotimes (or (abs (prefix-numeric-value arg)) 1)
         (if (bound-and-true-p tab-line-mode)
             (tab-line-switch-to-prev-tab)

@@ -3,6 +3,8 @@
 ;; Copyright (C) 2026  Karthik Chikmagalur
 
 ;; Author: Karthik Chikmagalur <karthikchikmagalur@gmail.com>
+;; Version: 0.0.5
+;; Package-Requires: ((emacs "27.1") (compat "30.1.0.0") (gptel "0.9.9.5"))
 ;; Keywords: comm
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -184,30 +186,6 @@ in `gptel-follow-chat-buffer-alist'."
     (setq gptel-follow--reference-type nil)
     (delete-overlay reference-ov)))
 
-;; TEMP: Currently unused
-(defun gptel-follow--wrap-text (text)
-  "Wrap TEXT to window width.
-Takes into account the window text width and attempts to break lines
-at word boundaries.  Returns a cons of (last-line . wrapped-lines)."
-  (cl-loop
-   with twidth = (window-text-width)
-   with start = 0
-   for char across text
-   for idx upfrom 0
-   if (= char ?\n)
-   collect (substring text start idx) into new-lines
-   and do (setq start (1+ idx))
-   else if (and (= char ? )
-                (< (abs (- twidth (- idx start))) 14)
-                (let ((next (string-search " " text idx)))
-                  (or (not next)
-                      (>= (- next idx) 14))))
-   collect (substring text start idx) into new-lines
-   and do (setq start (1+ idx))
-   end
-   finally return
-   (cons (substring text start) (nreverse new-lines))))
-
 (defun gptel-follow--response-overlay-height ()
   "Compute the response overlay height from `gptel-follow-response-overlay-height'."
   (cl-etypecase gptel-follow-response-overlay-height
@@ -343,16 +321,12 @@ Returns a list of URL strings found in the region."
   :doc "Keymap used on response overlays."
   "<up>"        #'gptel-follow--response-overlay-up
   "<down>"      #'gptel-follow--response-overlay-down
-  "C-M-n"       #'gptel-follow--response-overlay-down
-  "C-M-p"       #'gptel-follow--response-overlay-up
   "<prior>"     #'gptel-follow--response-overlay-pageup
   "<next>"      #'gptel-follow--response-overlay-pagedown
   "<remap> <scroll-other-window>" #'gptel-follow--response-overlay-pagedown
   "<remap> <exit-recursive-edit>" #'gptel-follow-clear-response-overlay
   "<remap> <scroll-other-window-down>" #'gptel-follow--response-overlay-pageup
   "<remap> <enlarge-window>" #'gptel-follow--response-overlay-resize
-  "M-<return>"    #'gptel-follow--response-overlay-dispatch
-  "M-RET"       #'gptel-follow--response-overlay-dispatch
   "<mouse-4>"   #'gptel-follow--response-overlay-up
   "<wheel-up>"  #'gptel-follow--response-overlay-up
   "<mouse-5>"   #'gptel-follow--response-overlay-down
@@ -374,31 +348,6 @@ Returns a list of URL strings found in the region."
   :lighter ""
   :keymap gptel-follow--response-overlay-mode-map
   :interactive nil)
-
-;; HOLD: Currently unused because of issues with update logic, baking the
-;; header-line as a string for now via `gptel-follow--response-overlay-header'.
-(defun gptel-follow--response-overlay-header-format (ov)
-  "Return a header-line format string for response overlay OV.
-Builds on the chat buffer's existing `header-line-format'."
-  (if-let* ((chat-buf
-             (plist-get (overlay-get ov 'gptel-follow) :buffer))
-            (chat-header (buffer-local-value 'header-line-format chat-buf)))
-      (nconc
-       (butlast chat-header)
-       `(:eval
-         (let* ((key-help
-                 (format "%sscroll: %s/%s, more: %s"
-                         (or (overlay-get ,ov 'gptel-follow-preview-scroll)
-                             "    ")
-                         (gptel-follow--command-key
-                          'gptel-follow--response-overlay-pagedown)
-                         (gptel-follow--command-key
-                          'gptel-follow--response-overlay-pageup)
-                         (gptel-follow--command-key
-                          'gptel-follow--response-overlay-dispatch))))
-           (list (propertize " " 'display
-                             `(space :align-to (- right ,(length key-help))))
-                 key-help))))))
 
 (defun gptel-follow--response-overlay-header (ov &optional up down)
   "Return a header-line string for response overlay OV.
@@ -466,126 +415,6 @@ depending on whether RESPONSE-OV is visible in the window."
   (when (and (overlayp response-ov) (overlay-buffer response-ov))
     (gptel-follow--response-overlay-append-chunk response-ov chunk)
     (gptel-follow--response-overlay-render response-ov)))
-
-;;;;;; Lines-based response accumulation
-
-(defun gptel-follow--response-overlay-reset-lines (response-ov)
-  "Reset RESPONSE-OV to an empty response since the last tool call."
-  (when (and (overlayp response-ov) (overlay-buffer response-ov))
-    (overlay-put response-ov 'gptel-follow-preview-lines nil)
-    (overlay-put response-ov 'gptel-follow-preview-tail "")
-    (gptel-follow--response-overlay-set-scroll-index response-ov 0)
-    (let ((gptel-buffer (overlay-get response-ov 'gptel-buffer)))
-      (overlay-put response-ov 'after-string
-                   (concat gptel-follow--hrule
-                           (gptel-follow--response-overlay-header response-ov)
-                           gptel-follow--hrule
-                           (propertize " " 'display
-                                       `(space :align-to (- right ,(1+ (length gptel-buffer)))))
-                           gptel-buffer)))))
-
-(defun gptel-follow--response-overlay-append-chunk-lines (ov chunk)
-  "Append text CHUNK to the lines-based response overlay OV.
-Splits on newlines and accumulates complete lines in
-`gptel-follow-preview-lines', keeping partial tail in
-`gptel-follow-preview-tail'."
-  (let* ((tail (or (overlay-get ov 'gptel-follow-preview-tail) ""))
-         (text (concat tail chunk))
-         (parts (nreverse (split-string text "\n" nil)))
-         (lines (overlay-get ov 'gptel-follow-preview-lines)))
-    (cond
-     ((string-suffix-p "\n" text) ;ended with newline, move in tail and clear it out
-      (overlay-put ov 'gptel-follow-preview-lines (nconc parts lines))
-      (overlay-put ov 'gptel-follow-preview-tail ""))
-     (t (overlay-put ov 'gptel-follow-preview-lines (nconc (cdr parts) lines))
-        (overlay-put ov 'gptel-follow-preview-tail (car parts))))))
-
-(defun gptel-follow--response-overlay-render-lines (ov)
-  "Render the lines-based response overlay OV.
-Computes which slice of the accumulated lines to display based on
-the scroll index and height, then sets after-string."
-  (when (and (overlayp ov) (overlay-buffer ov))
-    (let* ((lines (cons (overlay-get ov 'gptel-follow-preview-tail)
-                        (overlay-get ov 'gptel-follow-preview-lines)))
-           (height (overlay-get ov 'gptel-follow-height))
-           (index (or (overlay-get ov 'gptel-follow-scroll-index) 0))
-           (len (length lines))
-           (slice (nreverse             ;lines are in reverse order
-                   (cl-subseq lines (max (- len (+ index height)) 0) (- len index))))
-           (up (if (> index 0) "⬆ " "  "))
-           (down (if (< (+ index height) len) "⬇ " "  "))
-           (gptel-buffer (overlay-get ov 'gptel-buffer))
-           (prefix (gptel-highlight--fringe-prefix 'response)))
-      (overlay-put ov 'gptel-follow-scroll-index index)
-      (overlay-put ov 'after-string
-                   (concat
-                    gptel-follow--hrule
-                    (propertize
-                     (concat (gptel-follow--response-overlay-header ov up down)
-                             "\n" (string-join slice "\n") gptel-follow--hrule)
-                     'wrap-prefix prefix 'line-prefix prefix)
-                    (propertize " " 'display
-                                `(space :align-to (- right ,(1+ (length gptel-buffer)))))
-                    gptel-buffer)))))
-
-(defun gptel-follow--setup-response-overlay-lines (context-plist)
-  "Create and initialize the response overlay for CONTEXT-PLIST."
-  (let* ((origin (plist-get context-plist :marker))
-         (origin-buf (marker-buffer origin))
-         (response-ov (plist-get context-plist :response-ov)))
-    (with-current-buffer origin-buf
-      (save-excursion
-        (without-restriction
-          (unless (and (overlayp response-ov)
-                       (eq (overlay-buffer response-ov) (current-buffer)))
-            (setq response-ov
-                  (let ((start (pos-bol)) (end (pos-eol)))
-                    (when (= start end)
-                      (cond ((not (bobp)) (cl-decf start))
-                            ((not (eobp)) (cl-incf end))))
-                    (make-overlay start end))))
-          (overlay-put response-ov 'evaporate nil) ;For clarity
-          (overlay-put response-ov 'gptel-follow context-plist)
-          (overlay-put response-ov 'gptel-buffer ;For display under the response
-                       (propertize (buffer-name (plist-get context-plist :buffer))
-                                   'face 'shadow))
-          (overlay-put response-ov 'priority 65)
-          (overlay-put response-ov 'keymap gptel-follow-response-overlay-map)
-          (overlay-put response-ov 'pointer 'hand)
-          (overlay-put response-ov 'mouse-face 'highlight)
-          (overlay-put response-ov 'help-echo
-                       "mouse-4/mouse-5, C-M-n/C-M-p, C-M-v/C-M-S-v scroll this response")
-          (overlay-put response-ov 'gptel-follow-height
-                       (gptel-follow--response-overlay-height))
-          (gptel-follow--response-overlay-reset response-ov)))
-      (gptel-follow--setup-response-overlay-keymap response-ov)
-      (gptel-follow--response-overlay-mode 1))
-     response-ov))
-
-(defun gptel-follow-clear-response-overlay-lines (&optional response-ov)
-  "Remove RESPONSE-OV and clean up associated resources.
-Interactively, uses the overlay at point.  Deletes the reference
-overlay, aborts the gptel request, and removes the response overlay."
-  (interactive (list (gptel-follow--response-overlay-at-point)))
-  (if (not (overlayp response-ov))
-      (message "No `gptel-follow' overlay at point!")
-    (pcase-let (((map :marker :reference-ov :buffer)
-                 (overlay-get response-ov 'gptel-follow)))
-      (set-marker marker nil)
-      (when (overlayp reference-ov) (delete-overlay reference-ov))
-      (when (buffer-live-p buffer) (gptel-abort buffer))
-      (when (overlayp response-ov)
-        (delete-overlay response-ov)))))
-
-(defun gptel-follow--response-overlay-set-scroll-index-lines (ov index)
-  "Set the scroll INDEX for lines-based response overlay OV.
-Clamps INDEX to valid range (0 to max-index)."
-  (let* ((height (overlay-get ov 'gptel-follow-height))
-         (len (+ (length (overlay-get ov 'gptel-follow-preview-lines))
-                 (if (string-empty-p (overlay-get ov 'gptel-follow-preview-tail))
-                     0 1)))
-         (max-index (max 0 (- len height))))
-    (overlay-put ov 'gptel-follow-scroll-index (min (max 0 index) max-index))))
 
 ;;;;;; Buffer-based response accumulation
 

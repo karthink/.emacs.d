@@ -193,7 +193,7 @@ in `gptel-follow-chat-buffer-alist'."
     (natnum gptel-follow-response-overlay-height)
     (float (floor (* gptel-follow-response-overlay-height (frame-height))))))
 
-;; FIXME: This logic is hard to follow
+;; KLUDGE: This logic is hard to follow
 (defun gptel-follow--reference-bounds (origin &optional type)
   "Return the bounds and type of reference for the buffer location at ORIGIN.
 
@@ -318,30 +318,24 @@ Returns a list of URL strings found in the region."
 
 ;;;;; Response in overlay
 (defvar-keymap gptel-follow-response-overlay-map
-  :doc "Keymap used on response overlays."
-  "<up>"        #'gptel-follow--response-overlay-up
-  "<down>"      #'gptel-follow--response-overlay-down
-  "<prior>"     #'gptel-follow--response-overlay-pageup
-  "<next>"      #'gptel-follow--response-overlay-pagedown
-  "<remap> <scroll-other-window>" #'gptel-follow--response-overlay-pagedown
-  "<remap> <exit-recursive-edit>" #'gptel-follow-clear-response-overlay
-  "<remap> <scroll-other-window-down>" #'gptel-follow--response-overlay-pageup
-  "<remap> <enlarge-window>" #'gptel-follow--response-overlay-resize
-  "<mouse-4>"   #'gptel-follow--response-overlay-up
-  "<wheel-up>"  #'gptel-follow--response-overlay-up
-  "<mouse-5>"   #'gptel-follow--response-overlay-down
-  "<wheel-down>" #'gptel-follow--response-overlay-down)
+  :doc "Mouse keymap used on response overlay text."
+  "<down-mouse-1>" #'gptel-follow--response-overlay-drag
+  "<mouse-1>"      #'gptel-follow--response-overlay-dispatch
+  "<mouse-4>"      #'gptel-follow--response-overlay-up
+  "<wheel-up>"     #'gptel-follow--response-overlay-up
+  "<mouse-5>"      #'gptel-follow--response-overlay-down
+  "<wheel-down>"   #'gptel-follow--response-overlay-down)
 
 (defvar-keymap gptel-follow--response-overlay-mode-map
   :doc "Keymap used on response overlays."
-  "C-M-n"       #'gptel-follow--response-overlay-down
-  "C-M-p"       #'gptel-follow--response-overlay-up
-  "<remap> <scroll-other-window>" #'gptel-follow--response-overlay-pagedown
-  "<remap> <exit-recursive-edit>" #'gptel-follow-clear-response-overlay
-  "<remap> <scroll-other-window-down>" #'gptel-follow--response-overlay-pageup
-  "<remap> <enlarge-window>" #'gptel-follow--response-overlay-resize
   "M-<return>" #'gptel-follow--response-overlay-dispatch
-  "M-RET" #'gptel-follow--response-overlay-dispatch)
+  "M-RET"      #'gptel-follow--response-overlay-dispatch
+  "C-M-n"      #'gptel-follow--response-overlay-down
+  "C-M-p"      #'gptel-follow--response-overlay-up
+  "<remap> <scroll-other-window>"      #'gptel-follow--response-overlay-pagedown
+  "<remap> <exit-recursive-edit>"      #'gptel-follow-clear-response-overlay
+  "<remap> <scroll-other-window-down>" #'gptel-follow--response-overlay-pageup
+  "<remap> <enlarge-window>"           #'gptel-follow--response-overlay-resize)
 
 (define-minor-mode gptel-follow--response-overlay-mode
   "Minor mode for controlling `gptel-follow' overlays."
@@ -461,16 +455,19 @@ after-string, showing HEIGHT lines starting at SCROLL-INDEX."
            (gptel-buffer (overlay-get ov 'gptel-buffer))
            (prefix (gptel-highlight--fringe-prefix 'response)))
       (overlay-put ov 'gptel-follow-scroll-index index)
-      (overlay-put ov 'after-string
-                   (concat
-                    gptel-follow--hrule
-                    (propertize
-                     (concat (gptel-follow--response-overlay-header ov up down)
-                             "\n" view-string gptel-follow--hrule)
-                     'wrap-prefix prefix 'line-prefix prefix)
-                    (propertize " " 'display
-                                `(space :align-to (- right ,(1+ (length gptel-buffer)))))
-                    gptel-buffer)))))
+      (overlay-put
+       ov 'after-string
+       (propertize
+        (concat gptel-follow--hrule
+                (propertize
+                 (concat (gptel-follow--response-overlay-header ov up down)
+                         "\n" view-string gptel-follow--hrule)
+                 'wrap-prefix prefix 'line-prefix prefix)
+                (propertize " " 'display
+                            `(space :align-to (- right ,(1+ (length gptel-buffer)))))
+                gptel-buffer)
+        'keymap gptel-follow-response-overlay-map
+        'pointer 'hand)))))
 
 (declare-function gfm-mode "markdown-mode")
 (declare-function markdown-toggle-markup-hiding "markdown-mode")
@@ -500,6 +497,10 @@ source buffer for rendering."
               (plist-put context-plist :src src-buf)
               (with-current-buffer src-buf
                 (cond
+                 ((or (bound-and-true-p markdown-mode)
+                      (bound-and-true-p gfm-mode)
+                      (bound-and-true-p markdown-ts-mode))
+                  t)
                  ((fboundp 'markdown-ts-mode)
                   (delay-mode-hooks (markdown-ts-mode)))
                  ((fboundp 'markdown-mode)
@@ -516,10 +517,6 @@ source buffer for rendering."
                                    'face 'shadow))
           (overlay-put response-ov 'priority 65)
           (overlay-put response-ov 'keymap gptel-follow-response-overlay-map)
-          (overlay-put response-ov 'pointer 'hand)
-          (overlay-put response-ov 'mouse-face 'highlight)
-          (overlay-put response-ov 'help-echo
-                       "mouse-4/mouse-5, C-M-n/C-M-p, C-M-v/C-M-S-v scroll this response")
           (overlay-put response-ov 'gptel-follow-height
                        (gptel-follow--response-overlay-height))
           (gptel-follow--response-overlay-reset response-ov)))
@@ -557,6 +554,52 @@ Clamps INDEX to the valid range based on source buffer line count."
     (overlay-put ov 'gptel-follow-scroll-index (min (max 0 index) max-index))))
 
 ;;;;;; Response overlay manipulation commands
+(defun gptel-follow--response-overlay-drag (event)
+  "Move the response overlay by dragging it with the mouse.
+Dragging across windows is supported, but across frames is not.
+Intended to be bound overlay-locally to a <down-mouse-1> EVENT."
+  (interactive "e")
+  (let* ((start-posn (event-start event))
+         (start-window (posn-window start-posn))
+         (end-window)
+         (ov (with-selected-window start-window
+               (car (overlays-at (1- (posn-point start-posn))))))
+         (mouse-autoselect-window)      ;messes with window calculations below
+         (echo-keystrokes 0)            ;noisy
+         (was-tooltip-mode tooltip-mode) ;avoid flickering
+         (use-system-tooltips nil))
+    (when (overlayp ov)
+      (unwind-protect
+          (progn
+            (tooltip-mode -1)
+            (track-mouse
+              (let ((track-mouse 'dragging))
+                (while-let ((ev (read-event))
+                            ((mouse-movement-p ev)))
+                  (when-let* ((new-pos (posn-point (event-end ev))))
+                    (setq end-window (posn-window (event-end ev)))
+                    (when (framep end-window)
+                      ;; TODO Dragging across frames; it's tough to get this right
+                      (select-frame-set-input-focus end-window)
+                      (setq end-window (frame-selected-window end-window)))
+                    (unless (= new-pos (posn-point start-posn))
+                      (with-selected-window end-window
+                        (save-excursion
+                          (goto-char new-pos)
+                          (let ((start (pos-bol)) (end (pos-eol)))
+                            (when (= start end)
+                              (cond ((not (bobp)) (cl-decf start))
+                                    ((not (eobp)) (cl-incf end))))
+                            (move-overlay ov start end
+                                          (window-buffer end-window))))))))))
+            (unless (or (null end-window) (eq start-window end-window))
+              ;; FIXME: We also need to adjust the `window-scroll-functions' in
+              ;; these windows appropriately.
+              (gptel-follow--response-overlay-mode -1)
+              (with-selected-window end-window
+                (gptel-follow--response-overlay-mode 1))))
+        (when was-tooltip-mode (tooltip-mode 1))))))
+
 (defun gptel-follow--response-overlay-scroll-to (index response-ov)
   "Scroll RESPONSE-OV to display line INDEX and re-render."
   (when (and (overlayp response-ov) (overlay-buffer response-ov))
@@ -565,65 +608,75 @@ Clamps INDEX to the valid range based on source buffer line count."
 
 (defun gptel-follow--response-overlay-at-point ()
   "Return the `gptel-follow' response overlay relevant to point or event."
-  (let* ((pos (if (and (eventp last-input-event)
-                       (consp (event-start last-input-event)))
+  (let* ((is-mouse-event (consp last-input-event))
+         (win (if is-mouse-event
+                  (posn-window (event-start last-input-event))
+                (selected-window)))
+         (pos (if is-mouse-event
                   (posn-point (event-start last-input-event))
                 (point)))
-         (ovs (nconc (overlays-in pos (window-end))
-                     ;; 1-: after-string can appear at window-start with the
-                     ;; overlay end before window-start
-                     (overlays-in (1- (window-start)) pos))))
+         (ovs (with-selected-window win
+                (nconc (overlays-in pos (window-end))
+                       ;; 1-: after-string can appear at window-start with the
+                       ;; overlay end before window-start
+                       (overlays-in (1- (window-start)) pos)))))
     (cl-find-if (lambda (ov) (overlay-get ov 'gptel-follow)) ovs)))
 
 (defun gptel-follow--response-overlay-down (&optional response-ov)
   "Scroll RESPONSE-OV down by one line."
   (interactive (list (gptel-follow--response-overlay-at-point)))
-  (gptel-follow--response-overlay-scroll-to
-   (1+ (or (overlay-get response-ov 'gptel-follow-scroll-index) 0)) response-ov))
+  (when response-ov
+    (gptel-follow--response-overlay-scroll-to
+     (1+ (or (overlay-get response-ov 'gptel-follow-scroll-index) 0)) response-ov)))
 
 (defun gptel-follow--response-overlay-up (&optional response-ov)
   "Scroll RESPONSE-OV up by one line."
   (interactive (list (gptel-follow--response-overlay-at-point)))
-  (gptel-follow--response-overlay-scroll-to
-   (1- (or (overlay-get response-ov 'gptel-follow-scroll-index) 0)) response-ov))
+  (when response-ov
+    (gptel-follow--response-overlay-scroll-to
+     (1- (or (overlay-get response-ov 'gptel-follow-scroll-index) 0)) response-ov)))
 
 (defun gptel-follow--response-overlay-pagedown (&optional response-ov)
   "Scroll RESPONSE-OV down by one page (its full height)."
   (interactive (list (gptel-follow--response-overlay-at-point)))
-  (gptel-follow--response-overlay-scroll-to
-   (+ (or (overlay-get response-ov 'gptel-follow-scroll-index) 0)
-      (overlay-get response-ov 'gptel-follow-height))
-   response-ov))
+  (when response-ov
+    (gptel-follow--response-overlay-scroll-to
+     (+ (or (overlay-get response-ov 'gptel-follow-scroll-index) 0)
+        (overlay-get response-ov 'gptel-follow-height))
+     response-ov)))
 
 (defun gptel-follow--response-overlay-pageup (&optional response-ov)
   "Scroll RESPONSE-OV up by one page (its full height)."
   (interactive (list (gptel-follow--response-overlay-at-point)))
-  (gptel-follow--response-overlay-scroll-to
-   (- (or (overlay-get response-ov 'gptel-follow-scroll-index) 0)
-      (overlay-get response-ov 'gptel-follow-height))
-   response-ov))
+  (when response-ov
+    (gptel-follow--response-overlay-scroll-to
+     (- (or (overlay-get response-ov 'gptel-follow-scroll-index) 0)
+        (overlay-get response-ov 'gptel-follow-height))
+     response-ov)))
 
 (defun gptel-follow--response-overlay-resize (response-ov delta)
   "Resize RESPONSE-OV height by DELTA lines.
 DELTA is a positive or negative integer."
   (interactive (list (gptel-follow--response-overlay-at-point)
                      (prefix-numeric-value current-prefix-arg)))
-  (overlay-put response-ov 'gptel-follow-height
-               (max 2 (+ delta (overlay-get response-ov 'gptel-follow-height))))
-  (gptel-follow--response-overlay-render response-ov))
+  (when response-ov
+    (overlay-put response-ov 'gptel-follow-height
+                 (max 2 (+ delta (overlay-get response-ov 'gptel-follow-height))))
+    (gptel-follow--response-overlay-render response-ov)))
 
 (defun gptel-follow--pop-to-chat-buffer (response-ov)
   "Pop to the full chat buffer for RESPONSE-OV."
   (interactive (list (gptel-follow--response-overlay-at-point)))
-  (let* ((chat-buf (plist-get (overlay-get response-ov 'gptel-follow) :buffer))
-         (cwc (current-window-configuration))
-         (retfun (lambda () (interactive) (set-window-configuration cwc))))
-    (when (buffer-live-p chat-buf)
-      (pop-to-buffer chat-buf gptel-display-buffer-action)
-      (set-transient-map
-       (define-keymap "<remap> <keyboard-quit>" retfun)
-       (lambda () (eq (current-buffer) chat-buf)) nil
-       (substitute-command-keys "\\[keyboard-quit] to return!")))))
+  (when response-ov
+    (let* ((chat-buf (plist-get (overlay-get response-ov 'gptel-follow) :buffer))
+           (cwc (current-window-configuration))
+           (retfun (lambda () (interactive) (set-window-configuration cwc))))
+      (when (buffer-live-p chat-buf)
+        (pop-to-buffer chat-buf gptel-display-buffer-action)
+        (set-transient-map
+            (define-keymap "<remap> <keyboard-quit>" retfun)
+            (lambda () (eq (current-buffer) chat-buf)) nil
+            (substitute-command-keys "\\[keyboard-quit] to return!"))))))
 
 (defun gptel-follow--response-overlay-dispatch (response-ov)
   "Show an action menu for RESPONSE-OV.
@@ -635,8 +688,8 @@ and resizing the overlay."
           (orig-status (overlay-get response-ov 'after-string)))
       (unwind-protect
           (pcase-let ((newline-pos (string-search "\n" orig-status 2))
-                      (choices '((?v "visit buffer") (?r "reply")
-                                 (?k "clear") (?w "copy")
+                      (choices '((?b "visit buffer") (?r "reply")
+                                 (?c "clear") (?w "copy")
                                  (?+ "+height") (?- "-height")
                                  (?q "quit"))))
             (when (fboundp #'rmc--add-key-description)
@@ -667,8 +720,8 @@ and resizing the overlay."
                              (repeat-resize)))
                      nil nil t)))
         (pcase (car choice)
-          (?v (gptel-follow--pop-to-chat-buffer response-ov))
-          (?k (gptel-follow-clear-response-overlay response-ov))
+          (?b (gptel-follow--pop-to-chat-buffer response-ov))
+          (?c (gptel-follow-clear-response-overlay response-ov))
           (?w (let* ((resp (overlay-get response-ov 'after-string))
                      (header-end (string-search "\n" resp 2)))
                 (kill-new (substring-no-properties resp header-end))
@@ -754,7 +807,7 @@ SPC."
                  (gptel-follow--reference-bounds
                   origin-marker gptel-follow--reference-type)))
       (setq gptel-follow--reference-type type)
-      
+
       (prog1
           (if-let* ((reference-ov (plist-get gptel-follow--context :reference-ov))
                     ((overlayp reference-ov)))
@@ -825,7 +878,7 @@ With `prefix-arg' NO-QUIT, don't quit the prompt window."
                           origin-buf reference-ov (eq major-mode 'org-mode))))
     ;; Add context to prompt
     (when context-string (goto-char (point-min)) (insert context-string))
-    (unless no-quit (gptel-follow-quit))))
+    (unless no-quit (gptel-follow-quit 'keep))))
 
 (defun gptel-follow-send (&optional standalone)
   "Send the follow prompt to the LLM.
@@ -835,7 +888,7 @@ response inline at the point of origin.
 
 With `prefix-arg' STANDALONE, do not include any conversation history
 from the chat buffer."
-  (interactive)
+  (interactive "P")
   (cond
    ((not (plist-get gptel-follow--context :marker))
     (user-error "Cannot send query from here"))
@@ -861,7 +914,7 @@ from the chat buffer."
       (if delimited               ;Send only prompt (no buffer context)
           (without-restriction
             (goto-char (car delimited)) (push-mark)
-            (goto-char (cdr delimited)))
+            (goto-char (cdr delimited)) (activate-mark))
         (goto-char (point-max)))
       (let ((fsm (gptel-make-fsm :table gptel-send--transitions
                                  :handlers gptel-follow--handlers)))

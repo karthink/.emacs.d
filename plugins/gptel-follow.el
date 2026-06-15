@@ -508,6 +508,8 @@ source buffer for rendering."
                       (cond ((not (bobp)) (cl-decf start))
                             ((not (eobp)) (cl-incf end))))
                     (make-overlay start end)))
+            (overlay-put response-ov 'gptel-follow-height
+                         (gptel-follow--response-overlay-height))
             ;; For buffer-based rendering
             (let ((src-buf (gptel--temp-buffer " *gptel-follow-response*")))
               (plist-put context-plist :src src-buf)
@@ -535,8 +537,6 @@ source buffer for rendering."
                                    'face 'shadow))
           (overlay-put response-ov 'priority 65)
           (overlay-put response-ov 'keymap gptel-follow-response-overlay-map)
-          (overlay-put response-ov 'gptel-follow-height
-                       (gptel-follow--response-overlay-height))
           (gptel-follow--response-overlay-reset response-ov)))
       (gptel-follow--setup-response-overlay-keymap response-ov)
       (gptel-follow--response-overlay-mode 1))
@@ -973,6 +973,8 @@ With `prefix-arg' NO-QUIT, don't quit the prompt window."
          (origin-buf    (and origin-marker (marker-buffer origin-marker)))
          (context-string (gptel-follow--reference-text
                           origin-buf reference-ov (eq major-mode 'org-mode))))
+    ;; Clear active region
+    (with-current-buffer origin-buf (when (use-region-p) (deactivate-mark)))
     ;; Add context to prompt
     (when context-string (goto-char (point-min)) (insert context-string))
     (unless no-quit (gptel-follow-quit 'keep))))

@@ -117,7 +117,7 @@
   ;;   (transient-suffix-put 'gptel-menu (kbd "-n") :key "N")
   ;;   (transient-suffix-put 'gptel-menu (kbd "-t") :key "T"))
 
-  (setq gptel--system-message (alist-get 'default gptel-directives)
+  (setq gptel-system-prompt (alist-get 'default gptel-directives)
         gptel-default-mode 'org-mode)
   ;; (setf (alist-get 'org-mode gptel-prompt-prefix-alist) "*Prompt*: "
   ;;       (alist-get 'org-mode gptel-response-prefix-alist) "*Response*:\n"
@@ -166,12 +166,12 @@
   (cl-pushnew
    '(:propertize
      (:eval
-      (when (local-variable-p 'gptel--system-message)
+      (when (local-variable-p 'gptel-system-prompt)
         (concat
          "["
-         (if-let* ((n (car-safe (rassoc gptel--system-message gptel-directives))))
+         (if-let* ((n (car-safe (rassoc gptel-system-prompt gptel-directives))))
              (gptel--model-name n)
-           (gptel--describe-directive gptel--system-message 12))
+           (gptel--describe-directive gptel-system-prompt 12))
          "]")))
      'face 'gptel-rewrite-highlight-face)
    mode-line-misc-info)
@@ -401,8 +401,8 @@
   (gptel-make-preset 'default
     :description "DEFAULT: my settings for gptel"
     :system 'default
-    :backend "ChatGPT"
-    :model 'gpt-4.1-mini
+    :backend "Deepseek"
+    :model 'deepseek-chat
     :tools nil :temperature nil :stream t
     :include-reasoning 'ignore)
 
@@ -418,6 +418,19 @@
     :description "MODEL: gemini-flash"
     :model 'gemini-flash-latest
     :backend "Gemini")
+
+  (gptel-make-preset 'lite
+    :description "MODEL: smallest possible"
+    :model '(:function
+             (lambda (model)
+               (pcase (type-of gptel-backend)
+                 ('gptel-gemini 'gemini-flash-lite-latest)
+                 ((or 'gptel-openai 'gptel-openai-responses 'gptel-openai-oauth)
+                  'gpt-5.4-nano)
+                 ('gptel-deepseek 'deepseek-v4-flash)
+                 ('gptel-anthropic 'claude-haiku-4.5)
+                 (_ (message "No small model found, using %s" model)
+                    model)))))
 
   (gptel-make-preset 'sonar
     :description "MODEL: Sonar, follow up with gen, pro, research, or reasoning"
@@ -475,11 +488,21 @@
   ;; Presets for adding tools
   ;;-------------------------
 
+  (gptel-make-preset 'skill
+    :description "TOOLS: Add skill-reading tool"
+    :pre (lambda () (require 'gptel-agent-tools))
+    :tools '(:append ("Skill"))
+    :system '(:function
+              (lambda (sys)
+                (concat sys "\n\n" (gptel-agent--skills-system-message
+                                    (gptel-agent--update-skills))))))
+
   (gptel-make-preset 'web
     :description "TOOLS: Add basic web search tools"
     :pre (lambda () (require 'gptel-agent-tools))
     :tools '(:append ("WebSearch" "WebFetch" "YouTube"))
-    :system '(:append "\n\nUse the provided tools to search the web for up-to-date information."))
+    ;; :system '(:append "\n\nUse the provided tools to search the web for up-to-date information.")
+    )
 
   (gptel-make-preset 'files
     :pre (lambda () (require 'gptel-agent-tools))
@@ -495,7 +518,8 @@
     :pre (lambda () (require 'gptel-agent-tools))
     :description "TOOLS: Add Bash eval"
     :tools  '(:append ("Bash"))
-    :system '(:append "Use the Bash tool to introspect and change the state of the system."))
+    ;; :system '(:append "Use the Bash tool to introspect and change the state of the system.")
+    )
 
   (gptel-make-preset 'eval
     :pre (lambda () (require 'gptel-agent-tools))
@@ -555,6 +579,20 @@ enclose them in markdown quotes.
                              (string-match-p "darwin" (gptel-tool-name tool)))
                            (mapcan #'gptel-get-tool tools)))))
 
+  (gptel-make-preset 'github-ro
+    :description "TOOLS: Add GitHub MCP (minus darwin)"
+    :pre (lambda () (gptel-mcp-connect '("github") 'sync))
+    :system '(:append "\n\nUse the provided GitHub MCP tools to look for up-to-date information")
+    :tools
+    '( :append ("mcp-github")
+       :function (lambda (tools)
+                   (cl-delete-if
+                    (lambda (tool)
+                      (or
+                       (string-match-p "\\(?:merge\\|push\\|update\\|add\\|create\\|fork\\)_"
+                                       (gptel-tool-name tool))))
+                    (mapcan #'gptel-get-tool tools)))))
+
   ;;-------------------------------
   ;; Presets for contextual actions
   ;;-------------------------------
@@ -568,17 +606,17 @@ enclose them in markdown quotes.
   (gptel-make-preset 'include
     :description "CONTEXT: Include the filename or buffer following @include"
     :context
-    '(:function
-      (lambda (context)
-        (and-let* ((filename (progn (skip-syntax-forward " ")
-                                    (if (eq (char-after) ?\")
-                                        (read (current-buffer))
-                                      (thing-at-point 'filename)))))
-          (cond
-           ((file-readable-p filename) (push filename context))
-           ((buffer-live-p (get-buffer filename)) (push (get-buffer filename) context))
-           (t (message "Ignoring @include %s, file not readable" filename))))
-        context)))
+    `(:function
+      ,(lambda (context)
+         (and-let* ((filename (progn (skip-syntax-forward " ")
+                                     (if (eq (char-after) ?\")
+                                         (read (current-buffer))
+                                       (thing-at-point 'filename)))))
+           (cond
+            ((file-readable-p filename) (push filename context))
+            ((buffer-live-p (get-buffer filename)) (push (get-buffer filename) context))
+            (t (message "Ignoring @include %s, file not readable" filename))))
+         context)))
 
   (defun my/gptel-windows-on-frame ()
     "Return all windows on frame that aren't gptel chat buffers."
@@ -879,8 +917,8 @@ Do not repeat any of the BEFORE or AFTER code." lang lang lang)
                      (expand-file-name
                       "commit-summary.txt" user-emacs-directory))
                     (buffer-string)))
-    :backend "ChatGPT"
-    :model 'gpt-4.1-nano
+    :backend "Gemini"
+    :model 'gemini-flash-lite-latest
     :include-reasoning nil
     :tools nil)
   (defun my/gptel-commit-summary ()
@@ -1088,39 +1126,55 @@ h2 code { font-family: inherit; font-size: inherit; font-weight: inherit; }
 
 (use-package mcp
   :after gptel
+  :init (require 'gptel-integrations)
+  :defer
   :ensure (:host github :repo "lizqwerscott/mcp.el")
-  :config
-  (require 'gptel-integrations)
-  (setq mcp-hub-servers
-        `(("github"
-           :command "github-mcp-server"
-           :args ("stdio")
-           :env (:GITHUB_PERSONAL_ACCESS_TOKEN
-                 ,(auth-source-pass-get 'secret "api/api.github.com")))
-          ("filesystem"
-           :command "mcp-server-filesystem"
-           :args (,(expand-file-name "~/dotnix/")))
-          ("deepwiki" :url "https://mcp.deepwiki.com/sse")
-          ("memory" :command "mcp-server-memory")
-          ("sequential-thinking"
-           :command "uvx"
-           :args ("--from" "git+https://github.com/arben-adm/mcp-sequential-thinking"
-                  "--with" "portalocker" "mcp-sequential-thinking"))
-          ("nixos" :command "uvx" :args ("mcp-nixos"))
-          ("brave"
-           :command "mcp-server-brave-search"
-           :args nil
-           :env (:BRAVE_API_KEY ,(auth-source-pass-get
-                                  'secret "api/api.search.brave.com/search"))))))
+  :custom
+  (mcp-hub-servers
+   `(("github"
+      :command "github-mcp-server"
+      :args ("stdio")
+      :env (:GITHUB_PERSONAL_ACCESS_TOKEN
+            ,(auth-source-pass-get 'secret "api/api.github.com")))
+     ;; ("playwright"
+     ;;  :command "mcp-server-playwright"
+     ;;  :env ( :PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD "1"
+     ;;         :PLAYWRIGHT_BROWSERS_PATH
+     ;;         "/nix/store/ax73yyqxb7h6hq4xrp59b32s7yqmlw8d-playwright-browsers")
+     ;;  :args nil)
+     ("filesystem"
+      :command "mcp-server-filesystem"
+      :args (,(expand-file-name "~/dotnix/")))
+     ("deepwiki" :url "https://mcp.deepwiki.com/sse")
+     ("memory" :command "mcp-server-memory")
+     ("sequential-thinking"
+      :command "uvx"
+      :args ("--from" "git+https://github.com/arben-adm/mcp-sequential-thinking"
+             "--with" "portalocker" "mcp-sequential-thinking"))
+     ("nixos" :command "uvx" :args ("mcp-nixos"))
+     ("brave"
+      :command "mcp-server-brave-search"
+      :args nil
+      :env (:BRAVE_API_KEY ,(auth-source-pass-get
+                             'secret "api/api.search.brave.com/search"))))))
 
 (use-package gptel-agent
   :after gptel
   :ensure ( :host github :repo "karthink/gptel-agent" :protocol ssh
             :files (:defaults "agents"))
   :defer t
+  :init
+  (gptel-make-preset 'gptel-agent
+    :pre #'gptel-agent-update
+    :post (lambda () (gptel-preset 'gptel-agent #'set-local)))
+  (gptel-make-preset 'gptel-plan
+    :pre #'gptel-agent-update
+    :post (lambda () (gptel-preset 'gptel-plan #'set-local)))
   :config
-  (setq gptel-agent-preset
-        '(:backend "Gemini" :model gemini-flash-lite-latest))
+  (gptel-agent-update)
+  (setq gptel-agent-preset nil)
+  ;; '(:backend "ChatGPT" :model gpt-5.4-nano)
+  ;; '(:backend "Gemini" :model gemini-flash-latest)
 
   (defvar my/gptel-agent-edit-confirm-cache nil)
 

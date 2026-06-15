@@ -112,7 +112,9 @@
   :commands dot-mode
   :bind ( :map dot-mode-map
           ("C-c ." . nil)
-          ("C-M-." . nil))
+          ("C-M-." . nil)
+          :map kmacro-keymap
+          ("." . dot-mode-copy-to-last-kbd-macro))
   :hook ((prog-mode conf-mode text-mode tex-mode) . 'dot-mode-on))
 
 ;;;; abbrevs

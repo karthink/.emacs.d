@@ -331,7 +331,14 @@ ARGS is the raw argument list (STRING &optional TRANS-CASE)."
            (make-composed-keymap
             (define-keymap
               "C-c C-e" #'my/read-command-from-buffer
-              "<remap> <display-local-help>" #'man)
+              "<remap> <display-local-help>"
+              (lambda () (interactive)
+                (cond
+                 ((and-let* ((sym
+                              (or (thing-at-point 'symbol)
+                                  (thing-at-point 'word))))
+                    (man sym)))
+                 (t "No manpage for thing at point"))))
             minibuffer-local-shell-command-map)))
       (minibuffer-with-setup-hook
           (lambda () (goto-char (minibuffer-prompt-end))
@@ -501,6 +508,18 @@ ARGS is the raw argument list (STRING &optional TRANS-CASE)."
 (setq duplicate-line-final-position -1
       duplicate-region-final-position -1)
 (global-set-key (kbd "C-S-y") 'copy-from-above-command)
+(define-advice copy-from-above-command (:around (func &optional arg) comment)
+  (if (equal current-prefix-arg '(4))
+      (progn
+        (funcall func)
+        (save-excursion
+          (forward-line 0)
+          (let ((ln (line-number-at-pos (point))))
+            (backward-char)
+            (skip-chars-backward "\n\t ")
+            (unless (= (line-number-at-pos) ln)
+              (comment-line 1)))))
+    (funcall func arg)))
 
 ;; Key to kill-whole-line
 (global-set-key (kbd "C-S-k") 'kill-whole-line)

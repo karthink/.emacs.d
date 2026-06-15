@@ -14,6 +14,12 @@
   :prefix "demo-"
   :group 'convenience)
 
+(defcustom demo-disabled-modes
+  '(visible-mark-mode )
+  "List of minor modes to disable when starting a demo."
+  :group 'demo
+  :type '(repeat symbol))
+
 (eval-when-compile
   (defmacro demo--define-infix (key name description type default
                                     &rest reader)
@@ -35,8 +41,8 @@
   (demo--define-infix
    "A" "aspect-ratio" "Frame aspect ratio"
    '(choice (const :tag "tall" 'tall)
-     (const :tag "wide" 'wide)
-     (const :tag "unspecified" nil))
+            (const :tag "wide" 'wide)
+            (const :tag "unspecified" nil))
    nil
    (intern-soft (completing-read "Aspect ratio: " '(tall wide nil))))
 
@@ -88,8 +94,8 @@
   (demo--define-infix
    "p" "popper-style" "popup style?"
    '(choice (const :tag "basic" t)
-     (const :tag "custom" 'user)
-     (const :tag "off" nil))
+            (const :tag "custom" 'user)
+            (const :tag "off" nil))
    t
    (pcase demo-popper-style
      ('t 'user)
@@ -124,7 +130,11 @@
     (demo--set-popper-style)
     (demo--set-truncate-lines-p)]]
   ["Action"
-   ("RET" "Toggle demo-mode" demo-mode)])
+   ("D" "Toggle demo-mode" demo-mode)]
+  (interactive)
+  (if demo-mode
+      (demo-mode -1)
+    (transient-setup 'demo-transient)))
 
 (define-minor-mode demo-mode
   "Mode for demos."
@@ -137,6 +147,7 @@
         (put 'demo-mode-line-p :original (default-value 'mode-line-format))
         (put 'demo-theme :original custom-enabled-themes)
         (put 'demo-fontsize :original (face-attribute 'default :height))
+        (put 'variable-pitch :original (face-attribute 'variable-pitch :height))
         (put 'demo-keycast-p
              :original
              (or (and (bound-and-true-p keycast-tab-bar-mode) 'tab-bar)
@@ -159,13 +170,6 @@
         (global-set-key (kbd "C-s-SPC") #'ignore)
         (global-set-key (kbd "s-r") #'ignore)
         (global-set-key (kbd "C-s-t") #'ignore)
-        ;; Unneeded
-        (when (featurep 'project-x)
-	  (dolist (mode '(project-x-mode))
-            (if (bound-and-true-p mode)
-                (funcall (symbol-function mode) 0)))
-          
-          (project-x-mode 0))
         
         ;; Popups
         (demo-popper-apply-settings demo-popper-style)
@@ -214,6 +218,16 @@
          ;; :width 'normal
          )
 
+        (set-face-attribute 'tooltip nil :height (floor (* 0.9 demo-fontsize))
+                            :weight 'semibold)
+        (set-face-attribute 'variable-pitch nil :height demo-fontsize)
+
+        ;; Disabled minor modes
+        (dolist (sym demo-disabled-modes)
+          (when (and (boundp sym) (symbol-value sym))
+            (put sym :original t)
+            (funcall sym -1)))
+
         ;; Frame size and parameters
         (set-frame-parameter nil 'name "emacs-demo")
         (let ((frame-resize-pixelwise t)
@@ -248,6 +262,10 @@
      ;; :slant 'normal
      ;; :width 'normal
      :height (get 'demo-fontsize :original))
+    (set-face-attribute
+     'tooltip nil :height (get 'demo-fontsize :original))
+    (set-face-attribute
+     'variable-pitch nil :height (get 'variable-pitch :original))
     (set-frame-parameter nil 'name (get 'demo-aspect-ratio :name))
 
     (pcase (get 'demo-keycast-p :original)
@@ -259,6 +277,11 @@
               (keycast-tab-bar-mode -1))
             (when keycast-mode-line-mode
               (keycast-mode-line-mode -1))))
+
+    ;; Restore mode lines
+    (dolist (sym demo-disabled-modes)
+      (when (get sym :original)
+        (funcall sym 1)))
     
     ;; Restore mode-line, tab-bar and frame settings
     (kill-local-variable 'mode-line-format)

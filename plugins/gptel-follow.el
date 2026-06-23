@@ -184,11 +184,19 @@ This is an extended copy of the handlers for `gptel-send'.  See
 The buffer name is based on the project name.  Results are cached
 in `gptel-follow-chat-buffer-alist'."
   (with-current-buffer buf
-    (and-let* ((proj (project-current)))
-      (with-memoization
-          (alist-get proj gptel-follow-chat-buffer-alist
-                     nil t #'equal)
-        (format "*gptel-follow:%s*" (car-safe (last proj)))))))
+    (and-let* ((proj (project-current))
+               (root (project-root proj)))
+      (if-let* ((matching-bufs
+                 (match-buffers
+                  (lambda (b-or-n) ;Find a non-hidden gptel buffer in the project root
+                    (and-let* ((b (get-buffer b-or-n)))
+                      (and (buffer-local-value 'gptel-mode b)
+                           (not (= (aref (buffer-name b) 0) 32))
+                           (string= (buffer-local-value 'default-directory b)
+                                    root)))))))
+          (buffer-name (car matching-bufs))
+        (format "*gptel:%s*"            ;Or make up a generic buffer name
+                (file-name-nondirectory (substring root nil -1)))))))
 
 (defun gptel-follow-chat-buffer-name (origin-buf)
   "Find a suitable chat buffer for `gptel-follow' at point in ORIGIN-BUF."

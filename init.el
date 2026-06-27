@@ -175,6 +175,7 @@
       ;; (keymap-global-unset "C-@")       ;conflicts with C-SPC
       (keymap-global-unset "M-[")
       (setq recenter-redisplay nil)
+      (with-eval-after-load 'epg (setq epg-pinentry-mode 'loopback))
       (with-eval-after-load 'smartparens
         ;; conflicts with focus-in/out events
         (keymap-set smartparens-mode-map "M-[" nil))

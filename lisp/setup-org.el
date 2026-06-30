@@ -2081,6 +2081,36 @@ the full date reader."
               :after #'my/org-review-increment-count))
 
 ;;------------------------------------------------------------------------
+;; ** PODQUEUE
+;;------------------------------------------------------------------------
+(use-package org-capture
+  :after org-capture
+  :init
+  (add-hook 'org-capture-prepare-finalize-hook #'my/org-podqueue-add)
+  (add-hook 'org-ctrl-c-ctrl-c-final-hook #'my/org-podqueue-add 82)
+  :config
+  (defun my/org-podqueue-add ()
+    (when (member "@podqueue" (org-get-tags nil t))
+      (save-excursion
+        (goto-char (org-entry-beginning-position))
+        (let ((links))
+          (while (re-search-forward org-link-any-re (org-entry-end-position) t)
+            ;; Only consider valid links or links openable via `org-open-at-point'.
+            (let ((elem (save-match-data (org-element-context))))
+              (when (and (org-element-type-p
+                          elem '(link comment comment-block node-property keyword))
+                         (member (org-element-property :type elem)
+                                 '("http" "https")))
+                (push (org-element-property :raw-link elem) links))))
+          (if (not links)
+              (message "No podqueue link found, ignoring entry")
+            (let ((heading (org-get-heading t t t t)))
+              (podqueue-add (car links)
+                            (unless (or (string-blank-p heading)
+                                        (string-prefix-p "[[" heading))
+                              heading)))))))))
+
+;;------------------------------------------------------------------------
 ;; ** MOVIEDATA
 ;;------------------------------------------------------------------------
 (use-package moviedata

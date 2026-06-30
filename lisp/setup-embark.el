@@ -477,6 +477,48 @@ highlighting."
           (wombag-add-entry url "")
         (message "Could not initialize Wallabag"))))
 
+;; TODO: Fix error handling
+(use-package embark
+  :bind (:map embark-url-map ("L" . podqueue-add))
+  :config
+  (defun podqueue-add (link &optional title)
+    (let* ((key-func
+            (plist-get
+             (car (auth-source-search
+                   :host "podqueue.karthinks.com"
+                   :require '(:secret)))
+             :secret))
+           (payload (list :url link :submitted_via "emacs"))
+           key)
+      (cond
+       ((functionp key-func) (setq key (funcall key-func)))
+       ((not noninteractive)
+        (setq key (read-string "Bearer token for podqueue: ")))
+       (t (user-error "No bearer token available for podqueue-add")))
+      (when title (plist-put payload :title_override title))
+      (let ((callback
+             (lambda (status)
+               (cond
+                ((looking-at-p "HTTP/.*? 202 Accepted")
+                 (goto-char url-http-end-of-headers)
+                 (condition-case nil
+                     (pcase-let (((map :id) (json-parse-buffer
+                                             :object-type 'plist)))
+                       (message "Enqueued \"%s\" with id: %s"
+                                link id))
+                   (json-parse-error
+                    (switch-to-buffer (current-buffer)))
+                   (:success (kill-buffer (current-buffer)))))
+                (t (message "Podqueue failed")
+                   (switch-to-buffer (current-buffer))))))
+            (url-request-method "POST")
+            (url-request-extra-headers
+             `(("Content-Type" . "application/json")
+               ("Authorization" . ,(concat "Bearer " key))))
+            (url-request-data (json-serialize payload)))
+        (url-retrieve "https://podqueue.karthinks.com/add"
+                      callback nil t)))))
+
 ;; Embark integration for Org mode
 (use-package embark-org
   :after (org embark)

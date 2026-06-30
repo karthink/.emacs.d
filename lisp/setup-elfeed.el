@@ -691,26 +691,25 @@ Can be YouTube URLs or text entries"
            :repo "karthink/elfeed-tube")
   :after (elfeed-tube org))
 
-;; ** Elfeed prune: Remove elfeed entries
-(use-package elfeed-prune
-  :defer
-  :ensure (:host "www.codeberg.org"
-           :protocol https
-           :repo "bram85/elfeed-prune")
+;; ** Podqueue support: tag an entry with podqueue to enqueue it
+(use-package elfeed
+  :hook (elfeed-tag-hook . my/elfeed-podqueue-add)
   :config
-  (setq elfeed-prune-predicates nil
-        elfeed-prune-enabled nil)
-  (defun my/elfeed-remove-feed (_ feed)
-    "Add this function to the hook `elfeed-prune-predicates'.
-
-Make sure there's nothing else in `elfeed-prune-predicates'!
-
-And set `elfeed-prune-enabled' to true, then call `elfeed-prune'."
-    (seq-some
-     (lambda (title)
-       (string-match-p title (elfeed-feed-title feed)))
-     '("Feed title to be removed"
-       "Other feed"))))
+  (keymap-set elfeed-search-mode-map "L" (elfeed-search-tag-as 'podqueue))
+  (defun my/elfeed-podqueue-add (entries tags)
+    (when (memq 'podqueue tags)
+      (dolist (entry entries)
+        (let ((title (elfeed-entry-title entry))
+              (link (elfeed-entry-link entry)))
+          (if-let* ((enclosures (elfeed-entry-enclosures entry))
+                    (audio-enclosure
+                     (seq-find (lambda (link)
+                                 (or (string-suffix-p ".mp3" link)
+                                     (string-suffix-p ".m4a" link)))
+                               enclosures)))
+              (podqueue-add audio-enclosure title)
+            (podqueue-add link title))))
+      (elfeed-untag entries 'unread))))
 
 (provide 'setup-elfeed)
 ;; setup-elfeed.el ends here

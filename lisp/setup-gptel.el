@@ -221,7 +221,10 @@
 ;; * gptel LLM backends
 ;;---------------------------------------------------------
 (use-package gptel
+  :unless IS-VIRT
   :after gptel
+  :bind ( :map embark-url-map
+          ("?" . gptel-kagi-summarize))
   :config
   (gptel-make-openai "ChatGPT"
     :stream t
@@ -243,7 +246,10 @@
       :endpoint "/api/coding/paas/v4/chat/completions"
       :key #'gptel-api-key-from-auth-source
       :models
-      `(( glm-4.7            :input-cost 0.6 :output-cost 2.2
+      `(( glm-5.2            :input-cost 0.6 :output-cost 2.2
+          :context-window 200
+          :capabilities (json tool reasoning))
+        ( glm-4.7            :input-cost 0.6 :output-cost 2.2
           :context-window 200
           :capabilities (json tool reasoning))
         ( glm-4.7-flashx     :input-cost 0.6 :output-cost 2.2
@@ -303,6 +309,12 @@
     :stream t
     :key #'gptel-api-key-from-auth-source)
 
+  (defvar gptel--kagi
+    (gptel-make-kagi
+        "Kagi"
+      :key (lambda () (auth-source-pass-get 'secret "api/kagi-ai.com")))
+    "Kagi source for gptel")
+
   (gptel-make-openai "OpenRouter"
     :host "openrouter.ai"
     :endpoint "/api/v1/chat/completions"
@@ -351,7 +363,12 @@
     :stream t)
 
   (defvar gptel--gemini
-    (gptel-make-gemini "Gemini" :key gptel-api-key :stream t))
+    (gptel-make-gemini "Gemini"
+      :key (lambda ()
+             (auth-source-pass-get
+              'secret
+              "api/generativelanguage.googleapis.com/work"))
+      :stream t))
 
   (with-eval-after-load 'gptel-ollama
     (defvar gptel--ollama
@@ -375,29 +392,34 @@
       :host "localhost:4891"
       :models '(mistral-7b-openorca.Q4_0.gguf)))
 
-  (setq-default gptel-model 'gemini-flash-latest
-                gptel-backend gptel--gemini))
+  (setq-default gptel-model 'deepseek-chat
+                gptel-backend (gptel-get-backend "Deepseek"))
 
-;;================================================================
-;; * Directives and presets
-;;================================================================
+  (defun gptel-kagi-summarize (url)
+    (interactive "sSummarize url: ")
+    (let ((gptel-backend gptel--kagi)
+          (gptel-model "summarize:agnes")
+          (gptel-use-curl)
+          (gptel-use-context))
+      (gptel-request url
+        :callback
+        (lambda (response info)
+          (if response
+              (progn
+                (gptel--prepare-ask-buffer)
+                (let ((scroll-conservatively 0))
+                  (with-current-buffer gptel-ask--buffer-name
+                    (insert "\n" url "\nSummary:\n\n"
+                            response "\n\n----")
+                    (display-buffer (current-buffer)))))
+            (message "gptel-request failed with message: %s"
+                     (plist-get info :status)))))
+      (message "Generating summary for: %s" url)))
 
-;;----------------------------------------------------------------
-;; ** gptel-prompts: Get directives from a prompts directory
-;;----------------------------------------------------------------
-(use-package gptel-prompts
-  :ensure (:host github :repo "jwiegley/gptel-prompts")
-  :after gptel
-  :config
-  (when (file-directory-p gptel-prompts-directory)
-    (gptel-prompts-update)))
+  ;;-------------------
+  ;; Presets for models
+  ;;-------------------
 
-;;----------------------------------------------------------------
-;; ** gptel presets
-;;----------------------------------------------------------------
-(use-package gptel
-  :after gptel
-  :config
   (gptel-make-preset 'default
     :description "DEFAULT: my settings for gptel"
     :system 'default
@@ -406,9 +428,6 @@
     :tools nil :temperature nil :stream t
     :include-reasoning 'ignore)
 
-  ;;-------------------
-  ;; Presets for models
-  ;;-------------------
   (gptel-make-preset 'gemini
     :description "MODEL: gemini-pro"
     :model 'gemini-3-pro-preview
@@ -418,19 +437,6 @@
     :description "MODEL: gemini-flash"
     :model 'gemini-flash-latest
     :backend "Gemini")
-
-  (gptel-make-preset 'lite
-    :description "MODEL: smallest possible"
-    :model '(:function
-             (lambda (model)
-               (pcase (type-of gptel-backend)
-                 ('gptel-gemini 'gemini-flash-lite-latest)
-                 ((or 'gptel-openai 'gptel-openai-responses 'gptel-openai-oauth)
-                  'gpt-5.4-nano)
-                 ('gptel-deepseek 'deepseek-v4-flash)
-                 ('gptel-anthropic 'claude-haiku-4.5)
-                 (_ (message "No small model found, using %s" model)
-                    model)))))
 
   (gptel-make-preset 'sonar
     :description "MODEL: Sonar, follow up with gen, pro, research, or reasoning"
@@ -450,10 +456,9 @@
            (t 'sonar)))))
     :stream nil :tools nil :temperature 0.66)
 
-  ;;---------------------------
-  ;; Presets for system prompts
-  ;;---------------------------
-  (gptel-make-preset 'nostream :description "No streaming" :stream nil)
+  ;;------------------------------------
+  ;; Presets for system prompts + models
+  ;;------------------------------------
 
   (gptel-make-preset 'prog
     :description "PROMPT: Claude Sonnet, with context, generates only code"
@@ -479,119 +484,46 @@
     :parents '(think)
     :backend "Claude" :model 'claude-sonnet-4-5-20250929 :system 'explain
     :tools nil :stream t :temperature nil :max-tokens nil
-    :use-context 'system :include-reasoning nil)
+    :use-context 'system :include-reasoning nil))
+
+;;================================================================
+;; * Directives and presets
+;;================================================================
+
+;;----------------------------------------------------------------
+;; ** gptel-prompts: Get directives from a prompts directory
+;;----------------------------------------------------------------
+(use-package gptel-prompts
+  :ensure (:host github :repo "jwiegley/gptel-prompts")
+  :after gptel
+  :config
+  (when (file-directory-p gptel-prompts-directory)
+    (gptel-prompts-update)))
+
+;;----------------------------------------------------------------
+;; ** gptel presets
+;;----------------------------------------------------------------
+(use-package gptel
+  :after gptel
+  :config
+  (gptel-make-preset 'lite
+    :description "MODEL: smallest possible"
+    :model '(:function
+             (lambda (model)
+               (pcase (type-of gptel-backend)
+                 ('gptel-gemini 'gemini-flash-lite-latest)
+                 ((or 'gptel-openai 'gptel-openai-responses 'gptel-openai-oauth)
+                  'gpt-5.4-nano)
+                 ('gptel-deepseek 'deepseek-v4-flash)
+                 ('gptel-anthropic 'claude-haiku-4.5)
+                 (_ (message "No small model found, using %s" model)
+                    model)))))
+
+  (gptel-make-preset 'nostream :description "No streaming" :stream nil)
 
   (gptel-make-preset 'anki
     :description "PROMPT: Create anki question in org-anki format"
     :system 'anki)
-  ;;-------------------------
-  ;; Presets for adding tools
-  ;;-------------------------
-
-  (gptel-make-preset 'skill
-    :description "TOOLS: Add skill-reading tool"
-    :pre (lambda () (require 'gptel-agent-tools))
-    :tools '(:append ("Skill"))
-    :system '(:function
-              (lambda (sys)
-                (concat sys "\n\n" (gptel-agent--skills-system-message
-                                    (gptel-agent--update-skills))))))
-
-  (gptel-make-preset 'web
-    :description "TOOLS: Add basic web search tools"
-    :pre (lambda () (require 'gptel-agent-tools))
-    :tools '(:append ("WebSearch" "WebFetch" "YouTube"))
-    ;; :system '(:append "\n\nUse the provided tools to search the web for up-to-date information.")
-    )
-
-  (gptel-make-preset 'files
-    :pre (lambda () (require 'gptel-agent-tools))
-    :description "TOOLS: Add file read/write"
-    :tools '(:append ("Read" "Glob" "Write" "Edit" "Insert")))
-
-  (gptel-make-preset 'files-ro
-    :pre (lambda () (require 'gptel-agent-tools))
-    :description "TOOLS: Add file read-only"
-    :tools '(:append ("Read" "Glob")))
-
-  (gptel-make-preset 'shell
-    :pre (lambda () (require 'gptel-agent-tools))
-    :description "TOOLS: Add Bash eval"
-    :tools  '(:append ("Bash"))
-    ;; :system '(:append "Use the Bash tool to introspect and change the state of the system.")
-    )
-
-  (gptel-make-preset 'eval
-    :pre (lambda () (require 'gptel-agent-tools))
-    :tools  '(:append ("Eval"))
-    :system '(:append "Use the Eval tool to change the state of the running Emacs instance.")
-    :description "TOOLS: Add eval")
-
-  (gptel-make-preset 'introspect
-    :pre (lambda () (require 'gptel-agent-tools-introspection))
-    :description "Introspect Emacs with Ragmacs"
-    :system
-    "You are pair programming with the user in Emacs and on Emacs.
-
-Your job is to dive into Elisp code and understand the APIs and
-structure of elisp libraries and Emacs.  Use the provided tools to do
-so, but do not make duplicate tool calls for information already
-available in the chat.
-
-<tone>
-1. Be terse and to the point.  Speak directly.
-2. Explain your reasoning.
-3. Do NOT hedge or qualify.
-4. If you don't know, say you don't know.
-5. Do not offer unprompted advice or clarifications.
-6. Never apologize.
-7. Do NOT summarize your answers.
-</tone>
-
-<code_generation>
-When generating code:
-1. Create a plan first: list briefly the design steps or ideas involved.
-2. Use the provided tools to check that functions or variables you use
-in your code exist.
-3. Also check their calling convention and function-arity before you use
-them.
-</code_generation>
-
-<formatting>
-1. When referring to code symbols (variables, functions, tags etc)
-enclose them in markdown quotes.
-  Examples: `read_file`, `getResponse(url, callback)`
-  Example: `<details>...</details>`
-2. If you use LaTeX notation, enclose math in \( and \), or \[ and \] delimiters.
-</formatting>"
-    :cache '(tool)
-    :tools '("introspection"))
-
-  (gptel-make-preset 'nixos
-    :description "TOOLS: Add NixOS MCP (minus darwin)"
-    :pre (lambda () (gptel-mcp-connect '("nixos") 'sync))
-    :system '(:append "\n\nUse the provided NixOS tools to look for up-to-date information and\
- examine the state of my system")
-    :tools '( :append ("mcp-nixos")
-              :function (lambda (tools)
-                          (cl-delete-if
-                           (lambda (tool)
-                             (string-match-p "darwin" (gptel-tool-name tool)))
-                           (mapcan #'gptel-get-tool tools)))))
-
-  (gptel-make-preset 'github-ro
-    :description "TOOLS: Add GitHub MCP (minus darwin)"
-    :pre (lambda () (gptel-mcp-connect '("github") 'sync))
-    :system '(:append "\n\nUse the provided GitHub MCP tools to look for up-to-date information")
-    :tools
-    '( :append ("mcp-github")
-       :function (lambda (tools)
-                   (cl-delete-if
-                    (lambda (tool)
-                      (or
-                       (string-match-p "\\(?:merge\\|push\\|update\\|add\\|create\\|fork\\)_"
-                                       (gptel-tool-name tool))))
-                    (mapcan #'gptel-get-tool tools)))))
 
   ;;-------------------------------
   ;; Presets for contextual actions
@@ -639,6 +571,8 @@ enclose them in markdown quotes.
                     (my/gptel-windows-on-frame)))))
 
 (use-package gptel-anthropic-oauth
+  :unless IS-VIRT
+  :disabled
   :after (gptel-anthropic)
   :config
   (gptel-make-anthropic-oauth "ClaudeOauth" :stream t)
@@ -776,19 +710,11 @@ Do not repeat any of the BEFORE or AFTER code." lang lang lang)
 ;; ** gptel-ask: persistent side-buffer for one-off queries
 ;;----------------------------------------------------------------
 (use-package gptel-ask
+  :unless IS-VIRT
   :after gptel
   :autoload gptel-ask-notify
-  :bind ( :map help-map
-          ("C-q" . gptel-ask)
-          :map embark-url-map
-          ("?" . gptel-kagi-summarize))
+  :bind ( :map help-map ("C-q" . gptel-ask))
   :config
-  (defvar gptel--kagi
-    (gptel-make-kagi
-        "Kagi"
-      :key (lambda () (auth-source-pass-get 'secret "api/kagi-ai.com")))
-    "Kagi source for gptel")
-
   (setf (alist-get "^\\*gptel-ask\\*" display-buffer-alist
                    nil nil #'equal)
         `((display-buffer-reuse-window display-buffer-in-side-window)
@@ -797,33 +723,13 @@ Do not repeat any of the BEFORE or AFTER code." lang lang lang)
           (body-function . ,(lambda (win) (with-selected-window win
                                        (my/gptel-easy-page))))
           (post-command-select-window . t)
-          (bump-use-time . t)))
-
-  (defun gptel-kagi-summarize (url)
-    (interactive "sSummarize url: ")
-    (let ((gptel-backend gptel--kagi)
-          (gptel-model "summarize:agnes")
-          (gptel-use-curl)
-          (gptel-use-context))
-      (gptel-request url
-        :callback
-        (lambda (response info)
-          (if response
-              (progn
-                (gptel--prepare-ask-buffer)
-                (let ((scroll-conservatively 0))
-                  (with-current-buffer gptel-ask--buffer-name
-                    (insert "\n" url "\nSummary:\n\n"
-                            response "\n\n----")
-                    (display-buffer (current-buffer)))))
-            (message "gptel-request failed with message: %s"
-                     (plist-get info :status)))))
-      (message "Generating summary for: %s" url))))
+          (bump-use-time . t))))
 
 ;;----------------------------------------------------------------
 ;; ** gptel-quick: describe thing at point
 ;;----------------------------------------------------------------
 (use-package gptel-quick
+  :unless IS-VIRT
   :ensure ( :host github :protocol ssh :repo "karthink/gptel-quick")
   :bind ( :map embark-general-map ("?" . gptel-quick))
   :requires gptel
@@ -835,8 +741,9 @@ Do not repeat any of the BEFORE or AFTER code." lang lang lang)
 ;; ** flymake-gptel
 ;;----------------------------------------------------------------
 (use-package flymake-gptel
+  :unless IS-VIRT
   :ensure (:host github :protocol ssh
-           :repo "karthink/flymake-gptel")
+                 :repo "karthink/flymake-gptel")
   :bind (:map flymake-gptel-repeat-map
          ("SPC" . flymake-gptel-accept-and-next))
   :config
@@ -851,6 +758,7 @@ Do not repeat any of the BEFORE or AFTER code." lang lang lang)
 ;; ** Project-specific chat file
 ;;----------------------------------------------------------------
 (use-package project
+  :disabled
   :after (popper visual-fill-column)
   :bind (:map project-prefix-map
          ("C" . gptel-project))
@@ -899,14 +807,16 @@ Do not repeat any of the BEFORE or AFTER code." lang lang lang)
 ;; ** Actual eshell integration, currently non-functional
 ;;----------------------------------------------------------------
 (use-package gptel-eshell
+  :disabled
   :ensure (:host github :protocol ssh
-           :repo "karthink/gptel-eshell")
+                 :repo "karthink/gptel-eshell")
   :defer)
 
 ;;----------------------------------------------------------------
 ;; ** git commit headings
 ;;----------------------------------------------------------------
 (use-package gptel
+  :unless IS-VIRT
   :after (gptel git-commit)
   :hook ((git-commit-setup . my/gptel-commit-summary))
   :config
@@ -957,6 +867,7 @@ Intended to be placed in `git-commit-setup-hook'."
 ;; ** org export gptel chat buffers
 ;;----------------------------------------------------------------
 (use-package gptel
+  :unless IS-VIRT
   :defer
   :after ox-html
   :config
@@ -1119,14 +1030,42 @@ h2 code { font-family: inherit; font-size: inherit; font-weight: inherit; }
 ;;================================================================
 
 (use-package llm-tool-collection
+  :unless IS-VIRT
   :ensure (:host github :repo "skissue/llm-tool-collection")
   :config (mapcar (apply-partially #'apply #'gptel-make-tool)
                   (llm-tool-collection-get-all))
   :defer)
 
 (use-package mcp
+  :unless IS-VIRT
   :after gptel
-  :init (require 'gptel-integrations)
+  :init
+  (require 'gptel-integrations)
+  (gptel-make-preset 'nixos
+    :description "TOOLS: Add NixOS MCP (minus darwin)"
+    :pre (lambda () (gptel-mcp-connect '("nixos") 'sync))
+    :system '(:append "\n\nUse the provided NixOS tools to look for up-to-date information and\
+ examine the state of my system")
+    :tools '( :append ("mcp-nixos")
+              :function (lambda (tools)
+                          (cl-delete-if
+                           (lambda (tool)
+                             (string-match-p "darwin" (gptel-tool-name tool)))
+                           (mapcan #'gptel-get-tool tools)))))
+
+  (gptel-make-preset 'github-ro
+    :description "TOOLS: Add GitHub MCP (minus darwin)"
+    :pre (lambda () (gptel-mcp-connect '("github") 'sync))
+    :system '(:append "\n\nUse the provided GitHub MCP tools to look for up-to-date information")
+    :tools
+    '( :append ("mcp-github")
+       :function (lambda (tools)
+                   (cl-delete-if
+                    (lambda (tool)
+                      (or
+                       (string-match-p "\\(?:merge\\|push\\|update\\|add\\|create\\|fork\\)_"
+                                       (gptel-tool-name tool))))
+                    (mapcan #'gptel-get-tool tools)))))
   :defer
   :ensure (:host github :repo "lizqwerscott/mcp.el")
   :custom
@@ -1170,6 +1109,78 @@ h2 code { font-family: inherit; font-size: inherit; font-weight: inherit; }
   (gptel-make-preset 'gptel-plan
     :pre #'gptel-agent-update
     :post (lambda () (gptel-preset 'gptel-plan #'set-local)))
+  (gptel-make-preset 'skill
+    :description "TOOLS: Add skill-reading tool"
+    :pre (lambda () (require 'gptel-agent-tools))
+    :tools '(:append ("Skill"))
+    :system '(:function
+              (lambda (sys)
+                (concat sys "\n\n" (gptel-agent--skills-system-message
+                                    (gptel-agent--update-skills))))))
+  (gptel-make-preset 'web
+    :description "TOOLS: Add basic web search tools"
+    :pre (lambda () (require 'gptel-agent-tools))
+    :tools '(:append ("WebSearch" "WebFetch" "YouTube"))
+    ;; :system '(:append "\n\nUse the provided tools to search the web for up-to-date information.")
+    )
+  (gptel-make-preset 'files
+    :pre (lambda () (require 'gptel-agent-tools))
+    :description "TOOLS: Add file read/write"
+    :tools '(:append ("Read" "Glob" "Write" "Edit" "Insert")))
+  (gptel-make-preset 'files-ro
+    :pre (lambda () (require 'gptel-agent-tools))
+    :description "TOOLS: Add file read-only"
+    :tools '(:append ("Read" "Glob")))
+  (gptel-make-preset 'shell
+    :pre (lambda () (require 'gptel-agent-tools))
+    :description "TOOLS: Add Bash eval"
+    :tools  '(:append ("Bash"))
+    ;; :system '(:append "Use the Bash tool to introspect and change the state of the system.")
+    )
+  (gptel-make-preset 'eval
+    :pre (lambda () (require 'gptel-agent-tools))
+    :tools  '(:append ("Eval"))
+    :system '(:append "Use the Eval tool to change the state of the running Emacs instance.")
+    :description "TOOLS: Add eval")
+  (gptel-make-preset 'introspect
+    :pre (lambda () (require 'gptel-agent-tools-introspection))
+    :description "Introspect Emacs with Ragmacs"
+    :system
+    "You are pair programming with the user in Emacs and on Emacs.
+
+Your job is to dive into Elisp code and understand the APIs and
+structure of elisp libraries and Emacs.  Use the provided tools to do
+so, but do not make duplicate tool calls for information already
+available in the chat.
+
+<tone>
+1. Be terse and to the point.  Speak directly.
+2. Explain your reasoning.
+3. Do NOT hedge or qualify.
+4. If you don't know, say you don't know.
+5. Do not offer unprompted advice or clarifications.
+6. Never apologize.
+7. Do NOT summarize your answers.
+</tone>
+
+<code_generation>
+When generating code:
+1. Create a plan first: list briefly the design steps or ideas involved.
+2. Use the provided tools to check that functions or variables you use
+in your code exist.
+3. Also check their calling convention and function-arity before you use
+them.
+</code_generation>
+
+<formatting>
+1. When referring to code symbols (variables, functions, tags etc)
+enclose them in markdown quotes.
+  Examples: `read_file`, `getResponse(url, callback)`
+  Example: `<details>...</details>`
+2. If you use LaTeX notation, enclose math in \( and \), or \[ and \] delimiters.
+</formatting>"
+    :cache '(tool)
+    :tools '("introspection"))
   :config
   (gptel-agent-update)
   (setq gptel-agent-preset nil)

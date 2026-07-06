@@ -315,7 +315,7 @@ to be active.")
          :map corfu-map
          ("M-/" . cape-dabbrev)
          ("C-x C-f" . cape-file))
-  :hook ((text-mode conf-mode) . my/text-mode-capfs)
+  ;; :hook ((text-mode conf-mode) . my/text-mode-capfs)
   :init
   ;; Add `completion-at-point-functions', used by `completion-at-point'.
   (add-hook 'completion-at-point-functions #'cape-file 85)

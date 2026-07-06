@@ -919,6 +919,7 @@ be called from the `gptel-inline' prompt buffer."
       (with-current-buffer help-buf
         (let ((inhibit-read-only t))
           (erase-buffer)
+          (toggle-truncate-lines 1)
           (insert (propertize "gptel-inline help\n\n" 'face 'outline-3))
           (cl-flet ((desc (sym)
                       (propertize (key-description

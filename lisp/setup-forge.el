@@ -63,4 +63,8 @@
                    nil nil #'equal)
         (list 'git-link-tecosaur)))
 
+(use-package remoto
+  :ensure (:host github :repo "agzam/remoto.el")
+  :defer)
+
 (provide 'setup-forge)

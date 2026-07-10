@@ -790,8 +790,7 @@ show the next response."
     (with-current-buffer prompt-buf
       (goto-char (point-max))
       (narrow-to-region (point) (point)) ; gptel goes to (point-max)
-      (unless continue-ov            ;continuing thread, no extra context needed
-        (setq reference-ov (gptel-inline-cycle-reference origin)))
+      (setq reference-ov (gptel-inline-cycle-reference origin))
       ;; Keymap and indicator
       (use-local-map (make-composed-keymap
                       gptel-inline-map (current-local-map)))

@@ -26,7 +26,9 @@
                             (insert-file-contents "/etc/os-release")
                             (re-search-forward "ID=\\(?:guix\\|nixos\\)" nil t))))
 (defconst IS-VIRT    (and IS-LINUX (executable-find "systemd-detect-virt")
-                          (string= (car-safe (process-lines "systemd-detect-virt"))
+                          (string= (car-safe
+                                    (ignore-errors
+                                      (process-lines "systemd-detect-virt")))
                                    "google")))
 
 ;; Disable bidirectional text rendering for a modest performance boost. Just

@@ -56,11 +56,12 @@
                          (moviedata-add-availability id type entry marker (= num 0))))))))
 
 (defun moviedata-add-availability (id type entry marker &optional primary)
-  (let* ((full-query (concat "https://streaming-availability.p.rapidapi.com/shows/"
-                             (and type (concat type "/"))
-                             (cl-etypecase id
-                               (number (number-to-string id))
-                               (string id))
+  (let* ((id-string (concat (and type (concat type "/"))
+                            (cl-etypecase id
+                              (number (number-to-string id))
+                              (string id))))
+         (full-query (concat "https://streaming-availability.p.rapidapi.com/shows/"
+                             (url-hexify-string id-string)
                              "?country=us")))
     (plz 'get full-query
       :headers `(("X-RapidAPI-Key" . ,(auth-source-pass-get 'secret "api/rapidapi.com")))
@@ -71,7 +72,7 @@
               ;;   (erase-buffer)
               ;;   (print resp (current-buffer))
               ;;   (pp-buffer))
-              (message "%d: Availability data gathered" id)
+              (message "%s: Availability data gathered" id-string)
               (plist-put entry :streamingOptions (map-nested-elt resp '(:streamingOptions :us)))
               (plist-put entry :poster_path
                          (or (map-nested-elt resp '(:imageSet :horizontalPoster :w480))

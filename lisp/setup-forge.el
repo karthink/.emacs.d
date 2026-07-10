@@ -65,6 +65,11 @@
 
 (use-package remoto
   :ensure (:host github :repo "agzam/remoto.el")
-  :defer)
+  :after embark
+  :config
+  (advice-add 'remoto-embark-register :around
+              (lambda (orig-fn) (let ((embark-url-map (make-sparse-keymap)))
+                             (funcall orig-fn)))
+              '((name . no-embark-keymaps))))
 
 (provide 'setup-forge)

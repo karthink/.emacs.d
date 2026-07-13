@@ -318,10 +318,7 @@ Returns a list of URL strings found in the region."
         ;; We schedule the tool call permission query on the event loop because
         ;; the callback is called by the FSM handlers before the header-line
         ;; status updates in the chat buffer.
-        (run-at-time
-         0 nil (lambda (calls)
-                 (gptel--display-tool-calls calls info 'minibuffer))
-         (cdr resp))
+        (run-at-time 0 nil #'gptel-inline--display-tool-calls (cdr resp) info)
       (funcall orig-cb resp info raw)
       (unless raw
         (let ((response-ov (map-nested-elt info '(:context :response-ov))))
@@ -372,22 +369,9 @@ Returns a list of URL strings found in the region."
 UP and DOWN are optional indicator strings for scroll position."
   (if-let* ((chat-buf
              (plist-get (overlay-get ov 'gptel-inline) :buffer))
+            (header-rhs (overlay-get ov 'gptel-inline-header))
             (chat-header (buffer-local-value 'header-line-format chat-buf)))
-      (let* ((command-key
-              (lambda (sym)
-                (propertize (key-description
-                             (where-is-internal
-                              sym gptel-inline--response-overlay-mode-map t))
-                            'face 'help-key-binding)))
-             (keys
-              (concat up down
-                      (format "scroll: %s/%s, more: %s"
-                              ( funcall command-key
-                                'gptel-inline--response-overlay-pagedown)
-                              ( funcall command-key
-                                'gptel-inline--response-overlay-pageup)
-                              ( funcall command-key
-                                'gptel-inline--response-overlay-dispatch))))
+      (let* ((keys (concat up down header-rhs))
              (header
               (nconc (butlast chat-header)
                      (list (propertize
@@ -434,13 +418,107 @@ depending on whether RESPONSE-OV is visible in the window."
     (gptel-inline--response-overlay-append-chunk response-ov chunk)
     (gptel-inline--response-overlay-render response-ov)))
 
+;;;;;; Tool call confirmation in overlay
+
+;; TODO: All dispatch commands are almost identical, factor this logic out.
+(defun gptel-inline--accept-tool-calls (response-ov)
+  (interactive (list (gptel-inline--response-overlay-at-point)))
+  (unless (and (overlayp response-ov)
+               (overlay-buffer response-ov))
+    (user-error "No gptel pending tool calls found"))
+  (let* ((context-plist (overlay-get response-ov 'gptel-inline))
+         (chat-buf (plist-get context-plist :buffer))
+         (tool-call-overlay (plist-get context-plist :tool-display)))
+    (with-current-buffer chat-buf
+      (save-excursion
+        (goto-char (overlay-start tool-call-overlay))
+        (call-interactively #'gptel--accept-tool-calls)))
+    ;; Cleanup overlay in src buffer
+    (overlay-put response-ov 'gptel-inline-header
+                 (overlay-get response-ov 'gptel-inline-header-default))
+    (overlay-put response-ov 'gptel-inline-header-default nil)
+    (gptel-inline--response-overlay-render response-ov)
+    ;; Cleanup keybindings
+    (keymap-unset gptel-inline--response-overlay-mode-map "C-c C-c" 'remove)
+    (keymap-unset gptel-inline--response-overlay-mode-map "C-c C-k" 'remove)))
+
+(defun gptel-inline--reject-tool-calls (response-ov)
+  (interactive (list (gptel-inline--response-overlay-at-point)))
+  (unless (and (overlayp response-ov)
+               (overlay-buffer response-ov))
+    (user-error "No gptel pending tool calls found"))
+  (let* ((context-plist (overlay-get response-ov 'gptel-inline))
+         (chat-buf (plist-get context-plist :buffer))
+         (tool-call-overlay (plist-get context-plist :tool-display)))
+    (with-current-buffer chat-buf
+      (save-excursion
+        (goto-char (overlay-start tool-call-overlay))
+        (call-interactively #'gptel--reject-tool-calls)))
+    ;; Cleanup overlay in src buffer
+    (overlay-put response-ov 'gptel-inline-header
+                 (overlay-get response-ov 'gptel-inline-header-default))
+    (overlay-put response-ov 'gptel-inline-header-default nil)
+    (gptel-inline--response-overlay-render response-ov)
+    ;; Cleanup keybindings
+    (keymap-unset gptel-inline--response-overlay-mode-map "C-c C-c" 'remove)
+    (keymap-unset gptel-inline--response-overlay-mode-map "C-c C-k" 'remove)))
+
+;; FIXME: 1. The response-ov header-line disappears after inspecting
+;; FIXME: 2. Inspect -> Cancel should clear the overlay tool call display.
+(defun gptel-inline--inspect-tool-calls (response-ov)
+  (interactive (list (gptel-inline--response-overlay-at-point)))
+  (unless (and (overlayp response-ov)
+               (overlay-buffer response-ov))
+    (user-error "No gptel pending tool calls found"))
+  (let* ((context-plist (overlay-get response-ov 'gptel-inline))
+         (chat-buf (plist-get context-plist :buffer))
+         (tool-call-overlay (plist-get context-plist :tool-display)))
+    (with-current-buffer chat-buf
+      (save-excursion
+        (goto-char (overlay-start tool-call-overlay))
+        (call-interactively #'gptel--inspect-tool-calls)))
+    ;; Cleanup overlay in src buffer
+    (overlay-put response-ov 'gptel-inline-header
+                 (overlay-get response-ov 'gptel-inline-header-default))
+    (overlay-put response-ov 'gptel-inline-header-default nil)
+    (gptel-inline--response-overlay-render response-ov)))
+
+(defun gptel-inline--display-tool-calls (calls info)
+  (let ((tco (gptel--display-tool-calls calls info))
+        (response-ov (map-nested-elt info '(:context :response-ov))))
+    ;; If TCO is not the prompt overlay we queried from the minibuffer
+    (when (and (overlayp tco) (overlay-buffer tco))
+      (plist-put (overlay-get response-ov 'gptel-inline)
+                 :tool-display tco)
+      ;; Update tool call keybindings description, tool call preview
+      (overlay-put response-ov 'gptel-inline-header-default
+                   (overlay-get response-ov 'gptel-inline-header))
+      (overlay-put response-ov 'gptel-inline-header
+                   (concat "Run tools: "
+                           (propertize "C-c C-c" 'face 'help-key-binding)
+                           ", Cancel request: "
+                           (propertize "C-c C-k" 'face 'help-key-binding)
+                           ", Inspect or Edit: "
+                           (propertize "C-c C-i" 'face 'help-key-binding)))
+      (gptel-inline--update-response-overlay
+       (with-current-buffer (overlay-buffer tco)
+         ;; 1- adjustments for avoiding propertized separator-lines
+         (buffer-substring (1- (overlay-start tco)) (1- (overlay-end tco))))
+       response-ov)
+      ;; Update keybindings
+      (keymap-set gptel-inline--response-overlay-mode-map
+                  "C-c C-c" #'gptel-inline--accept-tool-calls)
+      (keymap-set gptel-inline--response-overlay-mode-map
+                  "C-c C-k" #'gptel-inline--reject-tool-calls))))
+
 ;;;;;; Buffer-based response accumulation
 
 (defun gptel-inline--response-overlay-reset (response-ov)
   "Reset RESPONSE-OV to an empty response since the last tool call."
   (when (and (overlayp response-ov) (overlay-buffer response-ov))
     (with-current-buffer (plist-get (overlay-get response-ov 'gptel-inline) :src)
-      (erase-buffer))                   ;clear src buffer
+      (let ((inhibit-read-only t))     ;tool-call confirmation text is read-only
+        (erase-buffer)))               ;clear src buffer
     (gptel-inline--response-overlay-set-scroll-index response-ov 0)
     (let ((gptel-buffer (overlay-get response-ov 'gptel-buffer)))
       (overlay-put response-ov 'after-string
@@ -518,6 +596,21 @@ source buffer for rendering."
                     (make-overlay start end)))
             (overlay-put response-ov 'gptel-inline-height
                          (gptel-inline--response-overlay-height))
+            (let ((command-key
+                   (lambda (sym)
+                     (propertize (key-description
+                                  (where-is-internal
+                                   sym gptel-inline--response-overlay-mode-map t))
+                                 'face 'help-key-binding))))
+              (overlay-put
+               response-ov 'gptel-inline-header
+               (format "scroll: %s/%s, more: %s"
+                       ( funcall command-key
+                         'gptel-inline--response-overlay-pagedown)
+                       ( funcall command-key
+                         'gptel-inline--response-overlay-pageup)
+                       ( funcall command-key
+                         'gptel-inline--response-overlay-dispatch))))
             ;; For buffer-based rendering
             (let ((src-buf (gptel--temp-buffer " *gptel-inline-response*")))
               (plist-put context-plist :src src-buf)
@@ -538,6 +631,9 @@ source buffer for rendering."
                   (markdown-toggle-fontify-code-blocks-natively 1))))))
           (overlay-put response-ov 'evaporate nil) ;For clarity
           (overlay-put response-ov 'gptel-inline ;Merge props from earlier if this is a follow-up
+                       ;; FIXME: This makes the overlay property a copy of
+                       ;; CONTEXT-PLIST, so changes to the context will not be
+                       ;; accessible from the overlay!
                        (gptel--merge-plists (overlay-get response-ov 'gptel-inline)
                                             context-plist))
           (overlay-put response-ov 'gptel-buffer ;For display under the response
@@ -712,28 +808,21 @@ and resizing the overlay."
   (interactive (list (gptel-inline--response-overlay-at-point)))
   (when (overlayp response-ov)
     (let ((choice)
-          (orig-status (overlay-get response-ov 'after-string)))
+          (orig-status (overlay-get response-ov 'gptel-inline-header)))
       (unwind-protect
-          (pcase-let ((newline-pos (string-search "\n" orig-status 2))
-                      (choices '((?v "visit") (?r "reply")
+          (pcase-let ((choices '((?v "visit") (?r "reply")
                                  (?c "clear") (?w "copy")
                                  (?+ "+height") (?- "-height")
                                  (?q "quit"))))
             (when (fboundp #'rmc--add-key-description)
-              (let ((desc
-                     (mapconcat
-                      (lambda (e) (cdr e))
-                      (mapcar #'rmc--add-key-description choices) ", ")))
-                (overlay-put
-                 response-ov 'after-string
-                 (concat
-                  gptel-inline--hrule
-                  (propertize " " 'display
-                              `(space :align-to (- right ,(length desc))))
-                  desc
-                  (substring orig-status (or newline-pos 0))))))
+              (let ((desc (mapconcat
+                           (lambda (e) (cdr e))
+                           (mapcar #'rmc--add-key-description choices) ", ")))
+                (overlay-put response-ov 'gptel-inline-header desc))
+              (gptel-inline--response-overlay-render response-ov))
             (setq choice (read-multiple-choice "Action" choices)))
-        (overlay-put response-ov 'after-string orig-status))
+        (overlay-put response-ov 'gptel-inline-header orig-status)
+        (gptel-inline--response-overlay-render response-ov))
       (cl-labels ((repeat+ () (interactive)
                     (gptel-inline--response-overlay-resize response-ov 3))
                   (repeat- () (interactive)
@@ -947,7 +1036,8 @@ With \\[universal-argument], don't quit"))
             (insert "\n- To send a standalone request (no session context), \
 mark your prompt before sending.")
             (insert (substitute-command-keys
-                     "\n- To modify session, visit it or use `widen' (\\[widen]) here.")))))
+                     (format "\n- To modify session, visit it (%s) or use `widen' (\\[widen]) here."
+                             (desc 'gptel-inline-visit-buffer)))))))
       (display-buffer help-buf '(display-buffer-in-atom-window
                                  (side . above)
                                  (window-parameters . ((mode-line-format . none)

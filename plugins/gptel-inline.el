@@ -420,7 +420,7 @@ depending on whether RESPONSE-OV is visible in the window."
 
 ;;;;;; Tool call confirmation in overlay
 
-;; TODO: All dispatch commands are almost identical, factor this logic out.
+;; TODO: All dispatch commands are almost identical, factor out this logic.
 (defun gptel-inline--accept-tool-calls (response-ov)
   (interactive (list (gptel-inline--response-overlay-at-point)))
   (unless (and (overlayp response-ov)
@@ -463,25 +463,10 @@ depending on whether RESPONSE-OV is visible in the window."
     (keymap-unset gptel-inline--response-overlay-mode-map "C-c C-c" 'remove)
     (keymap-unset gptel-inline--response-overlay-mode-map "C-c C-k" 'remove)))
 
-;; FIXME: 1. The response-ov header-line disappears after inspecting
-;; FIXME: 2. Inspect -> Cancel should clear the overlay tool call display.
-(defun gptel-inline--inspect-tool-calls (response-ov)
-  (interactive (list (gptel-inline--response-overlay-at-point)))
-  (unless (and (overlayp response-ov)
-               (overlay-buffer response-ov))
-    (user-error "No gptel pending tool calls found"))
-  (let* ((context-plist (overlay-get response-ov 'gptel-inline))
-         (chat-buf (plist-get context-plist :buffer))
-         (tool-call-overlay (plist-get context-plist :tool-display)))
-    (with-current-buffer chat-buf
-      (save-excursion
-        (goto-char (overlay-start tool-call-overlay))
-        (call-interactively #'gptel--inspect-tool-calls)))
-    ;; Cleanup overlay in src buffer
-    (overlay-put response-ov 'gptel-inline-header
-                 (overlay-get response-ov 'gptel-inline-header-default))
-    (overlay-put response-ov 'gptel-inline-header-default nil)
-    (gptel-inline--response-overlay-render response-ov)))
+;; TODO: Implement `gptel-inline--inspect-tool-calls'.  This is tricky because
+;; the response-overlay state needs to be changed when accepting/rejecting tool
+;; calls in the inspection buffer.  Inspect -> reject should clear the overlay
+;; tool call display, for example.
 
 (defun gptel-inline--display-tool-calls (calls info)
   (let ((tco (gptel--display-tool-calls calls info))
@@ -493,13 +478,10 @@ depending on whether RESPONSE-OV is visible in the window."
       ;; Update tool call keybindings description, tool call preview
       (overlay-put response-ov 'gptel-inline-header-default
                    (overlay-get response-ov 'gptel-inline-header))
-      (overlay-put response-ov 'gptel-inline-header
-                   (concat "Run tools: "
-                           (propertize "C-c C-c" 'face 'help-key-binding)
-                           ", Cancel request: "
-                           (propertize "C-c C-k" 'face 'help-key-binding)
-                           ", Inspect or Edit: "
-                           (propertize "C-c C-i" 'face 'help-key-binding)))
+      (overlay-put
+       response-ov 'gptel-inline-header
+       (concat "Run tools: " (propertize "C-c C-c" 'face 'help-key-binding)
+               ", Cancel request: " (propertize "C-c C-k" 'face 'help-key-binding)))
       (gptel-inline--update-response-overlay
        (with-current-buffer (overlay-buffer tco)
          ;; 1- adjustments for avoiding propertized separator-lines

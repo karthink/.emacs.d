@@ -848,6 +848,10 @@ show the next response."
                           (gptel-inline--response-overlay-at-point))))
   (let* ((origin (point-marker))
          (origin-buf (marker-buffer origin))
+         (newp (not (buffer-live-p
+                     (get-buffer
+                      (or buf-name
+                          (gptel-inline-chat-buffer-name origin-buf))))))
          (gptel-buf
           (save-excursion         ;Required if we are already in the chat buffer
             (gptel (or buf-name
@@ -886,7 +890,8 @@ Send: \\[gptel-inline-send], Help: \\[gptel-inline-help], Quit: \\[gptel-inline-
       ;; Set up context for request
       (setq gptel-inline--context
             (list :marker origin :reference-ov reference-ov
-                  :response-ov (and (overlayp continue-ov) continue-ov))))
+                  :response-ov (and (overlayp continue-ov) continue-ov)
+                  :new newp)))
     (pop-to-buffer prompt-buf gptel-inline-buffer-display-action)
     prompt-buf))
 
@@ -1035,7 +1040,11 @@ With `prefix-arg' KEEP, retain any entered text in the chat buffer."
   (interactive "P")
   (unless keep
     (when (buffer-base-buffer)
-      (delete-region (point-min) (point-max))))
+      (delete-region (point-min) (point-max))
+      (when (plist-get gptel-inline--context :new)
+        ;; Chat buffer was created by `gptel-inline'
+        (cl-remf gptel-inline--context :new)
+        (run-at-time 0 nil #'kill-buffer (buffer-base-buffer)))))
   (quit-window t))
 
 (defun gptel-inline-append (&optional no-quit)

@@ -4,7 +4,7 @@
 
 ;; Author: Karthik Chikmagalur <karthikchikmagalur@gmail.com>
 ;; Version: 0.0.5
-;; Package-Requires: ((emacs "27.1") (compat "30.1.0.0") (gptel "0.9.9.5"))
+;; Package-Requires: ((emacs "29.1") (compat "30.1.0.0") (gptel "0.9.9.5"))
 ;; Keywords: comm
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -33,6 +33,11 @@
 ;; background and provides the full conversation history context -- you don't
 ;; need to look at it.
 ;;
+;; By default, the chat buffer chosen for the conversation is one used
+;; previously, or a chat buffer created by gptel-inline for the current project.
+;; You can customize this by adding to the hook
+;; `gptel-inline-find-chat-buffer-functions'.
+;;
 ;; References are context snippets selected by cycling through
 ;; "things at point" (region, sexp, defun, paragraph, window, buffer,
 ;; etc.) using `gptel-inline-cycle-reference'.  The reference type is
@@ -58,6 +63,7 @@
 (declare-function buttonize "button")
 (declare-function make-vtable "vtable")
 (declare-function make-vtable-column "vtable")
+(declare-function project-root "project")
 
 
 ;;;; User options

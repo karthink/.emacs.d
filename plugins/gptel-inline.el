@@ -1068,15 +1068,15 @@ With `prefix-arg' NO-QUIT, don't quit the prompt window."
     (when context-string (goto-char (point-min)) (insert context-string))
     (unless no-quit (gptel-inline-quit 'keep))))
 
-(defun gptel-inline-send (&optional standalone)
+(defun gptel-inline-send ()
   "Send the follow prompt to the LLM.
 
 Includes any reference text from the origin buffer, and shows the
 response inline at the point of origin.
 
-With `prefix-arg' STANDALONE, do not include any conversation history
-from the chat buffer."
-  (interactive "P")
+If a region is active send only the prompt, do not include any
+conversation history from the chat buffer."
+  (interactive)
   (cond
    ((not (plist-get gptel-inline--context :marker))
     (user-error "Cannot send query from here"))
@@ -1089,7 +1089,7 @@ from the chat buffer."
          (origin-marker (plist-get gptel-inline--context :marker))
          (origin-buf    (and origin-marker (marker-buffer origin-marker)))
          (same-buffer-p (eq origin-buf gptel-buf))
-         (delimited     (and standalone (cons (point-min) (point-max))))
+         (delimited     (and (use-region-p) (cons (point-min) (point-max))))
          response-ov)
     ;; Chat buffer required for bookkeeping
     (plist-put gptel-inline--context :buffer gptel-buf)
@@ -1099,7 +1099,7 @@ from the chat buffer."
             (gptel-inline--setup-response-overlay gptel-inline--context))
       (plist-put gptel-inline--context :response-ov response-ov))
     (with-current-buffer gptel-buf
-      (if delimited               ;Send only prompt (no buffer context)
+      (if delimited                     ;Send only prompt (no buffer context)
           (without-restriction
             (goto-char (car delimited)) (push-mark)
             (goto-char (cdr delimited)) (activate-mark))

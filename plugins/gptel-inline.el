@@ -628,12 +628,15 @@ source buffer for rendering."
       (gptel-inline--response-overlay-mode 1))
     response-ov))
 
-(defun gptel-inline-clear-response-overlay (&optional response-ov)
+(defun gptel-inline-clear-response-overlay (&optional response-ov abort)
   "Remove RESPONSE-OV and clean up all associated resources.
-Interactively, uses the overlay at point.  Deletes the reference overlay,
-kills the source buffer, aborts the gptel request, and removes the
-response overlay."
-  (interactive (list (gptel-inline--response-overlay-at-point)))
+Interactively, uses the nearest visible gptel inline overlay.  Deletes
+the reference overlay and removes the response overlay.
+
+With prefix-arg ABORT, also aborts any active gptel request in the
+associated chat buffer."
+  (interactive (list (gptel-inline--response-overlay-at-point)
+                     current-prefix-arg))
   (if (not (overlayp response-ov))
       (message "No `gptel-inline' overlay at point!")
     (pcase-let (((map :marker :reference-ov :buffer :src)
@@ -641,9 +644,9 @@ response overlay."
       (set-marker marker nil)
       (when (overlayp reference-ov) (delete-overlay reference-ov))
       (when (buffer-live-p src) (kill-buffer src))
-      ;; FIXME: This aborts the latest request in the buffer, even if it isn't
-      ;; this one.  It's better to register an abort function.
-      (when (buffer-live-p buffer) (gptel-abort buffer))
+      ;; NOTE: This aborts the latest request in the buffer, even if it isn't
+      ;; this one.
+      (when (and abort (buffer-live-p buffer)) (gptel-abort buffer))
       (when (overlayp response-ov) (delete-overlay response-ov)))))
 
 (defun gptel-inline--response-overlay-set-scroll-index (ov index)

@@ -191,7 +191,7 @@ The buffer name is based on the project name.  Results are cached
 in `gptel-inline-chat-buffer-alist'."
   (with-current-buffer buf
     (and-let* ((proj (project-current))
-               (root (project-root proj)))
+               (root (expand-file-name (project-root proj))))
       (if-let* ((matching-bufs
                  (match-buffers
                   (lambda (b-or-n) ;Find a non-hidden gptel buffer in the project root

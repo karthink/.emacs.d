@@ -92,9 +92,13 @@ See `display-buffer' for details."
         #'gptel-inline-project-buffer)  ;use per-project gptel-session
   "Abnormal hook to find a chat buffer for the current location.
 Each hook function is called with one argument (the current buffer)
-and must return the name of a (possibly existing) gptel buffer to
-follow the conversation in.  If none of the functions return a buffer
-name, fall back to `gptel-inline-default-chat-buffer'."
+and must return either
+- the name of a (possibly existing) gptel buffer to track the conversation, or
+- a list of the form (name directory), where directory is the default
+  directory of the gptel buffer.
+
+If none of the functions return a buffer name, fall back to
+`gptel-inline-default-chat-buffer'."
   :type 'hook
   :group 'gptel-inline)
 
@@ -198,11 +202,13 @@ in `gptel-inline-chat-buffer-alist'."
                     (and-let* ((b (get-buffer b-or-n)))
                       (and (buffer-local-value 'gptel-mode b)
                            (not (= (aref (buffer-name b) 0) 32))
-                           (string= (buffer-local-value 'default-directory b)
+                           (string= (expand-file-name
+                                     (buffer-local-value 'default-directory b))
                                     root)))))))
           (buffer-name (car matching-bufs))
-        (format "*gptel:%s*"            ;Or make up a generic buffer name
-                (file-name-nondirectory (substring root nil -1)))))))
+        (list (format "*gptel:%s*"      ;Or make up a generic buffer name
+                      (file-name-nondirectory (substring root nil -1)))
+              root)))))
 
 (defun gptel-inline-chat-buffer-name (origin-buf)
   "Find a suitable chat buffer for `gptel-inline' at point in ORIGIN-BUF."
@@ -857,18 +863,22 @@ show the next response."
                           (gptel-inline--response-overlay-at-point))))
   (let* ((origin (point-marker))
          (origin-buf (marker-buffer origin))
-         (newp (not (buffer-live-p
-                     (get-buffer
-                      (or buf-name
-                          (gptel-inline-chat-buffer-name origin-buf))))))
-         (gptel-buf
-          (save-excursion         ;Required if we are already in the chat buffer
-            (gptel (or buf-name
-                       (gptel-inline-chat-buffer-name origin-buf)))))
-         (prompt-buf (make-indirect-buffer
-                      gptel-buf (generate-new-buffer-name
-                                 (buffer-name gptel-buf))
-                      t))
+         (buf-details            ;(chat-buffer-name &optional default-directory)
+          (ensure-list (or buf-name (gptel-inline-chat-buffer-name origin-buf))))
+         (buf-name (car buf-details))
+         (buf-dir  (cadr buf-details))
+         (newp (not (buffer-live-p (get-buffer buf-name))))
+         ;; save-excursion required if we are already in the chat buffer, gptel
+         ;; moves point!
+         (gptel-buf (save-excursion (gptel buf-name)))
+         (prompt-buf
+          (progn
+            (when buf-dir      ;set default-directory in the indirect buffer too
+              (with-current-buffer gptel-buf (setq default-directory buf-dir)))
+            (make-indirect-buffer
+             gptel-buf (generate-new-buffer-name
+                        (buffer-name gptel-buf))
+             t)))
          reference-ov)
     (setq gptel-inline--last gptel-buf)
     (with-current-buffer prompt-buf

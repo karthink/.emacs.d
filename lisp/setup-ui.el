@@ -7,9 +7,9 @@
 
 ;; Turn off the menu, tool bars and the scroll bar
 (menu-bar-mode 0)
-(tool-bar-mode 0)
-(scroll-bar-mode 0)
-(tooltip-mode 1)
+(when (fboundp 'tool-bar-mode) (tool-bar-mode 0))
+(when (fboundp 'scroll-bar-mode) (scroll-bar-mode 0))
+(when (fboundp 'tooltip-mode) (tooltip-mode 1))
 ;; native linux tooltips are all right
 (when IS-LINUX (setq x-gtk-use-system-tooltips nil))
 ;; Turn on image viewing

@@ -410,7 +410,8 @@ depending on whether RESPONSE-OV is visible in the window."
   (letrec ((gptel-inline-actions-toggle
             (lambda (win _win-start)
               (if (and (overlayp response-ov)
-                       (overlay-buffer response-ov)
+                       ;; Remove hook if overlay is moved to another window
+                       (eq (overlay-buffer response-ov) (current-buffer))
                        ;; Overlays can get moved out of accessible buffer portions
                        (> (overlay-end response-ov) (point-min)))
                   ;; FIXME: This will cause flip-flopping when there is more
@@ -650,7 +651,7 @@ associated chat buffer."
   (interactive (list (gptel-inline--response-overlay-at-point)
                      current-prefix-arg))
   (if (not (overlayp response-ov))
-      (message "No `gptel-inline' overlay at point!")
+      (message "No `gptel-inline' overlay visible!")
     (pcase-let (((map :marker :reference-ov :buffer :src)
                  (overlay-get response-ov 'gptel-inline)))
       (set-marker marker nil)
@@ -715,10 +716,9 @@ Intended to be bound overlay-locally to a <down-mouse-1> EVENT."
                             (move-overlay ov start end
                                           (window-buffer end-window))))))))))
             (unless (or (null end-window) (eq start-window end-window))
-              ;; FIXME: We also need to adjust the `window-scroll-functions' in
-              ;; these windows appropriately.
               (gptel-inline--response-overlay-mode -1)
               (with-selected-window end-window
+                (gptel-inline--setup-response-overlay-keymap ov)
                 (gptel-inline--response-overlay-mode 1))))
         (when was-tooltip-mode (tooltip-mode 1))))))
 

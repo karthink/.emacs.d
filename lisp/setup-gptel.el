@@ -506,6 +506,72 @@
 (use-package gptel
   :after gptel
   :config
+  (defvar gptel-include-preset--marker (make-marker))
+  (defun gptel-include-preset-capf ()
+    "Completion-at-point function for the \"@include\" preset.
+
+When point follows an \"@include\" trigger on the current line,
+this provides completion over buffer names and file names relative to
+`default-directory'.  Buffer/file names are inserted quoted."
+    (save-excursion
+      (when-let* ((p (point))
+                  (num (skip-chars-backward "^[:space:]\""))
+                  (prefix-pos
+                   (search-backward "@include" (line-beginning-position) t)))
+        (move-marker gptel-include-preset--marker (+ p num) (current-buffer))
+        (list (+ p num) p
+              ;; TODO: Add completion metadata/annotation support
+              (completion-table-merge #'internal-complete-buffer
+                                      #'read-file-name-internal)
+              :exclusive 'no
+              :exit-function
+              (lambda (str status)
+                (when (memq status '(finished))
+                  ;; We would prefer to use `completion-in-region--data' to
+                  ;; replace the match, but it's only populated by Emacs' default
+                  ;; completion system.
+                  ;; Handle offsets to accommodate existing "quotes"
+                  (let ((before (if (equal (char-before gptel-include-preset--marker) ?\")
+                                    1 0))
+                        (after  (if (equal (char-after) ?\") 1 0)))
+                    (delete-region (- gptel-include-preset--marker before)
+                                   (+ (point) after)))
+                  (move-marker gptel-include-preset--marker nil)
+                  ;; Insert quoted buffer/file name
+                  (insert (format "%S" (substring-no-properties str)))))))))
+
+  (advice-add 'gptel-preset-capf :after-until #'gptel-include-preset-capf)
+
+  (defun gptel-include-preset--parse-line (context)
+    "Parse file or buffer names after point."
+    (skip-syntax-forward " " (line-end-position))
+    (while-let ((_ (not (or (eolp) (eobp))))
+                (source (if (eq (char-after) ?\")
+                            (read (current-buffer))
+                          (prog1 (thing-at-point 'filename)
+                            (goto-char (match-end 0))))))
+      (skip-syntax-forward " " (line-end-position))
+      (cl-callf substring-no-properties source)
+      (cond
+       ((file-readable-p source)
+        (if (or (file-regular-p source)
+                (and (file-directory-p source)
+                     (or noninteractive
+                         (y-or-n-p
+                          (format "Include ALL files in directory \"%s\"? "
+                                  (file-name-as-directory source))))))
+            (push source gptel-annotate--sources)
+          (user-error "gptel-annotate request canceled")))
+       ((buffer-live-p (get-buffer source))
+        (push (get-buffer source) context))
+       (t (unless (or noninteractive
+                      (y-or-n-p
+                       (format "Cannot find source \"%s\" to @annotate, \
+continue with gptel request? " source)))
+            (user-error "gptel-annotate request aborted"))
+          (message "Ignoring @annotate %s, file not readable" source))))
+    context)
+
   (gptel-make-preset 'lite
     :description "MODEL: smallest possible"
     :model '(:function
@@ -537,18 +603,7 @@
 
   (gptel-make-preset 'include
     :description "CONTEXT: Include the filename or buffer following @include"
-    :context
-    `(:function
-      ,(lambda (context)
-         (and-let* ((filename (progn (skip-syntax-forward " ")
-                                     (if (eq (char-after) ?\")
-                                         (read (current-buffer))
-                                       (thing-at-point 'filename)))))
-           (cond
-            ((file-readable-p filename) (push filename context))
-            ((buffer-live-p (get-buffer filename)) (push (get-buffer filename) context))
-            (t (message "Ignoring @include %s, file not readable" filename))))
-         context)))
+    :context `(:function ,#'gptel-include-preset--parse-line))
 
   (defun my/gptel-windows-on-frame ()
     "Return all windows on frame that aren't gptel chat buffers."
@@ -647,6 +702,30 @@ ex: What is in this buffer? @buffer *scratch*"
                 (if (> arg 0)
                     (gptel--rewrite-next)
                   (gptel--rewrite-previous)))))
+  (gptel-make-preset 'gptel-rewrite
+    :description "Replace the prompt with the LLM's response."
+    :pre (lambda () (gptel--parse-list-and-insert
+                (list ""
+                      "What is the required change?  \
+I will generate only the final replacement.\n")))
+    :prompt-transform-functions
+    '(:prepend
+      (list
+       (lambda (fsm)
+         (let ((info (gptel-fsm-info fsm)))
+           (setf (gptel-fsm-handlers fsm) gptel--rewrite-handlers)
+           (plist-put info :callback #'gptel--rewrite-callback)
+           (plist-put
+            info :context
+            (with-current-buffer (plist-get info :buffer)
+              (let ((ov (or (cdr-safe (get-char-property-and-overlay (point) 'gptel-rewrite))
+                            (make-overlay
+                             (if (use-region-p) (region-beginning) (point-min))
+                             (if (use-region-p) (region-end) (point))
+                             nil t))))
+                (overlay-put ov 'evaporate t)
+                (cons ov (gptel--temp-buffer " *gptel-rewrite*")))))))))
+    :system gptel--rewrite-directive)
   (defun gptel--rewrite-inline-diff (&optional ovs)
     (interactive (list (gptel--rewrite-overlay-at)))
     (unless (require 'inline-diff nil t)
@@ -736,6 +815,49 @@ Do not repeat any of the BEFORE or AFTER code." lang lang lang)
   :config
   (setq gptel-quick-model 'gpt-4.1-mini
         gptel-quick-backend (gptel-get-backend "ChatGPT")))
+
+;;----------------------------------------------------------------
+;; ** gptel-inline: Persistent chats from anywhere
+;;----------------------------------------------------------------
+(use-package gptel-inline
+  :commands gptel-inline
+  :bind (("C-c i" . gptel-inline)))
+
+;;----------------------------------------------------------------
+;; ** gptel-annotate: Plumb responses as flymake annotations
+;;----------------------------------------------------------------
+(use-package gptel-annotate
+  :commands gptel-annotate
+  :after gptel
+  :init
+  (unless (alist-get 'gptel-annotate gptel--known-presets)
+    (gptel-make-preset 'gptel-annotate :pre (require 'gptel-annotate)))
+  :hook ((gptel-annotate-post . my/gptel-annotate-notify))
+  :config
+  (defun my/gptel-annotate-notify (bufs)
+    (if IS-LINUX
+        (notifications-notify
+         :title "gptel-annotate"
+         :body (format "Annotations ready in: %s"
+                       (mapconcat #'buffer-name bufs ", "))
+         :on-action
+         (lambda (id key)
+           (pop-to-buffer (car bufs)
+                          '((display-buffer-reuse-window
+                             display-buffer-in-previous-window
+                             display-buffer-use-least-recent-window)))
+           (select-frame-set-input-focus (selected-frame)))
+         :on-close
+         (lambda (id reason)
+           (when (memq reason '(dismissed close-notification))
+             (pop-to-buffer (car bufs)
+                            '((display-buffer-reuse-window
+                               display-buffer-in-previous-window
+                               display-buffer-use-least-recent-window)))
+             (select-frame-set-input-focus (selected-frame))))
+         :urgency 'normal)
+      (message "Annotations ready in: %s" (mapconcat #'buffer-name bufs ", "))))
+  (advice-add 'gptel-preset-capf :after-until #'gptel-annotate-preset-capf))
 
 ;;----------------------------------------------------------------
 ;; ** flymake-gptel

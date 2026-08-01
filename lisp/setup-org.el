@@ -637,7 +637,7 @@ appropriate.  In tables, insert a new row or end the table."
          (org-mode . my/org-latex-preview-precompile-idle))
   :bind (:map org-mode-map
          ("C-c C-x SPC" . org-latex-preview-clear-cache)
-         ("C-c i w" . my/org-latex-preview-image-at-point)
+         ;; ("C-c i w" . my/org-latex-preview-image-at-point)
          ("M-g m" . my/org-latex-next-env)
          ("M-g M" . my/org-latex-prev-env))
   :config
@@ -2008,7 +2008,7 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
 ;;----------------------------------------------------------------
 (use-package org-review
   :ensure t
-  :after org
+  :after org-agenda
   :demand t
   :bind ( :map org-agenda-mode-map
           ("r" . my/org-review-insert-last-and-next-review)

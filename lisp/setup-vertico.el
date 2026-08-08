@@ -104,6 +104,7 @@
            (xref-find-definitions reverse)
            (xref-find-references reverse)
            (my/eshell-previous-matching-input reverse)
+           (sidle-imenu buffer)
            (tmm-menubar reverse)))
   
    (defun my/vertico-multiform-unobtrusive ()
@@ -146,7 +147,7 @@
       (embark-act arg))))
 
 (use-package vertico-directory
-  :hook (rfn-eshadow-update-overlay vertico-directory-tidy)
+  :hook (rfn-eshadow-update-overlay . vertico-directory-tidy)
   :after vertico
   :bind (:map vertico-map
          ("DEL"   . vertico-directory-delete-char)

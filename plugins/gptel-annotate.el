@@ -253,7 +253,7 @@ See buffer %s for the raw annotation"
       (:success (message "gptel-annotations available in: %s"
                          (mapconcat (lambda (b) (propertize (buffer-name b) 'face 'bold))
                                     source-buffers ", "))
-                (run-hooks 'gptel-annotate-post-hook)))))
+                (run-hook-with-args 'gptel-annotate-post-hook source-buffers)))))
 
 (cl-defun gptel-annotate-flymake
     (report-fn &key _recent-changes _changes-start _changes-end &allow-other-keys)
@@ -311,43 +311,6 @@ after prompting for confirmation."
 
 ;; TODO: Handle text replacement
 
-;; (defun gptel-annotate-accept (pos)
-;;   (interactive (list (point)))
-;;   (when-let* ((our-diag (gptel-annotate--diag-at pos))
-;;               (ov (flymake--diag-overlay our-diag))
-;;               (replacement (cadr (flymake-diagnostic-data our-diag))))
-;;     (if (string-empty-p replacement)
-;;         (message "No replacement text available for diagnostic at point")
-;;       (gptel--annotate-clear our-diag)
-;;       (save-excursion ; Replace in this order to avoid merging into adjacent overlays:
-;;         (goto-char (overlay-start ov))
-;;         (insert replacement)
-;;         (delete-region (point) (overlay-end ov)))
-;;       (delete-overlay ov))))
-
-;; (defun gptel-annotate-inspect (pos &optional all)
-;;   (interactive (list (point) current-prefix-arg))
-;;   (require 'diff-mode)
-;;   (if all
-;;       (gptel-annotate--inspect-all)
-;;     (when-let* ((our-diag (gptel-annotate--diag-at pos))
-;;                 (ov (flymake--diag-overlay our-diag))
-;;                 (replacement (cadr (flymake-diagnostic-data our-diag))))
-;;       (if (string-empty-p replacement)
-;;           (message "No replacement text available to preview for diagnostic at point")
-;;         (let ((actions-map (overlay-get ov 'keymap)))
-;;           (if (overlay-get ov 'after-string)
-;;               ;; Clear out
-;;               (progn (overlay-put ov 'after-string nil)
-;;                      (overlay-put ov 'face 'flymake-warning)
-;;                      (keymap-unset actions-map "q"))
-;;             (overlay-put
-;;              ov 'after-string
-;;              (concat (propertize "→" 'face '(:inherit bold shadow))
-;;                      (propertize replacement 'face 'diff-added)))
-;;             (overlay-put ov 'face 'diff-removed)
-;;             (keymap-set actions-map "q" #'gptel-annotate-inspect)))))))
-
 ;;;; gptel request setup
 
 (defun gptel-annotate--request-context (fsm)
@@ -392,6 +355,7 @@ formatting parts of responses."
            (gptel-annotate--flymake-setup response info))))
       (_ (gptel-annotate--call-inner callback response info raw)))))
 
+;; FIXME: Broken for Anthropic (and Anthropic only)
 (defun gptel-annotate--wrap-stream-callback (callback)
   "Wrap FSM's streaming CALLBACK to annotate the required buffers or files."
   (let (accum-response)
@@ -401,10 +365,7 @@ formatting parts of responses."
          (push response accum-response))
         ('t                             ;Streaming is done
          (gptel-annotate--call-inner callback response info raw)
-         (if-let* ((tool-use (plist-get info :tool-use)) ;Did we stop to run tools?
-                   ((not (cl-some (lambda (call) (equal (plist-get call :name)
-                                                   gptel--ersatz-json-tool))
-                                  tool-use))))
+         (if-let* ((tool-use (plist-get info :tool-use))) ;Did we stop to run tools?
              (setq accum-response nil)  ;Yes, so do nothing
            (let ((flymake-setup-buf
                   (if (buffer-live-p (plist-get info :buffer))
@@ -510,13 +471,13 @@ SYS is the original system prompt, to be augmented."
 
 (defvar gptel-annotate--preset
   (list
+   :description "Annotate buffers with LLM responses/diagnostics.  \
+Specify files or buffers to annotate by listing them after @gptel-annotate."
    :prompt-transform-functions
    `(:function ,(lambda (ptf) (cons #'gptel-annotate--request-context ptf)))
    :use-context 'system
-   :context `(:function ,(lambda (context)
-                           (if gptel-annotate--sources
-                               (nconc gptel-annotate--sources context)
-                             context)))
+   :context `( :function
+               ,(lambda (context) (nconc gptel-annotate--sources context)))
    :schema gptel-annotate-response-schema
    :system `(:function ,#'gptel-annotate--augment-system-prompt))
   "Base preset for `gptel-annotate' requests.

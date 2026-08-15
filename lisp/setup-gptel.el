@@ -820,6 +820,8 @@ Do not repeat any of the BEFORE or AFTER code." lang lang lang)
 ;; ** gptel-inline: Persistent chats from anywhere
 ;;----------------------------------------------------------------
 (use-package gptel-inline
+  :ensure ( :host github :repo "karthink/gptel-inline"
+            :protocol ssh)
   :commands gptel-inline
   :bind (("C-c i" . gptel-inline)))
 

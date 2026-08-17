@@ -29,6 +29,9 @@
 ;;
 ;; Usage:
 ;;
+;; There are two ways: as a command or as a gptel preset.  The latter is
+;; generally more useful.
+;;
 ;; To annotate a file or buffer, run `M-x gptel-annotate'.  This command prompts
 ;; for the instructions to send to the LLM and the target sources (files or
 ;; buffers) to annotate.  By default, it annotates the current buffer, but with
@@ -87,7 +90,10 @@
 
 (defvar-keymap gptel-annotate-actions-map
   :doc "Actions on gptel annotation at point."
-  "C-c C-k" #'gptel-annotate-clear)
+  "C-c C-k"      #'gptel-annotate-clear
+  "C-c C-a"      #'gptel-annotate-accept
+  "C-c C-i"      #'gptel-annotate-inspect
+  "C-<down-mouse-1>"  #'gptel-annotate-accept-mouse)
 
 (defvar gptel-annotate-response-schema
   '( :type object
@@ -275,6 +281,13 @@ REPORT-FN is the flymake callback, see `flymake-diagnostic-functions'."
                   diag))
    (flymake-diagnostics pos)))
 
+(defun gptel-annotate--all-diags ()
+  "Return all gptel annotation flymake diagnostics in the buffer."
+  (cl-remove-if-not
+   (lambda (diag) (alist-get 'gptel-annotate
+                        (flymake--diag-overlay-properties diag)))
+   (flymake-diagnostics)))
+
 (defun gptel-annotate--clear (diag)
   "Remove flymake DIAG from gptel annotations."
   (setcar gptel-annotate--diagnostics
@@ -309,7 +322,89 @@ after prompting for confirmation."
                (flymake-start))
       (message "No annotation found at point"))))
 
-;; TODO: Handle text replacement
+;;;; Text replacement actions
+(defun gptel-annotate-accept (pos)
+  "Replace annotated text at POS with the LLM-suggested replacement.
+If there is no annotation at POS, or the annotation has no replacement
+text, display a message instead."
+  (interactive (list (point)))
+  (if-let* ((diag (gptel-annotate--diag-at pos))
+            (ov (flymake--diag-overlay diag))
+            (replacement (cadr (flymake-diagnostic-data diag)))
+            ((not (string-blank-p replacement))))
+      (progn
+        (gptel-annotate--clear diag)
+        (let ((beg (overlay-start ov))
+              (end (overlay-end ov)))
+          (delete-overlay ov)
+          (save-excursion
+            (goto-char beg)
+            (delete-region beg end)
+            (insert-and-inherit replacement)))
+        (when (and (consp gptel-annotate--diagnostics)
+                   (memq (car gptel-annotate--diagnostics) (list [] nil)))
+          (pop gptel-annotate--diagnostics))
+        (flymake-start))
+    (message (if (gptel-annotate--diag-at pos)
+                 "No replacement text available for annotation at point"
+               "No gptel annotation at point"))))
+
+(defun gptel-annotate-accept-mouse (event)
+  "Replace annotated text at the mouse click position.
+EVENT is the mouse click event."
+  (interactive "e")
+  (gptel-annotate-accept (posn-point (event-start event))))
+
+(defun gptel-annotate--show-replacement (diag)
+  "Show an inline replacement preview for DIAG on its overlay."
+  (let ((ov (flymake--diag-overlay diag))
+        (replacement (cadr (flymake-diagnostic-data diag))))
+    (overlay-put
+     ov 'after-string
+     (concat (propertize "→" 'face '(:inherit bold shadow))
+             (propertize replacement 'face 'diff-added)))
+    (overlay-put ov 'face 'diff-removed)
+    (keymap-set (overlay-get ov 'keymap) "q" #'gptel-annotate-inspect)))
+
+(defun gptel-annotate--hide-replacement (diag)
+  "Hide the inline replacement preview for DIAG."
+  (let ((ov (flymake--diag-overlay diag)))
+    (overlay-put ov 'after-string nil)
+    (overlay-put ov 'face 'flymake-warning)
+    (keymap-unset (overlay-get ov 'keymap) "q")))
+
+(defun gptel-annotate-inspect (pos &optional all)
+  "Toggle an inline preview of the replacement for annotation at POS.
+Calling again clears the preview.
+
+With prefix argument ALL, toggle previews for all annotations in the
+buffer: if any are currently shown, hide them all; otherwise show all
+that have replacement text."
+  (interactive (list (point) current-prefix-arg))
+  (require 'diff-mode)
+  (let* ((candidates (if all (gptel-annotate--all-diags)
+                       (list (gptel-annotate--diag-at pos))))
+         (diags (cl-delete-if-not
+                 (lambda (diag)
+                   (and diag
+                        (let ((rep (cadr (flymake-diagnostic-data diag))))
+                          (and rep (not (string-blank-p rep))))))
+                 candidates)))
+    (cond
+     ((null diags)
+      (message
+       (cond
+        (all "No replaceable gptel annotations in buffer")
+        ((gptel-annotate--diag-at pos)
+         "No replacement text available to preview for annotation at point")
+        (t "No gptel annotation at point"))))
+     ;; If any are currently showing, hide all
+     ((cl-some (lambda (d) (overlay-get (flymake--diag-overlay d) 'after-string))
+               diags)
+      (mapc #'gptel-annotate--hide-replacement diags))
+     ;; Otherwise show all
+     (t
+      (mapc #'gptel-annotate--show-replacement diags)))))
 
 ;;;; gptel request setup
 

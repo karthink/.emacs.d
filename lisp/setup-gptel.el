@@ -829,11 +829,13 @@ Do not repeat any of the BEFORE or AFTER code." lang lang lang)
 ;; ** gptel-annotate: Plumb responses as flymake annotations
 ;;----------------------------------------------------------------
 (use-package gptel-annotate
+  :ensure ( :host github :repo "karthink/gptel-annotate"
+            :protocol ssh)
   :commands gptel-annotate
   :after gptel
   :init
   (unless (alist-get 'gptel-annotate gptel--known-presets)
-    (gptel-make-preset 'gptel-annotate :pre (require 'gptel-annotate)))
+    (gptel-make-preset 'gptel-annotate :pre (lambda () (require 'gptel-annotate))))
   :hook ((gptel-annotate-post . my/gptel-annotate-notify))
   :config
   (defun my/gptel-annotate-notify (bufs)

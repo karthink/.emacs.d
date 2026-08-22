@@ -1999,6 +1999,37 @@ SKIP-EXPORT.  Set SILENT to non-nil to inhibit notifications."
          ("C-c o F" . org-ql-find-in-agenda)
          ("C-c o /" . org-ql-sparse-tree))
   :config
+  ;; "created:" predicate: match entries by CREATED property timestamp,
+  ;; e.g. (created :on today) or created:from=-3.  A bare number N
+  ;; means "created in the last N days", like `closed' and `clocked'.
+  (org-ql-defpred created (&key from to _on)
+    "Return non-nil if entry was created in given period.
+The CREATED property should hold an Org timestamp, e.g.
+  :CREATED: [2026-08-01 Sat 18:19]
+Without arguments, return non-nil if the entry has such a
+property."
+    :normalizers ((`(,predicate-names ,(and num-days (pred numberp)))
+                   ;; Like (closed) and (clocked): implicitly look into the past.
+                   (let* ((from-day (* -1 num-days))
+                          (rest (list :from from-day)))
+                     (org-ql--normalize-from-to-on
+                       `(created :from ,from))))
+                  (`(,predicate-names . ,rest)
+                   (org-ql--normalize-from-to-on
+                     `(created :from ,from :to ,to))))
+    :preambles ((`(,predicate-names . ,_)
+                 ;; Predicate still needs testing.
+                 (list :regexp "^[ \t]*:CREATED:" :query query)))
+    :body
+    (org-ql--predicate-ts :from from :to to
+                          :regexp (rx bol (0+ (any " \t")) ":CREATED:"
+                                      (1+ (any " \t"))
+                                      (group (any "[<") (1+ (not (any ">\n]")))
+                                             (any ">]")))
+                          :match-group 1))
+  (use-package org-ql-help
+    ;; Pop-up query cheatsheet: press ? in any org-ql query minibuffer.
+    :load-path "plugins/")
   (use-package org-ql-view
     :bind (:map org-ql-view-map
            ("q" . quit-window))))

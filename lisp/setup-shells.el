@@ -506,28 +506,20 @@ send a notification when the process has exited."
 ;;
 ;; Calling and exiting eshell
 (use-package eshell
-  :bind (("H-<return>" . eshell)
-         ("H-!" . eshell-here))
+  :bind (("C-S-e" . eshell-toggle) ("C-$" . eshell-toggle))
   :config
   (advice-add 'eshell-life-is-too-much :after #'my/delete-window-if-not-single)
   (advice-add 'eshell-mark-output :after #'activate-mark)
   ;; From http://howardism.org/Technical/Emacs/eshell-fun.html
-  (defun eshell-here ()
-      "Opens up a new shell in the directory associated with the
-    current buffer's file. The eshell is renamed to match that
-    directory to make multiple eshell windows easier."
-      (interactive)
-      (let* ((parent (if (buffer-file-name)
-                         (file-name-directory (buffer-file-name))
-                       default-directory))
-             (name   (car (last (split-string parent "/" t)))))
-        (if-let* ((eshell-name (concat "*eshell: " name "*"))
-                  (existing-eshell-buffer (get-buffer eshell-name)))
-            (select-window (display-buffer existing-eshell-buffer))
-          (select-window (display-buffer (eshell "new")))
-          (rename-buffer eshell-name)
-          (insert (concat "ls"))
-          (eshell-send-input)))))
+  (let ((eshell-last))
+    (defun eshell-toggle (&optional arg)
+      "Toggle eshell"
+      (interactive "P")
+      (cond (eshell-mode (setq eshell-last (current-buffer))
+                         (quit-window))
+            ((numberp arg) (eshell arg))
+            ((buffer-live-p eshell-last) (display-buffer eshell-last))
+            (t (eshell arg))))))
 
 ;; ** Eshell appearance
 ;;

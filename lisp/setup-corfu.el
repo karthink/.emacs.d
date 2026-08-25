@@ -309,8 +309,7 @@ to be active.")
   :after (corfu orderless)
   :commands my/toggle-writing-capf
   :defines my/toggle-writing-capf
-  :bind (("C-$" . cape-dict)
-         ("C-S-f" . cape-file)
+  :bind (("C-S-f" . cape-file)
          ("C-M-/" . cape-dabbrev)
          :map corfu-map
          ("M-/" . cape-dabbrev)

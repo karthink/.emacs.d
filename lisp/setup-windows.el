@@ -91,7 +91,7 @@ If buffer-or-name is nil return current buffer's mode."
     "List of major-modes used in REPL buffers")
 
   (defvar my/repl-names-list
-    '("^\\*\\(?:.*?-\\)\\{0,1\\}e*shell[^z-a]*\\(?:\\*\\|<[[:digit:]]+>\\)$"
+    '("^\\*\\(?:.*?-\\)\\{0,1\\}shell[^z-a]*\\(?:\\*\\|<[[:digit:]]+>\\)$"
       "\\*.*REPL.*\\*"
       "\\*MATLAB\\*"
       "\\*Python\\*"
@@ -748,7 +748,7 @@ When `switch-to-buffer-obey-display-actions' is non-nil,
   (setq popper-reference-buffers
         (append my/help-modes-list
                 my/man-modes-list
-                my/repl-modes-list
+                (cl-remove 'eshell-mode my/repl-modes-list)
                 my/repl-names-list
                 my/occur-grep-modes-list
                 ;; my/man-modes-list

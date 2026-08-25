@@ -1,7 +1,7 @@
 (use-package calc
   :bind (("C-x c" . calc)
-         ("C-S-e" . latex-math-from-calc)
-         ("C-c e" . calc-embedded))
+         ("C-c e" . latex-math-from-calc)
+         ("C-S-c" . calc-embedded))
   :config
   (use-package calc-embed
     :bind (:map calc-override-minor-modes-map

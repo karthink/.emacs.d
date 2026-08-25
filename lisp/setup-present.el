@@ -52,6 +52,9 @@
   (dolist (input '(self-insert-command
                    org-self-insert-command))
     (add-to-list 'keycast-substitute-alist `(,input "." "Typing!")))
+  (dolist (input '( dslide-deck-forward dslide-deck-backward dslide-deck-stop
+                    "<switch-frame>"))
+    (add-to-list 'keycast-substitute-alist `(,input nil nil)))
   (setf (alist-get 'strokes-do-stroke
                    keycast-substitute-alist)
         '("[mouse]" t))
@@ -183,6 +186,67 @@
          ("<C-down>"  . org-tree-slide-display-header-toggle)
          ("<C-right>" . org-tree-slide-move-next-tree)
          ("<C-left>"  . org-tree-slide-move-previous-tree)))
+
+(use-package dslide
+  :ensure (:remotes ("karthink" :repo "karthink/dslide"))
+  :defer
+  :bind ( :map dslide-mode-map
+          ("<down>" . nil)
+          ("C-<down>" . dslide-deck-stop))
+  :config
+  (setq dslide-slide-in-blank-lines 2)
+  (setq dslide-breadcrumb-separator " » ")
+  (setq dslide-breadcrumb-separator-style 'append) ;or 'separate
+  (remove-hook 'dslide-start-hook #'dslide-cursor-hide)
+  (remove-hook 'dslide-present-hook #'dslide-cursor-hide)
+  (remove-hook 'dslide-develop-hook #'dslide-cursor-hide)
+  (defclass dslide-action-reveal (dslide-action)
+    ((overlays :initform nil)
+     (elements :initform (paragraph link)    ;elements to hide
+               :initarg :elements))
+    "Hide all paragraphs and reveal them one by one.")
+
+  (cl-defmethod dslide-begin :after ((obj dslide-action-reveal))
+    (oset obj overlays
+          (dslide-section-map
+           obj (oref obj elements)
+           (lambda (el)
+             (unless (and (eq (org-element-type el) 'src-block)
+                          (string-match-p
+                           ":exports +none"
+                           (org-element-property :parameters el))))
+             (dslide-hide-element el (oref obj inline))))))
+
+  (cl-defmethod dslide-final :after ((obj dslide-action-reveal))
+    (mapc #'delete-overlay (oref obj overlays)))
+
+  (cl-defmethod dslide-forward ((obj dslide-action-reveal))
+    (when-let* ((next-para (dslide-section-next obj (oref obj elements) nil t))
+                (progress (org-element-property :begin next-para)))
+      (let ((item-overlays (seq-intersection (oref obj overlays)
+                                             (overlays-at progress))))
+        (oset obj overlays (seq-difference (oref obj overlays)
+                                           item-overlays))
+        (when dslide-slide-in-effect
+          (if (oref obj inline)
+              (mapc #'dslide-animation-peel item-overlays)
+            (dslide-animation-setup (org-element-property :begin next-para)
+                                    (org-element-property :end next-para))
+            ;; Because the user might add items etc, and to avoid the need for
+            ;; keys matching items to our overlays, we intersect overlays we are
+            ;; managing with overlays found at point, which could include overlays
+            ;; from some other action
+            (mapc #'delete-overlay item-overlays))))
+      ;; return progress
+      progress))
+
+  (cl-defmethod dslide-backward ((obj dslide-action-reveal))
+    (when-let ((previous-para (dslide-section-previous obj (oref obj elements)))
+               (progress (org-element-property :begin previous-para)))
+      (push (dslide-hide-element previous-para (oref obj inline))
+            (oref obj overlays))
+      ;; return progress
+      progress)))
 
 (provide 'setup-present)
 ;;; setup-present.el ends here

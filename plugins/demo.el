@@ -40,16 +40,22 @@
 
   (demo--define-infix
    "A" "aspect-ratio" "Frame aspect ratio"
-   '(choice (const :tag "tall" 'tall)
-            (const :tag "wide" 'wide)
-            (const :tag "unspecified" nil))
+   '(choice (const :tag "tall" tall)
+            (const :tag "wide" wide)
+            (const :tag "unspecified" t)
+            (const :tag "no-resize" nil))
    nil
-   (intern-soft (completing-read "Aspect ratio: " '(tall wide nil))))
+   (intern-soft (completing-read "Aspect ratio: " '(tall wide t nil))))
 
   (demo--define-infix
    "m" "mode-line-p" "mode-line?"
    'boolean t
    (not demo-mode-line-p))
+
+  (demo--define-infix
+   "l" "hl-line-p" "hl-line?"
+   'boolean nil
+   (not demo-hl-line-p))
 
   (demo--define-infix
    "h" "height" "Height in pixels"
@@ -69,12 +75,13 @@
 
   (demo--define-infix
    "t" "theme" "Theme"
-   'theme 'modus-operandi
+   'theme nil
    (intern-soft
     (completing-read "Use theme: "
-                     (mapcar #'symbol-name
-			     (custom-available-themes))
-                     nil t)))
+                     (cons nil
+                           (mapcar #'symbol-name
+			           (custom-available-themes)))
+                     nil nil)))
 
   (demo--define-infix
    "f" "fontsize" "Font size"
@@ -88,15 +95,15 @@
 
   (demo--define-infix
    "c" "autocomplete-p" "autocompletion?"
-   'boolean t
+   'boolean nil
    (not demo-autocomplete-p))
 
   (demo--define-infix
    "p" "popper-style" "popup style?"
    '(choice (const :tag "basic" t)
-            (const :tag "custom" 'user)
+            (const :tag "custom" user)
             (const :tag "off" nil))
-   t
+   'user
    (pcase demo-popper-style
      ('t 'user)
      ('user 'nil)
@@ -109,8 +116,12 @@
 
   (demo--define-infix
    "T" "tab-bar-p"  "Tab Bar?"
-   'boolean nil
-   (not demo-tab-bar-p)))
+   '(choice (const :tag "always" t)
+            (const :tag "more-than-one" 1)
+            (const :tag "no" nil))
+   1
+   (pcase demo-tab-bar-p
+     ('t 1) (1 nil) ('nil t))))
 
 (transient-define-prefix demo-transient ()
   "Turn on demo mode"
@@ -124,6 +135,7 @@
     (demo--set-fontsize)]
    ["Modes"
     (demo--set-mode-line-p)
+    (demo--set-hl-line-p)
     (demo--set-tab-bar-p)
     (demo--set-keycast-p)
     (demo--set-autocomplete-p)
@@ -145,6 +157,7 @@
         ;; Save all current settings
         (put 'demo-aspect-ratio :name (frame-parameter nil 'name))
         (put 'demo-mode-line-p :original (default-value 'mode-line-format))
+        (put 'demo-hl-line-p :original (default-value 'global-hl-line-mode))
         (put 'demo-theme :original custom-enabled-themes)
         (put 'demo-fontsize :original (face-attribute 'default :height))
         (put 'variable-pitch :original (face-attribute 'variable-pitch :height))
@@ -160,7 +173,7 @@
              :original (and (bound-and-true-p popper-mode)
                             (bound-and-true-p popper-display-control)))
         (put 'demo-truncate-lines-p :original truncate-lines)
-        (put 'demo-tab-bar-p :original (and tab-bar-mode tab-bar-show))
+        (put 'demo-tab-bar-p :original (and (bound-and-true-p tab-bar-mode) tab-bar-show))
         
         ;; Always needed
         (add-hook 'grep-mode-hook 'toggle-truncate-lines)
@@ -176,14 +189,14 @@
         
         ;; Autocompletion
         (cond
-         ((fboundp 'corfu-mode) (corfu-mode (if demo-autocomplete-p 1 0)))
-         ((fboundp 'company-mode) (company-mode (if demo-autocomplete-p 1 0))))
+         ((fboundp 'corfu-mode) (corfu-mode (if demo-autocomplete-p 1 -1)))
+         ((fboundp 'company-mode) (company-mode (if demo-autocomplete-p 1 -1))))
         ;; Mode line
         (unless demo-mode-line-p
           (setq-local mode-line-format nil))
         ;; Tab bar
         (if demo-tab-bar-p
-            (progn (setq tab-bar-show t)
+            (progn (setq tab-bar-show demo-tab-bar-p)
                    (tab-bar-mode 0)
                    (tab-bar-mode 1))
           (tab-bar-mode 0))
@@ -191,17 +204,18 @@
         (when (and demo-keycast-p)
           (require 'keycast)
           (add-to-list 'keycast-substitute-alist '(ignore nil nil))
-          (if demo-tab-bar-p
+          (if (eq demo-tab-bar-p t)
 	      (keycast-tab-bar-mode 1)
             (keycast-mode-line-mode 1)))
         
 	;; Theme
-        (mapc (lambda (theme)
-                (unless (equal theme demo-theme)
-                  (disable-theme theme)))
-              custom-enabled-themes)
-        (unless (member demo-theme custom-enabled-themes)
-          (load-theme demo-theme t))
+        (when demo-theme
+          (mapc (lambda (theme)
+                  (unless (equal theme demo-theme)
+                    (disable-theme theme)))
+                custom-enabled-themes)
+          (unless (member demo-theme custom-enabled-themes)
+            (load-theme demo-theme t)))
 
 	(let ((inhibit-message t))
 	  (if demo-truncate-lines-p
@@ -211,16 +225,16 @@
 	
 	;; Font
         (set-face-attribute
-         'default nil
+         'default (selected-frame)
          ;; :family "Monospace"
          ;; :slant 'normal
          :height demo-fontsize
          ;; :width 'normal
          )
 
-        (set-face-attribute 'tooltip nil :height (floor (* 0.9 demo-fontsize))
+        (set-face-attribute 'tooltip (selected-frame) :height (floor (* 0.9 demo-fontsize))
                             :weight 'semibold)
-        (set-face-attribute 'variable-pitch nil :height demo-fontsize)
+        (set-face-attribute 'variable-pitch (selected-frame) :height demo-fontsize)
 
         ;; Disabled minor modes
         (dolist (sym demo-disabled-modes)
@@ -230,11 +244,12 @@
 
         ;; Frame size and parameters
         (set-frame-parameter nil 'name "emacs-demo")
-        (let ((frame-resize-pixelwise t)
-              (frame-inhibit-implied-resize t))
-          (set-frame-size
-           (selected-frame) demo-width demo-height
-           'pixelwise)))
+        (when demo-aspect-ratio
+          (let ((frame-resize-pixelwise t)
+                (frame-inhibit-implied-resize t))
+            (set-frame-size
+             (selected-frame) demo-width demo-height
+             'pixelwise))))
 
     ;; Restore popup behavior
     (demo-popper-apply-settings
@@ -242,13 +257,14 @@
           :original))
     
     ;; Restore themes
-    (let ((original-themes (get 'demo-theme :original)))
-      (mapc (lambda (theme)
-              (unless (memq theme original-themes)
-                (disable-theme theme)))
-            custom-enabled-themes)
-      (dolist (theme original-themes)
-        (enable-theme theme)))
+    (when demo-theme
+      (let ((original-themes (get 'demo-theme :original)))
+        (mapc (lambda (theme)
+                (unless (memq theme original-themes)
+                  (disable-theme theme)))
+              custom-enabled-themes)
+        (dolist (theme original-themes)
+          (enable-theme theme))))
 
     ;; Restore autocompletion
     (cond
@@ -269,10 +285,8 @@
     (set-frame-parameter nil 'name (get 'demo-aspect-ratio :name))
 
     (pcase (get 'demo-keycast-p :original)
-      ('tab-bar (keycast-tab-bar-mode 1)
-                (keycast-mode-line-mode -1))
-      ('mode-line (keycast-tab-bar-mode -1)
-                  (keycast-mode-line-mode 1))
+      ('tab-bar (keycast-tab-bar-mode 1))
+      ('mode-line (keycast-mode-line-mode 1))
       ('nil (when keycast-tab-bar-mode
               (keycast-tab-bar-mode -1))
             (when keycast-mode-line-mode
@@ -286,6 +300,7 @@
     ;; Restore mode-line, tab-bar and frame settings
     (kill-local-variable 'mode-line-format)
     (setq mode-line-format (get 'demo-mode-line-p :original))
+    (global-hl-line-mode (unless (get 'demo-hl-line-p :original) -1))
     (setq tab-bar-show (or (get 'demo-tab-bar-p :original) 1))
     (tab-bar-mode (and (get 'demo-tab-bar-p :original) t))
     (force-mode-line-update)))
@@ -320,11 +335,13 @@
       ('nil (popper-echo-mode 0)
             (popper-mode 0))
       ('user (setq popper-display-control 'user
-                   popper-group-function nil)
+                   ;; popper-group-function nil
+                   )
              (popper-mode 0)
              (popper-mode 1)
              (popper-echo-mode 1)
-             (setq popper-mode-line nil)))))
+             ;; (setq popper-mode-line nil)
+             ))))
 
 ;; Keycast
 (use-package keycast

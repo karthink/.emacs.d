@@ -35,11 +35,17 @@
 
 (use-package pdf-tools
   :commands pdf-tools-install
-  :bind (:map pdf-view-mode-map
-              ("C-c C-r w" . pdf-view-auto-slice-minor-mode)
-              ([remap scroll-up-command] . pdf-view-scroll-up-or-next-page)
-              ([remap scroll-down-command] . pdf-view-scroll-down-or-previous-page))
+  :bind
+  ( :map pdf-view-mode-map
+    ("C-c C-r w" . pdf-view-auto-slice-minor-mode)
+    ([remap scroll-up-command] . pdf-view-scroll-up-or-next-page)
+    ([remap scroll-down-command] . pdf-view-scroll-down-or-previous-page)
+    :map pdf-view-roll-minor-mode-map
+    ([remap pdf-view-scroll-up-or-next-page] . pdf-roll-scroll-screen-forward)
+    ([remap pdf-view-scroll-down-or-previous-page] . pdf-roll-scroll-screen-backward))
   :config
+  (when (fboundp 'pdf-view-roll-minor-mode)
+    (add-hook 'pdf-view-mode-hook 'pdf-view-roll-minor-mode))
   (setf pdf-tools-enabled-modes
         (delq 'pdf-misc-size-indication-minor-mode
               pdf-tools-enabled-modes))

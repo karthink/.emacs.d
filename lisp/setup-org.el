@@ -821,6 +821,15 @@ appropriate.  In tables, insert a new row or end the table."
       (remove-hook 'org-latex-preview-overlay-open-functions
                     #'my/org-latex-preview-uncenter))))
 
+(use-package textui
+  :ensure (:host github :repo "yibie/textui")
+  :defer)
+
+(use-package org-table-widget
+  :ensure (:host github :repo "yibie/org-table-widget")
+  :defer)
+
+
 (use-package org-appear
   :disabled
   :ensure t

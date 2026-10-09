@@ -1005,8 +1005,7 @@ has no effect."
   (setopt org-agenda-files '("~/Documents/roam/inbox.org"
                              "~/Documents/roam/phone.org"
                              "~/Documents/roam/do.org"
-                             "~/Documents/roam/gmail-cal.org"
-                             "~/Documents/roam/ucsb-cal.org"))
+                             "~/Documents/roam/gmail-cal.org"))
   (setq-default
    org-agenda-span 'day
    org-agenda-restore-windows-after-quit t
@@ -1799,8 +1798,7 @@ the :consume parameter extracted from KEYWORD."
 ;;;----------------------------------------------------------------
 ;; Disabled since org-gcal is broken for me right now.
 (use-package org-gcal
-  :disabled
-  :ensure t
+  :when (and IS-LINUX (not IS-VIRT))
   :after org
   :commands (org-gcal-sync org-gcal-fetch my/org-gcal-sync-maybe)
   ;; :hook (org-agenda-mode . my/org-gcal-sync-maybe)
@@ -1817,10 +1815,7 @@ the :consume parameter extracted from KEYWORD."
         org-gcal-file-alist
         `((,my-email-address . ,(concat
                                  (file-name-as-directory "~/Documents/roam/")
-                                 "gmail-cal.org"))
-          (,(car my-alt-email-addresses) . ,(concat
-                                             (file-name-as-directory "~/Documents/roam/")
-                                             "ucsb-cal.org")))
+                                 "gmail-cal.org")))
         org-gcal-recurring-events-mode 'top-level)
 
   ;; Without this 'org-gcal is not registered as an oauth provider

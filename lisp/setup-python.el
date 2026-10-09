@@ -21,9 +21,10 @@
   (with-eval-after-load 'eglot
     (setf (alist-get '(python-mode python-ts-mode) eglot-server-programs
                      nil t #'equal)
-          ;; '("ty" "server")
+          '("ty" "server")
           ;; '("basedpyright-langserver" "--stdio")
-          '("rass" "--" "ty" "server" "--" "ruff" "server"))))
+          ;; '("rass" "--" "ty" "server" "--" "ruff" "server")
+          )))
 
 (use-package python-mls
   :ensure t

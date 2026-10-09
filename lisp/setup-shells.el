@@ -506,7 +506,7 @@ send a notification when the process has exited."
 ;;
 ;; Calling and exiting eshell
 (use-package eshell
-  :bind (("C-S-e" . eshell-toggle) ("C-$" . eshell-toggle))
+  :bind (("C-S-e" . eshell-toggle))
   :config
   (advice-add 'eshell-life-is-too-much :after #'my/delete-window-if-not-single)
   (advice-add 'eshell-mark-output :after #'activate-mark)
@@ -763,5 +763,26 @@ output instead."
            (buffer-name (project-prefixed-buffer-name "vterm")))
       (vterm buffer-name))))
 
+;; * GHOSTEL
+
+(use-package ghostel
+  :when IS-GUIX
+  :init (require 'ghostel-autoloads)
+  :bind (("C-$" . ghostel-toggle))
+  :config
+  (let ((ghostel-last))
+    (defun ghostel-toggle (&optional arg)
+      "Toggle eshell"
+      (interactive "P")
+      (cond ((eq major-mode 'ghostel-mode)
+             (setq ghostel-last (current-buffer))
+             (quit-window))
+            ((numberp arg) (ghostel arg))
+            ((buffer-live-p ghostel-last) (display-buffer ghostel-last))
+            (t (ghostel arg))))))
 
 (provide 'setup-shells)
+
+;; Local Variables:
+;; outline-regexp: "^;; \\*+"
+;; End:

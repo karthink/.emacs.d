@@ -837,7 +837,7 @@ appropriate.  In tables, insert a new row or end the table."
   :ensure (:host github
              :repo "minad/org-modern")
   :after org
-  :hook ((org-modern-mode . my/org-modern-spacing))
+  ;; :hook ((org-modern-mode . my/org-modern-spacing))
   :config
   (defun my/org-modern-spacing ()
     (setq-local line-spacing
@@ -982,7 +982,9 @@ has no effect."
   :after (org org-review)
   :commands org-agenda
   :hook (org-agenda-finalize . hl-line-mode)
-  :bind ( :map org-agenda-mode-map
+  :bind ( :map mode-specific-map
+          ("A" . my/org-agenda-switch)
+          :map org-agenda-mode-map
           ("D" . org-agenda-day-view)
           ("W" . org-agenda-week-view)
           ("w" . org-agenda-refile)
@@ -1020,6 +1022,17 @@ has no effect."
    org-agenda-log-mode-items '(closed clock state)
    org-agenda-log-mode-add-notes t
    org-agenda-default-appointment-duration 60)
+
+  ;; Org agenda commands
+  ;; ===================
+  (defun my/org-agenda-switch (agenda-bufs)
+    (interactive (list (match-buffers '(major-mode . org-agenda-mode))))
+    (cond
+     ((null agenda-bufs) (call-interactively #'org-agenda)) ;no agenda buffer
+     ((null (cadr agenda-bufs))                             ;one agenda buffer
+      (display-buffer (car agenda-bufs) '(nil (body-function . select-window))))
+     ;; Multiple agenda buffers: just pick the first one FIXME
+     (t (my/org-agenda-switch (list (car agenda-bufs))))))
 
   ;; Org agenda UI
   ;; =============
@@ -1339,6 +1352,10 @@ See `org-capture-templates' for more information."
          ("c" "Add calendar entry" entry (file "gmail-cal.org")
           "* %?\n%^{LOCATION}p\n:%(progn (require 'org-gcal) (symbol-value 'org-gcal-drawer-name)):
 %a\n:END:")
+         ("." "Task here" entry (here)
+          "* TODO %?\n:PROPERTIES:\n:CREATED:  %U\n:ID:  %(org-id-uuid)\n:LAST_REVIEW:  %U\n:END:\n"
+          :immediate-finish t :jump-to-captured t :no-save t
+          :empty-lines 1)
          ("h" "Hugo post")
          ("hb" "Hugo Blog section"
           entry

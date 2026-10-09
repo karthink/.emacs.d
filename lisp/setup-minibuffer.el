@@ -2,6 +2,9 @@
 
 (use-package minibuffer
   :hook (minibuffer-setup .  cursor-intangible-mode)
+  :bind ( :map completion-in-region-mode-map
+          ("M-n" . minibuffer-next-completion)
+          ("M-p" . minibuffer-previous-completion))
   :config
 ;; Minibuffer completion
   (setq completion-cycle-threshold 2
@@ -41,7 +44,16 @@ instead."
                        replacement)))))
 
   (define-key minibuffer-local-map (kbd "C-x C-i") 'minibuffer-replace-input)
-  
+
+  (defun my/completion-category ()
+    (when (minibufferp)
+      (completion-metadata-get
+       (completion-metadata
+        (buffer-substring-no-properties
+         (minibuffer-prompt-end) (max (minibuffer-prompt-end) (point)))
+        minibuffer-completion-table minibuffer-completion-predicate)
+       'category)))
+
   (defun basic-remote-try-completion (string table pred point)
     (and (path-remote-p string)
          (completion-basic-try-completion string table pred point)))

@@ -14,6 +14,9 @@
   ;; (setq ibuffer-default-shrink-to-minimum-size t)
   ;; (setq ibuffer-saved-filter-groups nil)
 
+  (setf (nth 5 (car ibuffer-formats)) '(name 30 30 :left nil))
+  (setf (nth 2 (cadr ibuffer-formats)) '(name 30 -1))
+
   (defun ibuffer-visit-buffer-other-window (&optional noselect)
   "In ibuffer, visit this buffer. If `ace-window' is available, use
 it to select window for visiting this buffer.`"
@@ -76,7 +79,11 @@ When no VC root is available, use standard `switch-to-buffer'."
   :bind (("C-x C-b" . ibuffer)
          ("M-s b" . my/buffers-major-mode)
          ("M-s v" . my/buffers-vc-root)
+         :map ibuffer-mode-filter-group-map
+         ("TAB" . ibuffer-toggle-filter-group)
          :map ibuffer-mode-map
+         ("C-M-n" . ibuffer-forward-filter-group)
+         ("C-M-p" . ibuffer-backward-filter-group)
          ("M-o" . nil)))
 
 (use-package sidle
@@ -87,6 +94,7 @@ When no VC root is available, use standard `switch-to-buffer'."
           ("S-SPC" . sidle-scroll-down-command)
           ("DEL" . sidle-scroll-down-command)
           ("q" . sidle-quit)
+          ("i" . sidle-imenu)
           ("M-n" . sidle-next)
           ("M-p" . sidle-prev)
           ("<" . sidle-top)

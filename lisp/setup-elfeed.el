@@ -693,9 +693,15 @@ Can be YouTube URLs or text entries"
 
 ;; ** Podqueue support: tag an entry with podqueue to enqueue it
 (use-package elfeed
+  :after elfeed-search
   :hook (elfeed-tag-hook . my/elfeed-podqueue-add)
+  :autoload my/elfeed-podqueue-add
   :config
-  (keymap-set elfeed-search-mode-map "L" (elfeed-search-tag-as 'podqueue))
+  (keymap-set elfeed-search-mode-map "L"
+              (lambda ()
+                "Toggle a tag on an Elfeed search selection"
+                (interactive)
+                (elfeed-search-toggle-all 'podqueue)))
   (defun my/elfeed-podqueue-add (entries tags)
     (when (memq 'podqueue tags)
       (dolist (entry entries)

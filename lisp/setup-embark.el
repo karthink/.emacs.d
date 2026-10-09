@@ -21,6 +21,7 @@
          ("M-SPC"     . embark-select)
          :map help-map
          ("SPC"      . my/embark-on-last-message)
+         ("y"        . my/embark-on-current-kill)
          ("b"        . embark-bindings)
          ("B"        . embark-bindings-at-point)
          ("C-b"      . describe-bindings)
@@ -138,6 +139,14 @@
     (interactive "P")
     (with-current-buffer (get-buffer "*Messages*")
       (goto-char (point-max))
+      (backward-char 1)
+      (embark-act arg)))
+
+  ;; Act on kill ring head (without context)
+  (defun my/embark-on-current-kill (&optional arg)
+    (interactive "P")
+    (with-work-buffer
+      (insert (current-kill 0))
       (backward-char 1)
       (embark-act arg)))
 

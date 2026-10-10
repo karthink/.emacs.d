@@ -712,7 +712,7 @@ output instead."
 ;; * VTERM
 
 ;; Vterm is a module, so the build declaration takes a little work.
-(when (and IS-LINUX (not IS-GUIX))
+(when (and IS-LINUX (not IS-GUIX) (not IS-VIRT))
   (use-package vterm
     :ensure (:files
              ("*.so" "*.el")
@@ -727,7 +727,7 @@ output instead."
     :defer))
 
 (use-package vterm
-  :when IS-LINUX
+  :when (and IS-LINUX (not IS-VIRT))
   :bind (:map vterm-mode-map
               ("C-c C-p" . my/vterm-previous-prompt)
               ("C-c C-n" . my/vterm-next-prompt)
@@ -751,7 +751,7 @@ output instead."
     (my/vterm-next-prompt (- (or arg 1)))))
 
 (use-package vterm
-  :when IS-LINUX
+  :when (and IS-LINUX (not IS-VIRT))
   :after project
   :bind (:map project-prefix-map
          ("s" . vterm-project))

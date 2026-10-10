@@ -130,6 +130,7 @@ When no VC root is available, use standard `switch-to-buffer'."
     :quit-entry #'quit-window))
 
 (use-package ibuffer-project
+  :unless (or IS-MAC IS-VIRT)
   :ensure t
   :after (ibuffer project)
   :hook ((ibuffer ibuffer-mode) . my/ibuffer-project-generate-filter-groups)

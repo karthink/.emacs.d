@@ -426,7 +426,7 @@ ARGS is the raw argument list (STRING &optional TRANS-CASE)."
     (hyperify-prefix-key [3])))
 
 (use-package emacs
-  :when IS-MAC
+  :when (or IS-MAC IS-VIRT)
   :bind-keymap (("s-t" . tab-prefix-map)
                 ("s-4" . ctl-x-4-map)
                 ("s-5" . ctl-x-5-map))

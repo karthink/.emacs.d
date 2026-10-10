@@ -58,23 +58,19 @@
 
 ;;;; ACTIVITIES
 (use-package activities
-  :when (daemonp)
   :ensure t
   :init
-  (setq activities-mode-idle-frequency 10)
-  (activities-tabs-mode))
-
-(use-package activities
-    :custom-face
-    (activities-tabs-face ((t nil)))
-    :bind
-    (("C-x C-a C-j" . activities-resume)
-     ("C-x C-a C-z" . activities-suspend)
-     ("C-x C-a C-k" . activities-discard)
-     ("C-x C-a b" . activities-switch-buffer)
-     ("C-x C-a C-s" . activities-define)
-     ("C-x C-a g" . activities-revert)
-     ("C-x C-a l" . activities-list)))
+  (activities-mode 1)
+  (activities-tabs-mode 1)
+  :custom-face (activities-tabs-face ((t nil)))
+  :bind
+  (("C-x C-a C-j" . activities-resume)
+   ("C-x C-a C-z" . activities-suspend)
+   ("C-x C-a C-k" . activities-discard)
+   ("C-x C-a b" . activities-switch-buffer)
+   ("C-x C-a C-s" . activities-define)
+   ("C-x C-a g" . activities-revert)
+   ("C-x C-a l" . activities-list)))
 
 ;;;; UNDO HISTORY
 

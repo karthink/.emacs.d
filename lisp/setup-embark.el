@@ -96,6 +96,7 @@
 
   (cl-pushnew 'down-list embark-repeat-actions)
   (cl-pushnew 'recenter-top-bottom embark-repeat-actions)
+  (cl-pushnew 'string-inflection-toggle embark-repeat-actions)
   (setq embark-keymap-prompter-key "'")
   (setq embark-cycle-key "SPC")
   (setq embark-quit-after-action
@@ -541,6 +542,7 @@ highlighting."
       (kill-new
        (let ((org-export-with-toc)
              (org-md-toplevel-hlevel 4)
+             (org-export-exclude-tags)
              (org-export-with-broken-links t)
              (org-export-with-sub-superscripts nil))
          (string-trim

@@ -300,7 +300,8 @@ Surrounding spaces are ignored when comparing."
       ring))
 
   (defun my/eshell-history-remove-duplicates ()
-    (my/ring-delete-first-item-duplicates eshell-history-ring))
+    (unless (ring-empty-p eshell-history-ring)
+      (my/ring-delete-first-item-duplicates eshell-history-ring)))
   
   (defun my/eshell-previous-matching-input ()
     (interactive)

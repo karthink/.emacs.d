@@ -213,7 +213,7 @@
   ;; Cape-dabbrev settings
   (defun my/text-mode-capfs ()
     (add-hook 'completion-at-point-functions 'cape-dabbrev 85 t))
-  (setf cape-dabbrev-check-other-buffers nil
+  (setf cape-dabbrev-buffer-function #'cape-text-buffers
         (alist-get 'cape-dabbrev completion-category-defaults)
         '((styles orderless-fast)))
 

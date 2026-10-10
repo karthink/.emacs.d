@@ -98,6 +98,9 @@
   :bind (:map eglot-mode-map ("C-h ." . eldoc))
   :hook ((eglot-managed-mode . my/eglot-eldoc-settings))
   :config
+  (add-hook 'eglot-managed-mode-hook
+            (poi-register #'flymake-goto-next-error
+                          #'my/flymake-action))
   (defun my/eglot-eldoc-settings ()
     (setq eldoc-documentation-strategy
           'eldoc-documentation-compose-eagerly))

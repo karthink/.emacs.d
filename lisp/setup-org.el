@@ -625,7 +625,7 @@ appropriate.  In tables, insert a new row or end the table."
         '(;; ("TODO"    :foreground "#6e90c8" :weight bold)
           ("NOTE" :foreground "#757575" :weight semibold)
           ("FAIL" :inherit shadow)
-          ("WAIT" :foreground "red" :weight semibold)
+          ("WAIT" :foreground "#d97706" :weight semibold)
           ("MAYBE"   :foreground "#6e8996" :weight bold)
           ("PROJECT" :foreground "#088e8e" :weight bold)
           ("SUSPENDED" :foreground "#6e8996" :weight bold))))
@@ -711,7 +711,7 @@ appropriate.  In tables, insert a new row or end the table."
        'repeat-map 'my/org-latex-env-map)
 
   (defun my/org-latex-preview-show-error ()
-    (display-local-help t))
+    (display-local-help t) nil)
   (add-hook 'org-ctrl-c-ctrl-c-final-hook
             #'my/org-latex-preview-show-error -10)
 
